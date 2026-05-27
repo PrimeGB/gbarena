@@ -13,8 +13,14 @@ type Profile = {
   pc_gt?: string | null;
 };
 
+type AppUser = {
+  id: string;
+  email?: string | null;
+};
+
 export default function ProfilePage() {
   const { user, loading } = useUser();
+  const currentUser = user as AppUser | null;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [usernameInput, setUsernameInput] = useState("");
@@ -23,7 +29,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!currentUser) {
       setProfile(null);
       return;
     }
@@ -31,20 +37,20 @@ export default function ProfilePage() {
     supabase
       .from("profiles")
       .select("username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt")
-      .eq("id", user.id)
+      .eq("id", currentUser.id)
       .single()
       .then(({ data }) => {
         const loadedProfile = data || null;
         setProfile(loadedProfile);
 
-        if (!loadedProfile && user.email && usernameInput === "") {
-          setUsernameInput(user.email.split("@")[0] || "");
+        if (!loadedProfile && currentUser.email && usernameInput === "") {
+          setUsernameInput(currentUser.email.split("@")[0] || "");
         }
       });
-  }, [user, usernameInput]);
+  }, [currentUser, usernameInput]);
 
   async function handleSave() {
-    if (!user) return;
+    if (!currentUser) return;
 
     const trimmedUsername = usernameInput.trim();
 
@@ -70,9 +76,9 @@ export default function ProfilePage() {
 
     const { error: insertError } = await supabase.from("profiles").insert([
       {
-        id: user.id,
+        id: currentUser.id,
         username: trimmedUsername,
-        email: user.email,
+        email: currentUser.email,
         xbox_gt: null,
         psn_gt: null,
         nintendo_gt: null,
@@ -95,7 +101,7 @@ export default function ProfilePage() {
 
     setProfile({
       username: trimmedUsername,
-      email: user.email || null,
+      email: currentUser.email || null,
       xbox_gt: null,
       psn_gt: null,
       nintendo_gt: null,
@@ -110,7 +116,7 @@ export default function ProfilePage() {
     return <div className="profile-loading">Loading profile.</div>;
   }
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div className="profile-loading">
         You must be logged in to view your profile.
@@ -123,11 +129,7 @@ export default function ProfilePage() {
   return (
     <>
       <style>{`
-        *{
-          margin:0;
-          padding:0;
-          box-sizing:border-box;
-        }
+        *{ margin:0; padding:0; box-sizing:border-box; }
 
         body{
           background:#000;
@@ -136,13 +138,8 @@ export default function ProfilePage() {
           overflow-x:hidden;
         }
 
-        a{
-          text-decoration:none;
-        }
-
-        button{
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-        }
+        a{text-decoration:none;}
+        button{font-family:Tahoma,Verdana,Arial,sans-serif;}
 
         .profile-loading{
           min-height:100vh;
@@ -177,10 +174,7 @@ export default function ProfilePage() {
           margin-left:14px;
         }
 
-        .wrapper{
-          width:1040px;
-          margin:0 auto;
-        }
+        .wrapper{ width:1040px; margin:0 auto; }
 
         .header{
           height:82px;
@@ -230,9 +224,7 @@ export default function ProfilePage() {
           background:linear-gradient(to bottom,#1c78c7,#0c2236);
           border:2px solid #74b4e6;
           position:relative;
-          box-shadow:
-            0 0 10px rgba(50,120,200,.5),
-            inset 0 0 8px rgba(255,255,255,.08);
+          box-shadow:0 0 10px rgba(50,120,200,.5), inset 0 0 8px rgba(255,255,255,.08);
           flex:none;
           display:flex;
           align-items:center;
@@ -254,10 +246,7 @@ export default function ProfilePage() {
           width:58px;
           height:40px;
           transform:rotate(-2deg);
-          filter:
-            drop-shadow(2px 3px 3px rgba(0,0,0,.75))
-            drop-shadow(0 0 5px rgba(255,255,255,.18))
-            drop-shadow(0 0 6px rgba(0,130,220,.28));
+          filter:drop-shadow(2px 3px 3px rgba(0,0,0,.75)) drop-shadow(0 0 5px rgba(255,255,255,.18)) drop-shadow(0 0 6px rgba(0,130,220,.28));
         }
 
         .gb-text-area{
@@ -316,9 +305,7 @@ export default function ProfilePage() {
           margin-right:22px;
         }
 
-        .nav a:hover{
-          color:#f2c14e;
-        }
+        .nav a:hover{ color:#f2c14e; }
 
         .profile-title-bar{
           margin-top:5px;
@@ -362,9 +349,7 @@ export default function ProfilePage() {
           background:#10283d;
         }
 
-        .title-avatar-upload input{
-          display:none;
-        }
+        .title-avatar-upload input{ display:none; }
 
         .profile-title-name{
           font-size:22px;
@@ -412,9 +397,7 @@ export default function ProfilePage() {
           align-items:stretch;
         }
 
-        .left-column,
-        .main-column,
-        .right-column{
+        .left-column,.main-column,.right-column{
           display:flex;
           flex-direction:column;
           min-height:530px;
@@ -446,9 +429,7 @@ export default function ProfilePage() {
           color:#d7e2ee;
         }
 
-        .profile-box{
-          margin-bottom:5px;
-        }
+        .profile-box{ margin-bottom:5px; }
 
         .avatar-box{
           width:100%;
@@ -490,12 +471,9 @@ export default function ProfilePage() {
           margin-bottom:0;
         }
 
-        .control-center-box .box-body{
-          height:100%;
-        }
+        .control-center-box .box-body{ height:100%; }
 
-        .quick-link,
-        .mini-list a{
+        .quick-link,.mini-list a{
           display:block;
           color:#d7eaff;
           padding:7px 4px;
@@ -503,8 +481,7 @@ export default function ProfilePage() {
           font-size:13px;
         }
 
-        .quick-link:hover,
-        .mini-list a:hover{
+        .quick-link:hover,.mini-list a:hover{
           color:#f2c14e;
           background:#10283d;
         }
@@ -631,9 +608,7 @@ export default function ProfilePage() {
           margin-bottom:0;
         }
 
-        .player-blog-box .box-body{
-          height:100%;
-        }
+        .player-blog-box .box-body{ height:100%; }
 
         .post{
           font-size:13px;
@@ -653,13 +628,8 @@ export default function ProfilePage() {
           margin-bottom:4px;
         }
 
-        .right-column{
-          gap:5px;
-        }
-
-        .right-column .box{
-          margin-bottom:0;
-        }
+        .right-column{ gap:5px; }
+        .right-column .box{ margin-bottom:0; }
 
         .right-box{
           flex:1;
@@ -741,15 +711,8 @@ export default function ProfilePage() {
           font-size:13px;
         }
 
-        .success{
-          color:#00ff88;
-          margin-top:10px;
-        }
-
-        .error{
-          color:#ff6b6b;
-          margin-top:10px;
-        }
+        .success{ color:#00ff88; margin-top:10px; }
+        .error{ color:#ff6b6b; margin-top:10px; }
 
         .footer{
           margin-top:5px;
@@ -785,29 +748,17 @@ export default function ProfilePage() {
                         <stop offset="72%" stopColor="#a7afb7" />
                         <stop offset="100%" stopColor="#6e7882" />
                       </linearGradient>
-
                       <linearGradient id="profileControllerEdge" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#ffffff" />
                         <stop offset="100%" stopColor="#3f4a55" />
                       </linearGradient>
-
                       <filter id="profileControllerShadow" x="-40%" y="-40%" width="180%" height="180%">
                         <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000000" floodOpacity=".8" />
                       </filter>
                     </defs>
 
                     <path
-                      d="M55 69
-                         C67 38 96 45 112 59
-                         C119 65 125 67 130 67
-                         C135 67 141 65 148 59
-                         C164 45 193 38 205 69
-                         C218 101 237 145 215 159
-                         C194 173 171 135 158 120
-                         C150 111 141 108 130 108
-                         C119 108 110 111 102 120
-                         C89 135 66 173 45 159
-                         C23 145 42 101 55 69Z"
+                      d="M55 69 C67 38 96 45 112 59 C119 65 125 67 130 67 C135 67 141 65 148 59 C164 45 193 38 205 69 C218 101 237 145 215 159 C194 173 171 135 158 120 C150 111 141 108 130 108 C119 108 110 111 102 120 C89 135 66 173 45 159 C23 145 42 101 55 69Z"
                       fill="url(#profileControllerBody)"
                       stroke="url(#profileControllerEdge)"
                       strokeWidth="4"
@@ -816,32 +767,14 @@ export default function ProfilePage() {
 
                     <path d="M73 88 H102 V101 H73Z" fill="#003e68" />
                     <path d="M81 80 H94 V109 H81Z" fill="#003e68" />
-
                     <circle cx="177" cy="83" r="8" fill="#003e68" />
                     <circle cx="198" cy="94" r="8" fill="#003e68" />
                     <circle cx="177" cy="105" r="8" fill="#003e68" />
                     <circle cx="156" cy="94" r="8" fill="#003e68" />
-
                     <circle cx="118" cy="85" r="5" fill="#4f5f6c" />
                     <circle cx="143" cy="85" r="5" fill="#4f5f6c" />
-
-                    <path
-                      d="M82 54
-                         C88 20 125 16 143 48"
-                      fill="none"
-                      stroke="#e5edf4"
-                      strokeWidth="10"
-                      strokeLinecap="round"
-                    />
-
-                    <path
-                      d="M86 54
-                         C92 28 122 25 137 49"
-                      fill="none"
-                      stroke="#6d7a86"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                    />
+                    <path d="M82 54 C88 20 125 16 143 48" fill="none" stroke="#e5edf4" strokeWidth="10" strokeLinecap="round" />
+                    <path d="M86 54 C92 28 122 25 137 49" fill="none" stroke="#6d7a86" strokeWidth="4" strokeLinecap="round" />
                   </svg>
                 </div>
 
@@ -918,20 +851,9 @@ export default function ProfilePage() {
                     <div className="username">{playerName}</div>
                     <div className="rank">Member Rank: Amateur</div>
 
-                    <div className="stat-row">
-                      <span>Record</span>
-                      <span>0 - 0</span>
-                    </div>
-
-                    <div className="stat-row">
-                      <span>Reputation</span>
-                      <span>100%</span>
-                    </div>
-
-                    <div className="stat-row">
-                      <span>Joined</span>
-                      <span>2026</span>
-                    </div>
+                    <div className="stat-row"><span>Record</span><span>0 - 0</span></div>
+                    <div className="stat-row"><span>Reputation</span><span>100%</span></div>
+                    <div className="stat-row"><span>Joined</span><span>2026</span></div>
                   </div>
                 </div>
 
@@ -955,37 +877,10 @@ export default function ProfilePage() {
                     <div className="linked-title">Linked Accounts</div>
 
                     <div className="linked-grid">
-                      <div className="linked-account">
-                        <div className="system-icon xbox-icon">X</div>
-                        <div className="account-text">
-                          <span>Xbox</span>
-                          Not Linked
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon playstation-icon">PS</div>
-                        <div className="account-text">
-                          <span>PlayStation</span>
-                          Not Linked
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon nintendo-icon">N</div>
-                        <div className="account-text">
-                          <span>Nintendo</span>
-                          Not Linked
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon pc-icon">PC</div>
-                        <div className="account-text">
-                          <span>PC</span>
-                          Not Linked
-                        </div>
-                      </div>
+                      <div className="linked-account"><div className="system-icon xbox-icon">X</div><div className="account-text"><span>Xbox</span>Not Linked</div></div>
+                      <div className="linked-account"><div className="system-icon playstation-icon">PS</div><div className="account-text"><span>PlayStation</span>Not Linked</div></div>
+                      <div className="linked-account"><div className="system-icon nintendo-icon">N</div><div className="account-text"><span>Nintendo</span>Not Linked</div></div>
+                      <div className="linked-account"><div className="system-icon pc-icon">PC</div><div className="account-text"><span>PC</span>Not Linked</div></div>
                     </div>
                   </div>
 
@@ -1002,25 +897,10 @@ export default function ProfilePage() {
                   <div className="box-body">
                     <table className="info-table">
                       <tbody>
-                        <tr>
-                          <td>Username</td>
-                          <td>{playerName}</td>
-                        </tr>
-
-                        <tr>
-                          <td>Current Status</td>
-                          <td>Online</td>
-                        </tr>
-
-                        <tr>
-                          <td>Favorite Game</td>
-                          <td>Not Set</td>
-                        </tr>
-
-                        <tr>
-                          <td>Location</td>
-                          <td>Not Set</td>
-                        </tr>
+                        <tr><td>Username</td><td>{playerName}</td></tr>
+                        <tr><td>Current Status</td><td>Online</td></tr>
+                        <tr><td>Favorite Game</td><td>Not Set</td></tr>
+                        <tr><td>Location</td><td>Not Set</td></tr>
                       </tbody>
                     </table>
                   </div>
@@ -1033,11 +913,10 @@ export default function ProfilePage() {
                     <div className="post">
                       <div className="post-title">About {playerName}</div>
                       <div className="post-meta">100 word player intro</div>
-
                       <p>
-                        This player has not written an intro yet. Later,
-                        this section will let players write a short profile
-                        blog about their gaming style, favorite games, teams,
+                        This player has not written an intro yet. Later, this
+                        section will let players write a short profile blog
+                        about their gaming style, favorite games, teams,
                         competitive history, and what kind of matches they are
                         looking for.
                       </p>
@@ -1049,7 +928,6 @@ export default function ProfilePage() {
               <aside className="right-column">
                 <div className="box right-box">
                   <div className="box-title">Top Teams</div>
-
                   <div className="box-body">
                     <div className="display-grid">
                       <div className="display-card">Empty Slot</div>
@@ -1062,7 +940,6 @@ export default function ProfilePage() {
 
                 <div className="box right-box">
                   <div className="box-title">Top Friends</div>
-
                   <div className="box-body">
                     <div className="display-grid">
                       <div className="display-card">Top Friends</div>
@@ -1075,7 +952,6 @@ export default function ProfilePage() {
 
                 <div className="box right-box">
                   <div className="box-title">Photos</div>
-
                   <div className="box-body">
                     <div className="photo-grid">
                       <div className="photo">PHOTO</div>
@@ -1089,9 +965,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <footer className="footer">
-            © 2026 Competitive Gaming Network
-          </footer>
+          <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
       </div>
     </>
