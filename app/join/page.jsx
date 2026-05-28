@@ -1,23 +1,5 @@
-﻿export default function JoinPage() {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#000",
-        color: "#fff",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        fontFamily: "Tahoma",
-      }}
-    >
-      <div>
-        <h1>Join Page Temporarily Disabled</h1>
+﻿import { redirect } from "next/navigation";
 
-        <p>
-          GB Arena signup system is currently being configured.
-        </p>
-      </div>
-    </div>
-  );
+export default function Home() {
+  redirect("/coming-soon");
 }
