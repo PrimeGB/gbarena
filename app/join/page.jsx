@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+
+async function getSupabase() {
+  const mod = await import("../../lib/supabase");
+  return mod.supabase;
+}
 
 export default function JoinPage() {
   const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,6 +22,8 @@ export default function JoinPage() {
   const [pendingProfile, setPendingProfile] = useState(null);
 
   async function handleSignup() {
+    const supabase = await getSupabase();
+
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
 
@@ -27,7 +34,6 @@ export default function JoinPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
-      setLoading(false);
       return;
     }
 
@@ -64,12 +70,12 @@ export default function JoinPage() {
     }
 
     let userId = data?.user?.id ?? data?.session?.user?.id;
-    if (!userId) {
-      const { data: currentUser } = await supabase.auth.getUser();
-      userId = currentUser?.user?.id;
-    }
 
-    if (userId) {
+    if (!userId) {
+      const pending = { username: trimmedUsername, email: trimmedEmail };
+      setPendingProfile(pending);
+      window.localStorage.setItem("pendingGameBattlesProfile", JSON.stringify(pending));
+    } else {
       const { error: profileError } = await supabase.from("profiles").insert([
         {
           id: userId,
@@ -83,10 +89,6 @@ export default function JoinPage() {
         setLoading(false);
         return;
       }
-    } else {
-      const pending = { username: trimmedUsername, email: trimmedEmail };
-      setPendingProfile(pending);
-      window.localStorage.setItem("pendingGameBattlesProfile", JSON.stringify(pending));
     }
 
     setLoading(false);
@@ -94,11 +96,15 @@ export default function JoinPage() {
   }
 
   async function handleConfirmEmail() {
+    const supabase = await getSupabase();
+
     const trimmedEmail = email.trim();
+
     const storedProfile =
       typeof window !== "undefined"
         ? window.localStorage.getItem("pendingGameBattlesProfile")
         : null;
+
     const resolvedPendingProfile =
       pendingProfile || (storedProfile ? JSON.parse(storedProfile) : null);
 
@@ -117,10 +123,6 @@ export default function JoinPage() {
     }
 
     let userId = data?.user?.id ?? data?.session?.user?.id;
-    if (!userId) {
-      const { data: currentUser } = await supabase.auth.getUser();
-      userId = currentUser?.user?.id;
-    }
 
     const usernameToUse =
       resolvedPendingProfile?.username ||
@@ -129,34 +131,20 @@ export default function JoinPage() {
       "";
 
     if (userId && usernameToUse) {
-      const { data: usernameTaken } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("username", usernameToUse)
-        .maybeSingle();
-
-      if (usernameTaken && usernameTaken.id !== userId) {
-        setError("This username is already taken.");
-        setLoading(false);
-        return;
-      }
-
       await supabase.auth.updateUser({
         data: {
           username: usernameToUse,
           display_name: usernameToUse,
         },
       });
-    }
 
-    if (userId) {
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
-      if (!existingProfile && usernameToUse) {
+      if (!existingProfile) {
         const { error: profileError } = await supabase.from("profiles").insert([
           {
             id: userId,
@@ -192,12 +180,9 @@ export default function JoinPage() {
 
         <div style={styles.headerBlock}>
           <div style={styles.logoWrap}>
-            <img
-              src="/logo.svg"
-              alt="GameBattles Logo"
-              style={styles.logoImage}
-            />
+            <img src="/logo.jpg" alt="GameBattles Logo" style={styles.logoImage} />
           </div>
+
           <div style={styles.cardTitleBox}>
             <div style={styles.cardTitle}>Create Your GameBattles Account</div>
           </div>
@@ -205,30 +190,27 @@ export default function JoinPage() {
 
         {signedUp ? (
           confirmed ? (
-            <div>
-              <p style={{ marginBottom: 12 }}>
-                Email confirmed! Redirecting to the main page...
-              </p>
-            </div>
+            <p style={{ marginBottom: 12 }}>
+              Email confirmed! Redirecting to the main page...
+            </p>
           ) : (
             <div>
               <p style={{ marginBottom: 12 }}>
-                Thanks for signing up! Check your email and confirm your
-                account. Then click the button below.
+                Thanks for signing up! Check your email and confirm your account.
+                Then click the button below.
               </p>
-              <button
-                onClick={handleConfirmEmail}
-                style={styles.button}
-                disabled={loading}
-              >
+
+              <button onClick={handleConfirmEmail} style={styles.button} disabled={loading}>
                 {loading ? "Checking confirmation..." : "I have confirmed my email"}
               </button>
+
               {error && <p style={styles.error}>{error}</p>}
             </div>
           )
         ) : (
           <>
             <div style={styles.sectionTitle}>CREATE YOUR ACCOUNT</div>
+
             <p style={styles.subtitle}>
               Join the competitive gaming community and participate in ladders,
               tournaments, and online matches.
@@ -299,19 +281,6 @@ const styles = {
     padding: 28,
     boxShadow: "0 0 0 1px rgba(255,255,255,0.03), 0 24px 60px rgba(0,0,0,0.45)",
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#f2c14e",
-    letterSpacing: 1.4,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 12,
-    lineHeight: 1.5,
-    color: "#d7e2ee",
-    marginBottom: 20,
-  },
   topStrip: {
     height: 16,
     width: "100%",
@@ -362,6 +331,19 @@ const styles = {
     textTransform: "uppercase",
     lineHeight: 1.1,
     margin: 0,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#f2c14e",
+    letterSpacing: 1.4,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: "#d7e2ee",
+    marginBottom: 20,
   },
   label: {
     display: "block",
