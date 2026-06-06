@@ -1,4 +1,4 @@
-export default function SupportPage() {
+export default function ContactPage() {
   return (
     <>
       <style>{`
@@ -172,21 +172,12 @@ export default function SupportPage() {
           color:#fff;
         }
 
-        .button.red{
-          border:1px solid #e34242;
-          background:linear-gradient(to bottom,#bd1717,#5c0000);
-          color:#fff;
-        }
-
         .button:hover{
           filter:brightness(1.12);
         }
 
-        .full{
-          grid-column:1 / -1;
-        }
-
         .warning{
+          grid-column:1 / -1;
           border:1px solid #7c1e1e;
           background:linear-gradient(to bottom,#2a0808,#100303);
           color:#ffd1d1;
@@ -214,8 +205,6 @@ export default function SupportPage() {
         @media(max-width:800px){
           .content{grid-template-columns:1fr;}
 
-          .full{grid-column:auto;}
-
           .header{
             flex-direction:column;
             justify-content:center;
@@ -230,92 +219,73 @@ export default function SupportPage() {
         <div className="wrapper">
           <div className="top-strip">
             <a href="/home">Home</a>
-            <a href="/contact">Contact</a>
+            <a href="/support">Support</a>
             <a href="/suggestions">Suggestions</a>
           </div>
 
           <header className="header">
             <div>
               <div className="logo-main">GameBattles</div>
-              <div className="logo-sub">Support Center</div>
+              <div className="logo-sub">Contact the Team</div>
             </div>
 
-            <div className="header-badge">Support</div>
+            <div className="header-badge">Contact Page</div>
           </header>
 
           <section className="title-bar">
-            <h1>Support Center</h1>
+            <h1>Contact Us</h1>
             <p>
-              Use this page when you need help with your account, the website,
-              match issues, score problems, or something that needs staff attention.
+              Use this page for general contact with the GB Arena team. For account help,
+              match problems, or technical issues, use the Support Center instead.
             </p>
           </section>
 
           <section className="content">
             <section className="panel">
-              <div className="panel-header">Account Help</div>
+              <div className="panel-header">General Contact</div>
               <div className="panel-body">
                 <p>
-                  Use this for login issues, profile problems, linked accounts,
-                  usernames, missing information, or anything related to your GB
-                  Arena account.
+                  This page is for reaching members of the GB Arena team about
+                  general questions, community topics, partnerships, staff questions,
+                  or one-on-one help that does not belong in match support.
                 </p>
 
-                <a className="button blue" href="/support/account">
-                  Account Support
+                <p>
+                  If you want to give ideas for the site or report something small,
+                  use the <span className="highlight">Suggestions Box</span>.
+                </p>
+
+                <a className="button" href="/suggestions">
+                  Go to Suggestions Box
                 </a>
               </div>
             </section>
 
             <section className="panel">
-              <div className="panel-header">Match Help</div>
+              <div className="panel-header">Need Support?</div>
               <div className="panel-body">
                 <p>
-                  Use this for match problems, score issues, no-shows, proof,
-                  or anything that needs staff help after a match is created.
+                  The Support Center is for real help requests. Use it for account
+                  issues, technical problems, match help, score problems, or anything
+                  that needs staff attention.
                 </p>
 
-                <a className="button" href="/support/matches">
-                  Match Support
+                <p>
+                  Disputes and match problems should not be sent as casual contact
+                  messages.
+                </p>
+
+                <a className="button blue" href="/support">
+                  Open Support Center
                 </a>
               </div>
             </section>
 
-            <section className="panel">
-              <div className="panel-header">Bug Reports</div>
-              <div className="panel-body">
-                <p>
-                  If something on the website is broken, loading wrong, not saving,
-                  or showing the wrong information, report it here or use the
-                  Suggestions Box.
-                </p>
-
-                <a className="button blue" href="/suggestions">
-                  Report Bug
-                </a>
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="panel-header">Disputes</div>
-              <div className="panel-body">
-                <p>
-                  Disputes are for official match problems only. Do not use general
-                  contact messages to avoid the dispute system.
-                </p>
-
-                <a className="button red" href="/support/disputes">
-                  Dispute Help
-                </a>
-              </div>
-            </section>
-
-            <div className="warning full">
+            <div className="warning">
               <p>
-                <strong>Important:</strong> Support is for real help requests.
-                Do not spam staff, abuse tickets, fake reports, or use support to
-                harass other players. Misusing support can lead to warnings,
-                restrictions, or account consequences.
+                <strong>Important:</strong> Do not use the Contact Page to avoid
+                dispute rules, spam staff, or ask for match results to be changed.
+                Misusing contact tools can lead to warnings or account consequences.
               </p>
             </div>
           </section>

@@ -65,7 +65,10 @@ export default function LoginPage() {
 
     if (data?.user?.id) {
       const metadataUsername =
-        data.user.user_metadata?.username || data.user.user_metadata?.display_name || "";
+        data.user.user_metadata?.username ||
+        data.user.user_metadata?.display_name ||
+        "";
+
       if (metadataUsername) {
         const { data: existingProfile } = await supabase
           .from("profiles")
@@ -85,23 +88,21 @@ export default function LoginPage() {
       }
     }
 
-    // SHOW SUCCESS SCREEN FIRST
     setSuccess(true);
 
-    // DELAY REDIRECT (FEELS MORE GAMEBATTLES STYLE)
     setTimeout(() => {
-      router.push("/");
+      router.push("/home");
     }, 1200);
   }
 
   return (
     <div style={styles.page}>
       <div style={styles.box}>
-        <h2 style={{ color: "#7fc0ff" }}>GameBattles Login</h2>
+        <h2 style={styles.title}>GameBattles Login</h2>
 
         {success ? (
-          <div style={{ color: "#00ff88", marginBottom: 10 }}>
-            Login successful... redirecting
+          <div style={styles.success}>
+            Login successful... redirecting to homepage
           </div>
         ) : (
           <form
@@ -141,7 +142,7 @@ export default function LoginPage() {
               {loading ? "Logging in..." : "Login"}
             </button>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p style={styles.error}>{error}</p>}
           </form>
         )}
       </div>
@@ -166,6 +167,16 @@ const styles = {
     padding: 20,
   },
 
+  title: {
+    color: "#7fc0ff",
+    marginBottom: 16,
+  },
+
+  success: {
+    color: "#00ff88",
+    marginBottom: 10,
+  },
+
   input: {
     width: "100%",
     padding: 10,
@@ -183,5 +194,9 @@ const styles = {
     color: "#fff",
     fontWeight: "bold",
     cursor: "pointer",
+  },
+
+  error: {
+    color: "red",
   },
 };

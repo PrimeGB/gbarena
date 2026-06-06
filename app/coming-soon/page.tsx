@@ -10,7 +10,7 @@ export default function ComingSoonPage() {
         }
 
         body{
-          background:#050505;
+          background:#02050a;
           font-family:Tahoma,Verdana,Arial,sans-serif;
           color:#d7e2ee;
         }
@@ -22,70 +22,128 @@ export default function ComingSoonPage() {
         .page{
           min-height:100vh;
           background:
-            linear-gradient(to bottom,#1d1d1d 0%,#080808 160px,#000 100%);
+            radial-gradient(circle at top,#1b3f66 0%,#07111d 34%,#020407 72%,#000 100%);
           padding:12px;
         }
 
         .site-frame{
           max-width:1240px;
           margin:0 auto;
-          border:1px solid #2c2c2c;
-          background:#0a0a0a;
-          box-shadow:0 0 18px rgba(0,0,0,.6);
+          border:1px solid #315375;
+          background:#06101b;
+          box-shadow:
+            0 0 24px rgba(0,0,0,.9),
+            inset 0 0 0 1px rgba(120,180,255,.08);
         }
 
         .top-strip{
           height:24px;
-          background:linear-gradient(to bottom,#5b5b5b,#2e2e2e);
-          border-bottom:1px solid #111;
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          padding:0 12px;
-          font-size:11px;
-          color:#d4dce5;
-        }
-
-        .main-header{
-          min-height:86px;
-          background:linear-gradient(to bottom,#343434,#181818);
+          background:linear-gradient(to bottom,#12375d,#071929);
           border-bottom:1px solid #000;
           display:flex;
           align-items:center;
           justify-content:space-between;
-          padding:14px 22px;
+          padding:0 12px;
+          font-size:11px;
+          color:#d8eaff;
+          text-transform:uppercase;
+          letter-spacing:.5px;
         }
 
-        .branding{
+        .top-strip span{
+          color:#ffd35a;
+          font-weight:bold;
+        }
+
+        .main-header{
+          min-height:96px;
+          background:
+            linear-gradient(to bottom,#1b4b78 0%,#0a223a 48%,#06111f 100%);
+          border-top:1px solid #3e78a8;
+          border-bottom:1px solid #000;
           display:flex;
-          flex-direction:column;
-          justify-content:center;
+          align-items:center;
+          justify-content:space-between;
+          padding:14px 20px;
+        }
+
+        .brand-wrap{
+          display:flex;
+          align-items:center;
+          gap:14px;
+        }
+
+        .logo-mark{
+          width:68px;
+          height:68px;
+          border-radius:50%;
+          border:2px solid #6fa8da;
+          background:
+            radial-gradient(circle at 35% 25%,#315f8b,#07111c 70%);
+          box-shadow:
+            inset 0 0 12px rgba(126,184,255,.35),
+            0 0 12px rgba(0,0,0,.7);
+          position:relative;
+        }
+
+        .logo-mark:before{
+          content:"";
+          position:absolute;
+          width:42px;
+          height:24px;
+          border-radius:18px;
+          background:#d8eaff;
+          left:12px;
+          top:24px;
+          box-shadow:0 2px 0 #06111f;
+        }
+
+        .logo-mark:after{
+          content:"";
+          position:absolute;
+          width:7px;
+          height:7px;
+          border-radius:50%;
+          background:#06111f;
+          right:18px;
+          top:31px;
+          box-shadow:
+            10px 0 0 #06111f,
+            -22px 0 0 #06111f,
+            -14px -5px 0 #06111f;
         }
 
         .brand-title{
           color:#fff;
-          font-size:42px;
+          font-size:43px;
           font-weight:bold;
-          line-height:1;
-          text-shadow:2px 2px #000;
+          line-height:.95;
           letter-spacing:-1px;
+          text-shadow:
+            2px 2px #000,
+            0 0 10px rgba(126,184,255,.25);
         }
 
         .brand-sub{
-          color:#7eb8ff;
+          margin-top:7px;
+          color:#ffd35a;
           font-size:12px;
+          font-weight:bold;
           text-transform:uppercase;
-          margin-top:8px;
-          letter-spacing:1px;
+          letter-spacing:1.2px;
         }
 
         .launch-box{
-          text-align:right;
-          margin-right:8px;
+          width:250px;
+          border:1px solid #4778a5;
+          background:linear-gradient(to bottom,#102f4e,#071625);
+          padding:11px 12px;
+          text-align:center;
+          box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
         }
 
         .launch-title{
-          color:#7eb8ff;
+          color:#ffd35a;
           font-size:13px;
           font-weight:bold;
           text-transform:uppercase;
@@ -93,32 +151,58 @@ export default function ComingSoonPage() {
         }
 
         .launch-sub{
-          color:#d4dde5;
+          color:#d4e7f7;
           font-size:12px;
+          line-height:1.5;
+        }
+
+        .nav-strip{
+          height:34px;
+          background:linear-gradient(to bottom,#0f3356,#061421);
+          border-top:1px solid #244d72;
+          border-bottom:1px solid #000;
+          display:flex;
+          align-items:center;
+          padding:0 12px;
+          gap:10px;
+          color:#b9cde0;
+          font-size:11px;
+          text-transform:uppercase;
+          font-weight:bold;
+        }
+
+        .nav-pill{
+          border:1px solid #284e70;
+          background:linear-gradient(to bottom,#163c61,#071a2c);
+          padding:6px 10px;
+          color:#dbeeff;
         }
 
         .hero{
           padding:18px;
-          background:#090909;
-          border-top:1px solid #2d2d2d;
-          border-bottom:1px solid #1a1a1a;
+          background:#050b13;
+          border-top:1px solid #163b5f;
+          border-bottom:1px solid #000;
         }
 
         .hero-grid{
           display:grid;
-          grid-template-columns:2fr 1fr;
+          grid-template-columns:1.55fr 1fr;
           gap:18px;
         }
 
-        .video-panel{
-          border:1px solid #2d2d2d;
-          background:#000;
+        .panel{
+          border:1px solid #315375;
+          background:#081524;
+          box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,.03),
+            0 0 12px rgba(0,0,0,.45);
         }
 
         .panel-header{
-          height:28px;
-          background:linear-gradient(to bottom,#515151,#252525);
-          border-bottom:1px solid #111;
+          height:30px;
+          background:linear-gradient(to bottom,#245f91,#0b2742);
+          border-bottom:1px solid #000;
           display:flex;
           align-items:center;
           padding:0 10px;
@@ -126,50 +210,83 @@ export default function ComingSoonPage() {
           font-size:11px;
           font-weight:bold;
           text-transform:uppercase;
+          letter-spacing:.4px;
+          text-shadow:1px 1px #000;
+        }
+
+        .panel-header span{
+          color:#ffd35a;
         }
 
         .video-wrap{
           background:#000;
+          border-top:1px solid #163a5f;
         }
 
         .video-wrap video{
           width:100%;
           display:block;
+          min-height:330px;
+          object-fit:cover;
+          background:#000;
         }
 
-        .coming-panel{
-          border:1px solid #2d2d2d;
-          background:#101010;
+        .hype-content{
+          padding:20px;
         }
 
-        .coming-content{
-          padding:22px;
-        }
-
-        .coming-title{
-          font-size:44px;
+        .hype-title{
           color:#fff;
+          font-size:34px;
           font-weight:bold;
           text-transform:uppercase;
-          line-height:1;
-          margin-bottom:18px;
+          line-height:1.05;
+          margin-bottom:14px;
           text-shadow:2px 2px #000;
         }
 
-        .coming-text{
-          color:#c7d1da;
+        .hype-title span{
+          color:#ffd35a;
+        }
+
+        .hype-text{
+          color:#c9d8e6;
           font-size:14px;
-          line-height:1.9;
-          margin-bottom:24px;
+          line-height:1.85;
+          margin-bottom:18px;
+        }
+
+        .memory-list{
+          border:1px solid #203f5c;
+          background:#06101c;
+          padding:12px;
+          margin-bottom:16px;
+        }
+
+        .memory-row{
+          color:#dcecff;
+          font-size:13px;
+          line-height:1.8;
+          border-bottom:1px solid rgba(126,184,255,.12);
+          padding:4px 0;
+        }
+
+        .memory-row:last-child{
+          border-bottom:0;
+        }
+
+        .memory-row span{
+          color:#ffd35a;
+          font-weight:bold;
         }
 
         .discord-link{
           width:100%;
-          height:48px;
-          background:linear-gradient(to bottom,#4f8fe0,#275fa5);
-          border:1px solid #163c68;
-          color:#fff;
-          font-size:13px;
+          min-height:50px;
+          background:linear-gradient(to bottom,#ffd35a,#b87912);
+          border:1px solid #ffdf79;
+          color:#06101b;
+          font-size:14px;
           font-weight:bold;
           text-transform:uppercase;
           cursor:pointer;
@@ -177,16 +294,17 @@ export default function ComingSoonPage() {
           align-items:center;
           justify-content:center;
           text-align:center;
+          box-shadow:0 2px 0 #3f2600;
         }
 
         .discord-link:hover{
-          background:linear-gradient(to bottom,#63a5fa,#3476c6);
+          background:linear-gradient(to bottom,#ffe27e,#d89418);
         }
 
         .content{
           padding:18px;
           display:grid;
-          grid-template-columns:2fr 1fr;
+          grid-template-columns:1.7fr 1fr;
           gap:18px;
         }
 
@@ -194,11 +312,6 @@ export default function ComingSoonPage() {
           display:flex;
           flex-direction:column;
           gap:18px;
-        }
-
-        .panel{
-          border:1px solid #2d2d2d;
-          background:#101010;
         }
 
         .panel-body{
@@ -212,9 +325,10 @@ export default function ComingSoonPage() {
         }
 
         .shot{
-          border:1px solid #242424;
+          border:1px solid #244765;
           background:#000;
           overflow:hidden;
+          position:relative;
         }
 
         .shot img{
@@ -222,16 +336,44 @@ export default function ComingSoonPage() {
           height:190px;
           object-fit:cover;
           display:block;
+          opacity:.95;
+        }
+
+        .shot-label{
+          position:absolute;
+          left:0;
+          bottom:0;
+          width:100%;
+          background:linear-gradient(to right,rgba(0,0,0,.9),rgba(5,19,34,.78));
+          border-top:1px solid rgba(126,184,255,.28);
+          color:#ffd35a;
+          font-size:11px;
+          font-weight:bold;
+          text-transform:uppercase;
+          padding:7px 9px;
         }
 
         .why{
-          color:#d0d8e0;
+          color:#d0dbe6;
           font-size:14px;
           line-height:1.9;
         }
 
+        .why-title{
+          color:#fff;
+          font-size:24px;
+          font-weight:bold;
+          text-transform:uppercase;
+          margin-bottom:12px;
+          text-shadow:2px 2px #000;
+        }
+
+        .why-title span{
+          color:#ffd35a;
+        }
+
         .highlight{
-          color:#7eb8ff;
+          color:#ffd35a;
           font-weight:bold;
         }
 
@@ -242,34 +384,69 @@ export default function ComingSoonPage() {
         }
 
         .update-box{
-          border:1px solid #272727;
-          background:#151515;
+          border:1px solid #244765;
+          background:linear-gradient(to bottom,#0a1c30,#06101c);
           padding:12px;
+          margin-bottom:12px;
+        }
+
+        .update-box:last-child{
+          margin-bottom:0;
         }
 
         .update-title{
-          color:#7eb8ff;
-          font-size:11px;
+          color:#ffd35a;
+          font-size:12px;
           font-weight:bold;
           text-transform:uppercase;
           margin-bottom:8px;
         }
 
         .update-text{
-          color:#c8d2db;
+          color:#c8d8e7;
           font-size:13px;
-          line-height:1.8;
+          line-height:1.75;
+        }
+
+        .mini-badge{
+          display:inline-block;
+          margin-top:8px;
+          border:1px solid #765900;
+          background:linear-gradient(to bottom,#ffd35a,#9c6a08);
+          color:#07111f;
+          font-size:10px;
+          font-weight:bold;
+          text-transform:uppercase;
+          padding:4px 7px;
+        }
+
+        .disclaimer{
+          margin:0 18px 18px;
+          border:1px solid #2b4c69;
+          background:#050c14;
+          color:#8fa7bb;
+          font-size:11px;
+          line-height:1.7;
+          padding:12px;
+          text-align:center;
+        }
+
+        .disclaimer strong{
+          color:#ffd35a;
         }
 
         .footer{
-          height:42px;
-          background:linear-gradient(to bottom,#1d1d1d,#090909);
-          border-top:1px solid #000;
+          min-height:44px;
+          background:linear-gradient(to bottom,#0b2238,#040a11);
+          border-top:1px solid #244765;
           display:flex;
           align-items:center;
           justify-content:center;
-          color:#76828d;
-          font-size:11px;
+          color:#d9e9f8;
+          font-size:12px;
+          font-weight:bold;
+          text-transform:uppercase;
+          letter-spacing:.5px;
         }
 
         @media(max-width:950px){
@@ -286,14 +463,28 @@ export default function ComingSoonPage() {
             grid-template-columns:1fr;
           }
 
-          .coming-title{
-            font-size:36px;
-          }
-
           .main-header{
             flex-direction:column;
             align-items:flex-start;
-            gap:18px;
+            gap:16px;
+          }
+
+          .launch-box{
+            width:100%;
+          }
+
+          .brand-title{
+            font-size:36px;
+          }
+
+          .hype-title{
+            font-size:28px;
+          }
+
+          .nav-strip{
+            height:auto;
+            flex-wrap:wrap;
+            padding:10px;
           }
 
         }
@@ -305,19 +496,29 @@ export default function ComingSoonPage() {
         <div className="site-frame">
 
           <div className="top-strip">
-            Competitive Gaming Is Coming Back
+            <div>
+              <span>GB Arena</span> Beta Landing Page
+            </div>
+
+            <div>
+              Old-School Competitive Gaming Returns
+            </div>
           </div>
 
           <div className="main-header">
 
-            <div className="branding">
+            <div className="brand-wrap">
 
-              <div className="brand-title">
-                GameBattles
-              </div>
+              <div className="logo-mark" />
 
-              <div className="brand-sub">
-                The old-school scene returns
+              <div>
+                <div className="brand-title">
+                  GameBattles
+                </div>
+
+                <div className="brand-sub">
+                  Competitive gaming the way it used to feel
+                </div>
               </div>
 
             </div>
@@ -329,21 +530,28 @@ export default function ComingSoonPage() {
               </div>
 
               <div className="launch-sub">
-                Real ladders. Real rivalries.
+                Ladders. Teams. Profiles. Rivalries. Rankings.
               </div>
 
             </div>
 
           </div>
 
+          <div className="nav-strip">
+            <div className="nav-pill">Ladders Returning</div>
+            <div className="nav-pill">Founder Badges</div>
+            <div className="nav-pill">Beta Access</div>
+            <div className="nav-pill">Discord Open</div>
+          </div>
+
           <div className="hero">
 
             <div className="hero-grid">
 
-              <div className="video-panel">
+              <div className="panel">
 
                 <div className="panel-header">
-                  Competitive Gaming Is Coming Back
+                  <span>Teaser Trailer</span>&nbsp; / Competitive Gaming Is Coming Back
                 </div>
 
                 <div className="video-wrap">
@@ -356,26 +564,41 @@ export default function ComingSoonPage() {
 
               </div>
 
-              <div className="coming-panel">
+              <div className="panel">
 
                 <div className="panel-header">
                   Coming Soon
                 </div>
 
-                <div className="coming-content">
+                <div className="hype-content">
 
-                  <div className="coming-title">
-                    COMING<br />SOON
+                  <div className="hype-title">
+                    The Old Days <span>Are Coming Back</span>
                   </div>
 
-                  <div className="coming-text">
+                  <div className="hype-text">
+                    Remember when your rank actually mattered?
+                    When ladders felt alive?
+                    When teams had real names, real rivalries, and everyone knew who was on top?
+                  </div>
 
-                    Competitive gaming the way it used to feel.<br /><br />
+                  <div className="memory-list">
 
-                    Join the Discord community now to stay updated,
-                    follow development progress, and be among the
-                    first players eligible to secure rare profile
-                    names when the platform officially launches.
+                    <div className="memory-row">
+                      <span>✓</span> Team ladders that actually mean something
+                    </div>
+
+                    <div className="memory-row">
+                      <span>✓</span> Profiles, records, ranks, badges, and bragging rights
+                    </div>
+
+                    <div className="memory-row">
+                      <span>✓</span> A community built around competition again
+                    </div>
+
+                    <div className="memory-row">
+                      <span>✓</span> That old GameBattles feeling people still miss
+                    </div>
 
                   </div>
 
@@ -385,7 +608,7 @@ export default function ComingSoonPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Join Official Discord
+                    Join The Official Discord
                   </a>
 
                 </div>
@@ -411,19 +634,23 @@ export default function ComingSoonPage() {
                   <div className="shots">
 
                     <div className="shot">
-                      <img src="/home.jpeg" alt="home" />
+                      <img src="/home.jpeg" alt="GB Arena homepage preview" />
+                      <div className="shot-label">Homepage Preview</div>
                     </div>
 
                     <div className="shot">
-                      <img src="/profile.jpg" alt="profile" />
+                      <img src="/profile.jpg" alt="GB Arena profile preview" />
+                      <div className="shot-label">Player Profile Preview</div>
                     </div>
 
                     <div className="shot">
-                      <img src="/matches.jpg" alt="matches" />
+                      <img src="/matches.jpg" alt="GB Arena matches preview" />
+                      <div className="shot-label">Match History Preview</div>
                     </div>
 
                     <div className="shot">
-                      <img src="/teams.jpg" alt="teams" />
+                      <img src="/teams.jpg" alt="GB Arena teams preview" />
+                      <div className="shot-label">Teams Preview</div>
                     </div>
 
                   </div>
@@ -442,16 +669,25 @@ export default function ComingSoonPage() {
 
                   <div className="why">
 
-                    Competitive gaming used to feel different.<br /><br />
+                    <div className="why-title">
+                      We Miss The <span>Old Scene</span>
+                    </div>
 
-                    Rivalries mattered.<br />
-                    Communities mattered.<br />
-                    Your name meant something.<br /><br />
+                    Competitive gaming used to feel different.
+                    You checked the ladders. You knew the top teams.
+                    You cared about your record. You remembered rivalries.
+                    Your profile was your identity.
+                    Your team name meant something.
+                    Winning actually felt good.
+                    Losing made you want a rematch.
+                    <br /><br />
 
-                    We’re building that feeling again.<br /><br />
+                    GB Arena is being built to bring that feeling back for the players
+                    who still remember what online competition used to feel like.
+                    <br /><br />
 
                     <span className="highlight">
-                      Simple. Competitive. Community-driven.
+                      Simple. Competitive. Community-driven. Built for the players who never forgot.
                     </span>
 
                   </div>
@@ -479,17 +715,13 @@ export default function ComingSoonPage() {
                     </div>
 
                     <div className="update-text">
-
-                      Early members will receive an exclusive
-                      founder badge on their profile recognizing
-                      they were part of the return of old-school
-                      competitive gaming.
-
+                      Early supporters will be remembered. Founder members will receive
+                      a profile badge showing they were here before launch.
+                      <br />
+                      <span className="mini-badge">Founder Badge Planned</span>
                     </div>
 
                   </div>
-
-                  <div style={{height:"12px"}} />
 
                   <div className="update-box">
 
@@ -498,33 +730,38 @@ export default function ComingSoonPage() {
                     </div>
 
                     <div className="update-text">
-
-                      A select few players will receive early
-                      access to create profiles, test features,
-                      and help shape the platform before launch.<br /><br />
-
-                      Beta testers will also receive a special
-                      badge displayed on their profiles.
-
+                      Select players will help test profiles, teams, ladders, matches,
+                      and early site features before the full public launch.
+                      <br />
+                      <span className="mini-badge">Beta Badge Planned</span>
                     </div>
 
                   </div>
 
-                  <div style={{height:"12px"}} />
+                  <div className="update-box">
+
+                    <div className="update-title">
+                      Ladders Coming Back
+                    </div>
+
+                    <div className="update-text">
+                      The goal is to bring back that ladder grind feeling:
+                      records, rankings, team pages, match finder, rivalries,
+                      and real bragging rights.
+                    </div>
+
+                  </div>
 
                   <div className="update-box">
 
                     <div className="update-title">
-                      Built For Competitors
+                      Built With The Community
                     </div>
 
                     <div className="update-text">
-
-                      Focused on rivalry, progression,
-                      community identity, and bringing back
-                      the competitive gaming atmosphere many
-                      players grew up with.
-
+                      Suggestions, feedback, and player ideas will help shape the
+                      site as it grows. This is not meant to feel corporate.
+                      It is meant to feel like home again.
                     </div>
 
                   </div>
@@ -537,8 +774,15 @@ export default function ComingSoonPage() {
 
           </div>
 
+          <div className="disclaimer">
+            <strong>Disclaimer:</strong> GB Arena is an independent community project.
+            It is not affiliated with, endorsed by, or connected to GameBattles,
+            Major League Gaming (MLG), Activision, Microsoft, Sony, Nintendo,
+            or any previous owners of the GameBattles platform.
+          </div>
+
           <div className="footer">
-            Built by competitive gamers.
+            Built By Competitive Gamers. For Competitive Gamers.
           </div>
 
         </div>
