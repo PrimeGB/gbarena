@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 function cleanName(value: string | null) {
@@ -21,6 +22,14 @@ const gameNames: Record<string, string> = {
 };
 
 export default function CreateTeamPage() {
+  return (
+    <Suspense fallback={<div className="create-team-loading">Loading Create Team...</div>}>
+      <CreateTeamContent />
+    </Suspense>
+  );
+}
+
+function CreateTeamContent() {
   const searchParams = useSearchParams();
 
   const gameSlug = searchParams.get("game") || "modern-warfare-4";
@@ -35,6 +44,16 @@ export default function CreateTeamPage() {
         *{margin:0;padding:0;box-sizing:border-box;}
         body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
         a{text-decoration:none;}
+
+        .create-team-loading{
+          min-height:100vh;
+          background:#000;
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-family:Tahoma,Verdana,Arial,sans-serif;
+        }
 
         .page{
           min-height:100vh;

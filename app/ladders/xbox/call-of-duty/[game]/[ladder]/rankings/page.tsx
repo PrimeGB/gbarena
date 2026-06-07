@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useUser } from "../../../../../../../lib/useUser";
 import { supabase } from "../../../../../../../lib/supabase";
 
+type AppUser = {
+  id: string;
+};
+
 const standings = [
   { rank: 1, team: "Team Reaper", wins: 182, loss: 1, streak: "105W" },
   { rank: 2, team: "Nova Elite", wins: 125, loss: 0, streak: "7W" },
@@ -15,11 +19,13 @@ const standings = [
 
 export default function TopTeamsPage() {
   const { user } = useUser();
+  const currentUser = user as AppUser | null;
+
   const [hasTeam, setHasTeam] = useState(false);
 
   useEffect(() => {
     async function checkTeams() {
-      if (!user?.id) {
+      if (!currentUser?.id) {
         setHasTeam(false);
         return;
       }
@@ -27,14 +33,14 @@ export default function TopTeamsPage() {
       const { data } = await supabase
         .from("team_members")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUser.id)
         .limit(1);
 
       setHasTeam(!!data && data.length > 0);
     }
 
     checkTeams();
-  }, [user]);
+  }, [currentUser]);
 
   const ladderButtonText = hasTeam ? "View Team" : "Join Ladder";
   const ladderButtonLink = "/profile/teams";

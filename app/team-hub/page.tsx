@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
+
+type AppUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: {
+    username?: string;
+    display_name?: string;
+  };
+};
 
 type TeamRow = {
   id: string;
@@ -66,9 +75,18 @@ function buildRosterSlots(count: number): RosterSlot[] {
 }
 
 export default function TeamHubPage() {
+  return (
+    <Suspense fallback={<div className="team-hub-loading">Loading Team Hub...</div>}>
+      <TeamHubContent />
+    </Suspense>
+  );
+}
+
+function TeamHubContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const currentUser = user as AppUser | null;
 
   const platform = searchParams.get("platform") || "xbox";
   const category = searchParams.get("category") || "call-of-duty";
@@ -89,27 +107,22 @@ export default function TeamHubPage() {
   const [creatingTeam, setCreatingTeam] = useState(false);
   const [createError, setCreateError] = useState("");
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
-
   const [teams, setTeams] = useState<TeamRow[]>([]);
-
   const [teamName, setTeamName] = useState("");
   const [clanTag, setClanTag] = useState("");
   const [teamBio, setTeamBio] = useState("");
-
   const [teamLogo, setTeamLogo] = useState<File | null>(null);
   const [avatarLogo, setAvatarLogo] = useState<File | null>(null);
-
   const [nameStatus, setNameStatus] = useState<NameStatus>("idle");
-
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [searchPlayer, setSearchPlayer] = useState("");
   const [searchingPlayers, setSearchingPlayers] = useState(false);
   const [playerResults, setPlayerResults] = useState<PlayerSearchResult[]>([]);
 
   const username =
-    user?.user_metadata?.username ||
-    user?.user_metadata?.display_name ||
-    user?.email?.split("@")[0] ||
+    currentUser?.user_metadata?.username ||
+    currentUser?.user_metadata?.display_name ||
+    currentUser?.email?.split("@")[0] ||
     "Current User";
 
   const roleOptions: TeamRole[] =
@@ -130,7 +143,7 @@ export default function TeamHubPage() {
 
   useEffect(() => {
     async function loadTeams() {
-      if (!user?.id) {
+      if (!currentUser?.id) {
         setLoading(false);
         return;
       }
@@ -138,7 +151,7 @@ export default function TeamHubPage() {
       const { data } = await supabase
         .from("team_members")
         .select("team_id, teams(id, name, created_at)")
-        .eq("user_id", user.id);
+        .eq("user_id", currentUser.id);
 
       if (data) {
         const foundTeams = data
@@ -152,7 +165,7 @@ export default function TeamHubPage() {
     }
 
     loadTeams();
-  }, [user]);
+  }, [currentUser]);
 
   useEffect(() => {
     async function checkTeamName() {
@@ -217,7 +230,7 @@ export default function TeamHubPage() {
         username: profile.username,
         email: profile.email,
         canInvite:
-          profile.id !== user?.id &&
+          profile.id !== currentUser?.id &&
           !activeUserIds.includes(profile.id) &&
           !roster.some((slot) => slot.playerId === profile.id),
       }));
@@ -228,7 +241,7 @@ export default function TeamHubPage() {
 
     const delay = setTimeout(searchPlayers, 350);
     return () => clearTimeout(delay);
-  }, [searchPlayer, selectedSlot, user?.id, roster]);
+  }, [searchPlayer, selectedSlot, currentUser?.id, roster]);
 
   function handleClanTag(value: string) {
     setClanTag(value.slice(0, 3).toUpperCase());
@@ -281,7 +294,7 @@ export default function TeamHubPage() {
   function beginCreateTeam() {
     setCreateError("");
 
-    if (!user?.id) {
+    if (!currentUser?.id) {
       setCreateError("You must be signed in first.");
       return;
     }
@@ -321,7 +334,7 @@ export default function TeamHubPage() {
     setRulesModalOpen(false);
     setCreateError("");
 
-    if (!user?.id) {
+    if (!currentUser?.id) {
       setCreateError("You must be signed in first.");
       return;
     }
@@ -359,7 +372,7 @@ export default function TeamHubPage() {
 
     const { error: memberError } = await supabase.from("team_members").insert({
       team_id: newTeam.id,
-      user_id: user.id,
+      user_id: currentUser.id,
     });
 
     if (memberError) {
@@ -377,6 +390,16 @@ export default function TeamHubPage() {
         *{ margin:0; padding:0; box-sizing:border-box; }
         body{ background:#000; font-family:Tahoma,Verdana,Arial,sans-serif; color:#d7e2ee; }
         a{ text-decoration:none; }
+
+        .team-hub-loading{
+          min-height:100vh;
+          background:#000;
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-family:Tahoma,Verdana,Arial,sans-serif;
+        }
 
         .page{
           min-height:100vh;
@@ -1125,35 +1148,12 @@ export default function TeamHubPage() {
                   <div className="steps-box">
                     <div className="steps-title">Create Team Steps</div>
 
-                    <div className="step-line">
-                      <span className="step-arrow">►</span>
-                      Enter Team Name
-                    </div>
-
-                    <div className="step-sub">
-                      <span className="step-mini-arrow">▸</span>
-                      Must be at least 4 characters long.
-                    </div>
-
-                    <div className="step-line">
-                      <span className="step-arrow">►</span>
-                      Enter Clan Tag
-                    </div>
-
-                    <div className="step-line">
-                      <span className="step-arrow">►</span>
-                      Upload Logo and Avatar
-                    </div>
-
-                    <div className="step-line">
-                      <span className="step-arrow">►</span>
-                      Review Ladder Rules
-                    </div>
-
-                    <div className="step-line">
-                      <span className="step-arrow">►</span>
-                      Confirm Ladder
-                    </div>
+                    <div className="step-line"><span className="step-arrow">►</span>Enter Team Name</div>
+                    <div className="step-sub"><span className="step-mini-arrow">▸</span>Must be at least 4 characters long.</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Enter Clan Tag</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Upload Logo and Avatar</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Review Ladder Rules</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Confirm Ladder</div>
 
                     {ladder !== "singles" && (
                       <div className="step-line">
@@ -1165,30 +1165,12 @@ export default function TeamHubPage() {
 
                   <div className="rules-box">
                     <div className="rules-title">4 Main Rules</div>
+                    <div className="rule-line"><span className="rule-arrow">►</span>No cheating, exploiting, or outside software.</div>
+                    <div className="rule-line"><span className="rule-arrow">►</span>Report match results honestly.</div>
+                    <div className="rule-line"><span className="rule-arrow">►</span>Save proof for disputes.</div>
+                    <div className="rule-line"><span className="rule-arrow">►</span>Follow the correct roster limit.</div>
 
-                    <div className="rule-line">
-                      <span className="rule-arrow">►</span>
-                      No cheating, exploiting, or outside software.
-                    </div>
-
-                    <div className="rule-line">
-                      <span className="rule-arrow">►</span>
-                      Report match results honestly.
-                    </div>
-
-                    <div className="rule-line">
-                      <span className="rule-arrow">►</span>
-                      Save proof for disputes.
-                    </div>
-
-                    <div className="rule-line">
-                      <span className="rule-arrow">►</span>
-                      Follow the correct roster limit.
-                    </div>
-
-                    <a className="rules-link" href={rulesUrl}>
-                      View Full Rules
-                    </a>
+                    <a className="rules-link" href={rulesUrl}>View Full Rules</a>
                   </div>
 
                   <div className="ladder-info">
@@ -1196,10 +1178,7 @@ export default function TeamHubPage() {
                     <div>Game: {gameName}</div>
                     <div>Ladder: {ladderName}</div>
                     <div>Status: Open</div>
-                    <div>
-                      Roster Limit: {rosterLimit} Player
-                      {rosterLimit === 1 ? "" : "s"}
-                    </div>
+                    <div>Roster Limit: {rosterLimit} Player{rosterLimit === 1 ? "" : "s"}</div>
                   </div>
                 </div>
               </aside>
@@ -1208,42 +1187,30 @@ export default function TeamHubPage() {
                 <div className="panel-header">Team Registration Form</div>
 
                 <div className="main-body">
-                  {!user && (
+                  {!currentUser && (
                     <>
                       <div className="message-title">Sign In Required</div>
-                      <div className="message-text">
-                        You need to sign in before joining this ladder.
-                      </div>
+                      <div className="message-text">You need to sign in before joining this ladder.</div>
 
                       <div className="actions">
-                        <a className="action-btn gold" href="/login">
-                          Sign In
-                        </a>
-                        <a className="action-btn" href="/join">
-                          Create Account
-                        </a>
-                        <a className="action-btn red" href={rankingsUrl}>
-                          Cancel
-                        </a>
+                        <a className="action-btn gold" href="/login">Sign In</a>
+                        <a className="action-btn" href="/join">Create Account</a>
+                        <a className="action-btn red" href={rankingsUrl}>Cancel</a>
                       </div>
                     </>
                   )}
 
-                  {user && loading && (
+                  {currentUser && loading && (
                     <>
                       <div className="message-title">Loading</div>
-                      <div className="message-text">
-                        Checking your current ladder entries before opening registration.
-                      </div>
+                      <div className="message-text">Checking your current ladder entries before opening registration.</div>
                     </>
                   )}
 
-                  {user && !loading && teams.length > 0 && (
+                  {currentUser && !loading && teams.length > 0 && (
                     <>
                       <div className="message-title">Active Entry Found</div>
-                      <div className="message-text">
-                        You already have an active entry connected to this ladder.
-                      </div>
+                      <div className="message-text">You already have an active entry connected to this ladder.</div>
 
                       <div className="team-list">
                         {teams.map((team) => (
@@ -1259,17 +1226,13 @@ export default function TeamHubPage() {
                       </div>
 
                       <div className="actions">
-                        <a className="action-btn gold" href="/profile/teams">
-                          View Entry
-                        </a>
-                        <a className="action-btn red" href={rankingsUrl}>
-                          Back To Ladder
-                        </a>
+                        <a className="action-btn gold" href="/profile/teams">View Entry</a>
+                        <a className="action-btn red" href={rankingsUrl}>Back To Ladder</a>
                       </div>
                     </>
                   )}
 
-                  {user && !loading && teams.length === 0 && (
+                  {currentUser && !loading && teams.length === 0 && (
                     <>
                       <div className="form-section">
                         <div className="form-title">Team Details</div>
@@ -1290,34 +1253,15 @@ export default function TeamHubPage() {
                                 }
                               />
 
-                              {nameStatus === "checking" && (
-                                <div className="name-status checking">
-                                  Checking name...
-                                </div>
-                              )}
-
-                              {nameStatus === "available" && (
-                                <div className="name-status available">
-                                  Name available
-                                </div>
-                              )}
-
-                              {nameStatus === "taken" && (
-                                <div className="name-status taken">
-                                  Name already taken
-                                </div>
-                              )}
+                              {nameStatus === "checking" && <div className="name-status checking">Checking name...</div>}
+                              {nameStatus === "available" && <div className="name-status available">Name available</div>}
+                              {nameStatus === "taken" && <div className="name-status taken">Name already taken</div>}
                             </div>
                           </div>
 
                           <div className="row">
                             <label>Clan Tag</label>
-                            <input
-                              value={clanTag}
-                              onChange={(e) => handleClanTag(e.target.value)}
-                              placeholder="Example: ECE"
-                              maxLength={3}
-                            />
+                            <input value={clanTag} onChange={(e) => handleClanTag(e.target.value)} placeholder="Example: ECE" maxLength={3} />
                           </div>
 
                           <div className="row">
@@ -1340,40 +1284,20 @@ export default function TeamHubPage() {
 
                             <div className="upload-grid">
                               <label className="upload-box">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    setTeamLogo(e.target.files?.[0] || null)
-                                  }
-                                />
+                                <input type="file" accept="image/*" onChange={(e) => setTeamLogo(e.target.files?.[0] || null)} />
                                 <strong>Team Logo</strong>
-                                <span>
-                                  {teamLogo ? teamLogo.name : "Upload your team logo"}
-                                </span>
+                                <span>{teamLogo ? teamLogo.name : "Upload your team logo"}</span>
                               </label>
 
                               <label className="upload-box">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    setAvatarLogo(e.target.files?.[0] || null)
-                                  }
-                                />
+                                <input type="file" accept="image/*" onChange={(e) => setAvatarLogo(e.target.files?.[0] || null)} />
                                 <strong>Team Avatar</strong>
-                                <span>
-                                  {avatarLogo
-                                    ? avatarLogo.name
-                                    : "Upload your team avatar"}
-                                </span>
+                                <span>{avatarLogo ? avatarLogo.name : "Upload your team avatar"}</span>
                               </label>
                             </div>
                           </div>
 
-                          {createError && (
-                            <div className="create-error">{createError}</div>
-                          )}
+                          {createError && <div className="create-error">{createError}</div>}
                         </div>
                       </div>
 
@@ -1381,45 +1305,25 @@ export default function TeamHubPage() {
                         <div className="form-title">Ladder Setup</div>
 
                         <div className="form-body">
-                          <div className="row">
-                            <label>Platform</label>
-                            <input value={platformName} readOnly />
-                          </div>
-
-                          <div className="row">
-                            <label>Game</label>
-                            <input value={gameName} readOnly />
-                          </div>
-
-                          <div className="row">
-                            <label>Ladder</label>
-                            <input value={ladderName} readOnly />
-                          </div>
+                          <div className="row"><label>Platform</label><input value={platformName} readOnly /></div>
+                          <div className="row"><label>Game</label><input value={gameName} readOnly /></div>
+                          <div className="row"><label>Ladder</label><input value={ladderName} readOnly /></div>
                         </div>
                       </div>
 
                       <div className="form-section">
                         <div className="form-title">
-                          {ladder === "singles"
-                            ? "Solo Roster"
-                            : ladder === "duos"
-                            ? "Duo Roster"
-                            : "Team Roster"}
+                          {ladder === "singles" ? "Solo Roster" : ladder === "duos" ? "Duo Roster" : "Team Roster"}
                         </div>
 
                         <div className="form-body">
                           <div className="leader-box">
                             <div className="leader-name">{username}</div>
-                            <div className="leader-role">
-                              {ladder === "singles" ? "Solo Player" : "Leader"}
-                            </div>
+                            <div className="leader-role">{ladder === "singles" ? "Solo Player" : "Leader"}</div>
                           </div>
 
                           {ladder === "singles" && (
-                            <div className="small-note">
-                              Solos Ladder only uses your own player profile. There are no
-                              roster slots to edit.
-                            </div>
+                            <div className="small-note">Solos Ladder only uses your own player profile. There are no roster slots to edit.</div>
                           )}
 
                           {ladder !== "singles" && (
@@ -1432,118 +1336,56 @@ export default function TeamHubPage() {
 
                               <div className="role-list">
                                 {roster.map((slot) => (
-                                  <div
-                                    className="role-row"
-                                    key={slot.slot}
-                                    onClick={() =>
-                                      !slot.playerId && openRosterSearch(slot.slot)
-                                    }
-                                  >
-                                    <div
-                                      className={
-                                        slot.playerId ? "role-name" : "role-empty"
-                                      }
-                                    >
-                                      {slot.playerId
-                                        ? slot.username
-                                        : ladder === "duos"
-                                        ? "Empty Partner Slot"
-                                        : "Empty Roster Slot"}
+                                  <div className="role-row" key={slot.slot} onClick={() => !slot.playerId && openRosterSearch(slot.slot)}>
+                                    <div className={slot.playerId ? "role-name" : "role-empty"}>
+                                      {slot.playerId ? slot.username : ladder === "duos" ? "Empty Partner Slot" : "Empty Roster Slot"}
                                     </div>
 
                                     <select
                                       className="role-select"
                                       value={slot.role}
                                       onClick={(e) => e.stopPropagation()}
-                                      onChange={(e) =>
-                                        changeRole(
-                                          slot.slot,
-                                          e.target.value as TeamRole
-                                        )
-                                      }
+                                      onChange={(e) => changeRole(slot.slot, e.target.value as TeamRole)}
                                     >
                                       {roleOptions.map((role) => (
-                                        <option key={role} value={role}>
-                                          {role}
-                                        </option>
+                                        <option key={role} value={role}>{role}</option>
                                       ))}
                                     </select>
 
                                     {selectedSlot === slot.slot && (
-                                      <div
-                                        className="slot-search-box"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
+                                      <div className="slot-search-box" onClick={(e) => e.stopPropagation()}>
                                         <div className="slot-search-top">
-                                          <div className="slot-search-title">
-                                            {ladder === "duos"
-                                              ? "Search Partner"
-                                              : "Search Member"}
-                                          </div>
-
-                                          <button
-                                            className="close-search"
-                                            type="button"
-                                            onClick={closeRosterSearch}
-                                          >
-                                            Close
-                                          </button>
+                                          <div className="slot-search-title">{ladder === "duos" ? "Search Partner" : "Search Member"}</div>
+                                          <button className="close-search" type="button" onClick={closeRosterSearch}>Close</button>
                                         </div>
 
                                         <input
                                           className="slot-search-input"
                                           value={searchPlayer}
-                                          onChange={(e) =>
-                                            setSearchPlayer(e.target.value)
-                                          }
+                                          onChange={(e) => setSearchPlayer(e.target.value)}
                                           placeholder="Type username or email"
                                           autoFocus
                                         />
 
-                                        {searchingPlayers && (
-                                          <div className="small-note">
-                                            Searching players...
-                                          </div>
-                                        )}
+                                        {searchingPlayers && <div className="small-note">Searching players...</div>}
 
-                                        {!searchingPlayers &&
-                                          searchPlayer.trim().length >= 2 &&
-                                          playerResults.length === 0 && (
-                                            <div className="small-note">
-                                              No matching players found.
-                                            </div>
-                                          )}
+                                        {!searchingPlayers && searchPlayer.trim().length >= 2 && playerResults.length === 0 && (
+                                          <div className="small-note">No matching players found.</div>
+                                        )}
 
                                         {playerResults.length > 0 && (
                                           <div className="player-results">
                                             {playerResults.map((player) => (
-                                              <div
-                                                className="player-result"
-                                                key={player.id}
-                                              >
+                                              <div className="player-result" key={player.id}>
                                                 <div>
-                                                  <div className="player-info">
-                                                    {player.username || "No username"}
-                                                  </div>
-                                                  <div className="player-email">
-                                                    {player.email}
-                                                  </div>
+                                                  <div className="player-info">{player.username || "No username"}</div>
+                                                  <div className="player-email">{player.email}</div>
                                                 </div>
 
                                                 {player.canInvite ? (
-                                                  <button
-                                                    className="invite-small"
-                                                    type="button"
-                                                    onClick={() =>
-                                                      invitePlayerToSlot(player)
-                                                    }
-                                                  >
-                                                    Invite
-                                                  </button>
+                                                  <button className="invite-small" type="button" onClick={() => invitePlayerToSlot(player)}>Invite</button>
                                                 ) : (
-                                                  <div className="player-status bad">
-                                                    Unavailable
-                                                  </div>
+                                                  <div className="player-status bad">Unavailable</div>
                                                 )}
                                               </div>
                                             ))}
@@ -1563,19 +1405,13 @@ export default function TeamHubPage() {
                         <button
                           className="action-btn gold"
                           type="button"
-                          disabled={
-                            creatingTeam ||
-                            nameStatus === "taken" ||
-                            nameStatus === "checking"
-                          }
+                          disabled={creatingTeam || nameStatus === "taken" || nameStatus === "checking"}
                           onClick={beginCreateTeam}
                         >
                           {creatingTeam ? "Creating..." : "Create Team"}
                         </button>
 
-                        <a className="action-btn red" href={rankingsUrl}>
-                          Cancel
-                        </a>
+                        <a className="action-btn red" href={rankingsUrl}>Cancel</a>
                       </div>
                     </>
                   )}
@@ -1594,43 +1430,19 @@ export default function TeamHubPage() {
             <div className="rules-modal-title">Confirm {ladderName} Rules</div>
 
             <div className="rules-modal-body">
-              <strong>
-                Before creating this team, you must confirm that you understand the
-                current ladder rules.
-              </strong>
+              <strong>Before creating this team, you must confirm that you understand the current ladder rules.</strong>
 
               <div className="modal-rules-list">
                 <div>• You understand this is the {gameName} {ladderName}.</div>
-                <div>
-                  • You agree to follow all match, roster, reporting, and dispute
-                  rules.
-                </div>
-                <div>
-                  • You understand cheating, fake reports, or abuse can lead to
-                  removal.
-                </div>
-                <div>
-                  • You understand staff may review match proof during disputes.
-                </div>
+                <div>• You agree to follow all match, roster, reporting, and dispute rules.</div>
+                <div>• You understand cheating, fake reports, or abuse can lead to removal.</div>
+                <div>• You understand staff may review match proof during disputes.</div>
               </div>
             </div>
 
             <div className="modal-actions">
-              <button
-                className="action-btn gold"
-                type="button"
-                onClick={createTeamAfterRulesConfirm}
-              >
-                Yes, Create
-              </button>
-
-              <button
-                className="action-btn red"
-                type="button"
-                onClick={() => setRulesModalOpen(false)}
-              >
-                Cancel
-              </button>
+              <button className="action-btn gold" type="button" onClick={createTeamAfterRulesConfirm}>Yes, Create</button>
+              <button className="action-btn red" type="button" onClick={() => setRulesModalOpen(false)}>Cancel</button>
             </div>
           </div>
         </div>
