@@ -27,7 +27,19 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <header style={{background:'#07111b',borderBottom:'1px solid #123',padding:'10px 18px',zIndex:90}}>
+          <div style={{maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <a href="/home" style={{color:'#eaf5ff',fontWeight:900,textDecoration:'none',fontSize:18}}>GameBattles</a>
+            <nav style={{display:'flex',gap:14}}>
+              <a href="/home" style={{color:'#cfeefe',textDecoration:'none'}}>Home</a>
+              <a href="/forums" style={{color:'#cfeefe',textDecoration:'none'}}>Forums</a>
+              <a href="/teams/top" style={{color:'#cfeefe',textDecoration:'none'}}>Teams</a>
+            </nav>
+          </div>
+        </header>
+        {children}
+      </body>
     </html>
   );
 }
