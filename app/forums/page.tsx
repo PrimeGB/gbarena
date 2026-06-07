@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 
 type ForumCategory =
   | "All"
@@ -106,19 +107,54 @@ export default function ForumsPage() {
     },
   ]);
 
-  // load from localStorage on mount
+  // load posts from Supabase on mount (fallback to localStorage)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("gb_forum_posts");
-      if (raw) {
-        setPosts(JSON.parse(raw));
+    let mounted = true;
+    async function fetchPosts() {
+      try {
+        const { data, error } = await supabase
+          .from("forum_posts")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && mounted) {
+          const mapped = data.map((p: any) => ({
+            id: p.id,
+            subject: p.subject,
+            message: p.message,
+            system: p.system,
+            game: p.game,
+            ladder: p.ladder,
+            type: p.type,
+            category: p.category,
+            author: p.author,
+            replies: p.replies || 0,
+            views: p.views || 0,
+            createdAt: new Date(p.created_at).getTime(),
+          }));
+          setPosts(mapped);
+          return;
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
+
+      // fallback: localStorage
+      try {
+        const raw = localStorage.getItem("gb_forum_posts");
+        if (raw && mounted) setPosts(JSON.parse(raw));
+      } catch (e) {
+        // ignore
+      }
     }
+
+    fetchPosts();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // persist posts to localStorage whenever they change
+  // persist posts to localStorage whenever they change (still useful as cache)
   useEffect(() => {
     try {
       localStorage.setItem("gb_forum_posts", JSON.stringify(posts));
@@ -197,12 +233,57 @@ export default function ForumsPage() {
       createdAt: now,
     };
 
+    // optimistic update
     setPosts([newPost, ...posts]);
     setLastPostTime(now);
     setSubject("");
     setMessage("");
     setError("");
     setActiveCategory(category);
+
+    // persist to Supabase (best-effort)
+    (async () => {
+      try {
+        const { data: inserted, error } = await supabase.from("forum_posts").insert([
+          {
+            subject: newPost.subject,
+            message: newPost.message,
+            system: newPost.system,
+            game: newPost.game,
+            ladder: newPost.ladder,
+            type: newPost.type,
+            category: newPost.category,
+            author: newPost.author,
+            replies: 0,
+            views: 1,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+
+        if (!error && inserted && inserted[0]) {
+          // replace optimistic item with DB-backed record id
+          setPosts((cur) => [
+            {
+              id: inserted[0].id,
+              subject: inserted[0].subject,
+              message: inserted[0].message,
+              system: inserted[0].system,
+              game: inserted[0].game,
+              ladder: inserted[0].ladder,
+              type: inserted[0].type,
+              category: inserted[0].category,
+              author: inserted[0].author,
+              replies: inserted[0].replies || 0,
+              views: inserted[0].views || 0,
+              createdAt: new Date(inserted[0].created_at).getTime(),
+            },
+            ...cur.filter((p) => p.createdAt !== newPost.createdAt),
+          ]);
+        }
+      } catch (e) {
+        console.error("Failed to insert forum post to Supabase:", e);
+      }
+    })();
   }
 
   return (
