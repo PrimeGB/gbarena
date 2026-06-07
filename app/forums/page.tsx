@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 type ForumCategory =
   | "All"
@@ -12,7 +12,9 @@ type ForumCategory =
   | "Top Clips";
 
 type ForumPost = {
+  id: number;
   subject: string;
+  message?: string;
   system: string;
   game: string;
   ladder: string;
@@ -38,6 +40,7 @@ export default function ForumsPage() {
 
   const [posts, setPosts] = useState<ForumPost[]>([
     {
+      id: Date.now() - 1000 * 60 * 60,
       subject: "Site updates and ladder testing",
       system: "All",
       game: "All",
@@ -50,6 +53,7 @@ export default function ForumsPage() {
       createdAt: Date.now() - 1000 * 60 * 10,
     },
     {
+      id: Date.now() - 1000 * 60 * 50,
       subject: "LF Team for Fortnite Ladder",
       system: "PlayStation",
       game: "Fortnite",
@@ -62,6 +66,7 @@ export default function ForumsPage() {
       createdAt: Date.now() - 1000 * 60 * 7,
     },
     {
+      id: Date.now() - 1000 * 60 * 80,
       subject: "LF Duos Partner - Need Active Player",
       system: "Xbox",
       game: "Call of Duty",
@@ -74,6 +79,7 @@ export default function ForumsPage() {
       createdAt: Date.now() - 1000 * 60 * 22,
     },
     {
+      id: Date.now() - 1000 * 60 * 90,
       subject: "Question about match proof",
       system: "PC",
       game: "Battlefield 6",
@@ -86,6 +92,7 @@ export default function ForumsPage() {
       createdAt: Date.now() - 1000 * 60 * 40,
     },
     {
+      id: Date.now() - 1000 * 60 * 100,
       subject: "How will team rank work?",
       system: "All",
       game: "All",
@@ -98,6 +105,27 @@ export default function ForumsPage() {
       createdAt: Date.now() - 1000 * 60 * 55,
     },
   ]);
+
+  // load from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gb_forum_posts");
+      if (raw) {
+        setPosts(JSON.parse(raw));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // persist posts to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("gb_forum_posts", JSON.stringify(posts));
+    } catch (e) {
+      // ignore
+    }
+  }, [posts]);
 
   const blockedTerms = [
     "cp",
@@ -155,7 +183,9 @@ export default function ForumsPage() {
     }
 
     const newPost: ForumPost = {
+      id: now,
       subject: subject.trim(),
+      message: message.trim(),
       system,
       game,
       ladder,
@@ -509,7 +539,9 @@ export default function ForumsPage() {
                       {filteredPosts.map((post, index) => (
                         <tr key={index}>
                           <td>
-                            <div className="post-subject">{post.subject}</div>
+                            <div>
+                              <a className="post-subject" href={`/forums/${post.id}`}>{post.subject}</a>
+                            </div>
                             <span className="tag">{post.type}</span>
                           </td>
                           <td>{post.system}</td>
