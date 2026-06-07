@@ -26,15 +26,6 @@ type TeamData = {
   logo_url: string | null;
   avatar_url: string | null;
 };
-  id: string;
-  name: string | null;
-  tag: string | null;
-  platform: string | null;
-  category: string | null;
-  game: string | null;
-  ladder: string | null;
-  owner_id: string | null;
-};
 
 function prettyText(value: string | null) {
   if (!value) return "";
