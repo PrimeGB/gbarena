@@ -489,73 +489,96 @@ export default function JoinPage() {
     setError("");
     setSuccess(false);
 
-    const cleanUsername = username.trim();
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanCountry = country.trim();
-    const cleanRegion = region.trim();
-    const dateOfBirth = `${birthYear}-${birthMonth}-${birthDay}`;
+    try {
+      const cleanUsername = username.trim();
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanCountry = country.trim();
+      const cleanRegion = region.trim();
+      const dateOfBirth = `${birthYear}-${birthMonth}-${birthDay}`;
 
-    const { data, error: signupError } = await supabase.auth.signUp({
-      email: cleanEmail,
-      password,
-      options: {
-        data: {
+      const { data, error: signupError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          data: {
+            username: cleanUsername,
+            display_name: cleanUsername,
+            date_of_birth: dateOfBirth,
+            country: cleanCountry,
+            location: cleanRegion,
+            agreed_to_rules: true,
+            agreed_to_rules_at: new Date().toISOString(),
+          },
+        },
+      });
+
+      if (signupError) {
+        console.error("Signup error:", signupError);
+        setError(signupError.message);
+        setShowAgreement(false);
+        setLoading(false);
+        return;
+      }
+
+      console.log("Signup response:", data);
+
+      if (!data || !data.user) {
+        console.error("No user returned from signup:", data);
+        setError("Account could not be created. Try again.");
+        setShowAgreement(false);
+        setLoading(false);
+        return;
+      }
+
+      const userId = data.user.id;
+      if (!userId) {
+        console.error("No user ID returned:", data.user);
+        setError("Account could not be created. Try again.");
+        setShowAgreement(false);
+        setLoading(false);
+        return;
+      }
+
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: userId,
           username: cleanUsername,
-          display_name: cleanUsername,
+          email: cleanEmail,
           date_of_birth: dateOfBirth,
           country: cleanCountry,
           location: cleanRegion,
           agreed_to_rules: true,
           agreed_to_rules_at: new Date().toISOString(),
+          xbox_gt: null,
+          psn_gt: null,
+          nintendo_gt: null,
+          pc_gt: null,
         },
-      },
-    });
+      ]);
 
-    if (signupError) {
-      setError(signupError.message);
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        setError(
+          profileError?.message || "That username or email is already in use."
+        );
+        setShowAgreement(false);
+        setLoading(false);
+        return;
+      }
+
+      setShowAgreement(false);
+      setSuccess(true);
+      setLoading(false);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1600);
+    } catch (err) {
+      console.error("Unexpected error during account creation:", err);
+      setError("An unexpected error occurred. Please try again.");
       setShowAgreement(false);
       setLoading(false);
-      return;
     }
-
-    if (!data.user?.id) {
-      setError("Account could not be created. Try again.");
-      setShowAgreement(false);
-      setLoading(false);
-      return;
-    }
-
-    const { error: profileError } = await supabase.from("profiles").insert([
-      {
-        id: data.user.id,
-        username: cleanUsername,
-        email: cleanEmail,
-        date_of_birth: dateOfBirth,
-        country: cleanCountry,
-        location: cleanRegion,
-        agreed_to_rules: true,
-        agreed_to_rules_at: new Date().toISOString(),
-        xbox_gt: null,
-        psn_gt: null,
-        nintendo_gt: null,
-        pc_gt: null,
-      },
-    ]);
-
-    if (profileError) {
-      setError("That username or email is already in use.");
-      setShowAgreement(false);
-      setLoading(false);
-      return;
-    }
-
-    setShowAgreement(false);
-    setSuccess(true);
-    setLoading(false);
-
-    setTimeout(() => {
-      router.push("/login");
-    }, 1600);
   }
 
   return (
