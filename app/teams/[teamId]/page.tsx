@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useUser } from "../../../lib/useUser";
+import { supabase } from "../../../lib/supabase";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -12,7 +15,13 @@ type Player = {
 };
 
 export default function TeamPage() {
-  const viewerRole: TeamRole = "leader";
+  const params = useParams();
+  const router = useRouter();
+  const { user } = useUser();
+  const teamId = params?.teamId;
+
+  const [isLeader, setIsLeader] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -43,6 +52,82 @@ export default function TeamPage() {
       player.username.toLowerCase().includes(clean)
     );
   }, [playerSearch]);
+
+  useEffect(() => {
+    if (!user?.id || !teamId) return;
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("team_members")
+          .select("user_id, role")
+          .eq("team_id", teamId)
+          .order("created_at", { ascending: true })
+          .limit(1);
+
+        if (!mounted) return;
+
+        if (data && data.length > 0) {
+          const first = data[0];
+          if (first.role === "leader" || String(first.user_id) === String(user.id)) {
+            setIsLeader(true);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, teamId]);
+
+  async function handleDisband() {
+    if (!teamId) return;
+    if (!confirm("Are you sure you want to disband this team? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("teams").delete().eq("id", teamId);
+      if (error) {
+        console.error("Disband error", error);
+        alert("Could not disband team: " + error.message);
+        setDeleting(false);
+        return;
+      }
+      router.push("/profile/teams");
+    } catch (e) {
+      console.error(e);
+      alert("Unexpected error while disbanding team.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleLeave() {
+    if (!teamId || !user?.id) return;
+    if (!confirm("Leave this team?")) return;
+    try {
+      const { error } = await supabase
+        .from("team_members")
+        .delete()
+        .eq("team_id", teamId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Leave error", error);
+        alert("Could not leave team: " + error.message);
+        return;
+      }
+
+      router.push("/profile/teams");
+    } catch (e) {
+      console.error(e);
+      alert("Unexpected error while leaving team.");
+    }
+  }
 
   return (
     <>
@@ -905,9 +990,15 @@ export default function TeamPage() {
                   </button>
                   <br />
 
-                  <span className="danger-link">
-                    {viewerRole === "leader" ? "Disband Team" : "Leave Team"}
-                  </span>
+                  {isLeader ? (
+                    <button className="danger-link" disabled={deleting} onClick={handleDisband}>
+                      {deleting ? "Disbanding..." : "Disband Team"}
+                    </button>
+                  ) : (
+                    <button className="danger-link" onClick={handleLeave}>
+                      Leave Team
+                    </button>
+                  )}
                 </div>
               </div>
 

@@ -1,5 +1,43 @@
+import { useEffect, useState } from "react";
+import { useUser } from "../../../lib/useUser";
+import { supabase } from "../../../lib/supabase";
+
 export default function ProfileTeamsPage() {
-  const teams = [];
+  const { user } = useUser();
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from("team_members")
+          .select("team_id, teams(id, name, created_at)")
+          .eq("user_id", user.id);
+
+        if (!mounted) return;
+
+        if (data) {
+          const foundTeams = data.map((item: any) => item.teams).filter(Boolean);
+          setTeams(foundTeams);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   return (
     <>
