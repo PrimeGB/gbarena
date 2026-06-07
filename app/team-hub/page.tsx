@@ -18,6 +18,10 @@ type TeamRow = {
   id: string;
   name: string;
   created_at?: string;
+  platform?: string | null;
+  category?: string | null;
+  game?: string | null;
+  ladder?: string | null;
 };
 
 type PlayerSearchResult = {
@@ -143,40 +147,44 @@ function TeamHubContent() {
 
   useEffect(() => {
     async function loadTeams() {
+      setLoading(true);
+
       if (!currentUser?.id) {
+        setTeams([]);
         setLoading(false);
         return;
       }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("team_members")
-        .select("team_id, teams(id, name, created_at)")
+        .select("team_id, teams(id, name, created_at, platform, category, game, ladder)")
         .eq("user_id", currentUser.id);
 
-      if (data) {
-        // Filter teams to only those matching the current ladder/platform/game
-        const foundTeams = data
-          .map((item: any) => item.teams)
-          .filter(Boolean) as TeamRow[];
-
-        const filtered = foundTeams.filter((t: any) => {
-          // some older rows may not have platform/game/ladder; treat those as non-matching
-          if (!t.platform || !t.game || !t.ladder) return false;
-          return (
-            String(t.platform) === String(platform) &&
-            String(t.game) === String(game) &&
-            String(t.ladder) === String(ladder)
-          );
-        });
-
-        setTeams(filtered);
+      if (error || !data) {
+        setTeams([]);
+        setLoading(false);
+        return;
       }
 
+      const foundTeams = data
+        .map((item: any) => item.teams)
+        .filter(Boolean) as TeamRow[];
+
+      const filteredTeams = foundTeams.filter((team) => {
+        return (
+          String(team.platform) === String(platform) &&
+          String(team.category) === String(category) &&
+          String(team.game) === String(game) &&
+          String(team.ladder) === String(ladder)
+        );
+      });
+
+      setTeams(filteredTeams);
       setLoading(false);
     }
 
     loadTeams();
-  }, [currentUser]);
+  }, [currentUser?.id, platform, category, game, ladder]);
 
   useEffect(() => {
     async function checkTeamName() {
@@ -334,7 +342,7 @@ function TeamHubContent() {
     }
 
     if (teams.length > 0) {
-      setCreateError("You already have an active team for this ladder.");
+      setCreateError("You already have an active team for this exact platform, game, and ladder.");
       return;
     }
 
@@ -342,30 +350,83 @@ function TeamHubContent() {
   }
 
   async function createTeamAfterRulesConfirm() {
-    setRulesModalOpen(false);
-    setCreateError("");
+  setRulesModalOpen(false);
+  setCreateError("");
 
-    if (!currentUser?.id) {
-      setCreateError("You must be signed in first.");
-      return;
+  if (!currentUser?.id) {
+    setCreateError("You must be signed in first.");
+    return;
+  }
+
+  const cleanTeamName = teamName.trim();
+  const cleanClanTag = clanTag.trim().toUpperCase();
+
+  setCreatingTeam(true);
+
+  try {
+    let logoUrl: string | null = null;
+    let avatarUrl: string | null = null;
+
+    if (teamLogo) {
+      const logoExt = teamLogo.name.split(".").pop() || "png";
+      const logoPath = `${currentUser.id}/logos/${Date.now()}-${cleanTeamName}.${logoExt}`;
+
+      const { error: logoUploadError } = await supabase.storage
+        .from("team-assets")
+        .upload(logoPath, teamLogo, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (logoUploadError) {
+        setCreateError("Team logo upload failed: " + logoUploadError.message);
+        setCreatingTeam(false);
+        return;
+      }
+
+      const { data: logoPublicData } = supabase.storage
+        .from("team-assets")
+        .getPublicUrl(logoPath);
+
+      logoUrl = logoPublicData.publicUrl;
     }
 
-    const cleanTeamName = teamName.trim();
+    if (avatarLogo) {
+      const avatarExt = avatarLogo.name.split(".").pop() || "png";
+      const avatarPath = `${currentUser.id}/avatars/${Date.now()}-${cleanTeamName}.${avatarExt}`;
 
-    setCreatingTeam(true);
+      const { error: avatarUploadError } = await supabase.storage
+        .from("team-assets")
+        .upload(avatarPath, avatarLogo, {
+          cacheControl: "3600",
+          upsert: true,
+        });
 
-    // Check if the user already has a team for this platform/game/ladder
+      if (avatarUploadError) {
+        setCreateError("Team avatar upload failed: " + avatarUploadError.message);
+        setCreatingTeam(false);
+        return;
+      }
+
+      const { data: avatarPublicData } = supabase.storage
+        .from("team-assets")
+        .getPublicUrl(avatarPath);
+
+      avatarUrl = avatarPublicData.publicUrl;
+    }
+
     const { data: existingForLadder } = await supabase
       .from("teams")
       .select("id")
       .eq("owner_id", currentUser.id)
       .eq("platform", platform)
+      .eq("category", category)
       .eq("game", game)
       .eq("ladder", ladder)
       .limit(1);
 
     if (existingForLadder && existingForLadder.length > 0) {
-      setCreateError("You already have an active team for this ladder.");
+      setCreateError("You already have an active team for this exact platform, game, and ladder.");
       setCreatingTeam(false);
       return;
     }
@@ -387,11 +448,15 @@ function TeamHubContent() {
       .from("teams")
       .insert({
         name: cleanTeamName,
+        tag: cleanClanTag,
+        bio: teamBio.trim(),
         platform,
         category,
         game,
         ladder,
         owner_id: currentUser.id,
+        logo_url: logoUrl,
+        avatar_url: avatarUrl,
       })
       .select("id, name")
       .single();
@@ -405,6 +470,7 @@ function TeamHubContent() {
     const { error: memberError } = await supabase.from("team_members").insert({
       team_id: newTeam.id,
       user_id: currentUser.id,
+      role: "leader",
     });
 
     if (memberError) {
@@ -414,8 +480,11 @@ function TeamHubContent() {
     }
 
     router.push(`/teams/${newTeam.id}`);
+  } catch (error: any) {
+    setCreateError(error?.message || "Team could not be created.");
+    setCreatingTeam(false);
   }
-
+}
   return (
     <>
       <style>{`
@@ -475,6 +544,10 @@ function TeamHubContent() {
           padding:0 24px;
         }
 
+        .logo-link{
+          display:block;
+        }
+
         .logo-main{
           color:#f4f8ff;
           font-size:42px;
@@ -483,6 +556,7 @@ function TeamHubContent() {
           text-transform:uppercase;
           line-height:40px;
           text-shadow:0 2px 4px #000;
+          cursor:pointer;
         }
 
         .logo-sub{
@@ -1148,10 +1222,10 @@ function TeamHubContent() {
           </div>
 
           <header className="header">
-            <div>
+            <a className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>
               <div className="logo-sub">Where Gaming Finds Its Edge</div>
-            </div>
+            </a>
 
             <div className="hub-badge">Create Team</div>
           </header>
@@ -1242,7 +1316,7 @@ function TeamHubContent() {
                   {currentUser && !loading && teams.length > 0 && (
                     <>
                       <div className="message-title">Active Entry Found</div>
-                      <div className="message-text">You already have an active entry connected to this ladder.</div>
+                      <div className="message-text">You already have an active entry connected to this exact platform, game, and ladder.</div>
 
                       <div className="team-list">
                         {teams.map((team) => (
