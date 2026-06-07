@@ -154,11 +154,22 @@ function TeamHubContent() {
         .eq("user_id", currentUser.id);
 
       if (data) {
+        // Filter teams to only those matching the current ladder/platform/game
         const foundTeams = data
           .map((item: any) => item.teams)
           .filter(Boolean) as TeamRow[];
 
-        setTeams(foundTeams);
+        const filtered = foundTeams.filter((t: any) => {
+          // some older rows may not have platform/game/ladder; treat those as non-matching
+          if (!t.platform || !t.game || !t.ladder) return false;
+          return (
+            String(t.platform) === String(platform) &&
+            String(t.game) === String(game) &&
+            String(t.ladder) === String(ladder)
+          );
+        });
+
+        setTeams(filtered);
       }
 
       setLoading(false);
@@ -343,6 +354,22 @@ function TeamHubContent() {
 
     setCreatingTeam(true);
 
+    // Check if the user already has a team for this platform/game/ladder
+    const { data: existingForLadder } = await supabase
+      .from("teams")
+      .select("id")
+      .eq("owner_id", currentUser.id)
+      .eq("platform", platform)
+      .eq("game", game)
+      .eq("ladder", ladder)
+      .limit(1);
+
+    if (existingForLadder && existingForLadder.length > 0) {
+      setCreateError("You already have an active team for this ladder.");
+      setCreatingTeam(false);
+      return;
+    }
+
     const { data: nameCheck } = await supabase
       .from("teams")
       .select("id")
@@ -360,6 +387,11 @@ function TeamHubContent() {
       .from("teams")
       .insert({
         name: cleanTeamName,
+        platform,
+        category,
+        game,
+        ladder,
+        owner_id: currentUser.id,
       })
       .select("id, name")
       .single();
