@@ -1,6 +1,33 @@
+import { supabase } from "../../lib/supabase";
+
+type ProfileResult = {
+  id: string;
+  username: string | null;
+  email: string | null;
+  country?: string | null;
+  location?: string | null;
+};
+
 export default async function MembersPage({ searchParams }: any) {
   const params = await searchParams;
-  const search = params?.q || "";
+  const search = String(params?.q || "").trim();
+
+  let results: ProfileResult[] = [];
+  let searchError = "";
+
+  if (search.length >= 2) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, email, country, location")
+      .or(`username.ilike.%${search}%,email.ilike.%${search}%`)
+      .limit(20);
+
+    if (error) {
+      searchError = error.message;
+    } else {
+      results = data || [];
+    }
+  }
 
   return (
     <>
@@ -18,10 +45,15 @@ export default async function MembersPage({ searchParams }: any) {
         .content{padding:20px;line-height:22px;font-size:12px;color:#d7eaff;}
         .content h1{color:#7fc0ff;font-size:28px;margin-bottom:18px;}
         .search-box{background:#07111b;border:1px solid #3b7fc2;padding:14px;margin-top:12px;}
-        input{width:100%;height:28px;background:#000;border:1px solid #3b7fc2;color:#fff;padding-left:8px;margin-bottom:10px;}
+        input{width:100%;height:32px;background:#000;border:1px solid #3b7fc2;color:#fff;padding-left:8px;margin-bottom:10px;}
         button{background:linear-gradient(to bottom,#c40000,#6a0000);border:1px solid #ff4d4d;color:#fff;font-weight:bold;padding:8px 12px;cursor:pointer;}
-        .result{margin-top:16px;background:#07111b;border:1px solid #3b7fc2;padding:14px;}
+        .result-wrap{margin-top:16px;}
+        .result{background:#07111b;border:1px solid #3b7fc2;padding:14px;margin-bottom:10px;}
+        .username{color:#f2c14e;font-size:16px;font-weight:bold;text-transform:uppercase;}
+        .meta{color:#d7eaff;font-size:12px;margin-top:5px;}
+        .empty{margin-top:16px;background:#07111b;border:1px solid #3b7fc2;padding:14px;color:#ff7777;font-weight:bold;}
         .highlight{color:#f2c14e;font-weight:bold;}
+        .error{margin-top:16px;background:#210707;border:1px solid #923131;padding:14px;color:#ff9c9c;font-weight:bold;}
       `}</style>
 
       <div className="top-strip">
@@ -44,23 +76,34 @@ export default async function MembersPage({ searchParams }: any) {
           <div className="content">
             <h1>Find A Player</h1>
 
-            <p>
-              Search for a player by username or email. Full profile lookup will connect to the database later.
-            </p>
+            <p>Search for a player by username or email.</p>
 
             <form className="search-box" action="/members" method="get">
               <input name="q" placeholder="Enter username or email..." defaultValue={search} />
               <button type="submit">Search Members</button>
             </form>
 
-            {search && (
-              <div className="result">
+            {searchError && <div className="error">Search error: {searchError}</div>}
+
+            {search && !searchError && (
+              <div className="result-wrap">
                 <p>
                   Searching for: <span className="highlight">{search}</span>
                 </p>
-                <p>
-                  Member database results will appear here once the full player search system is connected.
-                </p>
+
+                {results.length === 0 && (
+                  <div className="empty">No members found.</div>
+                )}
+
+                {results.map((player) => (
+                  <div className="result" key={player.id}>
+                    <div className="username">{player.username || "Unnamed Player"}</div>
+                    <div className="meta">Email: {player.email || "Hidden"}</div>
+                    <div className="meta">
+                      Location: {[player.location, player.country].filter(Boolean).join(", ") || "Not Set"}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
