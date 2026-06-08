@@ -48,7 +48,7 @@ function normalizeRole(value: string | null | undefined): TeamRole {
 export default function TeamPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useUser() as any;
   const teamId = String(params?.teamId || "");
 
   const [team, setTeam] = useState<TeamData | null>(null);
@@ -113,7 +113,7 @@ export default function TeamPage() {
         setTeam(teamData as TeamData);
       }
 
-      if (user?.id) {
+      if ((user as any)?.id) { {
         const { data: memberData } = await supabase
           .from("team_members")
           .select("role")
