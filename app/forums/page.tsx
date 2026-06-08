@@ -27,6 +27,21 @@ type ForumPost = {
   createdAt: number;
 };
 
+type ForumPostRow = {
+  id: number;
+  subject: string;
+  message?: string;
+  system: string;
+  game: string;
+  ladder: string;
+  type: string;
+  category: ForumCategory;
+  author: string;
+  replies: number;
+  views: number;
+  created_at: string;
+};
+
 export default function ForumsPage() {
   const [subject, setSubject] = useState("");
   const [system, setSystem] = useState("PlayStation");
@@ -244,38 +259,42 @@ export default function ForumsPage() {
     // persist to Supabase (best-effort)
     (async () => {
       try {
-        const { data: inserted, error } = await supabase.from("forum_posts").insert([
-          {
-            subject: newPost.subject,
-            message: newPost.message,
-            system: newPost.system,
-            game: newPost.game,
-            ladder: newPost.ladder,
-            type: newPost.type,
-            category: newPost.category,
-            author: newPost.author,
-            replies: 0,
-            views: 1,
-            created_at: new Date().toISOString(),
-          },
-        ]);
+        const { data: inserted, error } = (await supabase
+          .from("forum_posts")
+          .insert([
+            {
+              subject: newPost.subject,
+              message: newPost.message,
+              system: newPost.system,
+              game: newPost.game,
+              ladder: newPost.ladder,
+              type: newPost.type,
+              category: newPost.category,
+              author: newPost.author,
+              replies: 0,
+              views: 1,
+              created_at: new Date().toISOString(),
+            },
+          ])) as { data: ForumPostRow[] | null; error: any };
 
         if (!error && inserted && inserted[0]) {
+          const insertedRow = inserted[0];
+
           // replace optimistic item with DB-backed record id
           setPosts((cur) => [
             {
-              id: inserted[0].id,
-              subject: inserted[0].subject,
-              message: inserted[0].message,
-              system: inserted[0].system,
-              game: inserted[0].game,
-              ladder: inserted[0].ladder,
-              type: inserted[0].type,
-              category: inserted[0].category,
-              author: inserted[0].author,
-              replies: inserted[0].replies || 0,
-              views: inserted[0].views || 0,
-              createdAt: new Date(inserted[0].created_at).getTime(),
+              id: insertedRow.id,
+              subject: insertedRow.subject,
+              message: insertedRow.message,
+              system: insertedRow.system,
+              game: insertedRow.game,
+              ladder: insertedRow.ladder,
+              type: insertedRow.type,
+              category: insertedRow.category,
+              author: insertedRow.author,
+              replies: insertedRow.replies || 0,
+              views: insertedRow.views || 0,
+              createdAt: new Date(insertedRow.created_at).getTime(),
             },
             ...cur.filter((p) => p.createdAt !== newPost.createdAt),
           ]);
