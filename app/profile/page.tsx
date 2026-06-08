@@ -26,11 +26,19 @@ type Award = {
   description: string;
 };
 
+type TopTeam = {
+  id: string;
+  name: string;
+  record: string;
+  logo_url?: string | null;
+};
+
 export default function ProfilePage() {
   const { user, loading } = useUser();
   const currentUser = user as AppUser | null;
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -87,9 +95,19 @@ export default function ProfilePage() {
     return "favorite-default";
   }
 
+  function getTeamInitials(name: string) {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .slice(0, 3)
+      .toUpperCase();
+  }
+
   useEffect(() => {
     if (!currentUser) {
       setProfile(null);
+      setTopTeams([]);
       return;
     }
 
@@ -105,6 +123,31 @@ export default function ProfilePage() {
         if (!loadedProfile && currentUser.email && usernameInput === "") {
           setUsernameInput(currentUser.email.split("@")[0] || "");
         }
+      });
+
+    supabase
+      .from("team_members")
+      .select("team_id, teams(id, name, logo_url, wins, losses, created_at)")
+      .eq("user_id", currentUser.id)
+      .limit(4)
+      .then(({ data }) => {
+        const loadedTeams =
+          data
+            ?.map((row: any) => {
+              const team = Array.isArray(row.teams) ? row.teams[0] : row.teams;
+
+              if (!team) return null;
+
+              return {
+                id: team.id,
+                name: team.name || "Unnamed Team",
+                record: `${team.wins || 0} - ${team.losses || 0}`,
+                logo_url: team.logo_url || null,
+              };
+            })
+            .filter(Boolean) || [];
+
+        setTopTeams(loadedTeams as TopTeam[]);
       });
   }, [currentUser, usernameInput]);
 
@@ -184,6 +227,7 @@ export default function ProfilePage() {
   }
 
   const playerName = profile?.username || "Prime";
+  const emptyTeamSlots = Math.max(0, 4 - topTeams.length);
 
   return (
     <>
@@ -519,12 +563,6 @@ export default function ProfilePage() {
           display:block;
         }
 
-        .rank{
-          color:#d7e2ee;
-          font-size:13px;
-          margin-bottom:8px;
-        }
-
         .stat-row{
           display:flex;
           justify-content:space-between;
@@ -552,118 +590,21 @@ export default function ProfilePage() {
           background:#10283d;
         }
 
-        .linked-rank-box{
+        .gb-rank-box{
           background:#07111b;
           border:1px solid #244b70;
-          padding:8px;
           margin-bottom:5px;
-          display:grid;
-          grid-template-columns:1fr 160px;
-          gap:12px;
-        }
-
-        .linked-title{
-          color:#f2c14e;
-          font-size:17px;
-          font-weight:bold;
-          margin-bottom:8px;
-        }
-
-        .linked-grid{
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:8px;
-        }
-
-        .linked-account{
-          border:1px solid #244b70;
-          background:linear-gradient(to bottom,#081724,#050c14);
-          padding:8px;
-          color:#d7eaff;
-          font-size:13px;
-          min-height:62px;
           display:flex;
-          align-items:center;
-          gap:10px;
-        }
-
-        .linked-account:hover{
-          border-color:#f2c14e;
-          background:#10283d;
-        }
-
-        .system-icon{
-          width:42px;
-          height:42px;
-          border-radius:10px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:13px;
-          font-weight:bold;
-          color:#fff;
-          flex:none;
-          border:1px solid rgba(255,255,255,.22);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,.35),
-            inset 0 -10px 18px rgba(0,0,0,.35),
-            0 0 10px rgba(0,0,0,.7);
-          text-shadow:1px 1px 2px rgba(0,0,0,.9);
-        }
-
-        .xbox-icon{
-          background:
-            radial-gradient(circle at 30% 25%,#9aff9a 0,#27c527 35%,#075d07 100%);
-        }
-
-        .playstation-icon{
-          background:
-            radial-gradient(circle at 30% 25%,#8fb7ff 0,#245ee6 38%,#001b5c 100%);
-        }
-
-        .nintendo-icon{
-          background:
-            radial-gradient(circle at 30% 25%,#ff9aa4 0,#e40012 38%,#6b0007 100%);
-        }
-
-        .pc-icon{
-          background:
-            radial-gradient(circle at 30% 25%,#d8d8d8 0,#707070 38%,#151515 100%);
-        }
-
-        .account-text span{
-          display:block;
-          color:#f2c14e;
-          font-weight:bold;
-          margin-bottom:2px;
-          text-transform:uppercase;
-          font-size:12px;
-        }
-
-        .account-link{
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-        }
-
-        .account-link:hover{
-          color:#f2c14e;
-          text-decoration:underline;
-        }
-
-        .account-linked-name{
-          color:#00ff88;
-          font-size:12px;
-          font-weight:bold;
+          align-items:stretch;
+          min-height:88px;
         }
 
         .gb-rank{
-          border-left:1px solid #244b70;
-          padding-left:12px;
+          width:100%;
+          padding:8px 12px;
           text-align:center;
           display:flex;
           flex-direction:column;
-          min-height:100px;
         }
 
         .gb-rank-title{
@@ -702,12 +643,57 @@ export default function ProfilePage() {
           border-bottom:1px solid #172d40;
           padding:6px 8px;
           font-size:13px;
+          white-space:nowrap;
         }
 
-        .info-table td:first-child{
+        .info-table td:nth-child(1){
           color:#f2c14e;
-          width:135px;
+          width:120px;
           font-weight:bold;
+        }
+
+        .info-table td:nth-child(2){
+          color:#d7e2ee;
+          width:190px;
+        }
+
+        .info-table td:nth-child(3){
+          width:95px;
+          font-weight:bold;
+          text-align:left;
+          padding-left:18px;
+        }
+
+        .info-table td:nth-child(4){
+          color:#d7e2ee;
+          width:auto;
+          text-align:left;
+        }
+
+        .system-link{
+          font-weight:bold;
+          text-decoration:none;
+        }
+
+        .system-link:hover{
+          text-decoration:underline;
+          color:#fff !important;
+        }
+
+        .system-xbox{
+          color:#00ff88 !important;
+        }
+
+        .system-playstation{
+          color:#5fa8ff !important;
+        }
+
+        .system-nintendo{
+          color:#ff5a5a !important;
+        }
+
+        .system-pc{
+          color:#d7d7d7 !important;
         }
 
         .main-lower-grid{
@@ -897,30 +883,34 @@ export default function ProfilePage() {
           text-shadow:0 1px 1px #000;
         }
 
-        .right-column{ gap:5px; }
-        .right-column .box{ margin-bottom:0; }
+        .right-column{
+          gap:5px;
+        }
+
+        .right-column .box{
+          margin-bottom:0;
+        }
 
         .right-box{
-          flex:1;
           display:flex;
           flex-direction:column;
         }
 
         .right-box .box-body{
-          flex:1;
           display:flex;
         }
 
-        .display-grid,.photo-grid{
+        .display-grid{
           width:100%;
           display:grid;
           grid-template-columns:1fr 1fr;
-          gap:6px;
+          gap:8px;
         }
 
-        .display-card,.photo{
-          background:#050c14;
-          border:1px solid #244b70;
+        .display-card{
+          aspect-ratio:1 / 1;
+          background:linear-gradient(to bottom,#081724,#03070c);
+          border:1px solid #2f6f9f;
           display:flex;
           align-items:center;
           justify-content:center;
@@ -928,7 +918,67 @@ export default function ProfilePage() {
           font-size:11px;
           font-weight:bold;
           text-align:center;
-          min-height:58px;
+          overflow:hidden;
+          box-shadow:inset 0 0 14px rgba(0,0,0,.75);
+        }
+
+        .team-card{
+          aspect-ratio:1 / 1;
+          background:#02060b;
+          border:1px solid #2f6f9f;
+          display:flex;
+          flex-direction:column;
+          overflow:hidden;
+          box-shadow:inset 0 0 14px rgba(0,0,0,.75);
+        }
+
+        .team-logo-area{
+          flex:1;
+          width:100%;
+          background:linear-gradient(to bottom,#0b1d2c,#03070c);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          overflow:hidden;
+        }
+
+        .team-logo-area img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          display:block;
+        }
+
+        .team-logo-placeholder{
+          width:100%;
+          height:100%;
+          background:linear-gradient(to bottom,#15324b,#050c14);
+          color:#f2c14e;
+          font-size:28px;
+          font-weight:bold;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-shadow:inset 0 0 16px rgba(0,0,0,.85);
+        }
+
+        .team-record{
+          height:22px;
+          background:linear-gradient(to bottom,#10283d,#050c14);
+          border-top:1px solid #2f6f9f;
+          color:#f2c14e;
+          font-size:11px;
+          font-weight:bold;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        }
+
+        .display-card img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          display:block;
         }
 
         .complete-profile{
@@ -1094,8 +1144,6 @@ export default function ProfilePage() {
                       {playerName}
                     </a>
 
-                    <div className="rank">Member Rank: Amateur</div>
-
                     <div className="stat-row"><span>Overall Record</span><span>0 - 0</span></div>
                     <div className="stat-row"><span>Reputation</span><span>100%</span></div>
                     <div className="stat-row"><span>Joined</span><span>3/12-2026</span></div>
@@ -1106,7 +1154,7 @@ export default function ProfilePage() {
                   <div className="box-title">Control Center</div>
 
                   <div className="box-body">
-                    <a className="quick-link" href="/profile/edit">Edit Profile</a>
+                    <a className="quick-link" href="/profile/edit-profile">Edit Profile</a>
                     <a className="quick-link" href="/profile/teams">My Teams</a>
                     <a className="quick-link" href="/profile/friends">My Friends</a>
                     <a className="quick-link" href="/profile/matches">My Matches</a>
@@ -1120,69 +1168,7 @@ export default function ProfilePage() {
               </aside>
 
               <main className="main-column">
-                <div className="linked-rank-box">
-                  <div>
-                    <div className="linked-title">Linked Accounts</div>
-
-                    <div className="linked-grid">
-                      <div className="linked-account">
-                        <div className="system-icon xbox-icon">X</div>
-                        <div className="account-text">
-                          <span>Xbox</span>
-                          {profile.xbox_gt ? (
-                            <div className="account-linked-name">{profile.xbox_gt}</div>
-                          ) : (
-                            <a className="account-link" href="https://www.xbox.com/live" target="_blank">
-                              Not Linked
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon playstation-icon">PS</div>
-                        <div className="account-text">
-                          <span>PlayStation</span>
-                          {profile.psn_gt ? (
-                            <div className="account-linked-name">{profile.psn_gt}</div>
-                          ) : (
-                            <a className="account-link" href="https://www.playstation.com/" target="_blank">
-                              Not Linked
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon nintendo-icon">N</div>
-                        <div className="account-text">
-                          <span>Nintendo</span>
-                          {profile.nintendo_gt ? (
-                            <div className="account-linked-name">{profile.nintendo_gt}</div>
-                          ) : (
-                            <a className="account-link" href="https://accounts.nintendo.com/" target="_blank">
-                              Not Linked
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="linked-account">
-                        <div className="system-icon pc-icon">PC</div>
-                        <div className="account-text">
-                          <span>PC</span>
-                          {profile.pc_gt ? (
-                            <div className="account-linked-name">{profile.pc_gt}</div>
-                          ) : (
-                            <a className="account-link" href="https://store.steampowered.com/login/" target="_blank">
-                              Not Linked
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
+                <div className="gb-rank-box">
                   <div className="gb-rank">
                     <div className="gb-rank-title">GB Rank</div>
                     <div className="gb-rank-name">0-0</div>
@@ -1196,11 +1182,56 @@ export default function ProfilePage() {
                   <div className="box-body">
                     <table className="info-table">
                       <tbody>
-                        <tr><td>Username</td><td>{playerName}</td></tr>
-                        <tr><td>Current Status</td><td>Online</td></tr>
-                        <tr><td>Favorite Game</td><td>Not Set</td></tr>
-                        <tr><td>Favorite System</td><td>{favoriteSystem}</td></tr>
-                        <tr><td>Location</td><td>Not Set</td></tr>
+                        <tr>
+                          <td>Username</td>
+                          <td>{playerName}</td>
+                          <td>
+                            <a className="system-link system-xbox" href="https://www.xbox.com/live" target="_blank" rel="noopener noreferrer">
+                              Xbox
+                            </a>
+                          </td>
+                          <td>{profile.xbox_gt || "Not Linked"}</td>
+                        </tr>
+
+                        <tr>
+                          <td>Current Status</td>
+                          <td>Online</td>
+                          <td>
+                            <a className="system-link system-playstation" href="https://www.playstation.com/" target="_blank" rel="noopener noreferrer">
+                              PlayStation
+                            </a>
+                          </td>
+                          <td>{profile.psn_gt || "Not Linked"}</td>
+                        </tr>
+
+                        <tr>
+                          <td>Favorite Game</td>
+                          <td>Not Set</td>
+                          <td>
+                            <a className="system-link system-nintendo" href="https://accounts.nintendo.com/" target="_blank" rel="noopener noreferrer">
+                              Nintendo
+                            </a>
+                          </td>
+                          <td>{profile.nintendo_gt || "Not Linked"}</td>
+                        </tr>
+
+                        <tr>
+                          <td>Favorite System</td>
+                          <td>{favoriteSystem}</td>
+                          <td>
+                            <a className="system-link system-pc" href="https://store.steampowered.com/login/" target="_blank" rel="noopener noreferrer">
+                              PC
+                            </a>
+                          </td>
+                          <td>{profile.pc_gt || "Not Linked"}</td>
+                        </tr>
+
+                        <tr>
+                          <td>Location</td>
+                          <td>Not Set</td>
+                          <td></td>
+                          <td></td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -1250,10 +1281,27 @@ export default function ProfilePage() {
                   <div className="box-title">Top Teams</div>
                   <div className="box-body">
                     <div className="display-grid">
-                      <div className="display-card">Empty Slot</div>
-                      <div className="display-card">Empty Slot</div>
-                      <div className="display-card">Empty Slot</div>
-                      <div className="display-card">Empty Slot</div>
+                      {topTeams.map((team) => (
+                        <div className="team-card" key={team.id}>
+                          <div className="team-logo-area">
+                            {team.logo_url ? (
+                              <img src={team.logo_url} alt={team.name} />
+                            ) : (
+                              <div className="team-logo-placeholder">
+                                {getTeamInitials(team.name)}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="team-record">{team.record}</div>
+                        </div>
+                      ))}
+
+                      {Array.from({ length: emptyTeamSlots }).map((_, index) => (
+                        <div className="display-card" key={`empty-team-${index}`}>
+                          Empty Slot
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1266,18 +1314,6 @@ export default function ProfilePage() {
                       <div className="display-card">Top Friends</div>
                       <div className="display-card">Top Friends</div>
                       <div className="display-card">Top Friends</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="box right-box">
-                  <div className="box-title">Top Photos</div>
-                  <div className="box-body">
-                    <div className="photo-grid">
-                      <div className="photo">PHOTO</div>
-                      <div className="photo">PHOTO</div>
-                      <div className="photo">PHOTO</div>
-                      <div className="photo">PHOTO</div>
                     </div>
                   </div>
                 </div>
