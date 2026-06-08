@@ -1186,7 +1186,7 @@ export default function ProfilePage() {
                           <td>Username</td>
                           <td>{playerName}</td>
                           <td>
-                            <a className="system-link system-xbox" href="/profile/edit-profile">
+                            <a className="system-link system-xbox" href="/profile/edit"">
                               Xbox
                             </a>
                           </td>
