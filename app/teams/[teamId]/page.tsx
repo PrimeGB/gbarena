@@ -113,7 +113,7 @@ export default function TeamPage() {
         setTeam(teamData as TeamData);
       }
 
-      if ((user as any)?.id) { {
+      if ((user as any)?.id) {
         const { data: memberData } = await supabase
           .from("team_members")
           .select("role")
