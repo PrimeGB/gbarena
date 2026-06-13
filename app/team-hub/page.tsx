@@ -160,17 +160,24 @@ function TeamHubContent() {
         .select("team_id, teams(id, name, created_at, platform, category, game, ladder)")
         .eq("user_id", currentUser.id);
 
-      if (error || !data) {
-        setTeams([]);
-        setLoading(false);
-        return;
-      }
+      const memberTeams =
+        data?.map((item: any) => item.teams).filter(Boolean) as TeamRow[];
 
-      const foundTeams = data
-        .map((item: any) => item.teams)
-        .filter(Boolean) as TeamRow[];
+      const { data: ownedTeams, error: ownedError } = await supabase
+        .from("teams")
+        .select("id, name, created_at, platform, category, game, ladder")
+        .eq("owner_id", currentUser.id)
+        .eq("platform", platform)
+        .eq("category", category)
+        .eq("game", game)
+        .eq("ladder", ladder);
 
-      const filteredTeams = foundTeams.filter((team) => {
+      const combinedTeams = [...memberTeams, ...(ownedTeams || [])];
+      const uniqueTeams = Array.from(
+        new Map(combinedTeams.map((team: TeamRow) => [team.id, team])).values()
+      );
+
+      const filteredTeams = uniqueTeams.filter((team) => {
         return (
           String(team.platform) === String(platform) &&
           String(team.category) === String(category) &&
@@ -179,7 +186,11 @@ function TeamHubContent() {
         );
       });
 
-      setTeams(filteredTeams);
+      if (error && ownedError) {
+        setTeams([]);
+      } else {
+        setTeams(filteredTeams);
+      }
       setLoading(false);
     }
 
@@ -1332,7 +1343,12 @@ function TeamHubContent() {
                       </div>
 
                       <div className="actions">
-                        <a className="action-btn gold" href="/profile/teams">View Entry</a>
+                        <a
+                          className="action-btn gold"
+                          href={teams.length === 1 ? `/teams/${teams[0].id}` : "/profile/teams"}
+                        >
+                          View Entry
+                        </a>
                         <a className="action-btn red" href={rankingsUrl}>Back To Ladder</a>
                       </div>
                     </>

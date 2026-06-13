@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../../lib/supabase";
 
 function cleanName(value: string | null) {
   if (!value) return "Team";
@@ -30,13 +31,100 @@ export default function CreateTeamPage() {
 }
 
 function CreateTeamContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
+  const platformSlug = searchParams.get("platform") || "xbox";
+  const categorySlug = searchParams.get("category") || "call-of-duty";
   const gameSlug = searchParams.get("game") || "modern-warfare-4";
   const ladderSlug = searchParams.get("ladder") || "team";
 
-  const gameName = gameNames[gameSlug] || "Call of Duty: Modern Warfare 4";
+  const gameName = gameNames[gameSlug] || cleanName(gameSlug);
   const ladderName = cleanName(ladderSlug);
+  const platformName = cleanName(platformSlug);
+
+  const [teamName, setTeamName] = useState("");
+  const [teamTag, setTeamTag] = useState("");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const backUrl = useMemo(() => {
+    return `/team-hub?platform=${platformSlug}&category=${categorySlug}&game=${gameSlug}&ladder=${ladderSlug}`;
+  }, [platformSlug, categorySlug, gameSlug, ladderSlug]);
+
+  async function createTeam() {
+    setMessage("");
+
+    const cleanTeamName = teamName.trim();
+    const cleanTeamTag = teamTag.trim().toUpperCase();
+
+    if (!cleanTeamName || cleanTeamName.length < 4) {
+      setMessage("Team name must be at least 4 characters.");
+      return;
+    }
+
+    if (!cleanTeamTag || cleanTeamTag.length > 5) {
+      setMessage("Team tag is required and must be 5 characters or less.");
+      return;
+    }
+
+    setSaving(true);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      setSaving(false);
+      setMessage("You must be signed in to create a team.");
+      return;
+    }
+
+    const { data: existingTeam, error: checkError } = await supabase
+      .from("teams")
+      .select("id")
+      .eq("owner_id", user.id)
+      .eq("platform", platformSlug)
+      .eq("category", categorySlug)
+      .eq("game", gameSlug)
+      .eq("ladder", ladderSlug)
+      .maybeSingle();
+
+    if (checkError) {
+      setSaving(false);
+      setMessage("Database check failed. We may need to update the teams table.");
+      return;
+    }
+
+    if (existingTeam) {
+      setSaving(false);
+      setMessage("You already have a team for this exact platform, game, and ladder.");
+      return;
+    }
+
+    const { data: createdTeam, error: insertError } = await supabase
+      .from("teams")
+      .insert({
+        owner_id: user.id,
+        name: cleanTeamName,
+        tag: cleanTeamTag,
+        platform: platformSlug,
+        category: categorySlug,
+        game: gameSlug,
+        ladder: ladderSlug,
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !createdTeam) {
+      setSaving(false);
+      setMessage("Team could not be created. We may need to fix Supabase next.");
+      return;
+    }
+
+    router.push(`/team-hub?team=${createdTeam.id}&platform=${platformSlug}&category=${categorySlug}&game=${gameSlug}&ladder=${ladderSlug}`);
+  }
 
   return (
     <>
@@ -97,6 +185,10 @@ function CreateTeamContent() {
           padding:0 24px;
         }
 
+        .logo-link{
+          display:block;
+        }
+
         .logo-main{
           color:#f4f8ff;
           font-size:42px;
@@ -104,6 +196,7 @@ function CreateTeamContent() {
           font-style:italic;
           text-transform:uppercase;
           text-shadow:0 2px 4px #000;
+          cursor:pointer;
         }
 
         .logo-sub{
@@ -170,6 +263,22 @@ function CreateTeamContent() {
           padding:0 12px;
           font-size:15px;
           margin-bottom:18px;
+          outline:none;
+        }
+
+        .input:focus{
+          border-color:#67bdff;
+          box-shadow:0 0 10px rgba(103,189,255,.35);
+        }
+
+        .message{
+          margin:0 0 18px;
+          padding:12px;
+          border:1px solid #93670d;
+          background:#140f05;
+          color:#f2c14e;
+          font-size:13px;
+          font-weight:bold;
         }
 
         .btn-row{
@@ -190,6 +299,7 @@ function CreateTeamContent() {
           font-size:13px;
           font-weight:900;
           text-transform:uppercase;
+          cursor:pointer;
         }
 
         .btn.gold{
@@ -201,6 +311,11 @@ function CreateTeamContent() {
         .btn.red{
           background:linear-gradient(to bottom,#d60000,#700000);
           border-color:#ff4b4b;
+        }
+
+        .btn:disabled{
+          opacity:.55;
+          cursor:not-allowed;
         }
 
         .footer{
@@ -224,38 +339,48 @@ function CreateTeamContent() {
           </div>
 
           <header className="header">
-            <div>
+            <a className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>
               <div className="logo-sub">Create Team</div>
-            </div>
+            </a>
 
-            <div className="badge">{ladderName} Ladder</div>
+            <div className="badge">{platformName} · {ladderName} Ladder</div>
           </header>
 
           <section className="title-bar">
             <h1>Create Team</h1>
             <p>
-              {gameName} · {ladderName} Ladder
+              {gameName} · {platformName} · {ladderName} Ladder
             </p>
           </section>
 
           <section className="content">
             <div className="panel">
+              {message ? <div className="message">{message}</div> : null}
+
               <div className="label">Team Name</div>
-              <input className="input" placeholder="Enter your team name" />
+              <input
+                className="input"
+                placeholder="Enter your team name"
+                value={teamName}
+                onChange={(event) => setTeamName(event.target.value)}
+              />
 
               <div className="label">Team Tag</div>
-              <input className="input" placeholder="Example: GB" maxLength={5} />
+              <input
+                className="input"
+                placeholder="Example: GB"
+                maxLength={5}
+                value={teamTag}
+                onChange={(event) => setTeamTag(event.target.value)}
+              />
 
               <div className="btn-row">
-                <a className="btn gold" href="/profile/teams">
-                  Create Team
-                </a>
+                <button className="btn gold" onClick={createTeam} disabled={saving}>
+                  {saving ? "Creating..." : "Create Team"}
+                </button>
 
-                <a
-                  className="btn red"
-                  href={`/team-hub?game=${gameSlug}&ladder=${ladderSlug}`}
-                >
+                <a className="btn red" href={backUrl}>
                   Back
                 </a>
               </div>

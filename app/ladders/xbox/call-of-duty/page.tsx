@@ -1,6 +1,15 @@
 "use client";
 
-const codTitles = [
+import { usePathname } from "next/navigation";
+
+type CodTitle = {
+  title: string;
+  slug: string;
+  image: string;
+  ladders: string[];
+};
+
+const codTitles: CodTitle[] = [
   {
     title: "Call of Duty: Modern Warfare 4",
     slug: "modern-warfare-4",
@@ -22,17 +31,17 @@ const codTitles = [
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Warzone",
-    slug: "warzone",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1962663/header.jpg",
-    ladders: ["Singles", "Duos", "Team", "Kill Race"],
-  },
-  {
     title: "Call of Duty: Modern Warfare II",
     slug: "modern-warfare-ii",
     image:
       "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg",
+    ladders: ["Singles", "Duos", "Team"],
+  },
+  {
+    title: "Call of Duty: MW2",
+    slug: "mw2",
+    image:
+      "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
@@ -55,7 +64,38 @@ function ladderSlug(ladder: string) {
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
 
-export default function XboxCallOfDutyPage() {
+function prettyText(value: string) {
+  return value
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function getPlatformFromPath(pathname: string) {
+  const parts = pathname.split("/").filter(Boolean);
+  const laddersIndex = parts.indexOf("ladders");
+
+  if (laddersIndex >= 0 && parts[laddersIndex + 1]) {
+    return parts[laddersIndex + 1];
+  }
+
+  return "xbox";
+}
+
+function getPlatformClass(platform: string) {
+  if (platform === "xbox") return "platform-xbox";
+  if (platform === "playstation") return "platform-playstation";
+  if (platform === "pc") return "platform-pc";
+  if (platform === "nintendo") return "platform-nintendo";
+  return "platform-xbox";
+}
+
+export default function CallOfDutyLaddersPage() {
+  const pathname = usePathname();
+  const platform = getPlatformFromPath(pathname);
+  const platformName = prettyText(platform);
+  const platformClass = getPlatformClass(platform);
+
   return (
     <>
       <style>{`
@@ -75,6 +115,26 @@ export default function XboxCallOfDutyPage() {
           background:#07111b;
           border:1px solid #2f6f9f;
           box-shadow:0 0 35px rgba(0,90,160,.5);
+        }
+
+        .platform-xbox .wrapper{
+          border-color:#61df67;
+          box-shadow:0 0 35px rgba(0,255,80,.42);
+        }
+
+        .platform-playstation .wrapper{
+          border-color:#3f8dff;
+          box-shadow:0 0 35px rgba(45,120,255,.45);
+        }
+
+        .platform-pc .wrapper{
+          border-color:#d8e6ff;
+          box-shadow:0 0 35px rgba(220,235,255,.36);
+        }
+
+        .platform-nintendo .wrapper{
+          border-color:#ff3434;
+          box-shadow:0 0 35px rgba(255,35,35,.42);
         }
 
         .top-strip{
@@ -124,8 +184,8 @@ export default function XboxCallOfDutyPage() {
           margin-top:7px;
         }
 
-        .xbox-mark{
-          min-width:132px;
+        .platform-mark{
+          min-width:150px;
           height:58px;
           border-radius:34px;
           background:radial-gradient(circle at 30% 25%,#baffba 0,#28c928 38%,#062f06 100%);
@@ -134,11 +194,29 @@ export default function XboxCallOfDutyPage() {
           align-items:center;
           justify-content:center;
           color:#fff;
-          font-size:24px;
+          font-size:23px;
           font-weight:bold;
           text-transform:uppercase;
           box-shadow:0 0 18px rgba(0,255,100,.35), inset 0 0 18px rgba(0,0,0,.7);
           text-shadow:0 2px 4px #000;
+        }
+
+        .platform-playstation .platform-mark{
+          background:radial-gradient(circle at 30% 25%,#dbe9ff 0,#286cff 38%,#061b55 100%);
+          border-color:#9fc4ff;
+          box-shadow:0 0 18px rgba(45,120,255,.45), inset 0 0 18px rgba(0,0,0,.7);
+        }
+
+        .platform-pc .platform-mark{
+          background:radial-gradient(circle at 30% 25%,#fff 0,#8f9eb1 42%,#1b2533 100%);
+          border-color:#e7f0ff;
+          box-shadow:0 0 18px rgba(230,240,255,.4), inset 0 0 18px rgba(0,0,0,.7);
+        }
+
+        .platform-nintendo .platform-mark{
+          background:radial-gradient(circle at 30% 25%,#ffb1b1 0,#e71919 42%,#530606 100%);
+          border-color:#ff8b8b;
+          box-shadow:0 0 18px rgba(255,45,45,.45), inset 0 0 18px rgba(0,0,0,.7);
         }
 
         .nav{
@@ -159,9 +237,7 @@ export default function XboxCallOfDutyPage() {
           text-transform:uppercase;
         }
 
-        .nav a:hover{
-          color:#f2c14e;
-        }
+        .nav a:hover{color:#f2c14e;}
 
         .title-bar{
           background:linear-gradient(to bottom,#205077,#0a1724);
@@ -184,9 +260,7 @@ export default function XboxCallOfDutyPage() {
           line-height:22px;
         }
 
-        .content{
-          padding:24px;
-        }
+        .content{padding:24px;}
 
         .games-grid{
           display:grid;
@@ -198,6 +272,7 @@ export default function XboxCallOfDutyPage() {
           background:#050c14;
           border:1px solid #244b70;
           box-shadow:inset 0 0 18px rgba(0,0,0,.75);
+          overflow:hidden;
         }
 
         .game-title{
@@ -235,13 +310,9 @@ export default function XboxCallOfDutyPage() {
           filter:brightness(1.12);
         }
 
-        .card-body{
-          padding:14px;
-        }
+        .card-body{padding:14px;}
 
-        .ladder-list{
-          border:1px solid #172d40;
-        }
+        .ladder-list{border:1px solid #172d40;}
 
         .ladder-item{
           min-height:42px;
@@ -254,9 +325,7 @@ export default function XboxCallOfDutyPage() {
           font-size:12px;
         }
 
-        .ladder-item:last-child{
-          border-bottom:none;
-        }
+        .ladder-item:last-child{border-bottom:none;}
 
         .ladder-name{
           color:#d7e2ee;
@@ -288,9 +357,34 @@ export default function XboxCallOfDutyPage() {
           color:#a9c3db;
           font-size:11px;
         }
+
+        @media(max-width:1120px){
+          .wrapper{width:100%;}
+        }
+
+        @media(max-width:850px){
+          .games-grid{grid-template-columns:1fr;}
+          .header{
+            flex-direction:column;
+            gap:14px;
+            padding:20px;
+            text-align:center;
+          }
+          .nav{
+            height:auto;
+            flex-wrap:wrap;
+            gap:14px;
+            padding:10px;
+          }
+          .ladder-item{
+            grid-template-columns:1fr;
+            gap:8px;
+            padding:12px;
+          }
+        }
       `}</style>
 
-      <main className="page">
+      <main className={`page ${platformClass}`}>
         <div className="wrapper">
           <div className="top-strip">
             <a href="/home">Home</a>
@@ -304,7 +398,7 @@ export default function XboxCallOfDutyPage() {
               <div className="logo-sub">Where Gaming Finds Its Edge</div>
             </div>
 
-            <div className="xbox-mark">Xbox</div>
+            <div className="platform-mark">{platformName}</div>
           </header>
 
           <nav className="nav">
@@ -316,22 +410,22 @@ export default function XboxCallOfDutyPage() {
           </nav>
 
           <section className="title-bar">
-            <h1>Xbox Call of Duty Ladders</h1>
+            <h1>{platformName} Call of Duty Ladders</h1>
             <p>
-              Choose a Call of Duty title below. Each title has its own teams,
-              ladders, matches, and standings.
+              Choose a Call of Duty title below. Each title has Singles, Duos,
+              and Team ladders with its own teams, matches, rules, and standings.
             </p>
           </section>
 
           <section className="content">
             <div className="games-grid">
               {codTitles.map((game) => (
-                <div className="game-card" key={game.title}>
+                <div className="game-card" key={game.slug}>
                   <div className="game-title">{game.title}</div>
 
                   <a
                     className="game-image"
-                    href={`/ladders/xbox/call-of-duty/${game.slug}`}
+                    href={`/ladders/${platform}/call-of-duty/${game.slug}`}
                   >
                     <img src={game.image} alt={game.title} />
                   </a>
@@ -341,14 +435,14 @@ export default function XboxCallOfDutyPage() {
                       {game.ladders.map((ladder) => {
                         const currentLadderSlug = ladderSlug(ladder);
 
-                        const teamHubUrl = `/team-hub?platform=xbox&category=call-of-duty&game=${game.slug}&ladder=${currentLadderSlug}`;
+                        const teamHubUrl = `/team-hub?platform=${platform}&category=call-of-duty&game=${game.slug}&ladder=${currentLadderSlug}`;
 
-                        const rankingsUrl = `/ladders/xbox/call-of-duty/${game.slug}/${currentLadderSlug}/rankings`;
+                        const rankingsUrl = `/ladders/${platform}/call-of-duty/${game.slug}/${currentLadderSlug}/rankings`;
 
                         return (
                           <div
                             className="ladder-item"
-                            key={`${game.title}-${ladder}`}
+                            key={`${game.slug}-${currentLadderSlug}`}
                           >
                             <div className="ladder-name">{ladder} Ladder</div>
 

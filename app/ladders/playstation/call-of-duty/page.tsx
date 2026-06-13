@@ -22,17 +22,17 @@ const codTitles = [
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Warzone",
-    slug: "warzone",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1962663/header.jpg",
-    ladders: ["Singles", "Duos", "Team", "Kill Race"],
-  },
-  {
     title: "Call of Duty: Modern Warfare II",
     slug: "modern-warfare-ii",
     image:
       "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg",
+    ladders: ["Singles", "Duos", "Team"],
+  },
+  {
+    title: "Call of Duty: MW2",
+    slug: "mw2",
+    image:
+      "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
@@ -73,8 +73,8 @@ export default function PlayStationCallOfDutyPage() {
           width:1080px;
           margin:0 auto;
           background:#07111b;
-          border:1px solid #2f6f9f;
-          box-shadow:0 0 35px rgba(0,90,220,.5);
+          border:1px solid #3f8dff;
+          box-shadow:0 0 35px rgba(45,120,255,.45);
         }
 
         .top-strip{
@@ -98,7 +98,7 @@ export default function PlayStationCallOfDutyPage() {
         .header{
           min-height:108px;
           background:linear-gradient(to bottom,#15324b,#07111b);
-          border-bottom:2px solid #2f6f9f;
+          border-bottom:2px solid #3f8dff;
           display:flex;
           justify-content:space-between;
           align-items:center;
@@ -128,8 +128,7 @@ export default function PlayStationCallOfDutyPage() {
           min-width:158px;
           height:58px;
           border-radius:12px;
-          background:
-            radial-gradient(circle at 28% 25%,#d9ecff 0,#2d7dff 38%,#061a55 100%);
+          background:radial-gradient(circle at 28% 25%,#d9ecff 0,#2d7dff 38%,#061a55 100%);
           border:2px solid #9bc9ff;
           display:flex;
           align-items:center;
@@ -161,9 +160,7 @@ export default function PlayStationCallOfDutyPage() {
           text-transform:uppercase;
         }
 
-        .nav a:hover{
-          color:#f2c14e;
-        }
+        .nav a:hover{color:#f2c14e;}
 
         .title-bar{
           background:linear-gradient(to bottom,#205077,#0a1724);
@@ -186,9 +183,7 @@ export default function PlayStationCallOfDutyPage() {
           line-height:22px;
         }
 
-        .content{
-          padding:24px;
-        }
+        .content{padding:24px;}
 
         .games-grid{
           display:grid;
@@ -237,13 +232,8 @@ export default function PlayStationCallOfDutyPage() {
           filter:brightness(1.12);
         }
 
-        .card-body{
-          padding:14px;
-        }
-
-        .ladder-list{
-          border:1px solid #172d40;
-        }
+        .card-body{padding:14px;}
+        .ladder-list{border:1px solid #172d40;}
 
         .ladder-item{
           min-height:42px;
@@ -256,9 +246,7 @@ export default function PlayStationCallOfDutyPage() {
           font-size:12px;
         }
 
-        .ladder-item:last-child{
-          border-bottom:none;
-        }
+        .ladder-item:last-child{border-bottom:none;}
 
         .ladder-name{
           color:#d7e2ee;
@@ -328,7 +316,7 @@ export default function PlayStationCallOfDutyPage() {
           <section className="content">
             <div className="games-grid">
               {codTitles.map((game) => (
-                <div className="game-card" key={game.title}>
+                <div className="game-card" key={game.slug}>
                   <div className="game-title">{game.title}</div>
 
                   <a
@@ -343,22 +331,24 @@ export default function PlayStationCallOfDutyPage() {
                       {game.ladders.map((ladder) => {
                         const currentLadderSlug = ladderSlug(ladder);
 
-                        const teamHubUrl = `/team-hub?platform=playstation&category=call-of-duty&game=${game.slug}&ladder=${currentLadderSlug}`;
-
-                        const rankingsUrl = `/ladders/playstation/call-of-duty/${game.slug}/${currentLadderSlug}/rankings`;
-
                         return (
                           <div
                             className="ladder-item"
-                            key={`${game.title}-${ladder}`}
+                            key={`${game.slug}-${currentLadderSlug}`}
                           >
                             <div className="ladder-name">{ladder} Ladder</div>
 
-                            <a className="ladder-link" href={teamHubUrl}>
+                            <a
+                              className="ladder-link"
+                              href={`/team-hub?platform=playstation&category=call-of-duty&game=${game.slug}&ladder=${currentLadderSlug}`}
+                            >
                               View/Create Team
                             </a>
 
-                            <a className="ladder-link" href={rankingsUrl}>
+                            <a
+                              className="ladder-link"
+                              href={`/ladders/playstation/call-of-duty/${game.slug}/${currentLadderSlug}/rankings`}
+                            >
                               Current Ladder Rankings
                             </a>
                           </div>

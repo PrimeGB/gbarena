@@ -21,7 +21,7 @@ type AppUser = {
 type Award = {
   id: number;
   name: string;
-  type: "gold" | "crimson" | "ribbon" | "diamond" | "elite";
+  type: "trophy" | "medal" | "ribbon" | "shield" | "plaque";
   label: string;
   description: string;
 };
@@ -49,38 +49,38 @@ export default function ProfilePage() {
   const topAwards: Award[] = [
     {
       id: 1,
-      name: "Founder",
-      type: "gold",
-      label: "GB",
-      description: "Early member during the GameBattles launch era.",
+      name: "Founder Trophy",
+      type: "trophy",
+      label: "F",
+      description: "Original launch-era member.",
     },
     {
       id: 2,
-      name: "Crimson Champion",
-      type: "crimson",
-      label: "I",
-      description: "Won a major ladder season or championship.",
+      name: "Ladder Champion",
+      type: "shield",
+      label: "#1",
+      description: "Reached the top of a ladder.",
     },
     {
       id: 3,
-      name: "Beta Service",
-      type: "ribbon",
+      name: "Beta Tester Medal",
+      type: "medal",
       label: "B",
-      description: "Helped test features before public release.",
+      description: "Helped test before launch.",
     },
     {
       id: 4,
-      name: "Diamond Division",
-      type: "diamond",
-      label: "D",
-      description: "Reached Diamond division in ranked play.",
+      name: "Top 10 Ribbon",
+      type: "ribbon",
+      label: "10",
+      description: "Finished inside the top ten.",
     },
     {
       id: 5,
-      name: "Elite Operator",
-      type: "elite",
-      label: "E",
-      description: "Earned for elite competitive performance.",
+      name: "Hall of Fame Plaque",
+      type: "plaque",
+      label: "HOF",
+      description: "Elite community recognition.",
     },
   ];
 
@@ -668,6 +668,7 @@ export default function ProfilePage() {
           color:#d7e2ee;
           width:auto;
           text-align:left;
+          padding-left:28px;
         }
 
         .system-link{
@@ -733,136 +734,93 @@ export default function ProfilePage() {
         .awards-grid{
           display:grid;
           grid-template-columns:repeat(5,1fr);
-          gap:5px;
+          gap:6px;
           height:100%;
         }
 
         .award-card{
-          background:
-            linear-gradient(to bottom,#0b1a27,#050b12);
-          border:1px solid #345f86;
+          background:linear-gradient(to bottom,#101b25,#05080d);
+          border:1px solid #4b5c6b;
           display:flex;
           flex-direction:column;
           align-items:center;
           justify-content:flex-start;
           text-align:center;
           min-height:132px;
-          padding:7px 4px;
-          box-shadow:inset 0 0 12px rgba(0,0,0,.75);
+          padding:8px 4px;
+          box-shadow:inset 0 0 14px rgba(0,0,0,.85);
           overflow:hidden;
         }
 
         .award-card:hover{
-          border-color:#d7ad4a;
-          background:#10283d;
+          border-color:#c79b3b;
+          background:linear-gradient(to bottom,#172b3c,#080d13);
         }
 
-        .award-emblem{
-          width:46px;
-          height:46px;
+        .award-icon{
+          width:52px;
+          height:52px;
+          margin-bottom:6px;
           position:relative;
           display:flex;
           align-items:center;
           justify-content:center;
-          margin-bottom:6px;
           color:#fff;
-          font-size:13px;
+          font-size:12px;
           font-weight:900;
-          letter-spacing:.5px;
           text-shadow:0 1px 2px #000;
         }
 
-        .award-emblem.gold{
-          border-radius:50%;
-          background:
-            radial-gradient(circle at 35% 25%,#fff2a4 0,#d8a83d 42%,#5e3d00 100%);
-          border:2px solid #f0c75e;
-          box-shadow:0 0 10px rgba(215,173,74,.34), inset 0 0 10px rgba(0,0,0,.45);
+        .award-icon.trophy{
+          background:linear-gradient(to bottom,#f7d778,#9a6713 55%,#352006);
+          clip-path:polygon(24% 5%,76% 5%,76% 22%,90% 22%,90% 45%,76% 50%,67% 65%,58% 65%,58% 80%,72% 80%,72% 94%,28% 94%,28% 80%,42% 80%,42% 65%,33% 65%,24% 50%,10% 45%,10% 22%,24% 22%);
+          border:1px solid #d1a447;
         }
 
-        .award-emblem.gold:before{
+        .award-icon.medal{
+          border-radius:50%;
+          background:radial-gradient(circle at 35% 25%,#fff0ad,#b48220 48%,#392405);
+          border:3px solid #d8b45a;
+          box-shadow:0 0 8px rgba(210,170,75,.28), inset 0 0 8px rgba(0,0,0,.5);
+        }
+
+        .award-icon.medal:before{
           content:"";
           position:absolute;
-          inset:7px;
-          border-radius:50%;
-          border:1px solid rgba(255,255,255,.35);
+          top:-12px;
+          width:30px;
+          height:18px;
+          background:linear-gradient(to right,#13294d,#c8c8c8,#13294d);
+          clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);
         }
 
-        .award-emblem.crimson{
-          width:50px;
-          height:48px;
-          border-radius:6px 6px 13px 13px;
-          background:
-            linear-gradient(to bottom,#ffb3b3 0,#9d001f 48%,#310006 100%);
-          border:2px solid #e9415d;
-          box-shadow:0 0 12px rgba(180,0,40,.38), inset 0 0 12px rgba(0,0,0,.55);
-        }
-
-        .award-emblem.crimson:before{
-          content:"";
-          position:absolute;
-          left:8px;
-          right:8px;
-          bottom:-7px;
-          height:8px;
-          background:linear-gradient(to bottom,#5f0010,#1b0004);
-          border:1px solid #e9415d;
-          border-top:none;
-        }
-
-        .award-emblem.ribbon{
+        .award-icon.ribbon{
           width:38px;
-          height:50px;
-          border-radius:4px 4px 2px 2px;
-          background:
-            linear-gradient(to right,#0e2f72 0,#3f85ff 32%,#b6d4ff 50%,#3f85ff 68%,#0e2f72 100%);
-          border:2px solid #9fc7ff;
-          box-shadow:0 0 11px rgba(50,120,255,.35), inset 0 0 10px rgba(0,0,0,.4);
+          height:54px;
+          background:linear-gradient(to right,#5b000b,#b30f20,#e5e5e5,#b30f20,#5b000b);
+          border:1px solid #c9c9c9;
+          clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);
         }
 
-        .award-emblem.ribbon:after{
-          content:"";
-          position:absolute;
-          left:7px;
-          bottom:-10px;
-          width:20px;
-          height:20px;
-          background:#0e2f72;
-          transform:rotate(45deg);
-          border-right:2px solid #9fc7ff;
-          border-bottom:2px solid #9fc7ff;
-        }
-
-        .award-emblem.diamond{
-          width:42px;
-          height:42px;
-          transform:rotate(45deg);
-          border-radius:6px;
-          background:
-            linear-gradient(135deg,#eaffff 0,#62dcff 42%,#004f76 100%);
-          border:2px solid #b8f7ff;
-          box-shadow:0 0 12px rgba(80,220,255,.38), inset 0 0 10px rgba(0,0,0,.34);
-        }
-
-        .award-emblem.diamond span{
-          transform:rotate(-45deg);
-          display:block;
-          color:#062b3a;
+        .award-icon.shield{
+          background:linear-gradient(to bottom,#d9e7f5,#426d91 50%,#10283d);
+          clip-path:polygon(50% 0,90% 14%,84% 68%,50% 100%,16% 68%,10% 14%);
+          border:1px solid #b8d6ef;
+          color:#07111b;
           text-shadow:none;
         }
 
-        .award-emblem.elite{
-          width:48px;
-          height:48px;
-          clip-path:polygon(50% 0%,61% 32%,96% 34%,68% 55%,78% 91%,50% 70%,22% 91%,32% 55%,4% 34%,39% 32%);
-          background:
-            linear-gradient(to bottom,#f5edff 0,#8050ff 47%,#1c084a 100%);
-          border:2px solid #cbb6ff;
-          box-shadow:0 0 13px rgba(140,90,255,.45), inset 0 0 10px rgba(0,0,0,.5);
+        .award-icon.plaque{
+          width:58px;
+          height:44px;
+          border-radius:4px;
+          background:linear-gradient(to bottom,#63421c,#b47b2c 50%,#3b2309);
+          border:3px solid #221306;
+          box-shadow:inset 0 0 8px rgba(255,220,130,.2), 0 2px 4px rgba(0,0,0,.7);
         }
 
         .award-name{
-          color:#f5d06a;
+          color:#f2c14e;
           font-size:10px;
           font-weight:900;
           text-transform:uppercase;
@@ -875,7 +833,7 @@ export default function ProfilePage() {
         }
 
         .award-desc{
-          color:#e2edf8;
+          color:#d9e6f0;
           font-size:9px;
           font-weight:700;
           line-height:12px;
@@ -932,9 +890,20 @@ export default function ProfilePage() {
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
         }
 
-        .team-logo-area{
+        .team-card:hover{
+          border-color:#f2c14e;
+        }
+
+        .team-logo-link{
           flex:1;
           width:100%;
+          display:block;
+          overflow:hidden;
+        }
+
+        .team-logo-area{
+          width:100%;
+          height:100%;
           background:linear-gradient(to bottom,#0b1d2c,#03070c);
           display:flex;
           align-items:center;
@@ -1154,7 +1123,7 @@ export default function ProfilePage() {
                   <div className="box-title">Control Center</div>
 
                   <div className="box-body">
-                    <a className="quick-link" href="/profile/edit-profile">Edit Profile</a>
+                    <a className="quick-link" href="/profile/edit">Edit Profile</a>
                     <a className="quick-link" href="/profile/teams">My Teams</a>
                     <a className="quick-link" href="/profile/friends">My Friends</a>
                     <a className="quick-link" href="/profile/matches">My Matches</a>
@@ -1197,7 +1166,7 @@ export default function ProfilePage() {
                           <td>Current Status</td>
                           <td>Online</td>
                           <td>
-                            <a className="system-link system-playstation" href="https://www.playstation.com/" target="_blank" rel="noopener noreferrer">
+                            <a className="system-link system-playstation" href="/profile/edit">
                               PlayStation
                             </a>
                           </td>
@@ -1208,7 +1177,7 @@ export default function ProfilePage() {
                           <td>Favorite Game</td>
                           <td>Not Set</td>
                           <td>
-                            <a className="system-link system-nintendo" href="https://accounts.nintendo.com/" target="_blank" rel="noopener noreferrer">
+                            <a className="system-link system-nintendo" href="/profile/edit">
                               Nintendo
                             </a>
                           </td>
@@ -1219,7 +1188,7 @@ export default function ProfilePage() {
                           <td>Favorite System</td>
                           <td>{favoriteSystem}</td>
                           <td>
-                            <a className="system-link system-pc" href="https://store.steampowered.com/login/" target="_blank" rel="noopener noreferrer">
+                            <a className="system-link system-pc" href="/profile/edit">
                               PC
                             </a>
                           </td>
@@ -1245,8 +1214,8 @@ export default function ProfilePage() {
                       <div className="awards-grid">
                         {topAwards.map((award) => (
                           <div className="award-card" key={award.id}>
-                            <div className={`award-emblem ${award.type}`}>
-                              {award.type === "diamond" ? <span>{award.label}</span> : award.label}
+                            <div className={`award-icon ${award.type}`}>
+                              {award.label}
                             </div>
                             <div className="award-name">{award.name}</div>
                             <div className="award-desc">{award.description}</div>
@@ -1283,15 +1252,17 @@ export default function ProfilePage() {
                     <div className="display-grid">
                       {topTeams.map((team) => (
                         <div className="team-card" key={team.id}>
-                          <div className="team-logo-area">
-                            {team.logo_url ? (
-                              <img src={team.logo_url} alt={team.name} />
-                            ) : (
-                              <div className="team-logo-placeholder">
-                                {getTeamInitials(team.name)}
-                              </div>
-                            )}
-                          </div>
+                          <a className="team-logo-link" href={`/teams/${team.id}`}>
+                            <div className="team-logo-area">
+                              {team.logo_url ? (
+                                <img src={team.logo_url} alt={team.name} />
+                              ) : (
+                                <div className="team-logo-placeholder">
+                                  {getTeamInitials(team.name)}
+                                </div>
+                              )}
+                            </div>
+                          </a>
 
                           <div className="team-record">{team.record}</div>
                         </div>

@@ -290,8 +290,13 @@ export default function TeamPage() {
           padding:34px 20px 20px 20px;display:flex;flex-direction:column;justify-content:flex-start;
         }
 
-        .team-name{color:#fff;font-size:32px;font-weight:900;text-transform:uppercase;margin-bottom:14px;}
-        .team-tag{color:#d7ad4a;font-size:14px;font-weight:900;text-transform:uppercase;margin-bottom:24px;}
+        .team-title-block{
+          height:72px;
+          transform:translateY(-20px);
+        }
+
+        .team-name{color:#fff;font-size:32px;font-weight:900;text-transform:uppercase;margin-bottom:3px;line-height:1;}
+        .team-tag{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:0;line-height:1.05;letter-spacing:.35px;}
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
         .founder-name{color:#d7ad4a;font-weight:bold;}
 
@@ -328,15 +333,30 @@ export default function TeamPage() {
           text-align:left;padding-left:14px;width:24%;
         }
 
+        .xp-head{color:#fff;}
+        .xp-cell{color:#fff;font-weight:bold;}
+        .level-cell{color:#fff;font-weight:900;text-align:center;}
+        .level-pill{
+          display:inline-block;min-width:auto;height:auto;line-height:normal;text-align:center;
+          background:transparent;border:0;color:#fff;font-weight:900;
+        }
+
         .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
 
         .roster-table th{text-align:left;}
         .roster-table td{text-align:left;}
-        .roster-table th:last-child,.roster-table td:last-child{text-align:center;}
+        .roster-table th:first-child{width:30%;padding-left:74px;}
+        .roster-table td:first-child{width:30%;padding-left:20px;}
+        .roster-table th:nth-child(2),.roster-table td:nth-child(2){width:14%;}
+        .roster-table th:nth-child(3),.roster-table td:nth-child(3){width:15%;text-align:center;}
+        .roster-table th:nth-child(4),.roster-table td:nth-child(4){width:18%;text-align:center;}
+        .roster-table th:nth-child(5),.roster-table td:nth-child(5){width:15%;text-align:center;}
+        .roster-table th:last-child,.roster-table td:last-child{text-align:center;width:8%;}
 
         .member-name{
-          color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:12px;
+          color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:26px;
+          padding-left:20px !important;
         }
 
         .status-box{
@@ -511,8 +531,10 @@ export default function TeamPage() {
                     </div>
 
                     <div className="team-info">
-                      <div className="team-name">{teamName}</div>
-                      <div className="team-tag">Clan Tag: {teamTag}</div>
+                      <div className="team-title-block">
+                        <div className="team-name">{teamName}</div>
+                        <div className="team-tag">Clan Tag: {teamTag}</div>
+                      </div>
 
                       <div className="team-line">Achievements: None</div>
                       <div className="team-line">Fame: New Team</div>
@@ -522,7 +544,10 @@ export default function TeamPage() {
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (
-                          <a className="team-action-btn" href="/matches/create">
+                         <a
+  className="team-action-btn"
+  href={`/matches/create?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
+>
                             Create Match
                           </a>
                         ) : (
@@ -531,7 +556,10 @@ export default function TeamPage() {
                           </button>
                         )}
 
-                        <a className="team-action-btn secondary" href="/matches/finder">
+                        <a
+  className="team-action-btn secondary"
+  href={`/matches/finder?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
+>
                           Match Finder
                         </a>
                       </div>
@@ -551,6 +579,8 @@ export default function TeamPage() {
                         <th>L</th>
                         <th>Streak</th>
                         <th>Best Streak</th>
+                        <th className="xp-head">XP</th>
+                        <th>Level</th>
                       </tr>
                     </thead>
 
@@ -562,6 +592,8 @@ export default function TeamPage() {
                         <td>0</td>
                         <td>-</td>
                         <td>-</td>
+                        <td className="xp-cell">0 / 100</td>
+                        <td className="level-cell"><span className="level-pill">1</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -589,6 +621,7 @@ export default function TeamPage() {
                         <th>Role</th>
                         <th>GB Rank</th>
                         <th>Member Since</th>
+                        <th>Last Update</th>
                         <th>
                           <span className="eligibility-head">
                             Eligibility
@@ -614,6 +647,7 @@ export default function TeamPage() {
                         <td className="rank">Leader</td>
                         <td>-</td>
                         <td>Today</td>
+                        <td>Just now</td>
                         <td>
                           <span className="eligible"></span>
                         </td>
