@@ -43,6 +43,36 @@ type MatchRow = {
   accepted_at?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+
+  posting_team_score?: number | null;
+  accepting_team_score?: number | null;
+  reporting_status?: string | null;
+
+  reported_by_team_id?: string | null;
+  reported_winner_team_id?: string | null;
+  reported_loser_team_id?: string | null;
+  confirmation_team_id?: string | null;
+
+  score_reported_at?: string | null;
+  score_confirmed_at?: string | null;
+  score_verified?: boolean | null;
+  score_verified_at?: string | null;
+
+  disputed_at?: string | null;
+  dispute_reason?: string | null;
+
+  finalized?: boolean | null;
+  finalized_at?: string | null;
+  finalized_by?: string | null;
+
+  rankings_applied?: boolean | null;
+  result_processed?: boolean | null;
+  ranking_change_applied_at?: string | null;
+
+  locked_posting_roster?: string[] | null;
+  locked_accepting_roster?: string[] | null;
+  winning_user_ids?: string[] | null;
+  losing_user_ids?: string[] | null;
 };
 
 type TeamRow = {
@@ -55,6 +85,7 @@ type TeamRow = {
   losses: number | null;
   streak: string | null;
   xp: number | null;
+  rating_points?: number | null;
   owner_id?: string | null;
 };
 
@@ -138,6 +169,20 @@ function getBestOfNumber(bestOf: string | null | undefined) {
   return Number(found[0]) || 3;
 }
 
+function validateSeriesScore(bestOf: number, scoreA: number, scoreB: number) {
+  const requiredWins = bestOf === 7 ? 4 : bestOf === 5 ? 3 : 2;
+  const winnerScore = Math.max(scoreA, scoreB);
+  const loserScore = Math.min(scoreA, scoreB);
+
+  if (scoreA === scoreB) return "Scores cannot be tied.";
+  if (winnerScore !== requiredWins) {
+    return `Best Of ${bestOf} requires the winner to reach ${requiredWins}.`;
+  }
+  if (loserScore >= requiredWins) return "Invalid series result.";
+
+  return "";
+}
+
 function matchTimeHasPassed(matchTime: string | null | undefined) {
   if (!matchTime) return false;
 
@@ -214,7 +259,7 @@ export default function MatchDetailsPage() {
       if (teamIds.length > 0) {
         const { data: teamsData } = await supabase
           .from("teams")
-          .select("id,name,tag,logo_url,avatar_url,wins,losses,streak,xp,owner_id")
+          .select("id,name,tag,logo_url,avatar_url,wins,losses,streak,xp,rating_points,owner_id")
           .in("id", teamIds);
 
         const teams = (teamsData || []) as TeamRow[];
@@ -317,6 +362,19 @@ export default function MatchDetailsPage() {
     !isFinalized &&
     reportingStatus === "awaiting_confirmation";
   const canDisputeScore = canConfirmScore;
+  const confirmationTeamName =
+    match?.confirmation_team_id === postingTeam?.id
+      ? postingTeam?.name || "Posting Team"
+      : match?.confirmation_team_id === acceptingTeam?.id
+      ? acceptingTeam?.name || "Accepting Team"
+      : "Opponent";
+  const commentsUnlocked = isCompleted || isFinalized || reportingStatus === "completed";
+  const canApplyRankings =
+    !!match?.score_verified &&
+    !!match?.winning_team_id &&
+    !!match?.losing_team_id &&
+    !match?.rankings_applied &&
+    !match?.result_processed;
 
 
   async function reloadMatch() {
@@ -362,8 +420,9 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    if (postScore === acceptScore) {
-      setActionMessage("Scores cannot be tied. Enter a winner.");
+    const scoreError = validateSeriesScore(bestOfNumber, postScore, acceptScore);
+    if (scoreError) {
+      setActionMessage(scoreError);
       return;
     }
 
@@ -438,6 +497,8 @@ export default function MatchDetailsPage() {
         status: "completed",
         reporting_status: "completed",
         score_confirmed_at: new Date().toISOString(),
+        score_verified: true,
+        score_verified_at: new Date().toISOString(),
         completed_at: new Date().toISOString(),
       })
       .eq("id", match.id)
@@ -486,6 +547,91 @@ export default function MatchDetailsPage() {
     }
 
     setActionMessage("Dispute opened. Staff must resolve this match.");
+    await reloadMatch();
+  }
+
+
+  async function handleApplyRankings() {
+    if (!match || !canApplyRankings || actionLoading) return;
+
+    setActionLoading(true);
+    setActionMessage("");
+
+    const winningTeamId = match.winning_team_id;
+    const losingTeamId = match.losing_team_id;
+
+    if (!winningTeamId || !losingTeamId) {
+      setActionLoading(false);
+      setActionMessage("Winner and loser are required before rankings can apply.");
+      return;
+    }
+
+    let winningUsers = match.winning_user_ids || [];
+    let losingUsers = match.losing_user_ids || [];
+
+    if (winningUsers.length === 0 || losingUsers.length === 0) {
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("team_id, user_id")
+        .in("team_id", [winningTeamId, losingTeamId]);
+
+      winningUsers =
+        members
+          ?.filter((member: any) => member.team_id === winningTeamId)
+          .map((member: any) => member.user_id)
+          .filter(Boolean) || [];
+
+      losingUsers =
+        members
+          ?.filter((member: any) => member.team_id === losingTeamId)
+          .map((member: any) => member.user_id)
+          .filter(Boolean) || [];
+    }
+
+    if (winningUsers.length === 0 || losingUsers.length === 0) {
+      setActionLoading(false);
+      setActionMessage("Could not find players for both teams.");
+      return;
+    }
+
+    const { error: applyError } = await supabase.rpc("apply_final_match_result", {
+      winning_team_id: winningTeamId,
+      losing_team_id: losingTeamId,
+      winning_user_ids: winningUsers,
+      losing_user_ids: losingUsers,
+      is_forfeit: false,
+    });
+
+    if (applyError) {
+      setActionLoading(false);
+      setActionMessage("Rankings could not be applied.");
+      return;
+    }
+
+    const { error: lockError } = await supabase
+      .from("matches")
+      .update({
+        finalized: true,
+        finalized_at: new Date().toISOString(),
+        finalized_by: currentUser?.id || null,
+        rankings_applied: true,
+        result_processed: true,
+        ranking_change_applied_at: new Date().toISOString(),
+        winning_user_ids: winningUsers,
+        losing_user_ids: losingUsers,
+      })
+      .eq("id", match.id)
+      .eq("rankings_applied", false)
+      .eq("result_processed", false);
+
+    setActionLoading(false);
+
+    if (lockError) {
+      setActionMessage("Rankings applied, but match lock failed. Check match record.");
+      return;
+    }
+
+    setActionMessage("Rankings applied.");
     await reloadMatch();
   }
 
@@ -1140,7 +1286,7 @@ export default function MatchDetailsPage() {
                           <span className="loss-number">{postingTeam?.losses || 0}</span>
                         </span>
                         <br />
-                        Rank: <span className="orange">Pending</span>
+                        GB Rank: <span className="orange">#--</span>
                       </div>
                     </div>
                   </div>
@@ -1168,7 +1314,7 @@ export default function MatchDetailsPage() {
                           <span className="loss-number">{acceptingTeam?.losses || 0}</span>
                         </span>
                         <br />
-                        Rank: <span className="orange">Pending</span>
+                        GB Rank: <span className="orange">#--</span>
                       </div>
                     </div>
 
@@ -1337,7 +1483,7 @@ export default function MatchDetailsPage() {
 
                   {reportingStatus === "awaiting_confirmation" && !canConfirmScore && (
                     <div className="score-note">
-                      Score has been submitted and is awaiting opponent confirmation.
+                      Score has been submitted and is awaiting confirmation from {confirmationTeamName}.
                     </div>
                   )}
 
@@ -1345,6 +1491,17 @@ export default function MatchDetailsPage() {
                     <div className="score-note">
                       Result confirmed. Match is complete.
                     </div>
+                  )}
+
+                  {canApplyRankings && (
+                    <button
+                      className="confirm-btn"
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={handleApplyRankings}
+                    >
+                      Apply Rankings
+                    </button>
                   )}
 
                   {reportingStatus === "disputed" && (
@@ -1368,7 +1525,7 @@ export default function MatchDetailsPage() {
 
                 <div className="comment-body">
                   <div className="comment-box">
-                    {isCompleted ? (
+                    {commentsUnlocked ? (
                       <>
                         <div className="comment">
                           <span className="comment-time">After Match</span>
