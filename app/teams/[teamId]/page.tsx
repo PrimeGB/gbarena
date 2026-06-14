@@ -25,6 +25,11 @@ type TeamData = {
   owner_id: string | null;
   logo_url: string | null;
   avatar_url: string | null;
+  wins: number | null;
+  losses: number | null;
+  streak: number | null;
+  xp: number | null;
+  rating_points: number | null;
 };
 
 type TeamMatch = {
