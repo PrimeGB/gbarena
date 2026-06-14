@@ -679,9 +679,8 @@ export default function TeamPage() {
         .roster-table td:first-child{width:30%;padding-left:20px;}
         .roster-table th:nth-child(2),.roster-table td:nth-child(2){width:14%;}
         .roster-table th:nth-child(3),.roster-table td:nth-child(3){width:15%;text-align:center;}
-        .roster-table th:nth-child(4),.roster-table td:nth-child(4){width:18%;text-align:center;}
-        .roster-table th:nth-child(5),.roster-table td:nth-child(5){width:15%;text-align:center;}
-        .roster-table th:last-child,.roster-table td:last-child{text-align:center;width:8%;}
+        .roster-table th:nth-child(4),.roster-table td:nth-child(4){width:20%;text-align:center;}
+        .roster-table th:last-child,.roster-table td:last-child{text-align:center;width:13%;}
 
         .member-name{
           color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:26px;
@@ -977,7 +976,6 @@ export default function TeamPage() {
                         <th>Role</th>
                         <th>GB Rank</th>
                         <th>Member Since</th>
-                        <th>Last Update</th>
                         <th>
                           <span className="eligibility-head">
                             Eligibility
@@ -1005,7 +1003,6 @@ export default function TeamPage() {
                             <td className="rank">{prettyText(normalizeRole(member.role))}</td>
                             <td>{ordinal(member.gb_place)}</td>
                             <td>Today</td>
-                            <td>{member.gb_wins}-{member.gb_losses}</td>
                             <td>
                               <span className="eligible"></span>
                             </td>
@@ -1022,7 +1019,6 @@ export default function TeamPage() {
                           <td className="rank">Leader</td>
                           <td>Unranked</td>
                           <td>Today</td>
-                          <td>0-0</td>
                           <td>
                             <span className="eligible"></span>
                           </td>

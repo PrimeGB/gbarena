@@ -930,6 +930,18 @@ export default function MatchDetailsPage() {
           display:block;
         }
 
+        .team-logo-link{
+          text-decoration:none;
+          color:inherit;
+          display:block;
+          flex-shrink:0;
+        }
+
+        .team-logo-link:hover .team-logo{
+          border-color:#d66f16;
+          box-shadow:0 0 10px rgba(214,111,22,.45);
+        }
+
         .team-copy{
           min-height:116px;
           display:flex;
@@ -1440,13 +1452,25 @@ export default function MatchDetailsPage() {
               <section className="team-grid">
                 <div className="team-card left-card">
                   <div className="team-main">
-                    <div className="team-logo">
-                      {postingTeam?.logo_url ? (
-                        <img src={postingTeam.logo_url} alt="Posting Team Logo" />
-                      ) : (
-                        postingTeam?.tag || "GB"
-                      )}
-                    </div>
+                    {postingTeam?.id ? (
+                      <a className="team-logo-link" href={`/teams/${postingTeam.id}`}>
+                        <div className="team-logo">
+                          {postingTeam?.logo_url ? (
+                            <img src={postingTeam.logo_url} alt="Posting Team Logo" />
+                          ) : (
+                            postingTeam?.tag || "GB"
+                          )}
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="team-logo">
+                        {postingTeam?.logo_url ? (
+                          <img src={postingTeam.logo_url} alt="Posting Team Logo" />
+                        ) : (
+                          postingTeam?.tag || "GB"
+                        )}
+                      </div>
+                    )}
 
                     <div className="team-copy">
                       <div className="team-name-block">
@@ -1498,13 +1522,25 @@ export default function MatchDetailsPage() {
                       </div>
                     </div>
 
-                    <div className="team-logo">
-                      {acceptingTeam?.logo_url ? (
-                        <img src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
-                      ) : (
-                        acceptingTeam?.tag || "GB"
-                      )}
-                    </div>
+                    {acceptingTeam?.id ? (
+                      <a className="team-logo-link" href={`/teams/${acceptingTeam.id}`}>
+                        <div className="team-logo">
+                          {acceptingTeam?.logo_url ? (
+                            <img src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                          ) : (
+                            acceptingTeam?.tag || "GB"
+                          )}
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="team-logo">
+                        {acceptingTeam?.logo_url ? (
+                          <img src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                        ) : (
+                          acceptingTeam?.tag || "GB"
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
