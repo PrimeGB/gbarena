@@ -1,364 +1,173 @@
-export default function TopPlayersPage() {
-  const players = [
-    {
-      rank: 1,
-      username: "xReaper",
-      points: 2840,
-      wins: 42,
-      streak: "9W"
-    },
-    {
-      rank: 2,
-      username: "Nova",
-      points: 2715,
-      wins: 38,
-      streak: "5W"
-    },
-    {
-      rank: 3,
-      username: "Ghost",
-      points: 2650,
-      wins: 37,
-      streak: "3W"
-    },
-    {
-      rank: 4,
-      username: "Toxic",
-      points: 2495,
-      wins: 35,
-      streak: "2W"
-    },
-    {
-      rank: 5,
-      username: "Frost",
-      points: 2430,
-      wins: 31,
-      streak: "1L"
-    },
-    {
-      rank: 6,
-      username: "Rogue",
-      points: 2380,
-      wins: 30,
-      streak: "4W"
-    },
-    {
-      rank: 7,
-      username: "Blitz",
-      points: 2290,
-      wins: 28,
-      streak: "2W"
-    },
-    {
-      rank: 8,
-      username: "Vex",
-      points: 2200,
-      wins: 25,
-      streak: "1W"
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "../../../lib/supabase";
+
+type TeamRow = {
+  id: string;
+  name: string | null;
+  tag: string | null;
+  platform: string | null;
+  game: string | null;
+  ladder: string | null;
+  wins: number | null;
+  losses: number | null;
+  streak: number | null;
+  xp: number | null;
+  rating_points: number | null;
+};
+
+function prettyText(value: string | null | undefined) {
+  if (!value) return "Unknown";
+  if (value === "mw2") return "MW2";
+  if (value === "modern-warfare-4") return "MW4";
+  return value.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function ordinal(value: number) {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  if (value % 10 === 1) return `${value}st`;
+  if (value % 10 === 2) return `${value}nd`;
+  if (value % 10 === 3) return `${value}rd`;
+  return `${value}th`;
+}
+
+export default function TopTeamsPage() {
+  const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadTeams() {
+      setLoading(true);
+      setError("");
+
+      const { data, error: loadError } = await supabase
+        .from("teams")
+        .select("id,name,tag,platform,game,ladder,wins,losses,streak,xp,rating_points")
+        .order("rating_points", { ascending: false })
+        .order("wins", { ascending: false })
+        .order("losses", { ascending: true })
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (loadError) {
+        setError(loadError.message);
+        setTeams([]);
+        setLoading(false);
+        return;
+      }
+
+      setTeams((data || []) as TeamRow[]);
+      setLoading(false);
     }
-  ];
+
+    loadTeams();
+  }, []);
 
   return (
     <>
       <style>{`
-
-        *{
-          margin:0;
-          padding:0;
-          box-sizing:border-box;
-        }
-
-        body{
-          background:#000;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-          color:#d7e2ee;
-        }
-
-        a{
-          text-decoration:none;
-        }
-
-        .top-strip{
-          height:22px;
-          background:linear-gradient(to bottom,#c40000,#6a0000);
-          border-bottom:1px solid #140000;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
-          color:#fff;
-          font-size:10px;
-        }
-
-        .wrapper{
-          width:1240px;
-          margin:0 auto;
-        }
-
-        .header{
-          height:92px;
-          background:#0a1622;
-          border-left:1px solid #3b7fc2;
-          border-right:1px solid #3b7fc2;
-          border-bottom:2px solid #4f93d6;
-          display:flex;
-          align-items:center;
-          padding:0 14px;
-        }
-
-        .logo-main{
-          font-size:30px;
-          font-weight:bold;
-          color:#eaf5ff;
-          letter-spacing:-1px;
-        }
-
-        .logo-sub{
-          color:#f2c14e;
-          font-size:10px;
-          text-transform:uppercase;
-          margin-top:5px;
-        }
-
-        .nav{
-          height:32px;
-          background:#0a1622;
-          border-left:1px solid #3b7fc2;
-          border-right:1px solid #3b7fc2;
-          border-bottom:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          gap:16px;
-          padding:0 12px;
-        }
-
-        .nav a{
-          font-size:10px;
-          text-transform:uppercase;
-          color:#d7eaff;
-        }
-
-        .nav a:hover{
-          color:#f2c14e;
-        }
-
-        .layout{
-          margin-top:8px;
-          display:grid;
-          grid-template-columns:240px 1fr;
-          gap:10px;
-        }
-
-        .panel{
-          background:#0a1622;
-          border:1px solid #3b7fc2;
-        }
-
-        .panel-title{
-          height:24px;
-          background:#0f2a40;
-          border-bottom:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          padding-left:8px;
-          font-size:10px;
-          font-weight:bold;
-          color:#f2c14e;
-          text-transform:uppercase;
-        }
-
-        .sidebar a{
-          display:block;
-          padding:8px;
-          border-bottom:1px solid #16324a;
-          color:#d7eaff;
-          font-size:10px;
-        }
-
-        .sidebar a:hover{
-          background:#12324b;
-          color:#fff;
-        }
-
-        .rank-table{
-          width:100%;
-          border-collapse:collapse;
-        }
-
-        .rank-table th{
-          background:#07111b;
-          border-bottom:1px solid #3b7fc2;
-          color:#f2c14e;
-          font-size:10px;
-          text-transform:uppercase;
-          padding:10px 6px;
-          text-align:left;
-        }
-
-        .rank-table td{
-          padding:10px 6px;
-          border-bottom:1px solid #16324a;
-          font-size:11px;
-          color:#d7eaff;
-        }
-
-        .rank-table tr:nth-child(even){
-          background:#09131d;
-        }
-
-        .rank-table tr:hover{
-          background:#12324b;
-        }
-
-        .rank-number{
-          color:#f2c14e;
-          font-weight:bold;
-        }
-
-        .points{
-          color:#7fc0ff;
-          font-weight:bold;
-        }
-
-        .wins{
-          color:#9cff9c;
-        }
-
-        .streak{
-          color:#ffcb6b;
-          font-weight:bold;
-        }
-
-        .page-info{
-          padding:10px;
-          font-size:11px;
-          line-height:1.5;
-          color:#c8d8e8;
-          border-bottom:1px solid #16324a;
-        }
-
-        .footer{
-          margin-top:8px;
-          height:26px;
-          background:#0a1622;
-          border:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#a9c3db;
-          font-size:10px;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
+        .page{min-height:100vh;background:linear-gradient(to bottom,#02060a,#000);padding:32px 22px;}
+        .wrap{max-width:1060px;margin:0 auto;background:#07111b;border:1px solid #315f88;}
+        .top-strip{height:30px;background:linear-gradient(to bottom,#8b0000,#3b0000);border-bottom:1px solid #b32222;display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:0 14px;}
+        .top-strip a{color:#fff;font-size:12px;font-weight:bold;text-transform:uppercase;text-decoration:none;}
+        .header{min-height:92px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;padding:0 22px;}
+        .title-main{color:#f2c14e;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+        .title-sub{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
+        .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
+        .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;text-decoration:none;}
+        .nav a:hover{color:#d7ad4a;}
+        .panel{margin:16px;border:1px solid #244b70;background:#050b12;}
+        .panel-title{height:32px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;}
+        th{background:#050c14;color:#fff;padding:10px 8px;border-bottom:1px solid #244b70;text-align:center;font-size:11px;text-transform:uppercase;}
+        td{color:#cfe2f2;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;}
+        th:nth-child(2),td:nth-child(2){text-align:left;}
+        .place{color:#d7ad4a;font-weight:900;}
+        .team-link{color:#7fc7ff;font-weight:900;text-decoration:none;text-transform:uppercase;}
+        .team-link:hover{color:#d7ad4a;}
+        .meta{color:#8aa7c0;font-size:10px;text-transform:uppercase;}
+        .win{color:#36e86b;font-weight:900;}
+        .loss{color:#ff5555;font-weight:900;}
+        .points{color:#fff;font-weight:900;}
+        .empty,.loading,.error{padding:36px;text-align:center;color:#cfe2f2;font-size:14px;font-weight:900;text-transform:uppercase;}
+        .error{color:#ff7777;}
+        .footer{height:36px;background:#07111b;border-top:1px solid #244b70;display:flex;align-items:center;justify-content:center;color:#a9c3db;font-size:11px;}
       `}</style>
 
-      <div className="top-strip">
-        GameBattles Top Players Rankings
-      </div>
-
-      <div className="wrapper">
-
-        <header className="header">
-
-          <div>
-            <div className="logo-main">Top Players</div>
-
-            <div className="logo-sub">
-              Weekly Competitive Rankings
-            </div>
+      <main className="page">
+        <div className="wrap">
+          <div className="top-strip">
+            <a href="/home">Home</a>
+            <a href="/profile">My Profile</a>
+            <a href="/forums">Forums</a>
           </div>
 
-        </header>
-
-        <nav className="nav">
-          <a href="/">Home</a>
-          <a href="/latest-news">Latest News</a>
-          <a href="/forums">Forums</a>
-          <a href="/members">Members</a>
-          <a href="/teams/top">Top Teams</a>
-        </nav>
-
-        <div className="layout">
-
-          <aside className="panel">
-
-            <div className="panel-title">
-              Rankings Menu
+          <header className="header">
+            <div>
+              <div className="title-main">GameBattles</div>
+              <div className="title-sub">Top Teams</div>
             </div>
+          </header>
 
-            <div className="sidebar">
-              <a href="/players/top">Top Players</a>
-              <a href="#">Top Teams</a>
-              <a href="#">Top Weekly Earners</a>
-              <a href="#">Highest Win Streaks</a>
-              <a href="#">Most Active Players</a>
-            </div>
+          <nav className="nav">
+            <a href="/home">Home</a>
+            <a href="/profile/teams">My Teams</a>
+            <a href="/members">Members</a>
+            <a href="/forums">Forums</a>
+          </nav>
 
-          </aside>
+          <section className="panel">
+            <div className="panel-title">Overall Team Rankings</div>
 
-          <main className="panel">
-
-            <div className="panel-title">
-              Weekly Player Rankings
-            </div>
-
-            <div className="page-info">
-              Players are ranked by weekly points earned from competitive matches,
-              tournaments, and ladder wins. Rankings update automatically and show
-              where players stand against the rest of the community.
-            </div>
-
-            <table className="rank-table">
-
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Username</th>
-                  <th>Weekly Points</th>
-                  <th>Wins</th>
-                  <th>Current Streak</th>
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {players.map((player) => (
-                  <tr key={player.rank}>
-
-                    <td className="rank-number">
-                      {player.rank}
-                    </td>
-
-                    <td>
-                      {player.username}
-                    </td>
-
-                    <td className="points">
-                      {player.points}
-                    </td>
-
-                    <td className="wins">
-                      {player.wins}
-                    </td>
-
-                    <td className="streak">
-                      {player.streak}
-                    </td>
-
+            {loading ? (
+              <div className="loading">Loading top teams...</div>
+            ) : error ? (
+              <div className="error">{error}</div>
+            ) : teams.length === 0 ? (
+              <div className="empty">No teams ranked yet.</div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Place</th>
+                    <th>Team</th>
+                    <th>Game</th>
+                    <th>Ladder</th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th>Streak</th>
+                    <th>GB Points</th>
                   </tr>
-                ))}
+                </thead>
+                <tbody>
+                  {teams.map((team, index) => (
+                    <tr key={team.id}>
+                      <td className="place">{ordinal(index + 1)}</td>
+                      <td>
+                        <a className="team-link" href={`/teams/${team.id}`}>{team.name || "Team"}</a>
+                        <div className="meta">{team.tag ? `[${team.tag}]` : ""} {prettyText(team.platform)}</div>
+                      </td>
+                      <td>{prettyText(team.game)}</td>
+                      <td>{prettyText(team.ladder)}</td>
+                      <td className="win">{team.wins || 0}</td>
+                      <td className="loss">{team.losses || 0}</td>
+                      <td>{team.streak || 0}</td>
+                      <td className="points">{team.rating_points ?? 100}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
 
-              </tbody>
-
-            </table>
-
-          </main>
-
+          <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
-
-        <footer className="footer">
-          © 2026 Competitive Gaming Rankings
-        </footer>
-
-      </div>
+      </main>
     </>
   );
 }

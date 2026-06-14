@@ -818,9 +818,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            <a className="view-ladder" href={ladderUrl}>
-              View Ladder
-            </a>
           </header>
 
           <div className="avatar-row">
@@ -840,6 +837,7 @@ export default function TeamPage() {
             <a href="/members">Members</a>
             <a href="/forums">Forums</a>
             <a href="/teams/top">Top Teams</a>
+            <a href={ladderUrl}>View Ladder</a>
           </nav>
 
           {loading ? (
@@ -865,8 +863,6 @@ export default function TeamPage() {
                       </div>
 
                       <div className="team-line">Achievements: None</div>
-                      <div className="team-line">GB Rank Points: {teamRatingPoints}</div>
-                      <div className="team-line">XP: {teamXp}</div>
                       <div className="team-line">
                         Founder: <span className="founder-name">{leaderName}</span>
                       </div>

@@ -1,564 +1,539 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUser } from "../../../../../../../lib/useUser";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
 
-type AppUser = {
+type TeamRow = {
   id: string;
+  name: string | null;
+  tag: string | null;
+  logo_url: string | null;
+  avatar_url: string | null;
+  platform: string | null;
+  category: string | null;
+  game: string | null;
+  ladder: string | null;
+  wins: number | null;
+  losses: number | null;
+  streak: number | null;
+  xp: number | null;
+  rating_points: number | null;
+  created_at: string | null;
 };
 
-const standings = [
-  { rank: 1, team: "Team Reaper", wins: 182, loss: 1, streak: "105W" },
-  { rank: 2, team: "Nova Elite", wins: 125, loss: 0, streak: "7W" },
-  { rank: 3, team: "Ghost Ops", wins: 65, loss: 0, streak: "65W" },
-  { rank: 4, team: "Vortex", wins: 83, loss: 1, streak: "14W" },
-  { rank: 5, team: "Toxic Gaming", wins: 74, loss: 5, streak: "1L" },
-  { rank: 6, team: "Blitz Unit", wins: 85, loss: 16, streak: "2W" },
-];
+function prettyText(value: string | null | undefined) {
+  if (!value) return "Unknown";
+  if (value === "mw2") return "Modern Warfare 2";
+  if (value === "modern-warfare-4") return "Modern Warfare 4";
+  if (value === "modern-warfare-iii") return "Modern Warfare III";
+  if (value === "black-ops-6") return "Black Ops 6";
 
-export default function TopTeamsPage() {
-  const { user } = useUser();
-  const currentUser = user as AppUser | null;
+  return value
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
-  const [hasTeam, setHasTeam] = useState(false);
+function ordinal(value: number) {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+
+  const mod10 = value % 10;
+  if (mod10 === 1) return `${value}st`;
+  if (mod10 === 2) return `${value}nd`;
+  if (mod10 === 3) return `${value}rd`;
+  return `${value}th`;
+}
+
+function winPct(wins: number, losses: number) {
+  const total = wins + losses;
+  if (total <= 0) return ".000";
+  return (wins / total).toFixed(3).replace("0", "");
+}
+
+function levelFromPoints(points: number) {
+  return Math.max(1, Math.floor(points / 100));
+}
+
+function streakText(streak: number) {
+  if (streak > 0) return `${streak}W`;
+  if (streak < 0) return `${Math.abs(streak)}L`;
+  return "-";
+}
+
+export default function LadderRankingsPage() {
+  const params = useParams();
+  const game = String(params?.game || "modern-warfare-4");
+  const ladder = String(params?.ladder || "team");
+
+  const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const gameTitle = prettyText(game);
+  const ladderTitle = `${prettyText(ladder)} Ladder`;
+
+  const rankedTeams = useMemo(() => {
+    return [...teams].sort((a, b) => {
+      const ratingA = Number(a.rating_points || 100);
+      const ratingB = Number(b.rating_points || 100);
+      const winsA = Number(a.wins || 0);
+      const winsB = Number(b.wins || 0);
+      const lossesA = Number(a.losses || 0);
+      const lossesB = Number(b.losses || 0);
+
+      if (ratingB !== ratingA) return ratingB - ratingA;
+      if (winsB !== winsA) return winsB - winsA;
+      if (lossesA !== lossesB) return lossesA - lossesB;
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    });
+  }, [teams]);
 
   useEffect(() => {
-    async function checkTeams() {
-      if (!currentUser?.id) {
-        setHasTeam(false);
+    async function loadTeams() {
+      setLoading(true);
+      setError("");
+
+      const { data, error: teamsError } = await supabase
+        .from("teams")
+        .select("id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,streak,xp,rating_points,created_at")
+        .eq("platform", "xbox")
+        .eq("category", "call-of-duty")
+        .eq("game", game)
+        .eq("ladder", ladder)
+        .order("rating_points", { ascending: false })
+        .order("wins", { ascending: false })
+        .order("losses", { ascending: true });
+
+      if (teamsError) {
+        setError(teamsError.message);
+        setLoading(false);
         return;
       }
 
-      const { data } = await supabase
-        .from("team_members")
-        .select("id")
-        .eq("user_id", currentUser.id)
-        .limit(1);
-
-      setHasTeam(!!data && data.length > 0);
+      setTeams((data || []) as TeamRow[]);
+      setLoading(false);
     }
 
-    checkTeams();
-  }, [currentUser]);
-
-  const ladderButtonText = hasTeam ? "View Team" : "Join Ladder";
-  const ladderButtonLink = "/profile/teams";
+    loadTeams();
+  }, [game, ladder]);
 
   return (
     <>
       <style>{`
-        *{
-          margin:0;
-          padding:0;
-          box-sizing:border-box;
-        }
-
-        body{
-          background:#000;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-          color:#d7e2ee;
-        }
-
-        a{
-          text-decoration:none;
-        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:#07111b;font-family:Tahoma,Verdana,Arial,sans-serif;color:#111;}
+        a{text-decoration:none;}
 
         .page{
           min-height:100vh;
-          background:
-            radial-gradient(circle at top,rgba(20,80,130,.36),transparent 42%),
-            #000;
-          padding:54px 70px;
+          background:linear-gradient(to bottom,#0b2337,#02070c);
+          padding:12px;
         }
 
-        .top-area{
-          max-width:1180px;
-          margin:0 auto 28px;
+        .shell{
+          max-width:980px;
+          margin:0 auto;
+          border-left:1px solid #315f88;
+          border-right:1px solid #315f88;
+          background:#f4f4f4;
+          box-shadow:0 0 30px rgba(0,0,0,.65);
+        }
+
+        .top-nav{
+          height:34px;
           display:flex;
-          justify-content:space-between;
-          align-items:flex-start;
+          align-items:stretch;
+          background:linear-gradient(to bottom,#ffffff,#d9d9d9);
+          border:1px solid #bcbcbc;
+          border-bottom:0;
         }
 
-        .ladder-heading{
-          display:flex;
-          gap:24px;
-          align-items:flex-start;
-          padding-top:14px;
-        }
-
-        .cover{
-          width:172px;
-          height:124px;
-          background:#050c14;
-          border:1px solid #2f6f9f;
-          border-radius:4px;
-          overflow:hidden;
-          box-shadow:0 0 18px rgba(0,90,160,.5);
-        }
-
-        .cover img{
-          width:100%;
-          height:100%;
-          object-fit:cover;
-          object-position:center;
-          display:block;
-        }
-
-        .ladder-text{
-          padding-top:12px;
-        }
-
-        .game-name{
-          color:#f2c14e;
-          font-size:16px;
-          font-weight:900;
-          letter-spacing:1.4px;
-          text-transform:uppercase;
-          margin-bottom:10px;
-          text-shadow:0 1px 2px #000;
-        }
-
-        .eyebrow{
-          color:#67bdff;
-          font-size:13px;
-          font-weight:900;
-          letter-spacing:3px;
-          text-transform:uppercase;
-          margin-bottom:12px;
-        }
-
-        .title{
-          font-size:34px;
-          line-height:38px;
-          font-weight:900;
-          color:#fff;
-          margin-bottom:0;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .join-btn{
-          margin-top:78px;
-          width:150px;
-          height:52px;
-          background:linear-gradient(to bottom,#d60000,#700000);
-          border:1px solid #ff4b4b;
-          border-radius:4px;
-          color:#fff;
-          font-size:14px;
-          font-weight:900;
-          text-transform:uppercase;
+        .top-nav a{
+          color:#111;
+          min-width:86px;
+          padding:0 12px;
           display:flex;
           align-items:center;
           justify-content:center;
-          box-shadow:0 3px 8px rgba(0,0,0,.45);
-          text-shadow:0 1px 2px #000;
-        }
-
-        .join-btn:hover{
-          background:linear-gradient(to bottom,#f00000,#870000);
-        }
-
-        .layout{
-          max-width:1180px;
-          margin:0 auto;
-          display:grid;
-          grid-template-columns:1fr 360px;
-          gap:20px;
-        }
-
-        .info-box,
-        .standings-box,
-        .details-box{
-          background:#07111b;
-          border:1px solid #244b70;
-          border-radius:4px;
-          box-shadow:inset 0 0 18px rgba(0,0,0,.75);
-        }
-
-        .info-box{
-          padding:22px;
-          margin-bottom:32px;
-        }
-
-        .box-header{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          border-bottom:1px solid #244b70;
-          padding-bottom:16px;
-          margin-bottom:18px;
-        }
-
-        .box-title{
-          font-size:14px;
+          border-right:1px solid #c7c7c7;
+          font-size:11px;
           font-weight:900;
-          letter-spacing:1.6px;
           text-transform:uppercase;
-          color:#f2c14e;
-          text-shadow:0 1px 2px #000;
         }
 
-        .info-content{
-          display:flex;
-          gap:18px;
-          align-items:flex-start;
-          color:#d7e2ee;
-          font-size:14px;
-          line-height:22px;
+        .top-nav a.active{
+          background:#d9d9d9;
+          color:#b00000;
+          box-shadow:inset 0 -3px 0 #c40000;
         }
+
+        .ladder-box{
+          border:1px solid #c7c7c7;
+          background:#fff;
+          border-radius:5px 5px 0 0;
+          overflow:hidden;
+        }
+
+        .tabs{
+          height:34px;
+          display:flex;
+          align-items:end;
+          padding-left:10px;
+          background:#f8f8f8;
+          border-bottom:1px solid #d0d0d0;
+        }
+
+        .tab{
+          height:28px;
+          min-width:72px;
+          padding:0 12px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          border:1px solid #c9c9c9;
+          border-bottom:0;
+          background:linear-gradient(to bottom,#fff,#dedede);
+          color:#111;
+          font-size:10px;
+          font-weight:900;
+          margin-right:3px;
+          border-radius:4px 4px 0 0;
+        }
+
+        .tab.active{background:#fff;color:#111;}
+
+        .hero{
+          min-height:82px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          padding:9px 14px 9px 18px;
+          border-bottom:1px solid #d0d0d0;
+          background:#fff;
+        }
+
+        .hero-left{display:flex;align-items:center;gap:10px;}
 
         .ladder-icon{
-          min-width:38px;
-          height:38px;
+          width:62px;
+          height:62px;
+          border-radius:9px;
+          border:1px solid #999;
+          background:linear-gradient(135deg,#050505,#333);
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:27px;
+          font-weight:900;
+          box-shadow:inset 0 0 12px rgba(255,255,255,.2);
+        }
+
+        .hero-title{color:#999;font-size:28px;line-height:29px;font-weight:400;}
+        .season{font-size:11px;color:#777;line-height:16px;}
+        .season strong{color:#555;}
+        .king{color:#064ba8;font-weight:900;}
+
+        .hero-right{
+          display:flex;
+          align-items:center;
+          gap:14px;
+        }
+
+        .your-team{
+          height:32px;
+          padding:0 20px;
+          border:1px solid #1684d3;
+          border-radius:5px;
+          background:linear-gradient(to bottom,#4db8ff,#0074c8);
+          color:#fff;
+          font-size:12px;
+          font-weight:900;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        }
+
+        .region{
+          width:64px;
+          height:55px;
           border-radius:50%;
-          background:linear-gradient(to bottom,#205077,#0a1724);
-          border:1px solid #4b95d8;
-          color:#f2c14e;
+          background:radial-gradient(circle,#ffefef,#b40000 60%,#680000);
+          color:#fff;
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:21px;
+          font-size:14px;
           font-weight:900;
-          box-shadow:inset 0 0 12px rgba(0,0,0,.75);
+          text-shadow:0 1px 3px #000;
+          border:1px solid #b9b9b9;
         }
 
-        .standings-box{
+        .sub-tabs{
+          display:flex;
+          flex-wrap:wrap;
+          padding:10px 10px 0 10px;
+          border-bottom:1px solid #d0d0d0;
+          background:#fdfdfd;
+        }
+
+        .sub-tab{
+          height:34px;
+          padding:0 13px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:linear-gradient(to bottom,#fff,#e5e5e5);
+          border:1px solid #c9c9c9;
+          border-bottom:0;
+          color:#111;
+          font-size:10px;
+          font-weight:900;
+          margin-right:4px;
+          border-radius:4px 4px 0 0;
+        }
+
+        .sub-tab.active{
+          background:#fff;
+          color:#b00000;
+          box-shadow:inset 0 3px 0 #c40000;
+        }
+
+        .standings-wrap{padding:0 10px 14px 10px;background:#fff;}
+
+        .standings{
+          width:100%;
+          border-collapse:collapse;
+          font-size:12px;
+          color:#111;
+        }
+
+        .standings th{
+          height:34px;
+          background:#e3e3e3;
+          border-bottom:1px solid #cfcfcf;
+          color:#111;
+          font-size:11px;
+          font-weight:900;
+          text-align:left;
+          padding:0 7px;
+          white-space:nowrap;
+        }
+
+        .standings td{
+          min-height:34px;
+          border-bottom:1px solid #ebebeb;
+          padding:5px 7px;
+          vertical-align:middle;
+          background:#fff;
+        }
+
+        .standings tr:nth-child(even) td{background:#f7f7f7;}
+        .standings tr:hover td{background:#eef6ff;}
+
+        .place{width:72px;white-space:nowrap;font-weight:400;color:#111;}
+        .up-arrow{color:#0b8c18;font-size:12px;font-weight:900;margin-left:4px;}
+        .team-cell{display:flex;align-items:center;gap:8px;font-weight:900;}
+
+        .team-logo{
+          width:24px;
+          height:24px;
+          border:1px solid #999;
+          background:#111;
+          display:flex;
+          align-items:center;
+          justify-content:center;
           overflow:hidden;
-        }
-
-        .standings-header{
-          height:50px;
-          background:linear-gradient(to bottom,#15324b,#091521);
-          display:grid;
-          grid-template-columns:115px 1fr 92px 92px 82px;
-          align-items:center;
-          padding:0 18px;
           color:#fff;
-          font-size:12px;
+          font-size:10px;
           font-weight:900;
-          letter-spacing:1.7px;
-          text-transform:uppercase;
-          border-bottom:1px solid #244b70;
+          flex-shrink:0;
         }
+        .team-logo img{width:100%;height:100%;object-fit:contain;display:block;}
+        .team-name{color:#0753a3;font-weight:900;}
+        .hot{color:#ff6d00;margin-right:3px;}
+        .wins{color:#00860b;font-weight:900;text-align:center;}
+        .losses{color:#c40000;font-weight:900;text-align:center;}
+        .center{text-align:center;}
 
-        .standings-header .first{
-          color:#fff;
-          font-size:14px;
-        }
-
-        .standings-header div:nth-child(2){
-          padding-left:12px;
-        }
-
-        .standings-header div:nth-child(3),
-        .standings-header div:nth-child(4),
-        .standings-header div:nth-child(5){
-          text-align:right;
-        }
-
-        .row{
-          min-height:72px;
-          display:grid;
-          grid-template-columns:115px 1fr 92px 92px 82px;
-          align-items:center;
-          padding:0 18px;
-          border-top:1px solid #172d40;
-          background:#07111b;
-        }
-
-        .row:nth-child(even){
-          background:#0b1825;
-        }
-
-        .rank{
-          display:flex;
-          align-items:center;
-          gap:8px;
-          font-size:25px;
-          font-weight:900;
-          color:#fff;
-        }
-
-        .suffix{
-          font-size:13px;
-          margin-left:-6px;
-        }
-
-        .up{
-          color:#00ff88;
-          font-size:13px;
-        }
-
-        .down{
-          color:#ff4d4d;
-          font-size:13px;
-        }
-
-        .team{
-          display:flex;
-          align-items:center;
-          gap:12px;
-          color:#fff;
-          font-size:16px;
-          font-weight:bold;
-          padding-left:12px;
-        }
-
-        .team:hover{
-          color:#f2c14e;
-        }
-
-        .avatar{
-          width:36px;
-          height:36px;
-          border-radius:3px;
-          background:linear-gradient(135deg,#205077,#0a1724);
-          border:1px solid #4b95d8;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#f2c14e;
-          font-size:14px;
-          font-weight:900;
-          box-shadow:inset 0 0 12px rgba(0,0,0,.75);
-        }
-
-        .wins{
-          color:#00ff88;
-          font-weight:900;
-          font-size:14px;
-          text-align:right;
-        }
-
-        .loss{
-          color:#ff4d4d;
-          font-weight:900;
-          font-size:14px;
-          text-align:right;
-        }
-
-        .streak{
-          color:#f2c14e;
-          font-weight:900;
-          font-size:14px;
-          text-align:right;
-        }
-
-        .details-box{
-          padding:22px;
-        }
-
-        .details-title{
-          font-size:14px;
-          font-weight:900;
-          letter-spacing:1.6px;
-          text-transform:uppercase;
-          border-bottom:1px solid #244b70;
-          padding-bottom:16px;
-          margin-bottom:14px;
-          color:#f2c14e;
-          text-shadow:0 1px 2px #000;
-        }
-
-        .detail-row{
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:10px;
-          padding:14px 0;
-          font-size:15px;
-        }
-
-        .detail-label{
-          color:#8aa7c0;
-        }
-
-        .detail-value{
-          color:#fff;
-          font-weight:bold;
-          text-align:right;
-        }
-
-        .rules-btn,
-        .match-btn,
-        .bracket-btn{
-          height:48px;
-          border:1px solid #4b95d8;
+        .level-bar{
+          height:23px;
+          width:52px;
+          background:linear-gradient(to right,#7d7d7d,#222);
+          border:1px solid #111;
           color:#fff;
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:13px;
           font-weight:900;
-          text-transform:uppercase;
-          letter-spacing:1px;
-          margin:18px 0 8px;
-          background:linear-gradient(to bottom,#205077,#0a1724);
+          margin:0 auto;
+        }
+
+        .rep-bar{
+          width:54px;
+          height:22px;
+          border:1px solid #000;
+          background:linear-gradient(to bottom,#5cff5c,#008000);
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:11px;
+          font-weight:900;
           text-shadow:0 1px 2px #000;
         }
 
-        .rules-btn:hover,
-        .match-btn:hover,
-        .bracket-btn:hover{
-          border-color:#f2c14e;
-          color:#f2c14e;
-          filter:brightness(1.15);
+        .ping{
+          width:13px;
+          height:9px;
+          background:repeating-linear-gradient(to right,#00bd00 0,#00bd00 2px,#002b00 2px,#002b00 3px);
+          border:1px solid #005000;
+          margin:0 auto;
         }
 
-        .playoff-note{
-          color:#8aa7c0;
-          font-size:12px;
-          line-height:18px;
+        .empty,.loading,.error{
+          padding:34px;
           text-align:center;
-          margin-bottom:18px;
+          color:#555;
+          font-size:13px;
+          font-weight:900;
         }
+        .error{color:#a00000;}
 
-        .footer{
-          max-width:1180px;
-          margin:34px auto 0;
-          color:#8aa7c0;
-          font-size:12px;
-          text-align:center;
+        @media(max-width:760px){
+          .top-nav{overflow-x:auto;}
+          .hero{align-items:flex-start;flex-direction:column;gap:12px;}
+          .hero-right{width:100%;justify-content:space-between;}
+          .standings-wrap{overflow-x:auto;}
+          .standings{min-width:820px;}
         }
       `}</style>
 
       <main className="page">
-        <section className="top-area">
-          <div className="ladder-heading">
-            <div className="cover">
-              <img src="/mw4.jpeg" alt="Call of Duty" />
+        <div className="shell">
+          <nav className="top-nav">
+            <a href="/home">Home</a>
+            <a className="active" href="/ladders/xbox/call-of-duty">Ladders</a>
+            <a href="/tournaments">Tournaments</a>
+            <a href="/free-agents">Free Agents</a>
+            <a href="/teams/create">Create a Team</a>
+            <a href="/forums">Forums</a>
+            <a href="/teams/top">Leaderboards</a>
+            <a href="/support">Support</a>
+          </nav>
+
+          <section className="ladder-box">
+            <div className="tabs">
+              <a className="tab active" href="#">Team</a>
+              <a className="tab" href="#">Doubles</a>
+              <a className="tab" href="#">Singles</a>
             </div>
 
-            <div className="ladder-text">
-              <div className="game-name">Call of Duty: Modern Warfare 4</div>
-              <div className="eyebrow"># Ladder · Season: Spring 2026 ▾</div>
-              <h1 className="title">Team Ladder</h1>
-            </div>
-          </div>
-
-          <a className="join-btn" href={ladderButtonLink}>
-            {ladderButtonText}
-          </a>
-        </section>
-
-        <section className="layout">
-          <div>
-            <div className="info-box">
-              <div className="box-header">
-                <div className="box-title">What Is Team Ladder?</div>
-              </div>
-
-              <div className="info-content">
-                <div className="ladder-icon">#</div>
-                <p>
-                  Team Ladder works like every other competitive ladder, but it
-                  is built for teams of 3 or more players. Create or join a
-                  team, compete in ladder matches, climb the standings, and
-                  review the Team Ladder rules for full match, roster, and
-                  playoff details.
-                </p>
-              </div>
-            </div>
-
-            <div className="standings-box">
-              <div className="standings-header">
-                <div className="first">Standings</div>
-                <div>Team</div>
-                <div>Wins</div>
-                <div>Loss</div>
-                <div>Streak</div>
-              </div>
-
-              {standings.map((team) => (
-                <div className="row" key={team.rank}>
-                  <div className="rank">
-                    {team.rank}
-                    <span className="suffix">
-                      {team.rank === 1
-                        ? "st"
-                        : team.rank === 2
-                        ? "nd"
-                        : team.rank === 3
-                        ? "rd"
-                        : "th"}
-                    </span>
-                    <span className={team.streak.includes("L") ? "down" : "up"}>
-                      {team.streak.includes("L") ? "▼" : "▲"}
-                    </span>
+            <div className="hero">
+              <div className="hero-left">
+                <div className="ladder-icon">GB</div>
+                <div>
+                  <div className="hero-title">{ladderTitle}</div>
+                  <div className="season">Season: <strong>Current</strong></div>
+                  <div className="season">
+                    Total Teams: <strong>{rankedTeams.length}</strong>
+                    {rankedTeams[0]?.name ? (
+                      <> | Current King: <span className="king">{rankedTeams[0].name}</span></>
+                    ) : null}
                   </div>
-
-                  <a className="team" href="/profile/teams">
-                    <div className="avatar">
-                      {team.team.slice(0, 2).toUpperCase()}
-                    </div>
-                    {team.team}
-                  </a>
-
-                  <div className="wins">{team.wins}</div>
-                  <div className="loss">{team.loss}</div>
-                  <div className="streak">{team.streak}</div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <aside className="details-box">
-            <div className="details-title">Ladder Details</div>
-
-            <div className="detail-row">
-              <div className="detail-label">Price</div>
-              <div className="detail-value">Free to Play</div>
+              <div className="hero-right">
+                <a className="your-team" href="/profile/teams">View Your Team</a>
+                <div className="region">NA</div>
+              </div>
             </div>
 
-            <div className="detail-row">
-              <div className="detail-label">Region</div>
-              <div className="detail-value">Open</div>
+            <div className="sub-tabs">
+              <a className="sub-tab active" href="#">Standings</a>
+              <a className="sub-tab" href={`/matches/finder?platform=xbox&category=call-of-duty&game=${game}&ladder=${ladder}`}>Match Finder</a>
+              <a className="sub-tab" href="#">Schedule</a>
+              <a className="sub-tab" href="#">Scoreboard</a>
+              <a className="sub-tab" href="#">Playoff Bracket</a>
+              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/rules`}>Rules</a>
+              <a className="sub-tab" href="/support">Support</a>
             </div>
 
-            <div className="detail-row">
-              <div className="detail-label">Total Teams</div>
-              <div className="detail-value">0</div>
+            <div className="standings-wrap">
+              {loading ? (
+                <div className="loading">Loading live ladder standings...</div>
+              ) : error ? (
+                <div className="error">{error}</div>
+              ) : rankedTeams.length === 0 ? (
+                <div className="empty">No teams have joined this ladder yet.</div>
+              ) : (
+                <table className="standings">
+                  <thead>
+                    <tr>
+                      <th>Place ▲</th>
+                      <th>Team Name</th>
+                      <th className="center">W</th>
+                      <th className="center">L</th>
+                      <th className="center">Pct</th>
+                      <th className="center">Strk</th>
+                      <th className="center">Level</th>
+                      <th className="center">XP</th>
+                      <th className="center">Rep</th>
+                      <th className="center">Ping</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {rankedTeams.map((team, index) => {
+                      const wins = Number(team.wins || 0);
+                      const losses = Number(team.losses || 0);
+                      const points = Number(team.rating_points || 100);
+                      const streak = Number(team.streak || 0);
+                      const rep = Math.min(100, Math.max(60, 90 + wins - losses));
+
+                      return (
+                        <tr key={team.id}>
+                          <td className="place">
+                            {ordinal(index + 1)} <span className="up-arrow">▲</span>
+                          </td>
+
+                          <td>
+                            <a className="team-cell" href={`/teams/${team.id}`}>
+                              <span className="team-logo">
+                                {team.logo_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={team.logo_url} alt={`${team.name || "Team"} logo`} />
+                                ) : (
+                                  team.tag || "GB"
+                                )}
+                              </span>
+                              <span className="team-name">
+                                {index < 3 ? <span className="hot">🔥</span> : null}
+                                {team.name || "Unnamed Team"}
+                              </span>
+                            </a>
+                          </td>
+
+                          <td className="wins">{wins}</td>
+                          <td className="losses">{losses}</td>
+                          <td className="center">{winPct(wins, losses)}</td>
+                          <td className="center">{streakText(streak)}</td>
+                          <td className="center"><div className="level-bar">{levelFromPoints(points)}</div></td>
+                          <td className="center">{points}</td>
+                          <td className="center"><div className="rep-bar">{rep}%</div></td>
+                          <td className="center"><div className="ping" /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
-
-            <div className="detail-row">
-              <div className="detail-label">Current Season</div>
-              <div className="detail-value">Spring 2026</div>
-            </div>
-
-            <div className="detail-row">
-              <div className="detail-label">Season Ends</div>
-              <div className="detail-value">Coming Soon</div>
-            </div>
-
-            <a className="rules-btn" href="/rules/team-ladder">
-              Ladder Rules
-            </a>
-
-            <a className="match-btn" href="/matches">
-              Match Finder
-            </a>
-
-            <div className="detail-row">
-              <div className="detail-label">Roster Lock Starts</div>
-              <div className="detail-value">TBA</div>
-            </div>
-
-            <div className="detail-row">
-              <div className="detail-label">Playoff Bracket Starts</div>
-              <div className="detail-value">TBA</div>
-            </div>
-
-            <a className="bracket-btn" href="/tournaments/playoffs">
-              View Playoff Bracket
-            </a>
-
-            <div className="playoff-note">Viewable during playoffs.</div>
-          </aside>
-        </section>
-
-        <footer className="footer">
-          © 2026 Competitive Gaming Ladder Rankings
-        </footer>
+          </section>
+        </div>
       </main>
     </>
   );
