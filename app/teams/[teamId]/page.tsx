@@ -50,6 +50,16 @@ type TeamNameMap = {
   [key: string]: string;
 };
 
+type RosterMember = {
+  user_id: string;
+  role: string | null;
+  username: string;
+  gb_rank_points: number;
+  gb_wins: number;
+  gb_losses: number;
+  gb_place: number | null;
+};
+
 function prettyText(value: string | null) {
   if (!value) return "";
   return value
@@ -128,6 +138,21 @@ function shortDate(value: string | null) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function ordinal(value: number | null | undefined) {
+  const num = Number(value || 0);
+  if (!num) return "Unranked";
+
+  const lastTwo = num % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) return `${num}th`;
+
+  const last = num % 10;
+  if (last === 1) return `${num}st`;
+  if (last === 2) return `${num}nd`;
+  if (last === 3) return `${num}rd`;
+
+  return `${num}th`;
+}
+
 export default function TeamPage() {
   const params = useParams();
   const router = useRouter();
@@ -143,6 +168,8 @@ export default function TeamPage() {
   const [playerSearch, setPlayerSearch] = useState("");
   const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
+  const [teamPlace, setTeamPlace] = useState<number | null>(null);
+  const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -163,6 +190,13 @@ export default function TeamPage() {
   const rulesUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rules`;
 
   const visibleMatches = teamMatches.slice(0, 20);
+  const teamWins = Number(team?.wins || 0);
+  const teamLosses = Number(team?.losses || 0);
+  const teamStreak = Number(team?.streak || 0);
+  const teamXp = Number(team?.xp ?? 100);
+  const teamRatingPoints = Number(team?.rating_points ?? 100);
+  const teamLevel = Math.max(1, Math.floor(teamRatingPoints / 100));
+  const cleanTeamPlace = ordinal(teamPlace);
 
   const players: Player[] = [
     { id: 1, username: "Prime", rank: "Free Agent", record: "0-0" },
@@ -202,7 +236,7 @@ export default function TeamPage() {
       const { data: teamData } = await supabase
         .from("teams")
         .select(
-          "id, name, tag, platform, category, game, ladder, owner_id, logo_url, avatar_url"
+          "id, name, tag, platform, category, game, ladder, owner_id, logo_url, avatar_url, wins, losses, streak, xp, rating_points"
         )
         .eq("id", teamId)
         .single();
@@ -210,6 +244,69 @@ export default function TeamPage() {
       if (teamData) {
         setTeam(teamData as TeamData);
       }
+
+      const { data: rankedTeams } = await supabase
+        .from("teams")
+        .select("id, wins, losses, rating_points, created_at")
+        .order("rating_points", { ascending: false })
+        .order("wins", { ascending: false })
+        .order("losses", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (rankedTeams) {
+        const placeIndex = rankedTeams.findIndex((rankedTeam: any) => String(rankedTeam.id) === String(teamId));
+        setTeamPlace(placeIndex >= 0 ? placeIndex + 1 : null);
+      }
+
+      const { data: memberRows } = await supabase
+        .from("team_members")
+        .select("user_id, role")
+        .eq("team_id", teamId);
+
+      const memberUserIds = (memberRows || [])
+        .map((member: any) => member.user_id)
+        .filter(Boolean) as string[];
+
+      let profileMap: Record<string, any> = {};
+      let rankMap: Record<string, number> = {};
+
+      if (memberUserIds.length > 0) {
+        const { data: memberProfiles } = await supabase
+          .from("profiles")
+          .select("id, username, gb_rank_points, gb_wins, gb_losses")
+          .in("id", memberUserIds);
+
+        (memberProfiles || []).forEach((profile: any) => {
+          profileMap[profile.id] = profile;
+        });
+
+        const { data: rankedProfiles } = await supabase
+          .from("profiles")
+          .select("id, gb_rank_points, gb_wins, gb_losses")
+          .order("gb_rank_points", { ascending: false })
+          .order("gb_wins", { ascending: false })
+          .order("gb_losses", { ascending: true });
+
+        (rankedProfiles || []).forEach((profile: any, index: number) => {
+          rankMap[profile.id] = index + 1;
+        });
+      }
+
+      const loadedRoster = (memberRows || []).map((member: any) => {
+        const profile = profileMap[member.user_id] || {};
+
+        return {
+          user_id: member.user_id,
+          role: member.role || "member",
+          username: profile.username || "Player",
+          gb_rank_points: Number(profile.gb_rank_points || 0),
+          gb_wins: Number(profile.gb_wins || 0),
+          gb_losses: Number(profile.gb_losses || 0),
+          gb_place: rankMap[member.user_id] || null,
+        } as RosterMember;
+      });
+
+      setRosterMembers(loadedRoster);
 
       const { data: matchesData, error: matchesError } = await supabase
         .from("matches")
@@ -264,7 +361,9 @@ export default function TeamPage() {
           setViewerRole("leader");
         }
 
+        const leaderProfile = loadedRoster.find((member) => String(member.user_id) === String(teamData?.owner_id));
         const username =
+          leaderProfile?.username ||
           user.user_metadata?.username ||
           user.user_metadata?.display_name ||
           user.email?.split("@")[0] ||
@@ -767,9 +866,13 @@ export default function TeamPage() {
                       </div>
 
                       <div className="team-line">Achievements: None</div>
-                      <div className="team-line">Fame: New Team</div>
+                      <div className="team-line">GB Rank Points: {teamRatingPoints}</div>
+                      <div className="team-line">XP: {teamXp}</div>
                       <div className="team-line">
                         Founder: <span className="founder-name">{leaderName}</span>
+                      </div>
+                      <div className="team-line">
+                        Team Rank: <span className="founder-name">{cleanTeamPlace}</span>
                       </div>
 
                       <div className="team-match-actions">
@@ -817,13 +920,13 @@ export default function TeamPage() {
                     <tbody>
                       <tr>
                         <td>Current</td>
-                        <td>-</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td className="xp-cell">0 / 100</td>
-                        <td className="level-cell"><span className="level-pill">1</span></td>
+                        <td>{cleanTeamPlace}</td>
+                        <td>{teamWins}</td>
+                        <td>{teamLosses}</td>
+                        <td>{teamStreak}</td>
+                        <td>{teamStreak}</td>
+                        <td className="xp-cell">{teamXp}</td>
+                        <td className="level-cell"><span className="level-pill">{teamLevel}</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -890,21 +993,41 @@ export default function TeamPage() {
                     </thead>
 
                     <tbody>
-                      <tr>
-                        <td className="member-name">
-                          <span className="status-box">
-                            <span className="online-guy"></span>
-                          </span>
-                          {leaderName}
-                        </td>
-                        <td className="rank">Leader</td>
-                        <td>-</td>
-                        <td>Today</td>
-                        <td>Just now</td>
-                        <td>
-                          <span className="eligible"></span>
-                        </td>
-                      </tr>
+                      {rosterMembers.length > 0 ? (
+                        rosterMembers.map((member) => (
+                          <tr key={member.user_id}>
+                            <td className="member-name">
+                              <span className="status-box">
+                                <span className="online-guy"></span>
+                              </span>
+                              {member.username}
+                            </td>
+                            <td className="rank">{prettyText(normalizeRole(member.role))}</td>
+                            <td>{ordinal(member.gb_place)}</td>
+                            <td>Today</td>
+                            <td>{member.gb_wins}-{member.gb_losses}</td>
+                            <td>
+                              <span className="eligible"></span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="member-name">
+                            <span className="status-box">
+                              <span className="online-guy"></span>
+                            </span>
+                            {leaderName}
+                          </td>
+                          <td className="rank">Leader</td>
+                          <td>Unranked</td>
+                          <td>Today</td>
+                          <td>0-0</td>
+                          <td>
+                            <span className="eligible"></span>
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
