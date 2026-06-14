@@ -96,7 +96,18 @@ type AppUser = {
 
 type TeamMemberRow = {
   team_id: string;
+  user_id?: string | null;
   role: string | null;
+};
+
+type MatchCommentRow = {
+  id: string;
+  match_id: string;
+  user_id: string | null;
+  team_id: string | null;
+  comment: string | null;
+  created_at: string | null;
+  profiles?: { username?: string | null } | null;
 };
 
 function clean(value: string | null | undefined, fallback = "TBD") {
@@ -228,11 +239,17 @@ export default function MatchDetailsPage() {
   const [canManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [comments, setComments] = useState<MatchCommentRow[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentMessage, setCommentMessage] = useState("");
 
   useEffect(() => {
     async function loadMatch() {
       setLoading(true);
       setPageError("");
+      setUserTeamId("");
+      setCanManageMatch(false);
 
       const { data: matchData, error: matchError } = await supabase
         .from("matches")
@@ -260,13 +277,21 @@ export default function MatchDetailsPage() {
         officialMatch.accepting_team_id,
       ].filter(Boolean) as string[];
 
+      let teams: TeamRow[] = [];
+
       if (teamIds.length > 0) {
-        const { data: teamsData } = await supabase
+        const { data: teamsData, error: teamsError } = await supabase
           .from("teams")
           .select("id,name,tag,logo_url,avatar_url,wins,losses,streak,xp,rating_points,owner_id")
           .in("id", teamIds);
 
-        const teams = (teamsData || []) as TeamRow[];
+        if (teamsError) {
+          setPageError(teamsError.message);
+          setLoading(false);
+          return;
+        }
+
+        teams = (teamsData || []) as TeamRow[];
 
         setPostingTeam(
           teams.find((team) => team.id === officialMatch.posting_team_id) ||
@@ -277,6 +302,9 @@ export default function MatchDetailsPage() {
           teams.find((team) => team.id === officialMatch.accepting_team_id) ||
             null
         );
+      } else {
+        setPostingTeam(null);
+        setAcceptingTeam(null);
       }
 
       setPostingScore(
@@ -284,6 +312,7 @@ export default function MatchDetailsPage() {
           ? ""
           : String(officialMatch.posting_team_score)
       );
+
       setAcceptingScore(
         officialMatch.accepting_team_score === null || officialMatch.accepting_team_score === undefined
           ? ""
@@ -291,33 +320,39 @@ export default function MatchDetailsPage() {
       );
 
       if (currentUser?.id && teamIds.length > 0) {
-        const ownedTeam = ((teamsData || []) as TeamRow[]).find(
+        const ownedTeam = teams.find(
           (team) =>
             team.owner_id === currentUser.id &&
-            (team.id === officialMatch.posting_team_id || team.id === officialMatch.accepting_team_id)
+            (team.id === officialMatch.posting_team_id ||
+              team.id === officialMatch.accepting_team_id)
         );
 
         if (ownedTeam) {
           setUserTeamId(ownedTeam.id);
           setCanManageMatch(true);
         } else {
-          const { data: memberRows } = await supabase
+          const { data: memberRows, error: memberError } = await supabase
             .from("team_members")
             .select("team_id, role")
             .eq("user_id", currentUser.id)
             .in("team_id", teamIds);
 
-          const allowedRoles = ["leader", "co-leader", "coleader", "captain", "owner"];
-          const allowedMember = ((memberRows || []) as TeamMemberRow[]).find((member) =>
-            allowedRoles.includes(String(member.role || "").toLowerCase())
-          );
-
-          if (allowedMember) {
-            setUserTeamId(allowedMember.team_id);
-            setCanManageMatch(true);
-          } else {
+          if (memberError) {
             setUserTeamId("");
             setCanManageMatch(false);
+          } else {
+            const allowedRoles = ["leader", "co-leader", "coleader", "captain", "owner"];
+            const allowedMember = ((memberRows || []) as TeamMemberRow[]).find((member) =>
+              allowedRoles.includes(String(member.role || "").toLowerCase())
+            );
+
+            if (allowedMember?.team_id) {
+              setUserTeamId(allowedMember.team_id);
+              setCanManageMatch(true);
+            } else {
+              setUserTeamId("");
+              setCanManageMatch(false);
+            }
           }
         }
       } else {
@@ -330,6 +365,10 @@ export default function MatchDetailsPage() {
 
     if (matchId) loadMatch();
   }, [matchId, currentUser?.id]);
+
+  useEffect(() => {
+    if (matchId) loadComments();
+  }, [matchId]);
 
   const pageTitle = useMemo(() => {
     if (!match) return "Match Details";
@@ -356,7 +395,7 @@ export default function MatchDetailsPage() {
     reportingStatus === "awaiting_confirmation" &&
     !!match?.confirmation_team_id &&
     userTeamId === match.confirmation_team_id;
-  const canSubmitScore = true;
+  const canSubmitScore =
     canReportScore &&
     canManageMatch &&
     userIsMatchTeam &&
@@ -377,12 +416,6 @@ export default function MatchDetailsPage() {
       ? acceptingTeam?.name || "Accepting Team"
       : "Opponent";
   const commentsUnlocked = isCompleted || isFinalized || reportingStatus === "completed";
-  const canApplyRankings =
-    !!match?.score_verified &&
-    !!match?.winning_team_id &&
-    !!match?.losing_team_id &&
-    !match?.rankings_applied &&
-    !match?.result_processed;
 
 
   async function reloadMatch() {
@@ -410,10 +443,214 @@ export default function MatchDetailsPage() {
     }
   }
 
+  async function loadComments() {
+    if (!matchId) return;
+
+    const { data, error } = await supabase
+      .from("match_comments")
+      .select("id, match_id, user_id, team_id, comment, created_at, profiles(username)")
+      .eq("match_id", matchId)
+      .order("created_at", { ascending: true });
+
+    if (!error) {
+      setComments((data || []) as MatchCommentRow[]);
+    }
+  }
+
+  async function getTeamMemberUserIds(teamId: string) {
+    const { data } = await supabase
+      .from("team_members")
+      .select("user_id")
+      .eq("team_id", teamId);
+
+    return (data || [])
+      .map((member: any) => member.user_id)
+      .filter(Boolean) as string[];
+  }
+
+  async function updateTeamRecord(teamId: string, didWin: boolean) {
+    const { data: teamData } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("id", teamId)
+      .maybeSingle();
+
+    if (!teamData) return;
+
+    const currentWins = Number(teamData.wins || 0);
+    const currentLosses = Number(teamData.losses || 0);
+    const currentXp = Number(teamData.xp || 0);
+    const currentRating = Number(teamData.rating_points || 0);
+
+    const updateData: any = {
+      wins: didWin ? currentWins + 1 : currentWins,
+      losses: didWin ? currentLosses : currentLosses + 1,
+      streak: didWin ? "W1" : "L1",
+      xp: didWin ? currentXp + 25 : currentXp + 5,
+    };
+
+    if ("rating_points" in teamData) {
+      updateData.rating_points = didWin
+        ? currentRating + 25
+        : Math.max(0, currentRating - 10);
+    }
+
+    await supabase.from("teams").update(updateData).eq("id", teamId);
+  }
+
+  async function updatePlayerRecords(userIds: string[], didWin: boolean) {
+    for (const userId of userIds) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!profileData) continue;
+
+      const updateData: any = {};
+
+      if ("wins" in profileData) updateData.wins = Number(profileData.wins || 0) + (didWin ? 1 : 0);
+      if ("losses" in profileData) updateData.losses = Number(profileData.losses || 0) + (didWin ? 0 : 1);
+      if ("xp" in profileData) updateData.xp = Number(profileData.xp || 0) + (didWin ? 25 : 5);
+      if ("rank_points" in profileData) updateData.rank_points = Number(profileData.rank_points || 0) + (didWin ? 25 : -10);
+      if ("rating_points" in profileData) updateData.rating_points = Math.max(0, Number(profileData.rating_points || 0) + (didWin ? 25 : -10));
+      if ("streak" in profileData) updateData.streak = didWin ? "W1" : "L1";
+
+      if (Object.keys(updateData).length > 0) {
+        await supabase.from("profiles").update(updateData).eq("id", userId);
+      }
+    }
+  }
+
+  async function finalizeMatchResultAutomatically(updatedMatch: MatchRow) {
+    const winningTeamId = updatedMatch.reported_winner_team_id || updatedMatch.winning_team_id;
+    const losingTeamId = updatedMatch.reported_loser_team_id || updatedMatch.losing_team_id;
+
+    if (!winningTeamId || !losingTeamId) {
+      return "Winner and loser could not be found.";
+    }
+
+    const winningUsers = await getTeamMemberUserIds(winningTeamId);
+    const losingUsers = await getTeamMemberUserIds(losingTeamId);
+
+    await updateTeamRecord(winningTeamId, true);
+    await updateTeamRecord(losingTeamId, false);
+    await updatePlayerRecords(winningUsers, true);
+    await updatePlayerRecords(losingUsers, false);
+
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        winning_team_id: winningTeamId,
+        losing_team_id: losingTeamId,
+        status: "completed",
+        reporting_status: "completed",
+        score_confirmed_at: new Date().toISOString(),
+        score_verified: true,
+        score_verified_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        finalized: true,
+        finalized_at: new Date().toISOString(),
+        finalized_by: currentUser?.id || null,
+        rankings_applied: true,
+        result_processed: true,
+        ranking_change_applied_at: new Date().toISOString(),
+        winning_user_ids: winningUsers,
+        losing_user_ids: losingUsers,
+      })
+      .eq("id", updatedMatch.id);
+
+    if (error) return error.message;
+    return "";
+  }
+
+  async function handlePostComment() {
+    if (!match || !commentsUnlocked || commentLoading) return;
+
+    const text = commentText.trim();
+    if (!text) return;
+
+    const verifiedUserTeamId = await verifyCurrentUserMatchTeam();
+    if (!verifiedUserTeamId || !currentUser?.id) {
+      setCommentMessage("Only players from this match can post a comment.");
+      return;
+    }
+
+    setCommentLoading(true);
+    setCommentMessage("");
+
+    const { error } = await supabase.from("match_comments").insert({
+      match_id: match.id,
+      user_id: currentUser.id,
+      team_id: verifiedUserTeamId,
+      comment: text,
+    });
+
+    setCommentLoading(false);
+
+    if (error) {
+      setCommentMessage("Comment could not be posted. Create the match_comments table if it does not exist.");
+      return;
+    }
+
+    setCommentText("");
+    await loadComments();
+  }
+
+  async function verifyCurrentUserMatchTeam() {
+    if (!match || !currentUser?.id) return "";
+
+    const teamIds = [match.posting_team_id, match.accepting_team_id].filter(Boolean) as string[];
+    if (teamIds.length === 0) return "";
+
+    if (userTeamId && teamIds.includes(userTeamId)) {
+      return userTeamId;
+    }
+
+    const ownedTeam = [postingTeam, acceptingTeam].find(
+      (team) => team?.owner_id === currentUser.id && teamIds.includes(team.id)
+    );
+
+    if (ownedTeam?.id) {
+      setUserTeamId(ownedTeam.id);
+      setCanManageMatch(true);
+      return ownedTeam.id;
+    }
+
+    const { data: memberRows } = await supabase
+      .from("team_members")
+      .select("team_id, role")
+      .eq("user_id", currentUser.id)
+      .in("team_id", teamIds);
+
+    const allowedRoles = ["leader", "co-leader", "coleader", "captain", "owner"];
+    const allowedMember = ((memberRows || []) as TeamMemberRow[]).find((member) =>
+      allowedRoles.includes(String(member.role || "").toLowerCase())
+    );
+
+    if (allowedMember?.team_id) {
+      setUserTeamId(allowedMember.team_id);
+      setCanManageMatch(true);
+      return allowedMember.team_id;
+    }
+
+    setUserTeamId("");
+    setCanManageMatch(false);
+    return "";
+  }
+
   async function handleSubmitScore() {
-    if (!match || !canSubmitScore || actionLoading) return;
+    if (!match || actionLoading) return;
 
     setActionMessage("");
+
+    const verifiedUserTeamId = await verifyCurrentUserMatchTeam();
+
+    if (!canReportScore || !verifiedUserTeamId || scoreAlreadyReported || isFinalized || isDisputed || isCompleted) {
+      setActionMessage("Only a verified match team leader, co-leader, captain, or owner can report this score.");
+      return;
+    }
 
     const postScore = Number(postingScore);
     const acceptScore = Number(acceptingScore);
@@ -439,13 +676,13 @@ export default function MatchDetailsPage() {
     const reportedLoserTeamId =
       postScore > acceptScore ? match.accepting_team_id : match.posting_team_id;
 
-    if (!reportedWinnerTeamId || !reportedLoserTeamId || !userTeamId) {
+    if (!reportedWinnerTeamId || !reportedLoserTeamId || !verifiedUserTeamId) {
       setActionMessage("Match teams could not be verified.");
       return;
     }
 
     const confirmationTeamId =
-      userTeamId === match.posting_team_id ? match.accepting_team_id : match.posting_team_id;
+      verifiedUserTeamId === match.posting_team_id ? match.accepting_team_id : match.posting_team_id;
 
     if (!confirmationTeamId) {
       setActionMessage("Opponent team could not be verified.");
@@ -464,7 +701,7 @@ export default function MatchDetailsPage() {
       .update({
         posting_team_score: postScore,
         accepting_team_score: acceptScore,
-        reported_by_team_id: userTeamId,
+        reported_by_team_id: verifiedUserTeamId,
         reported_winner_team_id: reportedWinnerTeamId,
         reported_loser_team_id: reportedLoserTeamId,
         confirmation_team_id: confirmationTeamId,
@@ -474,7 +711,7 @@ export default function MatchDetailsPage() {
       })
       .eq("id", match.id)
       .eq("finalized", false)
-      .eq("reporting_status", "none");
+      .or("reporting_status.is.null,reporting_status.eq.none");
 
     setActionLoading(false);
 
@@ -490,38 +727,29 @@ export default function MatchDetailsPage() {
   async function handleConfirmScore() {
     if (!match || !canConfirmScore || actionLoading) return;
 
-    if (!window.confirm("Confirm this result? This will complete the match, but ranking points will be applied in the finalization step.")) {
+    if (!window.confirm("Confirm this result? The match will be completed and rankings will update automatically.")) {
       return;
     }
 
     setActionLoading(true);
     setActionMessage("");
 
-    const { error } = await supabase
-      .from("matches")
-      .update({
-        winning_team_id: match.reported_winner_team_id,
-        losing_team_id: match.reported_loser_team_id,
-        status: "completed",
-        reporting_status: "completed",
-        score_confirmed_at: new Date().toISOString(),
-        score_verified: true,
-        score_verified_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", match.id)
-      .eq("finalized", false)
-      .eq("reporting_status", "awaiting_confirmation")
-      .eq("confirmation_team_id", userTeamId);
+    const updatedMatch: MatchRow = {
+      ...match,
+      winning_team_id: match.reported_winner_team_id,
+      losing_team_id: match.reported_loser_team_id,
+    };
+
+    const finalizeError = await finalizeMatchResultAutomatically(updatedMatch);
 
     setActionLoading(false);
 
-    if (error) {
-      setActionMessage("Result could not be confirmed.");
+    if (finalizeError) {
+      setActionMessage("Result confirmed, but rankings could not auto-update: " + finalizeError);
       return;
     }
 
-    setActionMessage("Result confirmed. Match is now completed.");
+    setActionMessage("Result confirmed. Match completed and rankings updated.");
     await reloadMatch();
   }
 
@@ -558,90 +786,6 @@ export default function MatchDetailsPage() {
     await reloadMatch();
   }
 
-
-  async function handleApplyRankings() {
-    if (!match || !canApplyRankings || actionLoading) return;
-
-    setActionLoading(true);
-    setActionMessage("");
-
-    const winningTeamId = match.winning_team_id;
-    const losingTeamId = match.losing_team_id;
-
-    if (!winningTeamId || !losingTeamId) {
-      setActionLoading(false);
-      setActionMessage("Winner and loser are required before rankings can apply.");
-      return;
-    }
-
-    let winningUsers = match.winning_user_ids || [];
-    let losingUsers = match.losing_user_ids || [];
-
-    if (winningUsers.length === 0 || losingUsers.length === 0) {
-      const { data: members } = await supabase
-        .from("team_members")
-        .select("team_id, user_id")
-        .in("team_id", [winningTeamId, losingTeamId]);
-
-      winningUsers =
-        members
-          ?.filter((member: any) => member.team_id === winningTeamId)
-          .map((member: any) => member.user_id)
-          .filter(Boolean) || [];
-
-      losingUsers =
-        members
-          ?.filter((member: any) => member.team_id === losingTeamId)
-          .map((member: any) => member.user_id)
-          .filter(Boolean) || [];
-    }
-
-    if (winningUsers.length === 0 || losingUsers.length === 0) {
-      setActionLoading(false);
-      setActionMessage("Could not find players for both teams.");
-      return;
-    }
-
-    const { error: applyError } = await supabase.rpc("apply_final_match_result", {
-      winning_team_id: winningTeamId,
-      losing_team_id: losingTeamId,
-      winning_user_ids: winningUsers,
-      losing_user_ids: losingUsers,
-      is_forfeit: false,
-    });
-
-    if (applyError) {
-      setActionLoading(false);
-      setActionMessage("Rankings could not be applied.");
-      return;
-    }
-
-    const { error: lockError } = await supabase
-      .from("matches")
-      .update({
-        finalized: true,
-        finalized_at: new Date().toISOString(),
-        finalized_by: currentUser?.id || null,
-        rankings_applied: true,
-        result_processed: true,
-        ranking_change_applied_at: new Date().toISOString(),
-        winning_user_ids: winningUsers,
-        losing_user_ids: losingUsers,
-      })
-      .eq("id", match.id)
-      .eq("rankings_applied", false)
-      .eq("result_processed", false);
-
-    setActionLoading(false);
-
-    if (lockError) {
-      setActionMessage("Rankings applied, but match lock failed. Check match record.");
-      return;
-    }
-
-    setActionMessage("Rankings applied.");
-    await reloadMatch();
-  }
 
   return (
     <>
@@ -1501,17 +1645,6 @@ export default function MatchDetailsPage() {
                     </div>
                   )}
 
-                  {canApplyRankings && (
-                    <button
-                      className="confirm-btn"
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={handleApplyRankings}
-                    >
-                      Apply Rankings
-                    </button>
-                  )}
-
                   {reportingStatus === "disputed" && (
                     <div className="score-note">
                       Match is disputed. Staff must resolve this result.
@@ -1535,21 +1668,42 @@ export default function MatchDetailsPage() {
                   <div className="comment-box">
                     {commentsUnlocked ? (
                       <>
-                        <div className="comment">
-                          <span className="comment-time">After Match</span>
-                          <strong>GameBattles</strong> One comment per player is allowed.
-                        </div>
+                        {comments.length > 0 ? (
+                          comments.map((item) => (
+                            <div className="comment" key={item.id}>
+                              <span className="comment-time">
+                                {item.created_at ? new Date(item.created_at).toLocaleString() : "After Match"}
+                              </span>
+                              <strong>{item.profiles?.username || "Player"}</strong> {item.comment}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="comment">
+                            <span className="comment-time">After Match</span>
+                            <strong>GameBattles</strong> No comments yet.
+                          </div>
+                        )}
 
                         <div className="comment-form">
                           <input
                             className="comment-input"
                             type="text"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
                             placeholder="Leave your one match comment..."
+                            disabled={commentLoading}
                           />
-                          <button className="post-btn" type="button">
+                          <button
+                            className="post-btn"
+                            type="button"
+                            disabled={commentLoading || !commentText.trim()}
+                            onClick={handlePostComment}
+                          >
                             Post
                           </button>
                         </div>
+
+                        {commentMessage && <div className="action-message">{commentMessage}</div>}
                       </>
                     ) : (
                       <>
