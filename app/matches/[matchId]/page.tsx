@@ -448,41 +448,23 @@ export default function MatchDetailsPage() {
   async function loadComments() {
     if (!matchId) return;
 
-    const { data, error } = await supabase
-      .from("match_comments")
-      .select("id, match_id, user_id, team_id, comment, created_at")
-      .eq("match_id", matchId)
-      .order("created_at", { ascending: true });
+    const { data, error } = await supabase.rpc("get_match_comments", {
+      match_uuid: matchId,
+    });
 
     if (error) {
       setCommentMessage("Comments could not be loaded: " + error.message);
       return;
     }
 
-    const rows = ((data || []) as MatchCommentRow[]).filter((row) => row.comment);
-    const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean))) as string[];
-
-    if (userIds.length === 0) {
-      setComments(rows);
-      return;
-    }
-
-    const { data: profileRows } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .in("id", userIds);
-
-    const usernameById = new Map<string, string>();
-    (profileRows || []).forEach((profile: any) => {
-      if (profile.id) usernameById.set(profile.id, profile.username || "Player");
-    });
-
-    setComments(
-      rows.map((row) => ({
+    const rows = ((data || []) as MatchCommentRow[])
+      .filter((row) => row.comment)
+      .map((row) => ({
         ...row,
-        username: row.user_id ? usernameById.get(row.user_id) || "Player" : "Player",
-      }))
-    );
+        username: row.username || "Player",
+      }));
+
+    setComments(rows);
   }
 
   async function getTeamMemberUserIds(teamId: string) {
@@ -513,7 +495,7 @@ export default function MatchDetailsPage() {
     const updateData: any = {
       wins: didWin ? currentWins + 1 : currentWins,
       losses: didWin ? currentLosses : currentLosses + 1,
-      streak: didWin ? "W1" : "L1",
+      streak: didWin ? Number(teamData.streak || 0) + 1 : -1,
       xp: didWin ? currentXp + 25 : currentXp + 5,
     };
 
@@ -614,25 +596,24 @@ export default function MatchDetailsPage() {
     setCommentLoading(true);
     setCommentMessage("");
 
-    const { error } = await supabase
-      .from("match_comments")
-      .insert({
-        match_id: match.id,
-        user_id: currentUser.id,
-        team_id: verifiedUserTeamId,
-        comment: text,
-      });
+    const { data, error } = await supabase.rpc("post_match_comment", {
+      match_uuid: match.id,
+      poster_user_uuid: currentUser.id,
+      poster_team_uuid: verifiedUserTeamId,
+      body_text: text,
+    });
 
     setCommentLoading(false);
 
     if (error) {
-      if (error.code === "23505") {
-        setCommentMessage("You already posted your one match comment.");
-        await loadComments();
-        return;
-      }
-
       setCommentMessage("Comment could not be posted: " + error.message);
+      return;
+    }
+
+    const result = data as any;
+    if (result && result.ok === false) {
+      setCommentMessage(result.message || "Comment could not be posted.");
+      await loadComments();
       return;
     }
 
@@ -797,6 +778,7 @@ export default function MatchDetailsPage() {
 
     setActionMessage("Result confirmed. Match completed and rankings updated.");
     await reloadMatch();
+    await loadComments();
   }
 
   async function handleDisputeScore() {
