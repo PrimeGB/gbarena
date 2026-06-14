@@ -34,6 +34,7 @@ type TopTeam = {
   id: string;
   name: string;
   record: string;
+  role: string;
   logo_url?: string | null;
 };
 
@@ -122,6 +123,28 @@ function ProfilePageContent() {
       .toUpperCase();
   }
 
+  function ordinalRank(value: number) {
+    const mod100 = value % 100;
+    let suffix = "th";
+
+    if (mod100 < 11 || mod100 > 13) {
+      const mod10 = value % 10;
+      if (mod10 === 1) suffix = "st";
+      if (mod10 === 2) suffix = "nd";
+      if (mod10 === 3) suffix = "rd";
+    }
+
+    return { number: String(value), suffix };
+  }
+
+  function prettyRole(value: string | null | undefined) {
+    const clean = String(value || "member").toLowerCase();
+    if (clean === "leader") return "Leader";
+    if (clean === "co-leader" || clean === "coleader") return "Co-Leader";
+    if (clean === "captain") return "Captain";
+    return "Member";
+  }
+
   useEffect(() => {
     if (!currentUser?.id) {
       setCurrentProfileName("");
@@ -177,7 +200,7 @@ function ProfilePageContent() {
             .select("id", { count: "exact", head: true })
             .gt("gb_rank_points", rankPoints);
 
-          setGbRankDisplay(`#${(count || 0) + 1}`);
+          setGbRankDisplay(`${(count || 0) + 1}`);
         }
 
         if (
@@ -192,7 +215,7 @@ function ProfilePageContent() {
 
     supabase
       .from("team_members")
-      .select("team_id, teams(id, name, logo_url, wins, losses, created_at)")
+      .select("team_id, role, teams(id, name, logo_url, wins, losses, created_at)")
       .eq("user_id", viewedUserId)
       .limit(4)
       .then(({ data }) => {
@@ -207,6 +230,7 @@ function ProfilePageContent() {
                 id: team.id,
                 name: team.name || "Unnamed Team",
                 record: `${team.wins || 0} - ${team.losses || 0}`,
+                role: prettyRole((row as any).role),
                 logo_url: team.logo_url || null,
               };
             })
@@ -337,6 +361,10 @@ function ProfilePageContent() {
   const gbWins = profile?.gb_wins || 0;
   const gbLosses = profile?.gb_losses || 0;
   const gbRankPoints = profile?.gb_rank_points || 0;
+  const statusText = isViewingOwnProfile ? "Online" : "Offline";
+  const statusClass = isViewingOwnProfile ? "status-online" : "status-offline";
+  const rankNumber = Number(gbRankDisplay);
+  const rankParts = Number.isFinite(rankNumber) && rankNumber > 0 ? ordinalRank(rankNumber) : null;
   const emptyTeamSlots = Math.max(0, 4 - topTeams.length);
 
   return (
@@ -738,7 +766,7 @@ function ProfilePageContent() {
           margin-bottom:5px;
           display:flex;
           align-items:stretch;
-          min-height:88px;
+          min-height:104px;
         }
 
         .gb-rank{
@@ -760,12 +788,29 @@ function ProfilePageContent() {
 
         .gb-rank-name{
           color:#fff;
-          font-size:32px;
+          font-size:36px;
           font-weight:bold;
           flex:1;
           display:flex;
           align-items:center;
           justify-content:center;
+        }
+
+        .rank-ordinal{
+          display:inline-flex;
+          align-items:flex-start;
+          justify-content:center;
+          line-height:1;
+          color:#fff;
+        }
+
+        .rank-suffix{
+          font-size:14px;
+          color:#fff;
+          margin-left:2px;
+          margin-top:9px;
+          line-height:1;
+          text-transform:lowercase;
         }
 
         .gb-rank-points{
@@ -837,6 +882,21 @@ function ProfilePageContent() {
 
         .system-pc{
           color:#d7d7d7 !important;
+        }
+
+        .status-online{
+          color:#00ff88 !important;
+          font-weight:bold;
+        }
+
+        .status-away{
+          color:#ffd35a !important;
+          font-weight:bold;
+        }
+
+        .status-offline{
+          color:#ff5a5a !important;
+          font-weight:bold;
         }
 
         .main-lower-grid{
@@ -1126,8 +1186,9 @@ function ProfilePageContent() {
         .team-logo-area img{
           width:100%;
           height:100%;
-          object-fit:cover;
+          object-fit:contain;
           display:block;
+          padding:4px;
         }
 
         .team-logo-placeholder{
@@ -1144,15 +1205,31 @@ function ProfilePageContent() {
         }
 
         .team-record{
-          height:22px;
+          min-height:32px;
           background:linear-gradient(to bottom,#10283d,#050c14);
           border-top:1px solid #2f6f9f;
           color:#f2c14e;
-          font-size:11px;
+          font-size:10px;
           font-weight:bold;
           display:flex;
+          flex-direction:column;
           align-items:center;
           justify-content:center;
+          line-height:13px;
+          text-transform:uppercase;
+        }
+
+        .team-role{
+          color:#fff;
+          font-size:10px;
+          font-weight:900;
+          letter-spacing:.4px;
+          text-shadow:0 1px 2px #000;
+        }
+
+        .team-score{
+          color:#f2c14e;
+          font-size:11px;
         }
 
         .display-card img{
@@ -1334,11 +1411,7 @@ function ProfilePageContent() {
                   <div className="box-body">
                     <div className="avatar-box">PLAYER IMAGE</div>
 
-                    <a className="username prime-link" href="/profile">
-                      {playerName}
-                    </a>
-
-                    <div className="stat-row"><span>Overall Record</span><span>{gbWins} - {gbLosses}</span></div>
+                    
                     <div className="stat-row"><span>Reputation</span><span>100%</span></div>
                     <div className="stat-row"><span>Joined</span><span>3/12-2026</span></div>
                   </div>
@@ -1355,9 +1428,7 @@ function ProfilePageContent() {
                         <a className="quick-link" href="/profile/edit">Edit Profile</a>
                         <a className="quick-link" href="/profile/teams">My Teams</a>
                         <a className="quick-link" href="/profile/friends">My Friends</a>
-                        <a className="quick-link" href="/profile/matches">My Matches</a>
                         <a className="quick-link" href="/profile/awards">My Awards</a>
-                        <a className="quick-link" href="/profile/awards">Manage Displayed Awards</a>
                         <a className="quick-link" href="/profile/friends/invite">Invite Friends</a>
                         <a className="quick-link" href="#">Account Settings</a>
                         <a className="quick-link" href="#">Messages</a>
@@ -1447,7 +1518,16 @@ function ProfilePageContent() {
                 <div className="gb-rank-box">
                   <div className="gb-rank">
                     <div className="gb-rank-title">GB Rank</div>
-                    <div className="gb-rank-name">{gbRankDisplay}</div>
+                    <div className="gb-rank-name">
+                      {rankParts ? (
+                        <span className="rank-ordinal">
+                          <span>{rankParts.number}</span>
+                          <sup className="rank-suffix">{rankParts.suffix}</sup>
+                        </span>
+                      ) : (
+                        gbRankDisplay
+                      )}
+                    </div>
                     <div className="gb-rank-points">GB Rank Points: {gbRankPoints}</div>
                   </div>
                 </div>
@@ -1471,7 +1551,7 @@ function ProfilePageContent() {
 
                         <tr>
                           <td>Current Status</td>
-                          <td>Online</td>
+                          <td className={statusClass}>{statusText}</td>
                           <td>
                             <a className="system-link system-playstation" href="/profile/edit">
                               PlayStation
@@ -1569,7 +1649,10 @@ function ProfilePageContent() {
                             </div>
                           </a>
 
-                          <div className="team-record">{team.record}</div>
+                          <div className="team-record">
+                            <span className="team-role">{team.role}</span>
+                            <span className="team-score">{team.record}</span>
+                          </div>
                         </div>
                       ))}
 
