@@ -797,16 +797,8 @@ export default function Home() {
 
               <div className="section-title">Social Links</div>
 
-              <a className="side-link" href="/social/discord">
+              <a className="side-link" href="https://discord.gg/nKZdS2BDS6">
                 <span className="social"><span className="social-icon discord-icon">☯</span>Discord</span>
-                <span className="arrow">›</span>
-              </a>
-              <a className="side-link" href="/social/x">
-                <span className="social"><span className="social-icon x-icon">𝕏</span>X / Twitter</span>
-                <span className="arrow">›</span>
-              </a>
-              <a className="side-link" href="/social/youtube">
-                <span className="social"><span className="social-icon youtube-icon">▶</span>YouTube</span>
                 <span className="arrow">›</span>
               </a>
               <a className="side-link" href="/social/tiktok">

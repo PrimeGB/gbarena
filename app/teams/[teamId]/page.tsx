@@ -27,6 +27,24 @@ type TeamData = {
   avatar_url: string | null;
 };
 
+type TeamMatch = {
+  id: string;
+  posting_team_id: string | null;
+  accepting_team_id: string | null;
+  game_mode: string | null;
+  players: string | null;
+  match_time: string | null;
+  best_of: string | null;
+  status: string | null;
+  winning_team_id?: string | null;
+  losing_team_id?: string | null;
+  created_at: string | null;
+};
+
+type TeamNameMap = {
+  [key: string]: string;
+};
+
 function prettyText(value: string | null) {
   if (!value) return "";
   return value
@@ -45,6 +63,66 @@ function normalizeRole(value: string | null | undefined): TeamRole {
   return "member";
 }
 
+
+function getMatchTimeMs(match: TeamMatch) {
+  const rawTime = match.match_time || match.created_at;
+
+  if (!rawTime) return 0;
+
+  const parsed = new Date(rawTime).getTime();
+
+  if (Number.isNaN(parsed)) return 0;
+
+  return parsed;
+}
+
+function resultText(match: TeamMatch, teamId: string) {
+  const status = String(match.status || "").toLowerCase();
+
+  if (status === "completed") {
+    if (match.winning_team_id && String(match.winning_team_id) === String(teamId)) {
+      return "W";
+    }
+
+    if (match.losing_team_id && String(match.losing_team_id) === String(teamId)) {
+      return "L";
+    }
+
+    return "W/L";
+  }
+
+  if (status === "disputed") return "Disputed";
+
+  const matchTime = getMatchTimeMs(match);
+
+  if (matchTime && Date.now() >= matchTime) {
+    return "Playing";
+  }
+
+  return "Upcoming";
+}
+
+function resultClass(match: TeamMatch, teamId: string) {
+  const result = resultText(match, teamId);
+
+  if (result === "W") return "result-win";
+  if (result === "L") return "result-loss";
+  if (result === "Disputed") return "result-dispute";
+  if (result === "Playing") return "result-playing";
+
+  return "result-upcoming";
+}
+
+function shortDate(value: string | null) {
+  if (!value) return "TBD";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
 export default function TeamPage() {
   const params = useParams();
   const router = useRouter();
@@ -58,6 +136,8 @@ export default function TeamPage() {
   const [deleting, setDeleting] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [playerSearch, setPlayerSearch] = useState("");
+  const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
+  const [teamNames, setTeamNames] = useState<TeamNameMap>({});
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -77,6 +157,8 @@ export default function TeamPage() {
   const ladderUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`;
   const rulesUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rules`;
 
+  const visibleMatches = teamMatches.slice(0, 20);
+
   const players: Player[] = [
     { id: 1, username: "Prime", rank: "Free Agent", record: "0-0" },
     { id: 2, username: "ShadowShot", rank: "Free Agent", record: "0-0" },
@@ -95,6 +177,17 @@ export default function TeamPage() {
     );
   }, [playerSearch]);
 
+  function getOpponentName(match: TeamMatch) {
+    const opponentId =
+      String(match.posting_team_id) === String(teamId)
+        ? match.accepting_team_id
+        : match.posting_team_id;
+
+    if (!opponentId) return "Opponent TBD";
+
+    return teamNames[opponentId] || "Opponent";
+  }
+
   useEffect(() => {
     async function loadTeamPage() {
       if (!teamId) return;
@@ -111,6 +204,43 @@ export default function TeamPage() {
 
       if (teamData) {
         setTeam(teamData as TeamData);
+      }
+
+      const { data: matchesData, error: matchesError } = await supabase
+        .from("matches")
+        .select(
+          "id, posting_team_id, accepting_team_id, game_mode, players, match_time, best_of, status, winning_team_id, losing_team_id, created_at"
+        )
+        .or(`posting_team_id.eq.${teamId},accepting_team_id.eq.${teamId}`)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (!matchesError) {
+        const loadedMatches = (matchesData || []) as TeamMatch[];
+        setTeamMatches(loadedMatches);
+
+        const opponentIds = loadedMatches
+          .map((match) =>
+            String(match.posting_team_id) === String(teamId)
+              ? match.accepting_team_id
+              : match.posting_team_id
+          )
+          .filter(Boolean) as string[];
+
+        if (opponentIds.length > 0) {
+          const { data: opponentTeams } = await supabase
+            .from("teams")
+            .select("id, name")
+            .in("id", opponentIds);
+
+          const nameMap: TeamNameMap = {};
+
+          (opponentTeams || []).forEach((opponent: any) => {
+            nameMap[opponent.id] = opponent.name || "Opponent";
+          });
+
+          setTeamNames(nameMap);
+        }
       }
 
       if ((user as any)?.id) {
@@ -343,6 +473,101 @@ export default function TeamPage() {
 
         .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
+
+
+        .match-list-wrap{
+          max-height:150px;
+          overflow-y:auto;
+          overflow-x:hidden;
+          background:#02070c;
+          padding:5px 6px;
+          scrollbar-gutter:stable;
+        }
+
+        .match-list-row{
+          min-height:29px;
+          display:grid;
+          grid-template-columns:1fr 1fr 1fr 1fr;
+          align-items:center;
+          width:100%;
+          border-bottom:1px solid rgba(255,255,255,.14);
+          color:#cfe2f2;
+          font-size:11px;
+          line-height:29px;
+          background:#02070c;
+        }
+
+        .match-list-row:last-child{
+          border-bottom:0;
+        }
+
+        .match-list-date{
+          color:#8aa7c0;
+          font-weight:900;
+          text-align:center;
+          white-space:nowrap;
+        }
+
+        .match-list-opponent{
+          color:#fff;
+          font-weight:900;
+          text-align:center;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          min-width:0;
+          padding:0 4px;
+        }
+
+        .match-list-details{
+          text-align:center;
+          white-space:nowrap;
+        }
+
+        .match-list-details a{
+          color:#7fc7ff;
+          font-size:10px;
+          font-weight:900;
+          text-decoration:none;
+          text-transform:uppercase;
+        }
+
+        .match-list-details a:hover{
+          color:#d7ad4a;
+        }
+
+        .match-list-result{
+          text-align:center;
+          font-weight:900;
+          white-space:nowrap;
+          overflow:visible;
+          font-size:10px;
+        }
+
+        .result-win{
+          color:#36e86b !important;
+          font-weight:900;
+        }
+
+        .result-loss{
+          color:#ff5555 !important;
+          font-weight:900;
+        }
+
+        .result-upcoming{
+          color:#d7ad4a !important;
+          font-weight:900;
+        }
+
+        .result-playing{
+          color:#ffd35a !important;
+          font-weight:900;
+        }
+
+        .result-dispute{
+          color:#ff5555 !important;
+          font-weight:900;
+        }
 
         .roster-table th{text-align:left;}
         .roster-table td{text-align:left;}
@@ -602,7 +827,30 @@ export default function TeamPage() {
                 <div className="mini-grid">
                   <div className="panel">
                     <div className="panel-title">Upcoming & Recent Matches</div>
-                    <div className="empty-text">No matches have been played or scheduled.</div>
+
+                    {visibleMatches.length === 0 ? (
+                      <div className="empty-text">No matches have been played or scheduled.</div>
+                    ) : (
+                      <div className="match-list-wrap">
+                        {visibleMatches.map((match) => (
+                          <div className="match-list-row" key={match.id}>
+                            <div className="match-list-date">{shortDate(match.match_time || match.created_at)}</div>
+
+                            <div className="match-list-opponent">
+                              {getOpponentName(match)}
+                            </div>
+
+                            <div className="match-list-details">
+                              <a href={`/matches/${match.id}`}>Details</a>
+                            </div>
+
+                            <div className={`match-list-result ${resultClass(match, teamId)}`}>
+                              {resultText(match, teamId)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="panel">

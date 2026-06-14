@@ -566,6 +566,15 @@ export default function JoinPage() {
         return;
       }
 
+      await supabase.rpc("send_system_message", {
+  target_user_id: userData.user.id,
+  message_subject: "Welcome To GameBattles",
+  message_body:
+    "Welcome to GameBattles and thank you for joining our community.\n\nGameBattles is built around competitive gaming, teamwork, rivalries, ladders, tournaments, and bringing players together across multiple platforms and titles.\n\nGetting Started:\n• Complete your profile\n• Link your gaming accounts\n• Add friends\n• Create or join a team\n• Explore available ladders\n• Start competing and building your record\n\nCommunity Expectations:\nAll members are expected to treat other players with respect, compete fairly, and follow all site rules and ladder regulations.\n\nPlease remember that cheating, harassment, account abuse, match manipulation, or attempts to exploit the platform may result in warnings, suspensions, ladder restrictions, or permanent account removal.\n\nBy continuing to use GameBattles you agree to follow all posted rules, policies, and future updates made by staff.\n\nGood luck and welcome to the competition.\n\n— The GameBattles Staff Team",
+  message_type_value: "system",
+  related_type_value: "welcome",
+  related_id_value: null,
+});
       setShowAgreement(false);
       setSuccess(true);
       setLoading(false);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
 
@@ -11,6 +12,9 @@ type Profile = {
   psn_gt?: string | null;
   nintendo_gt?: string | null;
   pc_gt?: string | null;
+  gb_wins?: number | null;
+  gb_losses?: number | null;
+  gb_rank_points?: number | null;
 };
 
 type AppUser = {
@@ -33,54 +37,68 @@ type TopTeam = {
   logo_url?: string | null;
 };
 
-export default function ProfilePage() {
+type TopFriend = {
+  id: string;
+  username: string;
+};
+
+function ProfilePageContent() {
   const { user, loading } = useUser();
+  const searchParams = useSearchParams();
   const currentUser = user as AppUser | null;
+  const requestedUserId = String(searchParams.get("userId") || "");
+  const viewedUserId = requestedUserId || currentUser?.id || "";
+  const isViewingOwnProfile =
+    !!currentUser?.id && (!requestedUserId || requestedUserId === currentUser.id);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
+  const [topFriends, setTopFriends] = useState<TopFriend[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [currentProfileName, setCurrentProfileName] = useState("");
+  const [unreadInboxCount, setUnreadInboxCount] = useState(0);
+  const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
 
   const favoriteSystem = "PlayStation";
 
   const topAwards: Award[] = [
     {
       id: 1,
-      name: "Founder Trophy",
-      type: "trophy",
-      label: "F",
-      description: "Original launch-era member.",
+      name: "Award Slot",
+      type: "shield",
+      label: "?",
+      description: "Waiting to earn.",
     },
     {
       id: 2,
-      name: "Ladder Champion",
+      name: "Award Slot",
       type: "shield",
-      label: "#1",
-      description: "Reached the top of a ladder.",
+      label: "?",
+      description: "Waiting to earn.",
     },
     {
       id: 3,
-      name: "Beta Tester Medal",
-      type: "medal",
-      label: "B",
-      description: "Helped test before launch.",
+      name: "Award Slot",
+      type: "shield",
+      label: "?",
+      description: "Waiting to earn.",
     },
     {
       id: 4,
-      name: "Top 10 Ribbon",
-      type: "ribbon",
-      label: "10",
-      description: "Finished inside the top ten.",
+      name: "Award Slot",
+      type: "shield",
+      label: "?",
+      description: "Waiting to earn.",
     },
     {
       id: 5,
-      name: "Hall of Fame Plaque",
-      type: "plaque",
-      label: "HOF",
-      description: "Elite community recognition.",
+      name: "Award Slot",
+      type: "shield",
+      label: "?",
+      description: "Waiting to earn.",
     },
   ];
 
@@ -105,22 +123,69 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    if (!currentUser) {
-      setProfile(null);
-      setTopTeams([]);
+    if (!currentUser?.id) {
+      setCurrentProfileName("");
+      setUnreadInboxCount(0);
       return;
     }
 
     supabase
       .from("profiles")
-      .select("username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt")
+      .select("username")
       .eq("id", currentUser.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
+        setCurrentProfileName(data?.username || "");
+      });
+
+    supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", currentUser.id)
+      .eq("is_read", false)
+      .eq("is_archived", false)
+      .then(({ count }) => {
+        setUnreadInboxCount(count || 0);
+      });
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!viewedUserId) {
+      setProfile(null);
+      setTopTeams([]);
+      setTopFriends([]);
+      setGbRankDisplay("Unranked");
+      return;
+    }
+
+    supabase
+      .from("profiles")
+      .select("username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gb_wins, gb_losses, gb_rank_points")
+      .eq("id", viewedUserId)
+      .single()
+      .then(async ({ data }) => {
         const loadedProfile = data || null;
         setProfile(loadedProfile);
 
-        if (!loadedProfile && currentUser.email && usernameInput === "") {
+        const rankPoints = loadedProfile?.gb_rank_points || 0;
+
+        if (rankPoints <= 0) {
+          setGbRankDisplay("Unranked");
+        } else {
+          const { count } = await supabase
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .gt("gb_rank_points", rankPoints);
+
+          setGbRankDisplay(`#${(count || 0) + 1}`);
+        }
+
+        if (
+          isViewingOwnProfile &&
+          !loadedProfile &&
+          currentUser?.email &&
+          usernameInput === ""
+        ) {
           setUsernameInput(currentUser.email.split("@")[0] || "");
         }
       });
@@ -128,7 +193,7 @@ export default function ProfilePage() {
     supabase
       .from("team_members")
       .select("team_id, teams(id, name, logo_url, wins, losses, created_at)")
-      .eq("user_id", currentUser.id)
+      .eq("user_id", viewedUserId)
       .limit(4)
       .then(({ data }) => {
         const loadedTeams =
@@ -149,7 +214,43 @@ export default function ProfilePage() {
 
         setTopTeams(loadedTeams as TopTeam[]);
       });
-  }, [currentUser, usernameInput]);
+
+    supabase
+      .from("friend_requests")
+      .select("requester_id, recipient_id, status")
+      .eq("status", "accepted")
+      .or(`requester_id.eq.${viewedUserId},recipient_id.eq.${viewedUserId}`)
+      .then(async ({ data }) => {
+        const requests = data || [];
+
+        const friendIds = requests
+          .map((request: any) =>
+            request.requester_id === viewedUserId
+              ? request.recipient_id
+              : request.requester_id
+          )
+          .filter(Boolean)
+          .slice(0, 4);
+
+        if (friendIds.length === 0) {
+          setTopFriends([]);
+          return;
+        }
+
+        const { data: friendProfiles } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("id", friendIds);
+
+        const loadedFriends =
+          friendProfiles?.map((friend: any) => ({
+            id: friend.id,
+            username: friend.username || "Unknown Player",
+          })) || [];
+
+        setTopFriends(loadedFriends as TopFriend[]);
+      });
+  }, [viewedUserId, isViewingOwnProfile, currentUser?.email, usernameInput]);
 
   async function handleSave() {
     if (!currentUser) return;
@@ -185,6 +286,9 @@ export default function ProfilePage() {
         psn_gt: null,
         nintendo_gt: null,
         pc_gt: null,
+        gb_wins: 0,
+        gb_losses: 0,
+        gb_rank_points: 0,
       },
     ]);
 
@@ -208,6 +312,9 @@ export default function ProfilePage() {
       psn_gt: null,
       nintendo_gt: null,
       pc_gt: null,
+      gb_wins: 0,
+      gb_losses: 0,
+      gb_rank_points: 0,
     });
 
     setSaved(true);
@@ -218,7 +325,7 @@ export default function ProfilePage() {
     return <div className="profile-loading">Loading profile.</div>;
   }
 
-  if (!currentUser) {
+  if (!viewedUserId) {
     return (
       <div className="profile-loading">
         You must be logged in to view your profile.
@@ -227,6 +334,9 @@ export default function ProfilePage() {
   }
 
   const playerName = profile?.username || "Prime";
+  const gbWins = profile?.gb_wins || 0;
+  const gbLosses = profile?.gb_losses || 0;
+  const gbRankPoints = profile?.gb_rank_points || 0;
   const emptyTeamSlots = Math.max(0, 4 - topTeams.length);
 
   return (
@@ -378,20 +488,35 @@ export default function ProfilePage() {
         }
 
         .header-ad{
-          width:300px;
-          height:52px;
-          background:#050c14;
-          border:1px solid #244b70;
-          display:block;
+          width:360px;
+          height:64px;
+          background:linear-gradient(to bottom,#0b1d2c,#03070c);
+          border:1px solid #2f6f9f;
+          display:flex;
+          align-items:center;
+          justify-content:center;
           overflow:hidden;
-          box-shadow:inset 0 0 8px rgba(0,0,0,.75);
+          box-shadow:inset 0 0 12px rgba(0,0,0,.85),0 0 9px rgba(47,111,159,.24);
+          opacity:.9;
+        }
+
+        .header-ad:hover{
+          opacity:1;
+          border-color:#f2c14e;
+          box-shadow:inset 0 0 12px rgba(0,0,0,.85),0 0 12px rgba(242,193,78,.28);
         }
 
         .header-ad img{
           width:100%;
           height:100%;
           object-fit:cover;
+          object-position:center;
           display:block;
+          filter:brightness(.88) contrast(1.04) saturate(.9);
+        }
+
+        .header-ad:hover img{
+          filter:brightness(.98) contrast(1.08) saturate(1);
         }
 
         .nav{
@@ -500,6 +625,23 @@ export default function ProfilePage() {
           background:#15324b;
           color:#f2c14e;
           border-color:#2f6f9f;
+        }
+
+        .inbox-tab{
+          position:relative;
+          padding-right:22px;
+        }
+
+        .mail-dot{
+          position:absolute;
+          right:6px;
+          top:4px;
+          width:10px;
+          height:10px;
+          border-radius:50%;
+          background:#e60000;
+          border:1px solid #ff9a9a;
+          box-shadow:0 0 6px rgba(255,0,0,.85);
         }
 
         .profile-grid{
@@ -757,6 +899,17 @@ export default function ProfilePage() {
           background:linear-gradient(to bottom,#172b3c,#080d13);
         }
 
+        .award-card.empty-award{
+          border-color:#2f4d66;
+          background:linear-gradient(to bottom,#0b1b2a,#03070c);
+          opacity:.95;
+        }
+
+        .award-card.empty-award:hover{
+          border-color:#4d86b8;
+          background:linear-gradient(to bottom,#102b43,#050b12);
+        }
+
         .award-icon{
           width:52px;
           height:52px;
@@ -819,6 +972,42 @@ export default function ProfilePage() {
           box-shadow:inset 0 0 8px rgba(255,220,130,.2), 0 2px 4px rgba(0,0,0,.7);
         }
 
+        .award-icon.locked-award{
+          width:52px;
+          height:52px;
+          border-radius:6px;
+          background:
+            linear-gradient(to bottom,rgba(255,255,255,.12),rgba(0,0,0,.3)),
+            linear-gradient(135deg,#27384a,#08111b 58%,#020407);
+          border:1px solid #4d86b8;
+          color:#8aa7c0;
+          box-shadow:inset 0 0 14px rgba(0,0,0,.85),0 0 8px rgba(35,115,190,.18);
+          font-size:22px;
+          font-weight:900;
+        }
+
+        .award-icon.locked-award:before{
+          content:"";
+          position:absolute;
+          top:10px;
+          width:21px;
+          height:15px;
+          border:4px solid #6c8aa3;
+          border-bottom:0;
+          border-radius:12px 12px 0 0;
+        }
+
+        .award-icon.locked-award:after{
+          content:"";
+          position:absolute;
+          bottom:9px;
+          width:28px;
+          height:23px;
+          border-radius:3px;
+          background:linear-gradient(to bottom,#7f99b0,#34495d);
+          box-shadow:inset 0 0 6px rgba(0,0,0,.55);
+        }
+
         .award-name{
           color:#f2c14e;
           font-size:10px;
@@ -878,6 +1067,29 @@ export default function ProfilePage() {
           text-align:center;
           overflow:hidden;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
+        }
+
+        .friend-card{
+          aspect-ratio:1 / 1;
+          background:linear-gradient(to bottom,#10283d,#050c14);
+          border:1px solid #2f6f9f;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:#7fc7ff;
+          font-size:12px;
+          font-weight:bold;
+          text-align:center;
+          overflow:hidden;
+          padding:6px;
+          text-transform:uppercase;
+          box-shadow:inset 0 0 14px rgba(0,0,0,.75);
+        }
+
+        .friend-card:hover{
+          border-color:#f2c14e;
+          color:#f2c14e;
+          background:linear-gradient(to bottom,#173a56,#06101a);
         }
 
         .team-card{
@@ -1032,11 +1244,11 @@ export default function ProfilePage() {
 
             <a
               className="header-ad"
-              href="https://discord.gg/Ue4af2QVCc"
+              href="https://discord.gg/nKZdS2BDS6"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <img src="/discord-ad.png" alt="Join the GameBattles Discord" />
+              <img src="/bc4b22ea-8e19-47ac-8e15-b369edac44fa.png" alt="Join the GameBattles Discord" />
             </a>
           </header>
 
@@ -1077,29 +1289,42 @@ export default function ProfilePage() {
             <a className="tab" href="/profile/photos">Photos</a>
             <a className="tab" href="/teams/create">Create Team</a>
             <a className="tab" href="/players">Find Players</a>
+            <a className="tab inbox-tab" href="/profile/inbox">
+              Inbox
+              {unreadInboxCount > 0 && <span className="mail-dot"></span>}
+            </a>
           </div>
 
           {!profile ? (
-            <div className="box" style={{ marginTop: 8 }}>
-              <div className="box-title">Create Profile</div>
+            isViewingOwnProfile ? (
+              <div className="box" style={{ marginTop: 8 }}>
+                <div className="box-title">Create Profile</div>
 
-              <div className="complete-profile">
-                <p>Enter a username to complete your profile.</p>
+                <div className="complete-profile">
+                  <p>Enter a username to complete your profile.</p>
 
-                <input
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  placeholder="Username"
-                />
+                  <input
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                    placeholder="Username"
+                  />
 
-                <button onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving." : "Complete Profile"}
-                </button>
+                  <button onClick={handleSave} disabled={saving}>
+                    {saving ? "Saving." : "Complete Profile"}
+                  </button>
 
-                {saved && <p className="success">Profile completed.</p>}
-                {error && <p className="error">{error}</p>}
+                  {saved && <p className="success">Profile completed.</p>}
+                  {error && <p className="error">{error}</p>}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="box" style={{ marginTop: 8 }}>
+                <div className="box-title">Profile Not Found</div>
+                <div className="complete-profile">
+                  This player profile could not be found.
+                </div>
+              </div>
+            )
           ) : (
             <div className="profile-grid">
               <aside className="left-column">
@@ -1113,25 +1338,107 @@ export default function ProfilePage() {
                       {playerName}
                     </a>
 
-                    <div className="stat-row"><span>Overall Record</span><span>0 - 0</span></div>
+                    <div className="stat-row"><span>Overall Record</span><span>{gbWins} - {gbLosses}</span></div>
                     <div className="stat-row"><span>Reputation</span><span>100%</span></div>
                     <div className="stat-row"><span>Joined</span><span>3/12-2026</span></div>
                   </div>
                 </div>
 
                 <div className="box control-center-box">
-                  <div className="box-title">Control Center</div>
+                  <div className="box-title">
+                    {isViewingOwnProfile ? "Control Center" : "Player Actions"}
+                  </div>
 
                   <div className="box-body">
-                    <a className="quick-link" href="/profile/edit">Edit Profile</a>
-                    <a className="quick-link" href="/profile/teams">My Teams</a>
-                    <a className="quick-link" href="/profile/friends">My Friends</a>
-                    <a className="quick-link" href="/profile/matches">My Matches</a>
-                    <a className="quick-link" href="/profile/awards">My Awards</a>
-                    <a className="quick-link" href="/profile/awards">Manage Displayed Awards</a>
-                    <a className="quick-link" href="/profile/friends/invite">Invite Friends</a>
-                    <a className="quick-link" href="#">Account Settings</a>
-                    <a className="quick-link" href="#">Messages</a>
+                    {isViewingOwnProfile ? (
+                      <>
+                        <a className="quick-link" href="/profile/edit">Edit Profile</a>
+                        <a className="quick-link" href="/profile/teams">My Teams</a>
+                        <a className="quick-link" href="/profile/friends">My Friends</a>
+                        <a className="quick-link" href="/profile/matches">My Matches</a>
+                        <a className="quick-link" href="/profile/awards">My Awards</a>
+                        <a className="quick-link" href="/profile/awards">Manage Displayed Awards</a>
+                        <a className="quick-link" href="/profile/friends/invite">Invite Friends</a>
+                        <a className="quick-link" href="#">Account Settings</a>
+                        <a className="quick-link" href="#">Messages</a>
+                      </>
+                    ) : (
+                     <>
+  <a
+  className="quick-link"
+  href="#"
+  onClick={async (e) => {
+    e.preventDefault();
+
+    if (!currentUser?.id) return;
+    if (!viewedUserId) return;
+    if (currentUser.id === viewedUserId) return;
+
+    const { data: existing } = await supabase
+      .from("friend_requests")
+      .select("id")
+      .eq("requester_id", currentUser.id)
+      .eq("recipient_id", viewedUserId)
+      .maybeSingle();
+
+    if (existing) {
+      alert("Friend request already sent.");
+      return;
+    }
+
+    const { data: friendRequest, error } = await supabase
+      .from("friend_requests")
+      .insert({
+        requester_id: currentUser.id,
+        recipient_id: viewedUserId,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (error || !friendRequest?.id) {
+      alert("Unable to send friend request.");
+      return;
+    }
+
+    const requesterName = currentProfileName || "A player";
+
+    await supabase.rpc("send_system_message", {
+      target_user_id: viewedUserId,
+      message_subject: "Friend Request",
+      message_body: `${requesterName} would like to add you as a friend.\n\nUse the Accept or Decline buttons in this message to respond to the request.`,
+      message_type_value: "system",
+      related_type_value: "friend_request",
+      related_id_value: friendRequest.id,
+    });
+
+    alert("Friend request sent.");
+  }}
+>
+  Add Friend
+</a>
+
+  <a className="quick-link" href="#">
+    Message Player
+  </a>
+
+  <a className="quick-link" href={`/profile/awards?userId=${viewedUserId}`}>
+    View Player Awards
+  </a>
+
+  <a className="quick-link" href={`/profile/friends?userId=${viewedUserId}`}>
+    View Player Friends
+  </a>
+
+  <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>
+    View Player Teams
+  </a>
+
+  <a className="quick-link" href="/home">
+    Back To Home
+  </a>
+</>
+                    )}
                   </div>
                 </div>
               </aside>
@@ -1140,8 +1447,8 @@ export default function ProfilePage() {
                 <div className="gb-rank-box">
                   <div className="gb-rank">
                     <div className="gb-rank-title">GB Rank</div>
-                    <div className="gb-rank-name">0-0</div>
-                    <div className="gb-rank-points">GB Rank Points</div>
+                    <div className="gb-rank-name">{gbRankDisplay}</div>
+                    <div className="gb-rank-points">GB Rank Points: {gbRankPoints}</div>
                   </div>
                 </div>
 
@@ -1213,10 +1520,8 @@ export default function ProfilePage() {
                     <div className="box-body">
                       <div className="awards-grid">
                         {topAwards.map((award) => (
-                          <div className="award-card" key={award.id}>
-                            <div className={`award-icon ${award.type}`}>
-                              {award.label}
-                            </div>
+                          <div className="award-card empty-award" key={award.id}>
+                            <div className="award-icon locked-award"></div>
                             <div className="award-name">{award.name}</div>
                             <div className="award-desc">{award.description}</div>
                           </div>
@@ -1279,12 +1584,26 @@ export default function ProfilePage() {
 
                 <div className="box right-box">
                   <div className="box-title">Top Friends</div>
+
                   <div className="box-body">
                     <div className="display-grid">
-                      <div className="display-card">Top Friends</div>
-                      <div className="display-card">Top Friends</div>
-                      <div className="display-card">Top Friends</div>
-                      <div className="display-card">Top Friends</div>
+                      {topFriends.map((friend) => (
+                        <a
+                          className="friend-card"
+                          href={`/profile?userId=${friend.id}`}
+                          key={friend.id}
+                        >
+                          {friend.username}
+                        </a>
+                      ))}
+
+                      {Array.from({ length: Math.max(0, 4 - topFriends.length) }).map(
+                        (_, index) => (
+                          <div className="display-card" key={`empty-friend-${index}`}>
+                            Empty Slot
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1296,5 +1615,13 @@ export default function ProfilePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="profile-loading">Loading profile.</div>}>
+      <ProfilePageContent />
+    </Suspense>
   );
 }
