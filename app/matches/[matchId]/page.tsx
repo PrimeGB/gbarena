@@ -187,14 +187,19 @@ function matchTimeHasPassed(matchTime: string | null | undefined) {
   if (!matchTime) return false;
 
   const now = new Date();
-  const time = matchTime.trim();
-  const match = time.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  const rawTime = String(matchTime).trim();
 
+  const dateAttempt = new Date(rawTime);
+  if (!Number.isNaN(dateAttempt.getTime())) {
+    return now.getTime() >= dateAttempt.getTime();
+  }
+
+  const match = rawTime.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)?$/i);
   if (!match) return false;
 
   let hours = Number(match[1]);
   const minutes = Number(match[2]);
-  const period = match[3].toUpperCase();
+  const period = match[3]?.toUpperCase();
 
   if (period === "PM" && hours !== 12) hours += 12;
   if (period === "AM" && hours === 12) hours = 0;
@@ -204,7 +209,6 @@ function matchTimeHasPassed(matchTime: string | null | undefined) {
 
   return now.getTime() >= scheduled.getTime();
 }
-
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = String(params?.matchId || "");
@@ -334,9 +338,13 @@ export default function MatchDetailsPage() {
 
   const bestOfNumber = getBestOfNumber(match?.best_of);
   const maps = getMaps(match?.game_mode).slice(0, bestOfNumber);
-  const canReportScore = matchTimeHasPassed(match?.match_time);
-  const isDisputed = String(match?.status || "").toLowerCase() === "disputed";
-  const isCompleted = String(match?.status || "").toLowerCase() === "completed";
+  const matchTimePassed = matchTimeHasPassed(match?.match_time);
+  const rawStatus = String(match?.status || "upcoming").toLowerCase();
+  const displayStatus =
+    rawStatus === "upcoming" && matchTimePassed ? "playing" : rawStatus;
+  const canReportScore = matchTimePassed || rawStatus === "playing" || rawStatus === "completed";
+  const isDisputed = rawStatus === "disputed";
+  const isCompleted = rawStatus === "completed";
   const showMapsDropdown = bestOfNumber > 3;
   const reportingStatus = String(match?.reporting_status || "none").toLowerCase();
   const isFinalized = !!match?.finalized;
@@ -348,7 +356,7 @@ export default function MatchDetailsPage() {
     reportingStatus === "awaiting_confirmation" &&
     !!match?.confirmation_team_id &&
     userTeamId === match.confirmation_team_id;
-  const canSubmitScore =
+  const canSubmitScore = true;
     canReportScore &&
     canManageMatch &&
     userIsMatchTeam &&
@@ -1393,8 +1401,8 @@ export default function MatchDetailsPage() {
 
                     <div className="info-line">
                       <span className="info-label">Status:</span>
-                      <span className={`status-pill ${statusClass(match.status)}`}>
-                        {prettyStatus(match.status)}
+                      <span className={`status-pill ${statusClass(displayStatus)}`}>
+                        {prettyStatus(displayStatus)}
                       </span>
                     </div>
 
