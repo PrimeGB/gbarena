@@ -108,6 +108,7 @@ type MatchCommentRow = {
   comment: string | null;
   created_at: string | null;
   profiles?: { username?: string | null } | null;
+  username?: string | null;
 };
 
 function clean(value: string | null | undefined, fallback = "TBD") {
@@ -416,6 +417,7 @@ export default function MatchDetailsPage() {
       ? acceptingTeam?.name || "Accepting Team"
       : "Opponent";
   const commentsUnlocked = isCompleted || isFinalized || reportingStatus === "completed";
+  const userAlreadyCommented = !!currentUser?.id && comments.some((item) => item.user_id === currentUser.id);
 
 
   async function reloadMatch() {
@@ -448,13 +450,39 @@ export default function MatchDetailsPage() {
 
     const { data, error } = await supabase
       .from("match_comments")
-      .select("id, match_id, user_id, team_id, comment, created_at, profiles(username)")
+      .select("id, match_id, user_id, team_id, comment, created_at")
       .eq("match_id", matchId)
       .order("created_at", { ascending: true });
 
-    if (!error) {
-      setComments((data || []) as MatchCommentRow[]);
+    if (error) {
+      setCommentMessage("Comments could not be loaded: " + error.message);
+      return;
     }
+
+    const rows = ((data || []) as MatchCommentRow[]).filter((row) => row.comment);
+    const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean))) as string[];
+
+    if (userIds.length === 0) {
+      setComments(rows);
+      return;
+    }
+
+    const { data: profileRows } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", userIds);
+
+    const usernameById = new Map<string, string>();
+    (profileRows || []).forEach((profile: any) => {
+      if (profile.id) usernameById.set(profile.id, profile.username || "Player");
+    });
+
+    setComments(
+      rows.map((row) => ({
+        ...row,
+        username: row.user_id ? usernameById.get(row.user_id) || "Player" : "Player",
+      }))
+    );
   }
 
   async function getTeamMemberUserIds(teamId: string) {
@@ -577,24 +605,39 @@ export default function MatchDetailsPage() {
       return;
     }
 
+    const alreadyPosted = comments.some((item) => item.user_id === currentUser.id);
+    if (alreadyPosted) {
+      setCommentMessage("You already posted your one match comment.");
+      return;
+    }
+
     setCommentLoading(true);
     setCommentMessage("");
 
-    const { error } = await supabase.from("match_comments").insert({
-      match_id: match.id,
-      user_id: currentUser.id,
-      team_id: verifiedUserTeamId,
-      comment: text,
-    });
+    const { error } = await supabase
+      .from("match_comments")
+      .insert({
+        match_id: match.id,
+        user_id: currentUser.id,
+        team_id: verifiedUserTeamId,
+        comment: text,
+      });
 
     setCommentLoading(false);
 
     if (error) {
-      setCommentMessage("Comment could not be posted. Create the match_comments table if it does not exist.");
+      if (error.code === "23505") {
+        setCommentMessage("You already posted your one match comment.");
+        await loadComments();
+        return;
+      }
+
+      setCommentMessage("Comment could not be posted: " + error.message);
       return;
     }
 
     setCommentText("");
+    setCommentMessage("Comment posted.");
     await loadComments();
   }
 
@@ -734,18 +777,21 @@ export default function MatchDetailsPage() {
     setActionLoading(true);
     setActionMessage("");
 
-    const updatedMatch: MatchRow = {
-      ...match,
-      winning_team_id: match.reported_winner_team_id,
-      losing_team_id: match.reported_loser_team_id,
-    };
-
-    const finalizeError = await finalizeMatchResultAutomatically(updatedMatch);
+    const { data, error } = await supabase.rpc("confirm_match_and_apply", {
+      match_uuid: match.id,
+      confirming_user_uuid: currentUser?.id || null,
+    });
 
     setActionLoading(false);
 
-    if (finalizeError) {
-      setActionMessage("Result confirmed, but rankings could not auto-update: " + finalizeError);
+    if (error) {
+      setActionMessage("Result could not be confirmed: " + error.message);
+      return;
+    }
+
+    const result = data as any;
+    if (result && result.ok === false) {
+      setActionMessage(result.message || "Result could not be confirmed.");
       return;
     }
 
@@ -1674,7 +1720,7 @@ export default function MatchDetailsPage() {
                               <span className="comment-time">
                                 {item.created_at ? new Date(item.created_at).toLocaleString() : "After Match"}
                               </span>
-                              <strong>{item.profiles?.username || "Player"}</strong> {item.comment}
+                              <strong>{item.username || "Player"}</strong> {item.comment}
                             </div>
                           ))
                         ) : (
@@ -1690,13 +1736,13 @@ export default function MatchDetailsPage() {
                             type="text"
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
-                            placeholder="Leave your one match comment..."
-                            disabled={commentLoading}
+                            placeholder={userAlreadyCommented ? "You already posted your one match comment" : "Leave your one match comment..."}
+                            disabled={commentLoading || userAlreadyCommented}
                           />
                           <button
                             className="post-btn"
                             type="button"
-                            disabled={commentLoading || !commentText.trim()}
+                            disabled={commentLoading || userAlreadyCommented || !commentText.trim()}
                             onClick={handlePostComment}
                           >
                             Post
