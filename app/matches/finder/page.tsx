@@ -94,6 +94,28 @@ function canManageMatches(role: TeamRole) {
   return role === "leader" || role === "co-leader" || role === "captain";
 }
 
+function parseDateMs(value: string | null | undefined) {
+  if (!value) return 0;
+
+  const direct = new Date(value).getTime();
+
+  if (!Number.isNaN(direct)) return direct;
+
+  return 0;
+}
+
+function shouldHidePost(post: MatchPost) {
+  const now = Date.now();
+  const matchTime = parseDateMs(post.match_time);
+  const createdTime = parseDateMs(post.created_at);
+  const oneDayMs = 1000 * 60 * 60 * 24;
+
+  if (matchTime && now >= matchTime) return true;
+  if (createdTime && now - createdTime >= oneDayMs) return true;
+
+  return false;
+}
+
 export default function MatchFinderPage() {
   return (
     <Suspense fallback={<div style={{ color: "white", padding: 40 }}>Loading Match Finder...</div>}>
@@ -118,9 +140,12 @@ function MatchFinderContent() {
   const gameImage = getGameImage(game);
   const ladderName = getLadderName(ladder);
   const rosterText = getRosterText(ladder);
+  const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;
+  const viewTeamUrl = viewerTeamId ? `/teams/${viewerTeamId}` : "/profile/teams";
+  const ladderUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;
 
   const [matches, setMatches] = useState<MatchPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [pageError, setPageError] = useState("");
   const [notice, setNotice] = useState("");
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -130,11 +155,21 @@ function MatchFinderContent() {
   const [cancelMatch, setCancelMatch] = useState<MatchPost | null>(null);
   const [viewerRole, setViewerRole] = useState<TeamRole>("member");
 
-  const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;
   const viewerCanManageMatches = canManageMatches(viewerRole);
 
+  async function markOldPostsExpired(posts: MatchPost[]) {
+    const expiredIds = posts.filter((post) => shouldHidePost(post)).map((post) => post.id);
+
+    if (expiredIds.length === 0) return;
+
+    await supabase
+      .from("match_posts")
+      .update({ status: "expired" })
+      .in("id", expiredIds)
+      .eq("status", "open");
+  }
+
   async function loadMatches() {
-    setLoading(true);
     setPageError("");
 
     const { data, error } = await supabase
@@ -150,23 +185,40 @@ function MatchFinderContent() {
     if (error) {
       setPageError("Could not load match posts: " + error.message);
       setMatches([]);
-      setLoading(false);
+      setHasLoaded(true);
       return;
     }
 
-    setMatches((data || []) as MatchPost[]);
-    setLoading(false);
+    const openPosts = (data || []) as MatchPost[];
+    const visiblePosts = openPosts.filter((post) => !shouldHidePost(post));
+
+    setMatches(visiblePosts);
+    setHasLoaded(true);
+
+    markOldPostsExpired(openPosts);
   }
 
   useEffect(() => {
-    loadMatches();
+    let cancelled = false;
+
+    async function runLoad() {
+      if (cancelled) return;
+      await loadMatches();
+    }
+
+    runLoad();
+
+    return () => {
+      cancelled = true;
+    };
   }, [platform, category, game, ladder]);
 
   useEffect(() => {
     async function loadViewerRole() {
-      setViewerRole("member");
-
-      if (!viewerTeamId || !user?.id) return;
+      if (!viewerTeamId || !user?.id) {
+        setViewerRole("member");
+        return;
+      }
 
       const { data } = await supabase
         .from("team_members")
@@ -177,6 +229,8 @@ function MatchFinderContent() {
 
       if (data?.role) {
         setViewerRole(normalizeRole(data.role));
+      } else {
+        setViewerRole("member");
       }
     }
 
@@ -207,6 +261,19 @@ function MatchFinderContent() {
     if (String(confirmMatch.team_id) === String(viewerTeamId)) {
       setNotice("You cannot accept your own match post.");
       setConfirmMatch(null);
+      return;
+    }
+
+    if (shouldHidePost(confirmMatch)) {
+      await supabase
+        .from("match_posts")
+        .update({ status: "expired" })
+        .eq("id", confirmMatch.id)
+        .eq("status", "open");
+
+      setNotice("This match post expired and has been removed.");
+      setConfirmMatch(null);
+      await loadMatches();
       return;
     }
 
@@ -290,7 +357,6 @@ function MatchFinderContent() {
     router.push(`/matches/${officialMatch.id}`);
   }
 
-
   async function cancelConfirmedPost() {
     if (!cancelMatch) return;
 
@@ -344,22 +410,22 @@ function MatchFinderContent() {
     <>
       <style>{`
         *{margin:0;padding:0;box-sizing:border-box;}
+        html{background:#000;}
         body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
         a{text-decoration:none;}
         button{font-family:Tahoma,Verdana,Arial,sans-serif;}
 
-        .page{min-height:100vh;background:radial-gradient(circle at top,rgba(45,100,150,.28),transparent 42%),linear-gradient(to bottom,#02060a,#000);padding:32px 22px;}
-        .wrap{max-width:1120px;margin:0 auto;background:#07111b;border:1px solid #315f88;box-shadow:0 0 28px rgba(0,80,140,.38), inset 0 0 22px rgba(0,0,0,.72);}
-        .top-strip{height:30px;background:linear-gradient(to bottom,#8b0000,#3b0000);border-bottom:1px solid #b32222;display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:0 14px;}
-        .top-strip a{color:#fff;font-size:12px;font-weight:bold;text-transform:uppercase;}
+        .page{min-height:100vh;background:#02060a;padding:32px 22px;}
+        .wrap{max-width:1120px;margin:0 auto;background:#07111b;border:1px solid #315f88;}
 
-        .header{min-height:104px;background:linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.08)),linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+        .header{min-height:104px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
         .game-header{display:flex;align-items:center;gap:18px;}
-        .game-cover{width:126px;height:78px;border:1px solid #315f88;background:linear-gradient(135deg,#07111b,#02070c 48%,#142f47);overflow:hidden;box-shadow:0 0 14px rgba(0,0,0,.55);}
+        .game-cover{width:126px;height:78px;border:1px solid #315f88;background:#050c14;overflow:hidden;}
         .game-cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
         .game-name{color:#f2c14e;font-size:15px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase;margin-bottom:8px;text-shadow:0 1px 2px #000;}
         .ladder-name{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
         .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:15px;font-weight:900;text-transform:uppercase;padding:14px 22px;text-shadow:0 2px 4px #000;}
+        .header-badge:hover{border-color:#d7ad4a;color:#d7ad4a;}
 
         .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
         .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;}
@@ -371,11 +437,11 @@ function MatchFinderContent() {
 
         .content{padding:18px;}
         .finder-layout{display:grid;grid-template-columns:232px 1fr;gap:14px;}
-        .panel{background:#050b12;border:1px solid #244b70;box-shadow:inset 0 0 18px rgba(0,0,0,.75);}
+        .panel{background:#050b12;border:1px solid #244b70;}
         .panel-header{min-height:36px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;padding:0 12px;color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
 
         .side-body{padding:12px;}
-        .ladder-card{border:1px solid #1f3d5a;background:linear-gradient(to bottom,#091724,#06101a);padding:12px;margin-bottom:12px;}
+        .ladder-card{border:1px solid #1f3d5a;background:#06101a;padding:12px;margin-bottom:12px;}
         .ladder-title{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);}
         .ladder-line{color:#cfe2f2;font-size:12px;line-height:23px;border-bottom:1px solid rgba(255,255,255,.05);}
         .ladder-line:last-child{border-bottom:0;}
@@ -389,7 +455,7 @@ function MatchFinderContent() {
         .main-body{padding:12px;}
         .notice-box{border:1px solid #d7ad4a;background:#201703;color:#ffd76a;font-size:12px;font-weight:900;text-transform:uppercase;padding:11px;margin-bottom:12px;text-align:center;}
 
-        .board{border:1px solid #244b70;background:#02070c;}
+        .board{border:1px solid #244b70;background:#02070c;min-height:118px;}
         .board-head,.match-row{display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr 170px;}
         .board-head{background:linear-gradient(to bottom,#112b42,#07111b);border-bottom:1px solid #244b70;}
         .board-head div{color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;padding:10px;border-right:1px solid rgba(255,255,255,.06);text-align:center;}
@@ -417,7 +483,7 @@ function MatchFinderContent() {
         .footer{height:36px;background:#07111b;border-top:1px solid #244b70;display:flex;justify-content:center;align-items:center;color:#a9c3db;font-size:11px;}
 
         .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.76);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
-        .accept-modal{width:520px;max-width:95vw;border:1px solid #6ba8d6;background:#07111b;box-shadow:0 0 35px rgba(0,100,180,.55);}
+        .accept-modal{width:520px;max-width:95vw;border:1px solid #6ba8d6;background:#07111b;}
         .accept-title{height:40px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;font-size:14px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;padding:0 14px;}
         .accept-body{padding:16px;color:#cfe2f2;font-size:13px;line-height:22px;}
         .accept-summary{border:1px solid #244b70;background:#050c14;padding:12px;margin:12px 0;color:#fff;font-size:12px;line-height:23px;}
@@ -438,12 +504,6 @@ function MatchFinderContent() {
 
       <main className="page">
         <div className="wrap">
-          <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
-          </div>
-
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
@@ -456,7 +516,9 @@ function MatchFinderContent() {
               </div>
             </div>
 
-            <div className="header-badge">Match Finder</div>
+            <a className="header-badge" href={viewTeamUrl}>
+              View Team
+            </a>
           </header>
 
           <nav className="nav">
@@ -464,7 +526,7 @@ function MatchFinderContent() {
             <a href="/profile/teams">My Teams</a>
             <a href="/members">Members</a>
             <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
+            <a href={ladderUrl}>Ladder</a>
           </nav>
 
           <section className="title-bar">
@@ -510,14 +572,17 @@ function MatchFinderContent() {
                       <div>Actions</div>
                     </div>
 
-                    {loading && <div className="loading-state">Loading match posts...</div>}
                     {pageError && <div className="error-state">{pageError}</div>}
 
-                    {!loading && !pageError && matches.length === 0 && (
+                    {!pageError && !hasLoaded && (
+                      <div className="loading-state">Loading match posts...</div>
+                    )}
+
+                    {!pageError && hasLoaded && matches.length === 0 && (
                       <div className="empty-state">No open matches posted for this ladder yet.</div>
                     )}
 
-                    {!loading && !pageError && matches.map((match) => {
+                    {!pageError && matches.map((match) => {
                       const isMyPost = viewerTeamId && String(match.team_id) === String(viewerTeamId);
 
                       return (
@@ -563,16 +628,13 @@ function MatchFinderContent() {
         </div>
       </main>
 
-
       {viewMatch && (
         <div className="modal-backdrop">
           <div className="accept-modal">
             <div className="accept-title">Posted Match Rules</div>
 
             <div className="accept-body">
-              <p className="accept-warning">
-                Review the posted match rules and settings before accepting.
-              </p>
+              <p className="accept-warning">Review the posted match rules and settings before accepting.</p>
 
               <div className="accept-summary">
                 Players: {viewMatch.players}
@@ -636,9 +698,7 @@ function MatchFinderContent() {
             <div className="accept-title">Cancel Match Post</div>
 
             <div className="accept-body">
-              <p className="accept-warning">
-                You are about to remove this posted match from Match Finder.
-              </p>
+              <p className="accept-warning">You are about to remove this posted match from Match Finder.</p>
 
               <div className="accept-summary">
                 Players: {cancelMatch.players}

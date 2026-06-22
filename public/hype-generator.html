@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>GameBattles Video Preview</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+
+    .stage {
+      width: 100vw;
+      height: 100vh;
+      background:
+        radial-gradient(circle at 50% 22%, rgba(77,174,255,.48), transparent 24%),
+        radial-gradient(circle at 50% 52%, rgba(47,111,159,.42), transparent 45%),
+        linear-gradient(to bottom,#173a56 0%,#10283d 16%,#071827 42%,#02070d 74%,#000 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage:before {
+      content: "";
+      position: absolute;
+      inset: 70px 120px;
+      border: 1px solid rgba(77,174,255,.45);
+      background:
+        linear-gradient(to bottom, rgba(31,83,122,.78), rgba(7,17,27,.74)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,.045) 0,
+          rgba(255,255,255,.045) 1px,
+          transparent 1px,
+          transparent 15px
+        );
+      box-shadow:
+        inset 0 0 36px rgba(0,0,0,.95),
+        0 0 40px rgba(77,174,255,.24);
+      z-index: 1;
+    }
+
+    .stage:after {
+      content: "";
+      position: absolute;
+      inset: 100px 155px;
+      border: 1px solid rgba(242,193,78,.34);
+      box-shadow:
+        inset 0 0 22px rgba(242,193,78,.12),
+        0 0 18px rgba(242,193,78,.14);
+      z-index: 2;
+    }
+
+    .smoke {
+      position: absolute;
+      width: 180%;
+      height: 180%;
+      left: -40%;
+      top: -40%;
+      background:
+        radial-gradient(circle at 20% 40%, rgba(80,140,190,.25), transparent 18%),
+        radial-gradient(circle at 60% 50%, rgba(120,120,120,.15), transparent 22%),
+        radial-gradient(circle at 80% 30%, rgba(47,111,159,.25), transparent 18%),
+        radial-gradient(circle at 45% 70%, rgba(0,0,0,.32), transparent 25%);
+      filter: blur(24px);
+      animation: smoke 15s ease-in-out infinite;
+      z-index: 0;
+    }
+
+    @keyframes smoke {
+      0% { transform: translate(-3%, 2%) scale(1); }
+      50% { transform: translate(5%, -2%) scale(1.06); }
+      100% { transform: translate(-3%, 2%) scale(1); }
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(77,174,255,.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77,174,255,.18) 1px, transparent 1px);
+      background-size: 72px 72px;
+      transform: perspective(650px) rotateX(62deg) translateY(270px);
+      opacity: .3;
+      z-index: 2;
+    }
+
+    .blue-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 22% 52%, rgba(77,174,255,.18), transparent 30%),
+        radial-gradient(circle at 78% 52%, rgba(77,174,255,.18), transparent 30%),
+        linear-gradient(90deg, transparent, rgba(77,174,255,.08), transparent);
+      animation: pulseBlue 4s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    @keyframes pulseBlue {
+      0%,100% { opacity: .45; }
+      50% { opacity: 1; }
+    }
+
+    .steel-lines {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(77,174,255,.2) 50%, transparent 100%),
+        repeating-linear-gradient(
+          90deg,
+          rgba(77,174,255,.05) 0px,
+          rgba(77,174,255,.05) 2px,
+          transparent 2px,
+          transparent 105px
+        );
+      opacity: .58;
+      z-index: 3;
+      animation: drift 15s linear infinite;
+    }
+
+    @keyframes drift {
+      0% { transform: translateX(-70px); }
+      100% { transform: translateX(70px); }
+    }
+
+    .side-left,
+    .side-right {
+      position: absolute;
+      top: 120px;
+      bottom: 120px;
+      width: 88px;
+      background:
+        linear-gradient(to bottom, #2f6f9f, #173a56 35%, #07111b),
+        repeating-linear-gradient(to bottom, rgba(255,255,255,.08) 0 1px, transparent 1px 20px);
+      border: 1px solid rgba(77,174,255,.42);
+      box-shadow:
+        inset 0 0 20px rgba(0,0,0,.9),
+        0 0 22px rgba(77,174,255,.18);
+      z-index: 4;
+      opacity: .82;
+    }
+
+    .side-left { left: 38px; }
+    .side-right { right: 38px; }
+
+    .plate {
+      position: absolute;
+      left: 50%;
+      top: 22%;
+      transform: translateX(-50%);
+      width: 780px;
+      height: 175px;
+      background:
+        linear-gradient(to bottom,#2f6f9f,#173a56 28%,#0d2234 64%,#050c14),
+        linear-gradient(135deg,transparent 0 25%,rgba(255,255,255,.18) 40%,transparent 55%);
+      border: 1px solid rgba(77,174,255,.65);
+      box-shadow:
+        inset 0 0 35px rgba(0,0,0,.95),
+        0 0 42px rgba(77,174,255,.28);
+      z-index: 4;
+      animation: plateIn 15s linear infinite;
+    }
+
+    .plate:before,
+    .plate:after {
+      content: "";
+      position: absolute;
+      top: 15px;
+      bottom: 15px;
+      width: 4px;
+      background: #f2c14e;
+      opacity: .85;
+      box-shadow: 0 0 12px rgba(242,193,78,.5);
+    }
+
+    .plate:before { left: 18px; }
+    .plate:after { right: 18px; }
+
+    @keyframes plateIn {
+      0% { opacity: 0; transform: translateX(-50%) scale(.92); }
+      8% { opacity: 1; transform: translateX(-50%) scale(1); }
+      82% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .metal {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(110deg, transparent 0%, rgba(80,180,255,.2) 26%, rgba(255,255,255,.15) 34%, transparent 50%),
+        linear-gradient(to bottom, rgba(255,255,255,.08), transparent 20%, rgba(0,0,0,.76));
+      animation: sweep 15s linear infinite;
+      z-index: 6;
+    }
+
+    @keyframes sweep {
+      0% { transform: translateX(-95%); opacity: .38; }
+      35% { opacity: 1; }
+      100% { transform: translateX(95%); opacity: .5; }
+    }
+
+    .logo {
+      position: absolute;
+      top: 26%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 78px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -4px;
+      color: #fff;
+      text-shadow:
+        0 0 10px #4daeff,
+        0 0 25px #4daeff,
+        0 0 55px rgba(77,174,255,.85),
+        0 0 85px rgba(77,174,255,.45),
+        4px 5px 0 #06111c;
+      z-index: 8;
+      animation: logoIn 15s linear infinite;
+    }
+
+    @keyframes logoIn {
+      0% { opacity: 0; transform: translateX(-50%) scale(.82); filter: blur(8px); }
+      10% { opacity: 1; transform: translateX(-50%) scale(1); filter: blur(0); }
+      78% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .est {
+      position: absolute;
+      top: 37%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #f2c14e;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      text-shadow: 0 0 10px #000;
+      z-index: 8;
+    }
+
+    .tagline {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #4daeff;
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      text-shadow: 0 0 10px #000;
+      z-index: 8;
+    }
+
+    .words {
+      position: absolute;
+      top: 58%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      text-align: center;
+      color: #f2c14e;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow:
+        0 0 12px #000,
+        0 0 20px rgba(242,193,78,.3);
+      z-index: 9;
+    }
+
+    .words span {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+      animation: words 15s linear infinite;
+    }
+
+    .words span:nth-child(1) { animation-delay: 1s; }
+    .words span:nth-child(2) { animation-delay: 4.5s; }
+    .words span:nth-child(3) { animation-delay: 8s; }
+    .words span:nth-child(4) { animation-delay: 11.2s; }
+
+    @keyframes words {
+      0% { opacity: 0; transform: scale(.8); filter: blur(8px); }
+      8% { opacity: 1; transform: scale(1); filter: blur(0); }
+      20% { opacity: 1; }
+      28% { opacity: 0; transform: scale(1.12); filter: blur(4px); }
+      100% { opacity: 0; }
+    }
+
+    .lower-panel {
+      position: absolute;
+      left: 50%;
+      bottom: 120px;
+      transform: translateX(-50%);
+      width: 760px;
+      height: 58px;
+      background:
+        linear-gradient(to bottom, #2f6f9f, #173a56 34%, #07111b);
+      border: 1px solid rgba(77,174,255,.58);
+      box-shadow:
+        inset 0 0 22px rgba(0,0,0,.85),
+        0 0 24px rgba(77,174,255,.2);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d7eaff;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+    }
+
+    .ticker {
+      color: #f2c14e;
+      margin: 0 12px;
+      text-shadow: 0 0 10px rgba(242,193,78,.6);
+    }
+
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      z-index: 18;
+      animation: flash 15s linear infinite;
+    }
+
+    @keyframes flash {
+      8%, 31%, 54%, 76% { opacity: .2; }
+      9%, 32%, 55%, 77% { opacity: 0; }
+    }
+
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.04) 0px,
+        rgba(255,255,255,.04) 1px,
+        transparent 3px,
+        transparent 6px
+      );
+      opacity: .38;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .crt {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, transparent 54%, rgba(0,0,0,.52) 100%),
+        linear-gradient(to bottom, rgba(255,255,255,.04), transparent 18%, rgba(0,0,0,.52));
+      z-index: 19;
+      pointer-events: none;
+    }
+
+    .bars {
+      position: absolute;
+      inset: 0;
+      z-index: 17;
+      pointer-events: none;
+    }
+
+    .bars:before,
+    .bars:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 90px;
+      background: #000;
+    }
+
+    .bars:before { top: 0; }
+    .bars:after { bottom: 0; }
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="smoke"></div>
+    <div class="grid"></div>
+    <div class="blue-glow"></div>
+    <div class="steel-lines"></div>
+    <div class="side-left"></div>
+    <div class="side-right"></div>
+    <div class="plate"></div>
+    <div class="metal"></div>
+
+    <div class="logo">GAMEBATTLES</div>
+    <div class="est">EST. 2026</div>
+    <div class="tagline">WHERE GAMING FINDS ITS EDGE</div>
+
+    <div class="words">
+      <span>BUILD YOUR ROSTER</span>
+      <span>CLIMB THE LADDER</span>
+      <span>EARN YOUR LEGACY</span>
+      <span>PROVE YOURSELF</span>
+    </div>
+
+    <div class="lower-panel">
+      TEAM LADDER <span class="ticker">•</span> MATCH FINDER <span class="ticker">•</span> GB RANK
+    </div>
+
+    <div class="flash"></div>
+    <div class="scanlines"></div>
+    <div class="crt"></div>
+    <div class="bars"></div>
+  </div>
+</body>
+</html>

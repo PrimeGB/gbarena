@@ -38,7 +38,6 @@ function prettyText(value: string | null | undefined) {
 function ordinal(value: number) {
   const mod100 = value % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
-
   const mod10 = value % 10;
   if (mod10 === 1) return `${value}st`;
   if (mod10 === 2) return `${value}nd`;
@@ -62,17 +61,25 @@ function streakText(streak: number) {
   return "-";
 }
 
+function movement(currentRank: number, previousRank: number | null) {
+  if (!previousRank || previousRank === currentRank) return "same";
+  if (previousRank > currentRank) return "up";
+  return "down";
+}
+
 export default function LadderRankingsPage() {
   const params = useParams();
-  const game = String(params?.game || "modern-warfare-4");
-  const ladder = String(params?.ladder || "team");
+  const game = String(params?.game || "mw2");
+  const ladder = String(params?.ladder || "singles");
 
   const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
+  const [myTeamId, setMyTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const gameTitle = prettyText(game);
-  const ladderTitle = `${prettyText(ladder)} Ladder`;
+  const ladderTitle = `${gameTitle} - ${prettyText(ladder)} Ladder`;
 
   const rankedTeams = useMemo(() => {
     return [...teams].sort((a, b) => {
@@ -91,13 +98,28 @@ export default function LadderRankingsPage() {
   }, [teams]);
 
   useEffect(() => {
-    async function loadTeams() {
+    async function loadPage() {
       setLoading(true);
       setError("");
 
+      const storageKey = `gb-ranks-xbox-call-of-duty-${game}-${ladder}`;
+
+      if (typeof window !== "undefined") {
+        const savedRanks = window.localStorage.getItem(storageKey);
+        if (savedRanks) {
+          try {
+            setPreviousRanks(JSON.parse(savedRanks));
+          } catch {
+            setPreviousRanks({});
+          }
+        }
+      }
+
       const { data, error: teamsError } = await supabase
         .from("teams")
-        .select("id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,streak,xp,rating_points,created_at")
+        .select(
+          "id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,streak,xp,rating_points,created_at"
+        )
         .eq("platform", "xbox")
         .eq("category", "call-of-duty")
         .eq("game", game)
@@ -112,354 +134,414 @@ export default function LadderRankingsPage() {
         return;
       }
 
-      setTeams((data || []) as TeamRow[]);
+      const loadedTeams = (data || []) as TeamRow[];
+      setTeams(loadedTeams);
+
+      const sortedNow = [...loadedTeams].sort((a, b) => {
+        const ratingA = Number(a.rating_points || 100);
+        const ratingB = Number(b.rating_points || 100);
+        const winsA = Number(a.wins || 0);
+        const winsB = Number(b.wins || 0);
+        const lossesA = Number(a.losses || 0);
+        const lossesB = Number(b.losses || 0);
+
+        if (ratingB !== ratingA) return ratingB - ratingA;
+        if (winsB !== winsA) return winsB - winsA;
+        if (lossesA !== lossesB) return lossesA - lossesB;
+        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+      });
+
+      const newRankSnapshot: Record<string, number> = {};
+      sortedNow.forEach((team, index) => {
+        newRankSnapshot[team.id] = index + 1;
+      });
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(storageKey, JSON.stringify(newRankSnapshot));
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.id) {
+        const { data: memberData } = await supabase
+          .from("team_members")
+          .select("team_id, teams!inner(id,platform,category,game,ladder)")
+          .eq("user_id", user.id)
+          .eq("teams.platform", "xbox")
+          .eq("teams.category", "call-of-duty")
+          .eq("teams.game", game)
+          .eq("teams.ladder", ladder)
+          .limit(1)
+          .maybeSingle();
+
+        setMyTeamId(memberData?.team_id || null);
+      }
+
       setLoading(false);
     }
 
-    loadTeams();
+    loadPage();
   }, [game, ladder]);
+
+  const viewTeamHref = myTeamId ? `/teams/${myTeamId}` : "/profile/teams";
 
   return (
     <>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#07111b;font-family:Tahoma,Verdana,Arial,sans-serif;color:#111;}
+        body{background:#050b12;font-family:Tahoma,Verdana,Arial,sans-serif;color:#eaf6ff;}
         a{text-decoration:none;}
 
         .page{
           min-height:100vh;
-          background:linear-gradient(to bottom,#0b2337,#02070c);
-          padding:12px;
+          background:radial-gradient(circle at top,#173d5f 0,#07111d 42%,#02060a 100%);
+          padding:14px;
         }
 
         .shell{
           max-width:980px;
           margin:0 auto;
-          border-left:1px solid #315f88;
-          border-right:1px solid #315f88;
-          background:#f4f4f4;
-          box-shadow:0 0 30px rgba(0,0,0,.65);
-        }
-
-        .top-nav{
-          height:34px;
-          display:flex;
-          align-items:stretch;
-          background:linear-gradient(to bottom,#ffffff,#d9d9d9);
-          border:1px solid #bcbcbc;
-          border-bottom:0;
-        }
-
-        .top-nav a{
-          color:#111;
-          min-width:86px;
-          padding:0 12px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          border-right:1px solid #c7c7c7;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .top-nav a.active{
-          background:#d9d9d9;
-          color:#b00000;
-          box-shadow:inset 0 -3px 0 #c40000;
+          border:1px solid #2d6f9f;
+          background:#071522;
+          box-shadow:0 0 34px rgba(0,0,0,.85), inset 0 0 18px rgba(65,150,210,.18);
         }
 
         .ladder-box{
-          border:1px solid #c7c7c7;
-          background:#fff;
-          border-radius:5px 5px 0 0;
+          border:1px solid #4c8fc2;
+          background:#091827;
           overflow:hidden;
         }
 
         .tabs{
-          height:34px;
+          height:38px;
           display:flex;
           align-items:end;
           padding-left:10px;
-          background:#f8f8f8;
-          border-bottom:1px solid #d0d0d0;
+          background:linear-gradient(to bottom,#1b5c8d,#0a263d 55%,#06131f);
+          border-bottom:1px solid #66a7d7;
         }
 
         .tab{
-          height:28px;
-          min-width:72px;
-          padding:0 12px;
+          height:30px;
+          min-width:82px;
+          padding:0 14px;
           display:flex;
           align-items:center;
           justify-content:center;
-          border:1px solid #c9c9c9;
+          border:1px solid #5a94bc;
           border-bottom:0;
-          background:linear-gradient(to bottom,#fff,#dedede);
-          color:#111;
+          background:linear-gradient(to bottom,#234b67,#0b2338);
+          color:#cbeaff;
           font-size:10px;
           font-weight:900;
-          margin-right:3px;
+          margin-right:4px;
           border-radius:4px 4px 0 0;
+          text-transform:uppercase;
+          text-shadow:0 1px 2px #000;
         }
 
-        .tab.active{background:#fff;color:#111;}
+        .tab.active{
+          background:linear-gradient(to bottom,#ebf8ff,#61a6d8 45%,#154b73);
+          color:#03111d;
+          text-shadow:none;
+        }
 
         .hero{
-          min-height:82px;
+          min-height:100px;
           display:flex;
           align-items:center;
           justify-content:space-between;
-          padding:9px 14px 9px 18px;
-          border-bottom:1px solid #d0d0d0;
-          background:#fff;
+          padding:13px 16px;
+          border-bottom:1px solid #2e6d9b;
+          background:
+            linear-gradient(to bottom,rgba(37,96,140,.95),rgba(7,25,40,.96)),
+            radial-gradient(circle at right,#1f6a9e,#071522 60%);
         }
 
-        .hero-left{display:flex;align-items:center;gap:10px;}
+        .hero-left{display:flex;align-items:center;gap:14px;}
 
         .ladder-icon{
-          width:62px;
-          height:62px;
-          border-radius:9px;
-          border:1px solid #999;
-          background:linear-gradient(135deg,#050505,#333);
-          color:#fff;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:27px;
+          width:76px;
+          height:76px;
+          border-radius:8px;
+          border:1px solid #9ec9e8;
+          background:
+            linear-gradient(135deg,rgba(0,0,0,.18),rgba(255,255,255,.1)),
+            url("https://upload.wikimedia.org/wikipedia/en/5/52/Call_of_Duty_Modern_Warfare_2_%282009%29_cover.png");
+          background-size:cover;
+          background-position:center;
+          box-shadow:inset 0 0 14px rgba(255,255,255,.18),0 0 14px rgba(48,152,220,.38);
+          flex-shrink:0;
+        }
+
+        .hero-title{
+          color:#ffffff;
+          font-size:26px;
+          line-height:29px;
           font-weight:900;
-          box-shadow:inset 0 0 12px rgba(255,255,255,.2);
+          text-transform:uppercase;
+          text-shadow:0 2px 4px #000;
+          letter-spacing:.3px;
         }
 
-        .hero-title{color:#999;font-size:28px;line-height:29px;font-weight:400;}
-        .season{font-size:11px;color:#777;line-height:16px;}
-        .season strong{color:#555;}
-        .king{color:#064ba8;font-weight:900;}
-
-        .hero-right{
-          display:flex;
-          align-items:center;
-          gap:14px;
+        .season{
+          font-size:11px;
+          color:#b8dfff;
+          line-height:17px;
+          font-weight:900;
+          text-transform:uppercase;
         }
+
+        .season strong{color:#ffffff;}
+
+        .hero-right{display:flex;align-items:center;gap:12px;}
 
         .your-team{
-          height:32px;
-          padding:0 20px;
-          border:1px solid #1684d3;
-          border-radius:5px;
-          background:linear-gradient(to bottom,#4db8ff,#0074c8);
+          height:34px;
+          padding:0 21px;
+          border:1px solid #9fd8ff;
+          border-radius:4px;
+          background:linear-gradient(to bottom,#77c7ff,#1478bd 50%,#06436e);
           color:#fff;
           font-size:12px;
           font-weight:900;
           display:flex;
           align-items:center;
           justify-content:center;
-        }
-
-        .region{
-          width:64px;
-          height:55px;
-          border-radius:50%;
-          background:radial-gradient(circle,#ffefef,#b40000 60%,#680000);
-          color:#fff;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:14px;
-          font-weight:900;
-          text-shadow:0 1px 3px #000;
-          border:1px solid #b9b9b9;
+          text-shadow:0 1px 2px #000;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.45);
         }
 
         .sub-tabs{
           display:flex;
           flex-wrap:wrap;
           padding:10px 10px 0 10px;
-          border-bottom:1px solid #d0d0d0;
-          background:#fdfdfd;
+          border-bottom:1px solid #2d6f9f;
+          background:linear-gradient(to bottom,#102f49,#081926);
         }
 
         .sub-tab{
-          height:34px;
-          padding:0 13px;
+          height:33px;
+          padding:0 14px;
           display:flex;
           align-items:center;
           justify-content:center;
-          background:linear-gradient(to bottom,#fff,#e5e5e5);
-          border:1px solid #c9c9c9;
+          background:linear-gradient(to bottom,#255979,#0d2b42);
+          border:1px solid #4d87b1;
           border-bottom:0;
-          color:#111;
+          color:#cdeeff;
           font-size:10px;
           font-weight:900;
           margin-right:4px;
           border-radius:4px 4px 0 0;
+          text-transform:uppercase;
+          text-shadow:0 1px 2px #000;
         }
 
         .sub-tab.active{
-          background:#fff;
-          color:#b00000;
-          box-shadow:inset 0 3px 0 #c40000;
+          background:linear-gradient(to bottom,#f2fbff,#72b6e2 45%,#1a5a86);
+          color:#03121d;
+          text-shadow:none;
         }
 
-        .standings-wrap{padding:0 10px 14px 10px;background:#fff;}
+        .standings-wrap{
+          padding:0 10px 14px 10px;
+          background:linear-gradient(to bottom,#0b1d2d,#071522);
+        }
 
         .standings{
           width:100%;
           border-collapse:collapse;
-          font-size:12px;
-          color:#111;
+          font-size:13px;
+          color:#eaf6ff;
+          border-left:1px solid #214b68;
+          border-right:1px solid #214b68;
         }
 
         .standings th{
           height:34px;
-          background:#e3e3e3;
-          border-bottom:1px solid #cfcfcf;
-          color:#111;
+          background:linear-gradient(to bottom,#d7edf9,#6ea9cc 50%,#245d83);
+          border-bottom:1px solid #9fd8ff;
+          color:#061622;
           font-size:11px;
           font-weight:900;
           text-align:left;
-          padding:0 7px;
+          padding:0 8px;
           white-space:nowrap;
+          text-transform:uppercase;
         }
 
         .standings td{
-          min-height:34px;
-          border-bottom:1px solid #ebebeb;
-          padding:5px 7px;
+          height:46px;
+          border-bottom:1px solid #173a55;
+          padding:6px 8px;
           vertical-align:middle;
-          background:#fff;
+          background:#0b2032;
         }
 
-        .standings tr:nth-child(even) td{background:#f7f7f7;}
-        .standings tr:hover td{background:#eef6ff;}
+        .standings tr:nth-child(even) td{background:#0e2a41;}
+        .standings tr:hover td{background:#153d5b;}
 
-        .place{width:72px;white-space:nowrap;font-weight:400;color:#111;}
-        .up-arrow{color:#0b8c18;font-size:12px;font-weight:900;margin-left:4px;}
-        .team-cell{display:flex;align-items:center;gap:8px;font-weight:900;}
+        .place{
+          width:92px;
+          white-space:nowrap;
+          font-weight:900;
+          color:#ffffff;
+        }
+
+        .move{
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          width:20px;
+          margin-right:5px;
+          font-size:14px;
+          font-weight:900;
+        }
+
+        .move.up{color:#16e044;}
+        .move.down{color:#ff3131;}
+        .move.same{color:#9ab6c8;}
+
+        .team-cell{
+          display:flex;
+          align-items:center;
+          gap:11px;
+          font-weight:900;
+        }
 
         .team-logo{
-          width:24px;
-          height:24px;
-          border:1px solid #999;
-          background:#111;
+          width:38px;
+          height:38px;
+          border:1px solid #9ed7ff;
+          background:#081018;
           display:flex;
           align-items:center;
           justify-content:center;
           overflow:hidden;
           color:#fff;
-          font-size:10px;
+          font-size:11px;
           font-weight:900;
           flex-shrink:0;
+          box-shadow:inset 0 0 8px rgba(255,255,255,.15),0 0 8px rgba(89,166,220,.25);
         }
-        .team-logo img{width:100%;height:100%;object-fit:contain;display:block;}
-        .team-name{color:#0753a3;font-weight:900;}
-        .hot{color:#ff6d00;margin-right:3px;}
-        .wins{color:#00860b;font-weight:900;text-align:center;}
-        .losses{color:#c40000;font-weight:900;text-align:center;}
+
+        .team-logo img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          display:block;
+        }
+
+        .team-name-wrap{
+          display:flex;
+          flex-direction:column;
+          line-height:15px;
+        }
+
+        .team-name{
+          color:#9bd8ff;
+          font-size:14px;
+          font-weight:900;
+          text-shadow:0 1px 2px #000;
+          letter-spacing:.2px;
+        }
+
+        .team-tag{
+          color:#d9ecff;
+          font-size:10px;
+          font-weight:900;
+          opacity:.75;
+          text-transform:uppercase;
+        }
+
+        .wins{color:#24e455;font-weight:900;text-align:center;}
+        .losses{color:#ff3d3d;font-weight:900;text-align:center;}
         .center{text-align:center;}
 
         .level-bar{
           height:23px;
-          width:52px;
-          background:linear-gradient(to right,#7d7d7d,#222);
-          border:1px solid #111;
-          color:#fff;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-weight:900;
-          margin:0 auto;
-        }
-
-        .rep-bar{
           width:54px;
-          height:22px;
-          border:1px solid #000;
-          background:linear-gradient(to bottom,#5cff5c,#008000);
+          background:linear-gradient(to bottom,#7bc5f4,#18547a 55%,#082236);
+          border:1px solid #9ed7ff;
           color:#fff;
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:11px;
           font-weight:900;
-          text-shadow:0 1px 2px #000;
-        }
-
-        .ping{
-          width:13px;
-          height:9px;
-          background:repeating-linear-gradient(to right,#00bd00 0,#00bd00 2px,#002b00 2px,#002b00 3px);
-          border:1px solid #005000;
           margin:0 auto;
+          text-shadow:0 1px 2px #000;
         }
 
         .empty,.loading,.error{
           padding:34px;
           text-align:center;
-          color:#555;
+          color:#b9dcf6;
           font-size:13px;
           font-weight:900;
         }
-        .error{color:#a00000;}
+
+        .error{color:#ff7373;}
 
         @media(max-width:760px){
-          .top-nav{overflow-x:auto;}
           .hero{align-items:flex-start;flex-direction:column;gap:12px;}
-          .hero-right{width:100%;justify-content:space-between;}
+          .hero-right{width:100%;justify-content:flex-start;}
           .standings-wrap{overflow-x:auto;}
-          .standings{min-width:820px;}
+          .standings{min-width:720px;}
         }
       `}</style>
 
       <main className="page">
         <div className="shell">
-          <nav className="top-nav">
-            <a href="/home">Home</a>
-            <a className="active" href="/ladders/xbox/call-of-duty">Ladders</a>
-            <a href="/tournaments">Tournaments</a>
-            <a href="/free-agents">Free Agents</a>
-            <a href="/teams/create">Create a Team</a>
-            <a href="/forums">Forums</a>
-            <a href="/teams/top">Leaderboards</a>
-            <a href="/support">Support</a>
-          </nav>
-
           <section className="ladder-box">
             <div className="tabs">
-              <a className="tab active" href="#">Team</a>
-              <a className="tab" href="#">Doubles</a>
-              <a className="tab" href="#">Singles</a>
+              <a className={ladder === "team" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/team/rankings`}>
+                Team
+              </a>
+              <a className={ladder === "doubles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/doubles/rankings`}>
+                Doubles
+              </a>
+              <a className={ladder === "singles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/singles/rankings`}>
+                Singles
+              </a>
             </div>
 
             <div className="hero">
               <div className="hero-left">
-                <div className="ladder-icon">GB</div>
+                <div className="ladder-icon" />
                 <div>
                   <div className="hero-title">{ladderTitle}</div>
-                  <div className="season">Season: <strong>Current</strong></div>
                   <div className="season">
-                    Total Teams: <strong>{rankedTeams.length}</strong>
-                    {rankedTeams[0]?.name ? (
-                      <> | Current King: <span className="king">{rankedTeams[0].name}</span></>
-                    ) : null}
+                    Season: <strong>Current</strong>
                   </div>
                 </div>
               </div>
 
               <div className="hero-right">
-                <a className="your-team" href="/profile/teams">View Your Team</a>
-                <div className="region">NA</div>
+                <a className="your-team" href={viewTeamHref}>
+                  View Your Team
+                </a>
               </div>
             </div>
 
             <div className="sub-tabs">
-              <a className="sub-tab active" href="#">Standings</a>
-              <a className="sub-tab" href={`/matches/finder?platform=xbox&category=call-of-duty&game=${game}&ladder=${ladder}`}>Match Finder</a>
-              <a className="sub-tab" href="#">Schedule</a>
-              <a className="sub-tab" href="#">Scoreboard</a>
-              <a className="sub-tab" href="#">Playoff Bracket</a>
-              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/rules`}>Rules</a>
-              <a className="sub-tab" href="/support">Support</a>
+              <a className="sub-tab active" href="#">
+                Standings
+              </a>
+              <a className="sub-tab" href={`/matches/finder?platform=xbox&category=call-of-duty&game=${game}&ladder=${ladder}`}>
+                Match Finder
+              </a>
+              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/playoff-bracket`}>
+                Playoff Bracket
+              </a>
+              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/rules`}>
+                Rules
+              </a>
+              <a className="sub-tab" href="/support">
+                Support
+              </a>
             </div>
 
             <div className="standings-wrap">
@@ -473,7 +555,7 @@ export default function LadderRankingsPage() {
                 <table className="standings">
                   <thead>
                     <tr>
-                      <th>Place ▲</th>
+                      <th>Place</th>
                       <th>Team Name</th>
                       <th className="center">W</th>
                       <th className="center">L</th>
@@ -481,8 +563,6 @@ export default function LadderRankingsPage() {
                       <th className="center">Strk</th>
                       <th className="center">Level</th>
                       <th className="center">XP</th>
-                      <th className="center">Rep</th>
-                      <th className="center">Ping</th>
                     </tr>
                   </thead>
 
@@ -492,27 +572,32 @@ export default function LadderRankingsPage() {
                       const losses = Number(team.losses || 0);
                       const points = Number(team.rating_points || 100);
                       const streak = Number(team.streak || 0);
-                      const rep = Math.min(100, Math.max(60, 90 + wins - losses));
+                      const currentRank = index + 1;
+                      const move = movement(currentRank, previousRanks[team.id] || null);
 
                       return (
                         <tr key={team.id}>
                           <td className="place">
-                            {ordinal(index + 1)} <span className="up-arrow">▲</span>
+                            <span className={`move ${move}`}>
+                              {move === "up" ? "▲" : move === "down" ? "▼" : "—"}
+                            </span>
+                            {ordinal(currentRank)}
                           </td>
 
                           <td>
                             <a className="team-cell" href={`/teams/${team.id}`}>
                               <span className="team-logo">
-                                {team.logo_url ? (
+                                {team.avatar_url || team.logo_url ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={team.logo_url} alt={`${team.name || "Team"} logo`} />
+                                  <img src={team.avatar_url || team.logo_url || ""} alt={`${team.name || "Team"} avatar`} />
                                 ) : (
                                   team.tag || "GB"
                                 )}
                               </span>
-                              <span className="team-name">
-                                {index < 3 ? <span className="hot">🔥</span> : null}
-                                {team.name || "Unnamed Team"}
+
+                              <span className="team-name-wrap">
+                                <span className="team-name">{team.name || "Unnamed Team"}</span>
+                                <span className="team-tag">{team.tag || "No Tag"}</span>
                               </span>
                             </a>
                           </td>
@@ -521,10 +606,10 @@ export default function LadderRankingsPage() {
                           <td className="losses">{losses}</td>
                           <td className="center">{winPct(wins, losses)}</td>
                           <td className="center">{streakText(streak)}</td>
-                          <td className="center"><div className="level-bar">{levelFromPoints(points)}</div></td>
+                          <td className="center">
+                            <div className="level-bar">{levelFromPoints(points)}</div>
+                          </td>
                           <td className="center">{points}</td>
-                          <td className="center"><div className="rep-bar">{rep}%</div></td>
-                          <td className="center"><div className="ping" /></td>
                         </tr>
                       );
                     })}

@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../../../lib/useUser";
+import { supabase } from "../../../lib/supabase";
+
+type AppUser = { id: string; email?: string | null };
 
 type EditTab = "main" | "teams" | "awards" | "photos" | "friends" | "settings";
 
@@ -34,19 +37,32 @@ const realGames = [
 ];
 
 export default function EditProfilePage() {
-  const { user, loading } = useUser();
+  const { user, loading } = useUser() as any;
+  const currentUser = user as AppUser | null;
 
   const [activeTab, setActiveTab] = useState<EditTab>("main");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentStatus, setCurrentStatus] = useState("Dynamic");
   const [favoriteGame, setFavoriteGame] = useState("");
   const [favoriteSystem, setFavoriteSystem] = useState("PlayStation");
   const [profileGlow, setProfileGlow] = useState("On");
   const [location, setLocation] = useState("");
+  const [initialLocation, setInitialLocation] = useState<string | null>(null);
+  const [locationLocked, setLocationLocked] = useState(false);
   const [playerIntro, setPlayerIntro] = useState("");
+  const [gtXbox, setGtXbox] = useState("");
+  const [gtPlaystation, setGtPlaystation] = useState("");
+  const [gtNintendo, setGtNintendo] = useState("");
+  const [gtPc, setGtPc] = useState("");
+  const [displayAwards, setDisplayAwards] = useState<string[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [friendsCount, setFriendsCount] = useState(0);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const favoriteGameIsValid = useMemo(() => {
     if (!favoriteGame.trim()) return true;
@@ -71,19 +87,81 @@ export default function EditProfilePage() {
     setSavedMessage("");
   }
 
+  useEffect(() => {
+    async function loadProfileAndRelations() {
+      if (!currentUser?.id) return;
+
+      try {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select(
+            `favorite_game,favorite_system,player_bio,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
+          )
+          .eq("id", currentUser.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setFavoriteGame(profileData.favorite_game || "");
+          setFavoriteSystem(profileData.favorite_system || "PlayStation");
+          setPlayerIntro(profileData.player_bio || "");
+          setProfileGlow(profileData.profile_glow || "On");
+          setAvatarPreview(profileData.avatar_url || null);
+          setLogoPreview(profileData.logo_url || null);
+          setInitialLocation(profileData.location || "");
+          setLocation(profileData.location || "");
+          setLocationLocked(!!profileData.location_locked);
+          setGtXbox(profileData.gt_xbox || "");
+          setGtPlaystation(profileData.gt_playstation || "");
+          setGtNintendo(profileData.gt_nintendo || "");
+          setGtPc(profileData.gt_pc || "");
+          setDisplayAwards(Array.isArray(profileData.display_awards) ? profileData.display_awards.slice(0,6) : []);
+        }
+
+        // load teams for current user
+        const { data: membershipRows } = await supabase
+          .from("team_members")
+          .select("team_id, role")
+          .eq("user_id", currentUser.id);
+
+        const teamIds = (membershipRows || []).map((r: any) => r.team_id).filter(Boolean);
+        if (teamIds.length > 0) {
+          const { data: teamsData } = await supabase
+            .from("teams")
+            .select("id,name,tag,logo_url,wins,losses")
+            .in("id", teamIds);
+
+          setTeams((teamsData || []) as any[]);
+        }
+
+        // load accepted friends count
+        const { data: requests } = await supabase
+          .from("friend_requests")
+          .select("*")
+          .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`);
+
+        const accepted = (requests || []).filter((r: any) => r.status === "accepted");
+        setFriendsCount(accepted.length || 0);
+      } catch (err) {
+        // ignore load errors for now
+      }
+    }
+
+    if (!loading) loadProfileAndRelations();
+  }, [loading, user?.id]);
+
   function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setLogoPreview(URL.createObjectURL(file));
+    setLogoFile(file);
     markChanged();
   }
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setAvatarPreview(URL.createObjectURL(file));
+    setAvatarFile(file);
     markChanged();
   }
 
@@ -109,18 +187,112 @@ export default function EditProfilePage() {
   }
 
   function handleSave() {
+    // trigger real save flow
     if (!favoriteGameIsValid) {
       setSavedMessage("Choose a real game before saving.");
       return;
     }
 
-    setHasChanges(false);
-    setSavedMessage("Changes saved for preview. Database saving will be connected later.");
+    saveProfile();
+  }
+
+  async function saveProfile() {
+    if (!currentUser) return;
+    setSaving(true);
+    setSavedMessage("");
+
+    try {
+      let avatarUrl: string | null = null;
+      let logoUrl: string | null = null;
+
+      if (avatarFile) {
+        const ext = avatarFile.name.split(".").pop() || "png";
+        const path = `${currentUser.id}/avatars/avatar-${Date.now()}.${ext}`;
+
+        const { error: avatarUploadError } = await supabase.storage
+          .from("avatars")
+          .upload(path, avatarFile, { cacheControl: "3600", upsert: true });
+
+        if (avatarUploadError) throw new Error("Avatar upload failed: " + avatarUploadError.message);
+
+        const { data: avatarPublicData } = supabase.storage.from("avatars").getPublicUrl(path);
+        avatarUrl = avatarPublicData.publicUrl;
+      }
+
+      if (logoFile) {
+        const ext = logoFile.name.split(".").pop() || "png";
+        const path = `${currentUser.id}/logos/logo-${Date.now()}.${ext}`;
+
+        const { error: logoUploadError } = await supabase.storage
+          .from("team-assets")
+          .upload(path, logoFile, { cacheControl: "3600", upsert: true });
+
+        if (logoUploadError) throw new Error("Logo upload failed: " + logoUploadError.message);
+
+        const { data: logoPublicData } = supabase.storage.from("team-assets").getPublicUrl(path);
+        logoUrl = logoPublicData.publicUrl;
+      }
+
+      const updateData: any = {
+        favorite_game: favoriteGame || null,
+        favorite_system: favoriteSystem || null,
+        profile_glow: profileGlow || null,
+        player_bio: playerIntro || null,
+        gt_xbox: gtXbox || null,
+        gt_playstation: gtPlaystation || null,
+        gt_nintendo: gtNintendo || null,
+        gt_pc: gtPc || null,
+        display_awards: displayAwards || null,
+      };
+
+      if (avatarUrl) updateData.avatar_url = avatarUrl;
+      if (logoUrl) updateData.logo_url = logoUrl;
+
+      // Location: only save if initial location was empty (first save)
+      if (!initialLocation || initialLocation === "") {
+        updateData.location = location || null;
+        updateData.location_locked = true;
+      }
+
+      const { error } = await supabase.from("profiles").upsert({ id: currentUser.id, ...updateData });
+
+      if (error) throw error;
+
+      setHasChanges(false);
+      setSavedMessage("Profile saved.");
+      if (!initialLocation || initialLocation === "") setLocationLocked(true);
+    } catch (err: any) {
+      console.error("Profile save error:", err);
+      // fallback: fake save to localStorage
+      try {
+        const fallback = {
+          favoriteGame,
+          favoriteSystem,
+          profileGlow,
+          playerIntro,
+          gtXbox,
+          gtPlaystation,
+          gtNintendo,
+          gtPc,
+          location,
+          savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem("gb_profile_preview", JSON.stringify(fallback));
+        setSavedMessage(
+          `Saved locally (preview). Supabase unavailable: ${err?.message || ""}`
+        );
+      } catch (inner) {
+        console.error("Local fallback save failed:", inner);
+        setSavedMessage("Save failed: " + (err?.message || String(err)));
+      }
+    }
+
+    setSaving(false);
   }
 
   if (loading) return <div className="profile-loading">Loading edit profile.</div>;
 
-  if (!user) {
+  if (!currentUser) {
     return <div className="profile-loading">You must be logged in to edit your profile.</div>;
   }
 
@@ -217,7 +389,7 @@ export default function EditProfilePage() {
         .logo-circle img{
           width:100%;
           height:100%;
-          object-fit:cover;
+          object-fit:contain;
         }
 
         .logo-text{
@@ -731,7 +903,11 @@ export default function EditProfilePage() {
                         value={location}
                         onChange={(event) => { setLocation(event.target.value); markChanged(); }}
                         placeholder="Example: Canada"
+                        disabled={locationLocked}
                       />
+                      {locationLocked && (
+                        <div className="field-note">Location locked after first save.</div>
+                      )}
                     </div>
 
                     <div className="form-row">
@@ -741,6 +917,15 @@ export default function EditProfilePage() {
                         onChange={(event) => { setPlayerIntro(event.target.value); markChanged(); }}
                         placeholder="Write a short intro about your gaming style, favorite games, competitive history, and what kind of matches you are looking for."
                       />
+                    </div>
+
+                    <div className="form-row">
+                      <label>Gamertags</label>
+                      <input value={gtXbox} onChange={(e) => { setGtXbox(e.target.value); markChanged(); }} placeholder="Xbox GT" style={{marginBottom:8}} />
+                      <input value={gtPlaystation} onChange={(e) => { setGtPlaystation(e.target.value); markChanged(); }} placeholder="PlayStation ID" style={{marginBottom:8}} />
+                      <input value={gtNintendo} onChange={(e) => { setGtNintendo(e.target.value); markChanged(); }} placeholder="Nintendo ID" style={{marginBottom:8}} />
+                      <input value={gtPc} onChange={(e) => { setGtPc(e.target.value); markChanged(); }} placeholder="PC / Steam ID" />
+                      <div className="field-note">Provide platform-specific IDs so friends and teams can find you.</div>
                     </div>
 
                     <div className="save-row">
@@ -765,16 +950,24 @@ export default function EditProfilePage() {
                     <div className="notice">
                       This page shows all teams you belong to. The 4 glowing slots are the teams that appear on your main profile.
                     </div>
-
                     <div className="manage-grid">
-                      <div className="manage-card top">Top Team Slot 1</div>
-                      <div className="manage-card top">Top Team Slot 2</div>
-                      <div className="manage-card top">Top Team Slot 3</div>
-                      <div className="manage-card top">Top Team Slot 4</div>
-                      <div className="manage-card">Owned Team</div>
-                      <div className="manage-card">Joined Team</div>
-                      <div className="manage-card">Past Team</div>
-                      <div className="manage-card">Empty Team Slot</div>
+                      {teams && teams.length > 0 ? (
+                        teams.map((t) => (
+                          <div key={t.id} className="manage-card">
+                            <div>
+                              <div style={{fontWeight:900}}>{t.name}</div>
+                              <div style={{fontSize:12, marginTop:6}}>{t.tag}</div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          <div className="manage-card top">Top Team Slot 1</div>
+                          <div className="manage-card top">Top Team Slot 2</div>
+                          <div className="manage-card top">Top Team Slot 3</div>
+                          <div className="manage-card top">Top Team Slot 4</div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -787,16 +980,12 @@ export default function EditProfilePage() {
                     <div className="notice">
                       View all awards you have earned. Choose which awards appear on your profile and arrange their order.
                     </div>
-
                     <div className="manage-grid">
-                      <div className="manage-card top">Display Award 1</div>
-                      <div className="manage-card top">Display Award 2</div>
-                      <div className="manage-card top">Display Award 3</div>
-                      <div className="manage-card top">Display Award 4</div>
-                      <div className="manage-card">Founder Trophy</div>
-                      <div className="manage-card">Beta Medal</div>
-                      <div className="manage-card">Ladder Champion</div>
-                      <div className="manage-card">First Win Badge</div>
+                      {Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className={`manage-card ${displayAwards[idx] ? 'top' : ''}`}>
+                          {displayAwards[idx] || `Empty Slot ${idx + 1}`}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -829,7 +1018,7 @@ export default function EditProfilePage() {
                   <div className="box-title">Manage Displayed Friends</div>
                   <div className="box-body">
                     <div className="notice">
-                      View your friends list. Choose which friends appear on your profile and arrange their order.
+                      View your friends list. You have <strong>{friendsCount}</strong> accepted friends. Choose which friends appear on your profile and arrange their order.
                     </div>
 
                     <div className="manage-grid">

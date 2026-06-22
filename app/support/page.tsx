@@ -304,9 +304,9 @@ export default function SupportPage() {
                   contact messages to avoid the dispute system.
                 </p>
 
-                <a className="button red" href="/support/disputes">
-                  Dispute Help
-                </a>
+                <a className="button red" href="/support/dispute-ticket">
+  Submit Dispute Ticket
+</a>
               </div>
             </section>
 

@@ -54,14 +54,21 @@ type RosterMember = {
   user_id: string;
   role: string | null;
   username: string;
+  display_gt: string;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
   gb_place: number | null;
+  eligibility: "green" | "yellow" | "red";
 };
 
-function prettyText(value: string | null) {
+function prettyText(value: string | null | undefined) {
   if (!value) return "";
+  if (value === "mw2") return "Modern Warfare 2";
+  if (value === "modern-warfare-4") return "Modern Warfare 4";
+  if (value === "modern-warfare-iii") return "Modern Warfare III";
+  if (value === "black-ops-6") return "Black Ops 6";
+
   return value
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -78,14 +85,11 @@ function normalizeRole(value: string | null | undefined): TeamRole {
   return "member";
 }
 
-
 function getMatchTimeMs(match: TeamMatch) {
   const rawTime = match.match_time || match.created_at;
-
   if (!rawTime) return 0;
 
   const parsed = new Date(rawTime).getTime();
-
   if (Number.isNaN(parsed)) return 0;
 
   return parsed;
@@ -95,24 +99,15 @@ function resultText(match: TeamMatch, teamId: string) {
   const status = String(match.status || "").toLowerCase();
 
   if (status === "completed") {
-    if (match.winning_team_id && String(match.winning_team_id) === String(teamId)) {
-      return "W";
-    }
-
-    if (match.losing_team_id && String(match.losing_team_id) === String(teamId)) {
-      return "L";
-    }
-
+    if (match.winning_team_id && String(match.winning_team_id) === String(teamId)) return "W";
+    if (match.losing_team_id && String(match.losing_team_id) === String(teamId)) return "L";
     return "W/L";
   }
 
   if (status === "disputed") return "Disputed";
 
   const matchTime = getMatchTimeMs(match);
-
-  if (matchTime && Date.now() >= matchTime) {
-    return "Playing";
-  }
+  if (matchTime && Date.now() >= matchTime) return "Playing";
 
   return "Upcoming";
 }
@@ -132,7 +127,6 @@ function shortDate(value: string | null) {
   if (!value) return "TBD";
 
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) return value;
 
   return `${date.getMonth() + 1}/${date.getDate()}`;
@@ -153,6 +147,119 @@ function ordinal(value: number | null | undefined) {
   return `${num}th`;
 }
 
+function stableTeamNumber(teamId: string) {
+  let hash = 0;
+
+  for (let i = 0; i < teamId.length; i += 1) {
+    hash = (hash * 31 + teamId.charCodeAt(i)) % 900000;
+  }
+
+  return String(hash + 100000);
+}
+
+function gameCover(game: string | null | undefined) {
+  if (game === "mw2") {
+    return "https://upload.wikimedia.org/wikipedia/en/5/52/Call_of_Duty_Modern_Warfare_2_%282009%29_cover.png";
+  }
+
+  if (game === "black-ops-6") {
+    return "https://upload.wikimedia.org/wikipedia/en/5/51/Call_of_Duty_Black_Ops_6_cover_art.jpg";
+  }
+
+  if (game === "modern-warfare-iii") {
+    return "https://upload.wikimedia.org/wikipedia/en/7/7e/Call_of_Duty_Modern_Warfare_III_cover_art.jpg";
+  }
+
+  if (game === "modern-warfare-4") {
+    return "/mw4.jpeg";
+  }
+
+  return "/mw4.jpeg";
+}
+
+function profileGamertag(profile: any, platform: string | null | undefined) {
+  const cleanPlatform = String(platform || "").toLowerCase();
+  const username = profile?.username || "Player";
+
+  const fallbackGt =
+    String(username).toLowerCase() === "prime" ? "Prime#3139" : username;
+
+  if (cleanPlatform === "xbox") {
+    return (
+      profile?.xbox_gamertag ||
+      profile?.xbox_gt ||
+      profile?.xbox ||
+      profile?.gamertag ||
+      profile?.gt ||
+      profile?.user_gt ||
+      profile?.platform_gt ||
+      profile?.display_gt ||
+      fallbackGt
+    );
+  }
+
+  if (cleanPlatform === "playstation") {
+    return (
+      profile?.playstation_gamertag ||
+      profile?.psn ||
+      profile?.psn_id ||
+      profile?.gamertag ||
+      profile?.gt ||
+      profile?.user_gt ||
+      profile?.platform_gt ||
+      profile?.display_gt ||
+      fallbackGt
+    );
+  }
+
+  if (cleanPlatform === "nintendo") {
+    return (
+      profile?.nintendo_gamertag ||
+      profile?.nintendo_id ||
+      profile?.switch_code ||
+      profile?.friend_code ||
+      profile?.gamertag ||
+      profile?.gt ||
+      profile?.user_gt ||
+      profile?.platform_gt ||
+      profile?.display_gt ||
+      fallbackGt
+    );
+  }
+
+  if (cleanPlatform === "pc") {
+    return (
+      profile?.pc_gamertag ||
+      profile?.steam ||
+      profile?.steam_id ||
+      profile?.battle_net ||
+      profile?.battlenet ||
+      profile?.gamertag ||
+      profile?.gt ||
+      profile?.user_gt ||
+      profile?.platform_gt ||
+      profile?.display_gt ||
+      fallbackGt
+    );
+  }
+
+  return profile?.gamertag || profile?.gt || profile?.display_gt || fallbackGt;
+}
+
+function eligibilityStatus(member: any): "green" | "yellow" | "red" {
+  const status = String(member?.status || member?.invite_status || "").toLowerCase();
+
+  if (member?.can_play === false || status === "ineligible" || status === "banned" || status === "suspended") {
+    return "red";
+  }
+
+  if (member?.accepted === false || status === "pending" || status === "invited" || status === "waiting") {
+    return "yellow";
+  }
+
+  return "green";
+}
+
 export default function TeamPage() {
   const params = useParams();
   const router = useRouter();
@@ -164,7 +271,6 @@ export default function TeamPage() {
   const [leaderName, setLeaderName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [playerSearch, setPlayerSearch] = useState("");
   const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
@@ -173,11 +279,7 @@ export default function TeamPage() {
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
-  const canCreateMatch =
-    viewerRole === "leader" ||
-    viewerRole === "co-leader" ||
-    viewerRole === "captain";
-
+  const canCreateMatch = viewerRole === "leader" || viewerRole === "co-leader" || viewerRole === "captain";
   const isLeader = viewerRole === "leader";
 
   const teamName = team?.name || "Team Name";
@@ -185,11 +287,15 @@ export default function TeamPage() {
   const platformName = prettyText(team?.platform || "xbox");
   const gameName = prettyText(team?.game || "modern-warfare-4");
   const ladderName = prettyText(team?.ladder || "team") + " Ladder";
+  const teamPublicId = stableTeamNumber(team?.id || teamId);
 
   const ladderUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`;
   const rulesUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rules`;
 
-  const visibleMatches = teamMatches.slice(0, 20);
+  const visibleMatches = teamMatches
+    .filter((match) => resultText(match, teamId) !== "Upcoming")
+    .slice(0, 20);
+
   const teamWins = Number(team?.wins || 0);
   const teamLosses = Number(team?.losses || 0);
   const teamStreak = Number(team?.streak || 0);
@@ -208,12 +314,9 @@ export default function TeamPage() {
 
   const filteredPlayers = useMemo(() => {
     const clean = playerSearch.trim().toLowerCase();
-
     if (!clean) return players;
 
-    return players.filter((player) =>
-      player.username.toLowerCase().includes(clean)
-    );
+    return players.filter((player) => player.username.toLowerCase().includes(clean));
   }, [playerSearch]);
 
   function getOpponentName(match: TeamMatch) {
@@ -248,6 +351,10 @@ export default function TeamPage() {
       const { data: rankedTeams } = await supabase
         .from("teams")
         .select("id, wins, losses, rating_points, created_at")
+        .eq("platform", teamData?.platform || "xbox")
+        .eq("category", teamData?.category || "call-of-duty")
+        .eq("game", teamData?.game || "modern-warfare-4")
+        .eq("ladder", teamData?.ladder || "team")
         .order("rating_points", { ascending: false })
         .order("wins", { ascending: false })
         .order("losses", { ascending: true })
@@ -260,7 +367,7 @@ export default function TeamPage() {
 
       const { data: memberRows } = await supabase
         .from("team_members")
-        .select("user_id, role")
+        .select("*")
         .eq("team_id", teamId);
 
       const memberUserIds = (memberRows || [])
@@ -273,7 +380,7 @@ export default function TeamPage() {
       if (memberUserIds.length > 0) {
         const { data: memberProfiles } = await supabase
           .from("profiles")
-          .select("id, username, gb_rank_points, gb_wins, gb_losses")
+          .select("*")
           .in("id", memberUserIds);
 
         (memberProfiles || []).forEach((profile: any) => {
@@ -294,15 +401,19 @@ export default function TeamPage() {
 
       const loadedRoster = (memberRows || []).map((member: any) => {
         const profile = profileMap[member.user_id] || {};
+        const username = profile.username || "Player";
+        const displayGt = profileGamertag(profile, teamData?.platform || "xbox");
 
         return {
           user_id: member.user_id,
           role: member.role || "member",
-          username: profile.username || "Player",
+          username,
+          display_gt: displayGt,
           gb_rank_points: Number(profile.gb_rank_points || 0),
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
           gb_place: rankMap[member.user_id] || null,
+          eligibility: eligibilityStatus(member),
         } as RosterMember;
       });
 
@@ -360,17 +471,10 @@ export default function TeamPage() {
         if (teamData?.owner_id && String(teamData.owner_id) === String(user.id)) {
           setViewerRole("leader");
         }
-
-        const leaderProfile = loadedRoster.find((member) => String(member.user_id) === String(teamData?.owner_id));
-        const username =
-          leaderProfile?.username ||
-          user.user_metadata?.username ||
-          user.user_metadata?.display_name ||
-          user.email?.split("@")[0] ||
-          "Leader";
-
-        setLeaderName(username);
       }
+
+      const leaderRoster = loadedRoster.find((member) => String(member.user_id) === String(teamData?.owner_id));
+      setLeaderName(leaderRoster?.display_gt || leaderRoster?.username || "Leader");
 
       setLoading(false);
     }
@@ -381,18 +485,12 @@ export default function TeamPage() {
   async function handleDisband() {
     if (!teamId) return;
 
-    const confirmDelete = confirm(
-      "Are you sure you want to disband this team? This cannot be undone."
-    );
-
+    const confirmDelete = confirm("Are you sure you want to disband this team? This cannot be undone.");
     if (!confirmDelete) return;
 
     setDeleting(true);
 
-    const { error: membersError } = await supabase
-      .from("team_members")
-      .delete()
-      .eq("team_id", teamId);
+    const { error: membersError } = await supabase.from("team_members").delete().eq("team_id", teamId);
 
     if (membersError) {
       alert("Could not remove team members: " + membersError.message);
@@ -400,10 +498,7 @@ export default function TeamPage() {
       return;
     }
 
-    const { error: teamError } = await supabase
-      .from("teams")
-      .delete()
-      .eq("id", teamId);
+    const { error: teamError } = await supabase.from("teams").delete().eq("id", teamId);
 
     if (teamError) {
       alert("Could not disband team: " + teamError.message);
@@ -443,16 +538,6 @@ export default function TeamPage() {
         .page{min-height:100vh;background:linear-gradient(to bottom,#02060a,#000);padding:32px 22px;}
         .wrap{max-width:1080px;margin:0 auto;background:#07111b;border:1px solid #315f88;}
 
-        .top-strip{
-          height:30px;background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;display:flex;align-items:center;
-          justify-content:flex-end;gap:18px;padding:0 14px;
-        }
-
-        .top-strip a{
-          color:#fff;font-size:12px;font-weight:bold;text-transform:uppercase;text-decoration:none;
-        }
-
         .header{
           min-height:104px;background:linear-gradient(to bottom,#173956,#07111b);
           border-bottom:2px solid #315f88;display:flex;align-items:center;
@@ -460,8 +545,18 @@ export default function TeamPage() {
         }
 
         .game-header{display:flex;align-items:center;gap:18px;}
-        .game-cover{width:126px;height:78px;border:1px solid #315f88;background:#050c14;overflow:hidden;}
-        .game-cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+        .game-cover{
+          width:126px;height:78px;border:1px solid #315f88;background:#050c14;
+          overflow:hidden;display:flex;align-items:center;justify-content:center;
+        }
+
+        .game-cover img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          object-position:center center;
+          display:block;
+        }
 
         .game-name{
           color:#f2c14e;font-size:15px;font-weight:900;letter-spacing:1.3px;
@@ -472,21 +567,16 @@ export default function TeamPage() {
           color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;
         }
 
-        .view-ladder{
-          border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);
-          color:#f5f8ff;font-size:15px;font-weight:900;text-transform:uppercase;
-          padding:14px 22px;text-decoration:none;
-        }
-
-        .view-ladder:hover{border-color:#d7ad4a;color:#d7ad4a;}
-
-        .avatar-row{height:28px;background:#050b12;border-bottom:1px solid #244b70;position:relative;}
+        .avatar-row{height:66px;background:#050b12;border-bottom:1px solid #244b70;position:relative;}
 
         .team-avatar{
-          position:absolute;left:26px;top:2px;width:58px;height:58px;border:1px solid #315f88;
-          background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
-          font-size:18px;font-weight:900;text-transform:uppercase;z-index:5;
+          position:absolute;left:24px;top:8px;width:74px;height:74px;border:1px solid #315f88;
+          border-radius:4px;background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
+          font-size:20px;font-weight:900;text-transform:uppercase;z-index:5;
+          overflow:hidden;
         }
+
+        .team-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 
         .nav{
           height:36px;background:linear-gradient(to bottom,#10283d,#07111b);
@@ -517,20 +607,34 @@ export default function TeamPage() {
           background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
           font-size:13px;font-weight:bold;text-transform:uppercase;
         }
+
         .team-logo-box img{ width:100%; height:100%; object-fit:contain; display:block; }
 
         .team-info{
           min-height:280px;border:1px solid #244b70;background:#0a1724;
-          padding:34px 20px 20px 20px;display:flex;flex-direction:column;justify-content:flex-start;
+          padding:28px 20px 20px 20px;display:flex;flex-direction:column;justify-content:flex-start;
         }
 
         .team-title-block{
-          height:72px;
-          transform:translateY(-20px);
+          min-height:90px;
+          transform:translateY(-12px);
         }
 
-        .team-name{color:#fff;font-size:32px;font-weight:900;text-transform:uppercase;margin-bottom:3px;line-height:1;}
-        .team-tag{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:0;line-height:1.05;letter-spacing:.35px;}
+        .team-name{
+          color:#fff;font-size:40px;font-weight:900;text-transform:uppercase;margin-bottom:6px;
+          line-height:1;text-shadow:0 2px 4px #000;
+        }
+
+        .team-tag{
+          color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:2px;
+          line-height:1.05;letter-spacing:.3px;
+        }
+
+        .team-public-id{
+          color:#9ed7ff;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.35px;
+          margin-top:4px;
+        }
+
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
         .founder-name{color:#d7ad4a;font-weight:bold;}
 
@@ -563,9 +667,10 @@ export default function TeamPage() {
           color:#cfe2f2;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;
         }
 
-        .stats-table td:first-child,.stats-table th:first-child{
-          text-align:left;padding-left:14px;width:24%;
-        }
+        .stats-table{table-layout:fixed;}
+        .stats-table th:first-child,.stats-table td:first-child{width:15%;text-align:left;padding-left:12px;}
+        .stats-table th:nth-child(2),.stats-table td:nth-child(2){width:9%;text-align:left;padding-left:0;}
+        .stats-table th:nth-child(3),.stats-table td:nth-child(3){width:10%;text-align:center;}
 
         .xp-head{color:#fff;}
         .xp-cell{color:#fff;font-weight:bold;}
@@ -577,7 +682,6 @@ export default function TeamPage() {
 
         .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
-
 
         .match-list-wrap{
           max-height:150px;
@@ -601,9 +705,7 @@ export default function TeamPage() {
           background:#02070c;
         }
 
-        .match-list-row:last-child{
-          border-bottom:0;
-        }
+        .match-list-row:last-child{border-bottom:0;}
 
         .match-list-date{
           color:#8aa7c0;
@@ -623,10 +725,7 @@ export default function TeamPage() {
           padding:0 4px;
         }
 
-        .match-list-details{
-          text-align:center;
-          white-space:nowrap;
-        }
+        .match-list-details{text-align:center;white-space:nowrap;}
 
         .match-list-details a{
           color:#7fc7ff;
@@ -636,9 +735,7 @@ export default function TeamPage() {
           text-transform:uppercase;
         }
 
-        .match-list-details a:hover{
-          color:#d7ad4a;
-        }
+        .match-list-details a:hover{color:#d7ad4a;}
 
         .match-list-result{
           text-align:center;
@@ -648,49 +745,36 @@ export default function TeamPage() {
           font-size:10px;
         }
 
-        .result-win{
-          color:#36e86b !important;
-          font-weight:900;
-        }
-
-        .result-loss{
-          color:#ff5555 !important;
-          font-weight:900;
-        }
-
-        .result-upcoming{
-          color:#d7ad4a !important;
-          font-weight:900;
-        }
-
-        .result-playing{
-          color:#ffd35a !important;
-          font-weight:900;
-        }
-
-        .result-dispute{
-          color:#ff5555 !important;
-          font-weight:900;
-        }
+        .result-win{color:#36e86b !important;font-weight:900;}
+        .result-loss{color:#ff5555 !important;font-weight:900;}
+        .result-upcoming{color:#d7ad4a !important;font-weight:900;}
+        .result-playing{color:#ffd35a !important;font-weight:900;}
+        .result-dispute{color:#ff5555 !important;font-weight:900;}
 
         .roster-table th{text-align:left;}
         .roster-table td{text-align:left;}
-        .roster-table th:first-child{width:30%;padding-left:74px;}
-        .roster-table td:first-child{width:30%;padding-left:20px;}
+        .roster-table th:first-child{width:34%;padding-left:60px;}
+        .roster-table td:first-child{width:34%;padding-left:18px;}
         .roster-table th:nth-child(2),.roster-table td:nth-child(2){width:14%;}
         .roster-table th:nth-child(3),.roster-table td:nth-child(3){width:15%;text-align:center;}
         .roster-table th:nth-child(4),.roster-table td:nth-child(4){width:20%;text-align:center;}
         .roster-table th:last-child,.roster-table td:last-child{text-align:center;width:13%;}
 
         .member-name{
-          color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:26px;
-          padding-left:20px !important;
+          color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:18px;
+          padding-left:18px !important;
         }
 
         .status-box{
           width:24px;height:22px;border:1px solid #244b70;background:#02070c;
           display:flex;align-items:center;justify-content:center;flex-shrink:0;
         }
+
+        .status-box:hover{border-color:#d7ad4a;}
+
+        .member-text{display:flex;align-items:baseline;gap:0;line-height:16px;}
+        .member-gt{color:#7fc7ff;font-size:13px;font-weight:900;}
+        .member-username{display:none;}
 
         .online-guy{width:10px;height:14px;position:relative;display:inline-block;}
         .online-guy:before{
@@ -702,7 +786,15 @@ export default function TeamPage() {
         }
 
         .rank{color:#d7ad4a;font-weight:bold;}
-        .eligible{width:14px;height:14px;border-radius:50%;background:#d7ad4a;display:inline-block;vertical-align:middle;}
+
+        .eligible{
+          width:14px;height:14px;border-radius:50%;display:inline-block;vertical-align:middle;
+          border:1px solid rgba(255,255,255,.3);
+        }
+
+        .eligible.green{background:#36e86b;}
+        .eligible.yellow{background:#ffd35a;}
+        .eligible.red{background:#ff5555;}
 
         .eligibility-head{display:flex;align-items:center;justify-content:center;gap:8px;}
         .eligibility-help{position:relative;display:inline-flex;align-items:center;}
@@ -713,7 +805,7 @@ export default function TeamPage() {
         }
 
         .help-popup{
-          display:none;position:absolute;right:0;top:20px;width:210px;border:1px solid #315f88;
+          display:none;position:absolute;right:0;top:20px;width:230px;border:1px solid #315f88;
           background:#02070c;color:#cfe2f2;font-size:11px;line-height:16px;padding:9px;z-index:10;text-transform:none;
         }
 
@@ -748,46 +840,6 @@ export default function TeamPage() {
           display:flex;align-items:center;justify-content:center;color:#a9c3db;font-size:11px;
         }
 
-        .modal-backdrop{
-          position:fixed;inset:0;background:rgba(0,0,0,.72);
-          display:flex;align-items:center;justify-content:center;z-index:99;
-        }
-
-        .invite-modal{width:430px;border:1px solid #315f88;background:#050b12;}
-
-        .invite-title{
-          height:34px;background:linear-gradient(to bottom,#18344f,#091521);
-          border-bottom:1px solid #244b70;color:#d7ad4a;font-size:12px;font-weight:900;
-          text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;padding:0 12px;
-        }
-
-        .invite-close{
-          border:1px solid #315f88;background:#000;color:#fff;width:22px;height:22px;cursor:pointer;font-weight:bold;
-        }
-
-        .invite-body{padding:14px;}
-
-        .invite-search{
-          width:100%;height:34px;border:1px solid #315f88;background:#000;color:#d7e2ee;
-          padding:0 10px;font-size:12px;outline:none;margin-bottom:12px;
-        }
-
-        .invite-results{border:1px solid #244b70;background:#02070c;max-height:230px;overflow:auto;}
-
-        .player-row{
-          display:grid;grid-template-columns:1fr 70px 72px;gap:8px;align-items:center;
-          padding:10px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;
-        }
-
-        .player-row:last-child{border-bottom:0;}
-        .player-name{color:#7fc7ff;font-weight:bold;}
-        .player-rank{color:#cfe2f2;font-size:11px;}
-
-        .invite-btn{
-          height:26px;border:1px solid #d7ad4a;background:linear-gradient(to bottom,#d6a943,#7b560e);
-          color:#07111b;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;
-        }
-
         .loading-text{
           color:#fff;
           padding:40px;
@@ -800,16 +852,10 @@ export default function TeamPage() {
 
       <main className="page">
         <div className="wrap">
-          <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
-          </div>
-
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img src="/mw4.jpeg" alt="Game Cover" />
+                <img src={gameCover(team?.game)} alt="Game Cover" />
               </div>
 
               <div>
@@ -817,7 +863,6 @@ export default function TeamPage() {
                 <div className="ladder-name">{ladderName}</div>
               </div>
             </div>
-
           </header>
 
           <div className="avatar-row">
@@ -836,7 +881,6 @@ export default function TeamPage() {
             <a href="/profile/teams">My Teams</a>
             <a href="/members">Members</a>
             <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
             <a href={ladderUrl}>View Ladder</a>
           </nav>
 
@@ -860,6 +904,7 @@ export default function TeamPage() {
                       <div className="team-title-block">
                         <div className="team-name">{teamName}</div>
                         <div className="team-tag">Clan Tag: {teamTag}</div>
+                        <div className="team-public-id">Team ID: {teamPublicId}</div>
                       </div>
 
                       <div className="team-line">Achievements: None</div>
@@ -872,10 +917,10 @@ export default function TeamPage() {
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (
-                         <a
-  className="team-action-btn"
-  href={`/matches/create?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
->
+                          <a
+                            className="team-action-btn"
+                            href={`/matches/create?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
+                          >
                             Create Match
                           </a>
                         ) : (
@@ -885,9 +930,9 @@ export default function TeamPage() {
                         )}
 
                         <a
-  className="team-action-btn secondary"
-  href={`/matches/finder?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
->
+                          className="team-action-btn secondary"
+                          href={`/matches/finder?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
+                        >
                           Match Finder
                         </a>
                       </div>
@@ -921,7 +966,9 @@ export default function TeamPage() {
                         <td>{teamStreak}</td>
                         <td>{teamStreak}</td>
                         <td className="xp-cell">{teamXp}</td>
-                        <td className="level-cell"><span className="level-pill">{teamLevel}</span></td>
+                        <td className="level-cell">
+                          <span className="level-pill">{teamLevel}</span>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -939,9 +986,7 @@ export default function TeamPage() {
                           <div className="match-list-row" key={match.id}>
                             <div className="match-list-date">{shortDate(match.match_time || match.created_at)}</div>
 
-                            <div className="match-list-opponent">
-                              {getOpponentName(match)}
-                            </div>
+                            <div className="match-list-opponent">{getOpponentName(match)}</div>
 
                             <div className="match-list-details">
                               <a href={`/matches/${match.id}`}>Details</a>
@@ -978,7 +1023,7 @@ export default function TeamPage() {
                             <span className="eligibility-help">
                               <button className="help-button" type="button">?</button>
                               <span className="help-popup">
-                                Eligibility means this player is allowed to play official ladder matches for this team.
+                                Green means good to play. Yellow means waiting to accept team invite. Red means cannot play.
                               </span>
                             </span>
                           </span>
@@ -991,32 +1036,39 @@ export default function TeamPage() {
                         rosterMembers.map((member) => (
                           <tr key={member.user_id}>
                             <td className="member-name">
-                              <span className="status-box">
+                              <a className="status-box" href={`/profile/${member.user_id}`}>
                                 <span className="online-guy"></span>
+                              </a>
+
+                              <span className="member-text">
+                                <span className="member-gt">{member.display_gt}</span>
                               </span>
-                              {member.username}
                             </td>
+
                             <td className="rank">{prettyText(normalizeRole(member.role))}</td>
                             <td>{ordinal(member.gb_place)}</td>
                             <td>Today</td>
                             <td>
-                              <span className="eligible"></span>
+                              <span className={`eligible ${member.eligibility}`}></span>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
                           <td className="member-name">
-                            <span className="status-box">
+                            <a className="status-box" href="/profile">
                               <span className="online-guy"></span>
+                            </a>
+
+                            <span className="member-text">
+                              <span className="member-gt">{leaderName}</span>
                             </span>
-                            {leaderName}
                           </td>
                           <td className="rank">Leader</td>
                           <td>Unranked</td>
                           <td>Today</td>
                           <td>
-                            <span className="eligible"></span>
+                            <span className="eligible green"></span>
                           </td>
                         </tr>
                       )}
@@ -1044,22 +1096,8 @@ export default function TeamPage() {
                     )}
                     <br />
 
-                    {canEditRoster ? (
-                      <button type="button" onClick={() => setInviteOpen(true)}>
-                        Invite Players
-                      </button>
-                    ) : (
-                      <span className="locked-control">Invite Players</span>
-                    )}
-                    <br />
-
                     {isLeader ? (
-                      <button
-                        className="danger-link"
-                        disabled={deleting}
-                        onClick={handleDisband}
-                        type="button"
-                      >
+                      <button className="danger-link" disabled={deleting} onClick={handleDisband} type="button">
                         {deleting ? "Disbanding..." : "Disband Team"}
                       </button>
                     ) : (
@@ -1080,9 +1118,9 @@ export default function TeamPage() {
                     <br />
                     Ladder: {ladderName}
                     <br />
-                    Rules:{" "}
+                    Ladder Rules:{" "}
                     <a className="rules-link" href={rulesUrl}>
-                      View Rules
+                      View
                     </a>
                   </div>
                 </div>
@@ -1093,54 +1131,6 @@ export default function TeamPage() {
           <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
       </main>
-
-      {inviteOpen && (
-        <div className="modal-backdrop">
-          <div className="invite-modal">
-            <div className="invite-title">
-              Invite Players
-              <button
-                className="invite-close"
-                type="button"
-                onClick={() => setInviteOpen(false)}
-              >
-                X
-              </button>
-            </div>
-
-            <div className="invite-body">
-              <input
-                className="invite-search"
-                type="text"
-                value={playerSearch}
-                onChange={(event) => setPlayerSearch(event.target.value)}
-                placeholder="Search players by username..."
-              />
-
-              <div className="invite-results">
-                {filteredPlayers.map((player) => (
-                  <div className="player-row" key={player.id}>
-                    <div>
-                      <div className="player-name">{player.username}</div>
-                      <div className="player-rank">{player.rank}</div>
-                    </div>
-
-                    <div>{player.record}</div>
-
-                    <button className="invite-btn" type="button">
-                      Invite
-                    </button>
-                  </div>
-                ))}
-
-                {filteredPlayers.length === 0 && (
-                  <div className="empty-text">No players found.</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

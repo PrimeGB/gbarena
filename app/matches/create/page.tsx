@@ -43,6 +43,7 @@ function getPlayerOptions(ladder: string | null) {
 }
 
 type RulesType = "GB Variant" | "CDL" | "Custom";
+type CrossPlayType = "Off" | "On";
 
 export default function CreateMatchPage() {
   return (
@@ -66,11 +67,13 @@ function CreateMatchContent() {
   const gameName = prettyText(game);
   const ladderName = getLadderName(ladder);
   const gameImage = getGameImage(game);
+  const viewTeamUrl = teamId ? `/teams/${teamId}` : "/profile/teams";
 
   const playerOptions = useMemo(() => getPlayerOptions(ladder), [ladder]);
 
   const [gameMode, setGameMode] = useState("Search and Destroy");
   const [rulesType, setRulesType] = useState<RulesType>("GB Variant");
+  const [crossplay, setCrossplay] = useState<CrossPlayType>("Off");
   const [players, setPlayers] = useState(playerOptions[0]);
   const [matchTime, setMatchTime] = useState("8:00 PM");
   const [bestOf, setBestOf] = useState("Best of 3");
@@ -141,8 +144,8 @@ function CreateMatchContent() {
 
   const presetText =
     rulesType === "Custom"
-      ? `Custom · Players ${players} · Perks ${perks} · Launchers ${launchers} · Killstreaks ${killstreaks}`
-      : `${rulesType} locked preset · Players ${players} · Preset settings cannot be edited`;
+      ? `Custom · Players ${players} · Cross Play ${crossplay} · Perks ${perks} · Launchers ${launchers} · Killstreaks ${killstreaks}`
+      : `${rulesType} locked preset · Players ${players} · Cross Play ${crossplay} · Preset settings cannot be edited`;
 
   async function handlePostMatch() {
     setPostError("");
@@ -171,6 +174,7 @@ function CreateMatchContent() {
       match_time: matchTime,
       best_of: bestOf,
       preset: rulesType,
+      crossplay,
       perks,
       launchers,
       killstreaks,
@@ -210,8 +214,6 @@ function CreateMatchContent() {
 
         .page{min-height:100vh;background:radial-gradient(circle at top,rgba(45,100,150,.22),transparent 42%),linear-gradient(to bottom,#02060a,#000);padding:32px 22px;}
         .wrap{max-width:1080px;margin:0 auto;background:#07111b;border:1px solid #315f88;box-shadow:0 0 28px rgba(0,80,140,.35), inset 0 0 22px rgba(0,0,0,.7);}
-        .top-strip{height:30px;background:linear-gradient(to bottom,#8b0000,#3b0000);border-bottom:1px solid #b32222;display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:0 14px;}
-        .top-strip a{color:#fff;font-size:12px;font-weight:bold;text-transform:uppercase;}
 
         .header{min-height:104px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
         .game-header{display:flex;align-items:center;gap:18px;}
@@ -220,6 +222,7 @@ function CreateMatchContent() {
         .game-name{color:#f2c14e;font-size:15px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase;margin-bottom:8px;text-shadow:0 1px 2px #000;}
         .ladder-name{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
         .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:15px;font-weight:900;text-transform:uppercase;padding:14px 22px;text-shadow:0 2px 4px #000;}
+        .header-badge:hover{border-color:#d7ad4a;color:#d7ad4a;}
 
         .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
         .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;}
@@ -281,6 +284,7 @@ function CreateMatchContent() {
         .settings-button.locked:hover{color:#fff;border-color:#4b95d8;}
 
         .rules-box{border:1px solid #315b7d;background:#02070c;padding:13px;color:#cfe2f2;font-size:12px;line-height:22px;}
+        .crossplay-box{border:1px solid #315b7d;background:#02070c;padding:13px;max-width:410px;}
         .small-note{color:#8aa7c0;font-size:11px;line-height:18px;margin-top:8px;}
 
         .success-box{border:1px solid #35a852;background:#06230d;color:#8cff9d;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
@@ -317,12 +321,6 @@ function CreateMatchContent() {
 
       <main className="page">
         <div className="wrap">
-          <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
-          </div>
-
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
@@ -335,7 +333,9 @@ function CreateMatchContent() {
               </div>
             </div>
 
-            <div className="header-badge">Create Match</div>
+            <a className="header-badge" href={viewTeamUrl}>
+              View Team
+            </a>
           </header>
 
           <nav className="nav">
@@ -343,7 +343,7 @@ function CreateMatchContent() {
             <a href="/profile/teams">My Teams</a>
             <a href="/members">Members</a>
             <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
+            <a href={`/ladders/${platform}/${category}/${game}/${ladder}/rankings`}>Ladder</a>
           </nav>
 
           <section className="title-bar">
@@ -360,8 +360,9 @@ function CreateMatchContent() {
                   <div className="steps-box">
                     <div className="steps-title">Create Match Steps</div>
                     <div className="step-line"><span className="step-arrow">►</span>Select Game Mode</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Review Map Notice</div>
+                    <div className="step-line"><span className="step-arrow">►</span>Select Cross Play</div>
                     <div className="step-line"><span className="step-arrow">►</span>Select Rules</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Confirm Player Count</div>
                     <div className="step-line"><span className="step-arrow">►</span>Pick Match Time</div>
                     <div className="step-line"><span className="step-arrow">►</span>Post Match</div>
                   </div>
@@ -371,6 +372,7 @@ function CreateMatchContent() {
                     <div>Game: {gameName}</div>
                     <div>Ladder: {ladderName}</div>
                     <div>Rules: {rulesType}</div>
+                    <div>Cross Play: {crossplay}</div>
                     <div>Players: {players}</div>
                     <div>Team ID: {teamId ? "Loaded" : "Missing"}</div>
                     <div>Status: Match Draft</div>
@@ -402,6 +404,31 @@ function CreateMatchContent() {
                           <option>Capture the Flag</option>
                           <option>Gunfight</option>
                         </select>
+                      </div>
+
+                      <div className="row">
+                        <label>Maps</label>
+                        <div className="rules-box">
+                          Maps will be generated once this match is accepted.
+                          <br />
+                          The map pool will be based on the selected game, ladder, mode, ruleset, and Best Of.
+                        </div>
+                      </div>
+
+                      <div className="row">
+                        <label>Cross Play</label>
+                        <div className="crossplay-box">
+                          <select className="small-select" value={crossplay} onChange={(e) => setCrossplay(e.target.value as CrossPlayType)}>
+                            <option>Off</option>
+                            <option>On</option>
+                          </select>
+
+                          <div className="small-note">
+                            {crossplay === "Off"
+                              ? `Cross Play Disabled: only ${platformName} teams on this exact game and ladder can accept.`
+                              : "Cross Play Enabled: teams from other platforms can accept as long as they are on this same game and ladder."}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="row">
@@ -503,9 +530,11 @@ function CreateMatchContent() {
                         <br />
                         • Selected ruleset: <strong>{rulesType}</strong>.
                         <br />
+                        • Cross Play: <strong>{crossplay}</strong>.
+                        <br />
                         • Player count is locked to <strong>{players}</strong> for this ladder.
                         <br />
-                        • Posted matches are available for eligible teams on this ladder.
+                        • Maps will generate once the match is accepted.
                         <br />
                         • Results must be reported after the match.
                         <br />
@@ -519,7 +548,7 @@ function CreateMatchContent() {
                       {posting ? "Posting..." : "Post Match"}
                     </button>
 
-                    <a className="action-btn" href={`/matches/finder?platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}>
+                    <a className="action-btn" href={`/matches/finder?teamId=${teamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}>
                       Match Finder
                     </a>
 
@@ -553,6 +582,8 @@ function CreateMatchContent() {
                   <div>Status: Developer controlled preset</div>
                   <div>Game Mode: Host selected</div>
                   <div>Players: Based on ladder</div>
+                  <div>Cross Play: Host selected</div>
+                  <div>Maps: Generated once accepted</div>
                   <div>Radar: Normal</div>
                   <div>Hardcore: Off</div>
                   <div>Third Person: Off</div>
@@ -571,6 +602,8 @@ function CreateMatchContent() {
                   <div>Ruleset: CDL competitive-style preset</div>
                   <div>Modes: Search and Destroy, Hardpoint, Control</div>
                   <div>Players: Competitive team format</div>
+                  <div>Cross Play: Host selected</div>
+                  <div>Maps: Generated once accepted</div>
                   <div>Radar: Normal</div>
                   <div>Hardcore: Off</div>
                   <div>Third Person: Off</div>

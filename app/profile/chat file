@@ -34,7 +34,6 @@ type Profile = {
 type AppUser = {
   id: string;
   email?: string | null;
-  created_at?: string | null;
 };
 
 type Award = {
@@ -118,20 +117,6 @@ function ProfilePageContent() {
     if (clean === "co-leader" || clean === "coleader") return "Co-Leader";
     if (clean === "captain") return "Captain";
     return "Member";
-  }
-
-  function formatJoinedDate(value: string | null | undefined) {
-    if (!value) return "Not Set";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "Not Set";
-
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const year = date.getFullYear();
-
-    return `${month}/${day}-${year}`;
   }
 
   useEffect(() => {
@@ -341,7 +326,7 @@ function ProfilePageContent() {
       logo_url: null,
       profile_glow: "On",
       display_awards: [],
-      created_at: new Date().toISOString(),
+      created_at: null,
     });
 
     setSaved(true);
@@ -387,7 +372,6 @@ function ProfilePageContent() {
   const rankNumber = Number(gbRankDisplay);
   const rankParts = Number.isFinite(rankNumber) && rankNumber > 0 ? ordinalRank(rankNumber) : null;
   const emptyTeamSlots = Math.max(0, 4 - topTeams.length);
-  const joinedDate = profile?.created_at || (isViewingOwnProfile ? currentUser?.created_at : null) || null;
 
   return (
     <>
@@ -421,19 +405,19 @@ function ProfilePageContent() {
         }
 
         .profile-page.favorite-xbox .wrapper{
-          box-shadow:-10px 0 22px rgba(0,255,100,.16),10px 0 22px rgba(0,255,100,.16);
+          box-shadow:-18px 0 35px rgba(0,255,100,.22),18px 0 35px rgba(0,255,100,.22);
         }
 
         .profile-page.favorite-playstation .wrapper{
-          box-shadow:-10px 0 22px rgba(0,120,255,.20),10px 0 22px rgba(0,120,255,.20);
+          box-shadow:-18px 0 35px rgba(40,120,255,.28),18px 0 35px rgba(40,120,255,.28);
         }
 
         .profile-page.favorite-nintendo .wrapper{
-          box-shadow:-10px 0 22px rgba(255,45,45,.17),10px 0 22px rgba(255,45,45,.17);
+          box-shadow:-18px 0 35px rgba(255,45,45,.25),18px 0 35px rgba(255,45,45,.25);
         }
 
         .profile-page.favorite-pc .wrapper{
-          box-shadow:-10px 0 22px rgba(170,95,255,.20),10px 0 22px rgba(170,95,255,.20);
+          box-shadow:-18px 0 35px rgba(140,90,255,.28),18px 0 35px rgba(140,90,255,.28);
         }
 
         .top-strip{
@@ -470,20 +454,20 @@ function ProfilePageContent() {
         .logo-box{
           height:62px;
           width:510px;
-          background:transparent;
-          border:none;
+          background:linear-gradient(to bottom,#102841,#07111b);
+          border:1px solid #2f6f9f;
           display:flex;
           align-items:center;
-          padding:0 0 0 2px;
+          padding:0 18px;
           position:relative;
-          overflow:visible;
-          box-shadow:none;
+          overflow:hidden;
+          box-shadow:inset 0 0 12px rgba(0,0,0,.65);
         }
 
         .gb-logo-wrap{
           display:flex;
           align-items:center;
-          gap:0;
+          gap:16px;
           position:relative;
           z-index:2;
         }
@@ -520,13 +504,12 @@ function ProfilePageContent() {
 
         .gb-logo-text{
           color:#f4f8ff;
-          font-size:42px;
-          font-weight:900;
+          font-size:40px;
+          font-weight:bold;
           letter-spacing:-2px;
-          line-height:36px;
+          line-height:34px;
           font-style:italic;
           text-transform:uppercase;
-          text-shadow:2px 2px 0 #02070d,0 0 10px rgba(77,174,255,.28);
         }
 
         .gb-logo-sub{
@@ -541,29 +524,20 @@ function ProfilePageContent() {
         .header-ad{
           width:360px;
           height:64px;
-          background:linear-gradient(to bottom,#07111b,#03070c);
-          border:1px solid #214d73;
+          background:linear-gradient(to bottom,#0b1d2c,#03070c);
+          border:1px solid #2f6f9f;
           display:flex;
-          align-items:stretch;
-          justify-content:stretch;
+          align-items:center;
+          justify-content:center;
           overflow:hidden;
-          box-shadow:inset 0 0 16px rgba(0,0,0,.9),0 0 10px rgba(47,111,159,.18);
-          opacity:.96;
-          position:relative;
-        }
-
-        .header-ad:after{
-          content:"";
-          position:absolute;
-          inset:0;
-          background:linear-gradient(to right,rgba(7,17,27,.25),rgba(7,17,27,0) 42%,rgba(7,17,27,.35));
-          pointer-events:none;
+          box-shadow:inset 0 0 12px rgba(0,0,0,.85),0 0 9px rgba(47,111,159,.24);
+          opacity:.9;
         }
 
         .header-ad:hover{
           opacity:1;
-          border-color:#4daeff;
-          box-shadow:inset 0 0 16px rgba(0,0,0,.9),0 0 12px rgba(77,174,255,.22);
+          border-color:#f2c14e;
+          box-shadow:inset 0 0 12px rgba(0,0,0,.85),0 0 12px rgba(242,193,78,.28);
         }
 
         .header-ad img{
@@ -572,36 +546,54 @@ function ProfilePageContent() {
           object-fit:cover;
           object-position:center;
           display:block;
-          filter:brightness(.82) contrast(1.12) saturate(.95);
+          filter:brightness(.88) contrast(1.04) saturate(.9);
         }
 
         .header-ad:hover img{
-          filter:brightness(.9) contrast(1.14) saturate(1);
+          filter:brightness(.98) contrast(1.08) saturate(1);
         }
 
+        .nav{
+          height:32px;
+          background:linear-gradient(to bottom,#10283d,#07111b);
+          border-left:1px solid #244b70;
+          border-right:1px solid #244b70;
+          border-bottom:1px solid #2f6f9f;
+          display:flex;
+          align-items:center;
+          padding:0 12px;
+        }
+
+        .nav a{
+          color:#d7eaff;
+          font-size:12px;
+          font-weight:bold;
+          text-transform:uppercase;
+          margin-right:22px;
+        }
+
+        .nav a:hover{ color:#f2c14e; }
 
         .profile-title-bar{
           margin-top:5px;
-          height:78px;
-          background:linear-gradient(to bottom,#183b58,#091521);
+          height:68px;
+          background:linear-gradient(to bottom,#15324b,#091521);
           border:1px solid #2f6f9f;
           color:#fff;
           display:flex;
           align-items:center;
-          padding:0 14px;
-          box-shadow:inset 0 0 18px rgba(0,0,0,.72);
+          padding:0 12px;
         }
 
         .profile-title-left{
           display:flex;
           align-items:center;
-          gap:16px;
-          width:100%;
+          gap:14px;
         }
 
         .title-avatar{
-          width:72px;
-          height:66px;
+          width:64px;
+          height:60px;
           background:linear-gradient(to bottom,#081724,#050c14);
           border:1px solid #3f86bd;
           display:flex;
@@ -613,8 +605,7 @@ function ProfilePageContent() {
           text-align:center;
           cursor:pointer;
           box-shadow:inset 0 0 10px rgba(0,0,0,.75), 0 0 8px rgba(47,111,159,.25);
-        
-          border-radius:4px;}
+        }
 
         .title-avatar:hover{
           border-color:#f2c14e;
@@ -627,27 +618,18 @@ function ProfilePageContent() {
           height:100%;
           object-fit:cover;
           display:block;
-          image-rendering:auto;
-          backface-visibility:hidden;
-          transform:translateZ(0);
         }
 
         .profile-title-name{
-          font-size:34px;
-          font-weight:900;
+          font-size:24px;
+          font-weight:bold;
           text-transform:uppercase;
           color:#fff;
-          min-height:66px;
-          display:flex;
-          align-items:center;
-          letter-spacing:-.5px;
-          text-shadow:2px 2px 0 #000,0 0 10px rgba(242,193,78,.18);
         }
 
         .prime-link{
           color:#f2c14e;
-          font-weight:900;
-          line-height:1;
+          font-weight:bold;
         }
 
         .prime-link:hover{
@@ -754,17 +736,13 @@ function ProfilePageContent() {
           font-size:13px;
           margin-bottom:12px;
           overflow:hidden;
-        
-          border-radius:4px;}
+        }
 
         .avatar-box img{
           width:100%;
           height:100%;
           object-fit:cover;
           display:block;
-          image-rendering:auto;
-          backface-visibility:hidden;
-          transform:translateZ(0);
         }
 
         .username{
@@ -803,13 +781,12 @@ function ProfilePageContent() {
         }
 
         .gb-rank-box{
-          background:linear-gradient(to bottom,#142f47,#07111b 62%,#050b12);
+          background:#07111b;
           border:1px solid #244b70;
           margin-bottom:5px;
           display:flex;
           align-items:stretch;
-          min-height:112px;
-          box-shadow:inset 0 0 18px rgba(0,0,0,.82),0 0 14px rgba(242,193,78,.16);
+          min-height:104px;
         }
 
         .gb-rank{
@@ -822,19 +799,17 @@ function ProfilePageContent() {
 
         .gb-rank-title{
           color:#f2c14e;
-          font-size:14px;
-          font-weight:900;
+          font-size:13px;
+          font-weight:bold;
           text-transform:uppercase;
-          padding-bottom:7px;
-          border-bottom:1px solid rgba(242,193,78,.35);
-          letter-spacing:1.4px;
-          text-shadow:0 1px 2px #000;
+          padding-bottom:6px;
+          border-bottom:1px solid #244b70;
         }
 
         .gb-rank-name{
           color:#fff;
-          font-size:42px;
-          font-weight:900;
+          font-size:36px;
+          font-weight:bold;
           flex:1;
           display:flex;
           align-items:center;
@@ -859,13 +834,11 @@ function ProfilePageContent() {
         }
 
         .gb-rank-points{
-          color:#7f8892;
-          font-size:10px;
-          border-top:1px solid rgba(120,140,160,.25);
-          padding-top:16px;
+          color:#7f97aa;
+          font-size:9px;
+          border-top:1px solid #244b70;
+          padding-top:4px;
           text-transform:uppercase;
-          font-weight:bold;
-          letter-spacing:.8px;
         }
 
         .info-table{
@@ -920,7 +893,7 @@ function ProfilePageContent() {
         }
 
         .system-playstation{
-          color:#0078ff !important;
+          color:#5fa8ff !important;
         }
 
         .system-nintendo{
@@ -928,7 +901,7 @@ function ProfilePageContent() {
         }
 
         .system-pc{
-          color:#b98cff !important;
+          color:#d7d7d7 !important;
         }
 
         .status-online{
@@ -1174,8 +1147,7 @@ function ProfilePageContent() {
           text-align:center;
           overflow:hidden;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .friend-card{
           aspect-ratio:1 / 1;
@@ -1192,8 +1164,7 @@ function ProfilePageContent() {
           padding:6px;
           text-transform:uppercase;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .friend-card:hover{
           border-color:#f2c14e;
@@ -1209,8 +1180,7 @@ function ProfilePageContent() {
           flex-direction:column;
           overflow:hidden;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .team-card:hover{
           border-color:#f2c14e;
@@ -1237,7 +1207,6 @@ function ProfilePageContent() {
           width:100%;
           height:100%;
           object-fit:contain;
-          object-position:center;
           display:block;
           padding:4px;
         }
@@ -1342,6 +1311,27 @@ function ProfilePageContent() {
           <header className="header">
             <div className="logo-box">
               <div className="gb-logo-wrap">
+                <div className="gb-circle">
+                  <div className="gb-ring"></div>
+
+                  <svg className="profile-controller-svg" viewBox="0 0 260 180" aria-hidden="true">
+                    <path
+                      d="M55 69 C67 38 96 45 112 59 C119 65 125 67 130 67 C135 67 141 65 148 59 C164 45 193 38 205 69 C218 101 237 145 215 159 C194 173 171 135 158 120 C150 111 141 108 130 108 C119 108 110 111 102 120 C89 135 66 173 45 159 C23 145 42 101 55 69Z"
+                      fill="#d8dce0"
+                      stroke="#3f4a55"
+                      strokeWidth="4"
+                    />
+                    <path d="M73 88 H102 V101 H73Z" fill="#003e68" />
+                    <path d="M81 80 H94 V109 H81Z" fill="#003e68" />
+                    <circle cx="177" cy="83" r="8" fill="#003e68" />
+                    <circle cx="198" cy="94" r="8" fill="#003e68" />
+                    <circle cx="177" cy="105" r="8" fill="#003e68" />
+                    <circle cx="156" cy="94" r="8" fill="#003e68" />
+                    <circle cx="118" cy="85" r="5" fill="#4f5f6c" />
+                    <circle cx="143" cy="85" r="5" fill="#4f5f6c" />
+                  </svg>
+                </div>
+
                 <div>
                   <div className="gb-logo-text">GAMEBATTLES</div>
                   <div className="gb-logo-sub">WHERE GAMING FINDS ITS EDGE</div>
@@ -1358,6 +1348,15 @@ function ProfilePageContent() {
               <img src="/bc4b22ea-8e19-47ac-8e15-b369edac44fa.png" alt="Join the GameBattles Discord" />
             </a>
           </header>
+
+          <nav className="nav">
+            <a href="/home">Home</a>
+            <a href="/profile">Profile</a>
+            <a href="/teams/top">Teams</a>
+            <a href="/profile/matches">Matches</a>
+            <a href="/forums">Forums</a>
+            <a href="#">Ladders</a>
+          </nav>
 
           <div className="profile-title-bar">
             <div className="profile-title-left">
@@ -1433,7 +1432,7 @@ function ProfilePageContent() {
 
                     
                     <div className="stat-row"><span>Reputation</span><span>100%</span></div>
-                    <div className="stat-row"><span>Joined</span><span>{formatJoinedDate(joinedDate)}</span></div>
+                    <div className="stat-row"><span>Joined</span><span>{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "Unknown"}</span></div>
                   </div>
                 </div>
 
