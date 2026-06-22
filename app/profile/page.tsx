@@ -519,23 +519,26 @@ function ProfilePageContent() {
         }
 
         .gb-logo-text{
-          color:#f4f8ff;
-          font-size:42px;
+          background:linear-gradient(to bottom,#ffffff,#d9e3ef 40%,#8ea5c3 100%);
+          -webkit-background-clip:text;
+          -webkit-text-fill-color:transparent;
+          font-size:48px;
           font-weight:900;
-          letter-spacing:-2px;
-          line-height:36px;
+          letter-spacing:-3px;
+          line-height:38px;
           font-style:italic;
           text-transform:uppercase;
-          text-shadow:2px 2px 0 #02070d,0 0 10px rgba(77,174,255,.28);
+          text-shadow:0 2px 0 #02101d,0 0 14px rgba(0,140,255,.55);
         }
 
         .gb-logo-sub{
-          color:#4daeff;
-          font-size:10px;
-          font-weight:bold;
-          letter-spacing:5px;
-          margin-top:4px;
+          color:#dfeaff;
+          font-size:11px;
+          font-weight:900;
+          letter-spacing:6px;
+          margin-top:5px;
           text-transform:uppercase;
+          text-shadow:0 0 8px rgba(0,120,255,.45);
         }
 
         .header-ad{
@@ -613,8 +616,7 @@ function ProfilePageContent() {
           text-align:center;
           cursor:pointer;
           box-shadow:inset 0 0 10px rgba(0,0,0,.75), 0 0 8px rgba(47,111,159,.25);
-        
-          border-radius:4px;}
+        }
 
         .title-avatar:hover{
           border-color:#f2c14e;
@@ -627,9 +629,6 @@ function ProfilePageContent() {
           height:100%;
           object-fit:cover;
           display:block;
-          image-rendering:auto;
-          backface-visibility:hidden;
-          transform:translateZ(0);
         }
 
         .profile-title-name{
@@ -754,17 +753,13 @@ function ProfilePageContent() {
           font-size:13px;
           margin-bottom:12px;
           overflow:hidden;
-        
-          border-radius:4px;}
+        }
 
         .avatar-box img{
           width:100%;
           height:100%;
           object-fit:cover;
           display:block;
-          image-rendering:auto;
-          backface-visibility:hidden;
-          transform:translateZ(0);
         }
 
         .username{
@@ -825,7 +820,7 @@ function ProfilePageContent() {
           font-size:14px;
           font-weight:900;
           text-transform:uppercase;
-          padding-bottom:7px;
+          padding-bottom:1px;
           border-bottom:1px solid rgba(242,193,78,.35);
           letter-spacing:1.4px;
           text-shadow:0 1px 2px #000;
@@ -839,6 +834,7 @@ function ProfilePageContent() {
           display:flex;
           align-items:center;
           justify-content:center;
+          padding-top:10px;
         }
 
         .rank-ordinal{
@@ -861,8 +857,9 @@ function ProfilePageContent() {
         .gb-rank-points{
           color:#7f8892;
           font-size:10px;
-          border-top:1px solid rgba(120,140,160,.25);
-          padding-top:16px;
+          border-top:1px solid rgba(242,193,78,.35);
+          padding-top:3px;
+          margin-top:14px;
           text-transform:uppercase;
           font-weight:bold;
           letter-spacing:.8px;
@@ -1174,8 +1171,7 @@ function ProfilePageContent() {
           text-align:center;
           overflow:hidden;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .friend-card{
           aspect-ratio:1 / 1;
@@ -1192,8 +1188,7 @@ function ProfilePageContent() {
           padding:6px;
           text-transform:uppercase;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .friend-card:hover{
           border-color:#f2c14e;
@@ -1209,8 +1204,7 @@ function ProfilePageContent() {
           flex-direction:column;
           overflow:hidden;
           box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-        
-          border-radius:4px;}
+        }
 
         .team-card:hover{
           border-color:#f2c14e;
@@ -1236,10 +1230,10 @@ function ProfilePageContent() {
         .team-logo-area img{
           width:100%;
           height:100%;
-          object-fit:contain;
+          object-fit:cover;
           object-position:center;
           display:block;
-          padding:4px;
+          transform:scale(1.08);
         }
 
         .team-logo-placeholder{
@@ -1429,7 +1423,7 @@ function ProfilePageContent() {
                   <div className="box-title">Profile</div>
 
                   <div className="box-body">
-                    <div className="avatar-box">{avatarUrl ? <img src={avatarUrl} alt={playerName} /> : "PLAYER IMAGE"}</div>
+                    <div className="avatar-box">{logoUrl ? <img src={logoUrl} alt={`${playerName} Logo`} /> : avatarUrl ? <img src={avatarUrl} alt={playerName} /> : "PLAYER IMAGE"}</div>
 
                     
                     <div className="stat-row"><span>Reputation</span><span>100%</span></div>
@@ -1451,7 +1445,6 @@ function ProfilePageContent() {
                         <a className="quick-link" href="/profile/awards">My Awards</a>
                         <a className="quick-link" href="/profile/friends/invite">Invite Friends</a>
                         <a className="quick-link" href="#">Account Settings</a>
-                        <a className="quick-link" href="#">Messages</a>
                       </>
                     ) : (
                      <>

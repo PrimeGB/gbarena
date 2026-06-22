@@ -1333,7 +1333,15 @@ function ProfilePageContent() {
                 </div>
 
                 <div>
-                  <div className="gb-logo-text">GAMEBATTLES</div>
+                  <img
+  src="/ed537d07-bdce-412b-ab2a-01dbd7c6f668.jpeg"
+  alt="GameBattles"
+  style={{
+    height: "74px",
+    width: "auto",
+    display: "block"
+  }}
+/>
                   <div className="gb-logo-sub">WHERE GAMING FINDS ITS EDGE</div>
                 </div>
               </div>
