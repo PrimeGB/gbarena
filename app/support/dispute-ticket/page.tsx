@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
@@ -59,7 +61,7 @@ function bestOfNumber(value: string | null | undefined) {
   return Number(found[0]) || 3;
 }
 
-export default function DisputeTicketPage() {
+function DisputeTicketPageContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("matchId") || "";
   const { user } = useUser() as any;
@@ -741,5 +743,13 @@ export default function DisputeTicketPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function DisputeTicketPage() {
+  return (
+    <Suspense fallback={<div className="loading">Loading dispute case...</div>}>
+      <DisputeTicketPageContent />
+    </Suspense>
   );
 }
