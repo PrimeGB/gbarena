@@ -519,16 +519,14 @@ function ProfilePageContent() {
         }
 
         .gb-logo-text{
-          background:linear-gradient(to bottom,#ffffff,#d9e3ef 40%,#8ea5c3 100%);
-          -webkit-background-clip:text;
-          -webkit-text-fill-color:transparent;
+          color:#ffffff;
           font-size:48px;
           font-weight:900;
           letter-spacing:-3px;
           line-height:38px;
           font-style:italic;
           text-transform:uppercase;
-          text-shadow:0 2px 0 #02101d,0 0 14px rgba(0,140,255,.55);
+          text-shadow:0 2px 0 #02101d,0 0 14px rgba(255,255,255,.25);
         }
 
         .gb-logo-sub{
@@ -538,7 +536,7 @@ function ProfilePageContent() {
           letter-spacing:6px;
           margin-top:5px;
           text-transform:uppercase;
-          text-shadow:0 0 8px rgba(0,120,255,.45);
+          text-shadow:0 0 8px rgba(255,255,255,.16);
         }
 
         .header-ad{

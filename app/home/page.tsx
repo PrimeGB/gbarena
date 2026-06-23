@@ -732,6 +732,7 @@ export default function Home() {
               <a href="/ladders/playstation/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
               <a href="/ladders/playstation/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
               <a href="/ladders/playstation/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
+            <a href="/ladders/playstation/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
 
@@ -744,6 +745,7 @@ export default function Home() {
               <a href="/ladders/xbox/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
               <a href="/ladders/xbox/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
               <a href="/ladders/xbox/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
+            <a href="/ladders/xbox/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
 

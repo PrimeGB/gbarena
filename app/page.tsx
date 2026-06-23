@@ -765,6 +765,7 @@ export default function Home() {
               <a href="/ladders/pc/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
               <a href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
               <a href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
+              <a href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
 
