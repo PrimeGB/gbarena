@@ -13,37 +13,37 @@ const codTitles: CodTitle[] = [
   {
     title: "Call of Duty 4: Modern Warfare",
     slug: "cod4",
-    image: "/cod4.jpg",
+    image: "/New%20folder/cod4.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: World at War",
     slug: "world-at-war",
-    image: "/waw.jpg",
+    image: "/New%20folder/waw.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2",
     slug: "mw2",
-    image: "/mw2.jpg",
+    image: "/New%20folder/mw2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops",
     slug: "black-ops",
-    image: "/bo1.jpg",
+    image: "/New%20folder/bo1.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 3",
     slug: "mw3",
-    image: "/mw3.jpg",
+    image: "/New%20folder/mw3.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops II",
     slug: "black-ops-2",
-    image: "/bo2.jpg",
+    image: "/New%20folder/bo2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
 ];
@@ -276,21 +276,24 @@ export default function CallOfDutyLaddersPage() {
           text-transform:uppercase;
         }
 
-        .game-image{
-          height:190px;
-          background:#000;
-          border-bottom:1px solid #244b70;
-          overflow:hidden;
-          display:block;
-        }
+       .game-image{
+  height:140px;
+  background:#000;
+  border-bottom:1px solid #244b70;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-        .game-image img{
-          width:100%;
-          height:100%;
-          object-fit:cover;
-          object-position:center center;
-          display:block;
-          transition:transform .18s ease, filter .18s ease;
+.game-image img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center center;
+  display:block;
+  transition:transform .18s ease, filter .18s ease;
+}
         }
 
         .game-image:hover img{
