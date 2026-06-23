@@ -12,37 +12,37 @@ type CodTitle = {
 const codTitles: CodTitle[] = [
   {
     title: "Call of Duty 4: Modern Warfare",
-    slug: "cod4",
+    slug: "cod4-2007",
     image: "/New%20folder/cod4.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: World at War",
-    slug: "world-at-war",
+    slug: "waw-2008",
     image: "/New%20folder/waw.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2",
-    slug: "mw2",
+    slug: "mw2-2009",
     image: "/New%20folder/mw2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops",
-    slug: "black-ops",
+    slug: "bo1-2010",
     image: "/New%20folder/bo1.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 3",
-    slug: "mw3",
+    slug: "mw3-2011",
     image: "/New%20folder/mw3.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops II",
-    slug: "black-ops-2",
+    slug: "bo2-2012",
     image: "/New%20folder/bo2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
@@ -53,6 +53,13 @@ function ladderSlug(ladder: string) {
 }
 
 function prettyText(value: string) {
+  if (value === "cod4-2007") return "Call Of Duty 4: Modern Warfare";
+  if (value === "waw-2008") return "Call Of Duty: World At War";
+  if (value === "mw2-2009") return "Call Of Duty: Modern Warfare 2";
+  if (value === "bo1-2010") return "Call Of Duty: Black Ops";
+  if (value === "mw3-2011") return "Call Of Duty: Modern Warfare 3";
+  if (value === "bo2-2012") return "Call Of Duty: Black Ops II";
+
   return value
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -276,24 +283,23 @@ export default function CallOfDutyLaddersPage() {
           text-transform:uppercase;
         }
 
-       .game-image{
-  height:140px;
-  background:#000;
-  border-bottom:1px solid #244b70;
-  overflow:hidden;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+        .game-image{
+          height:140px;
+          background:#000;
+          border-bottom:1px solid #244b70;
+          overflow:hidden;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        }
 
-.game-image img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  object-position:center center;
-  display:block;
-  transition:transform .18s ease, filter .18s ease;
-}
+        .game-image img{
+          width:100%;
+          height:100%;
+          object-fit:contain;
+          object-position:center center;
+          display:block;
+          transition:transform .18s ease, filter .18s ease;
         }
 
         .game-image:hover img{
