@@ -11,51 +11,39 @@ type CodTitle = {
 
 const codTitles: CodTitle[] = [
   {
-    title: "Call of Duty: Modern Warfare 4",
-    slug: "modern-warfare-4",
-    image: "/mw4.jpeg",
+    title: "Call of Duty 4: Modern Warfare",
+    slug: "cod4",
+    image: "/cod4.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Black Ops 6",
-    slug: "black-ops-6",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg",
+    title: "Call of Duty: World at War",
+    slug: "world-at-war",
+    image: "/waw.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Modern Warfare III",
-    slug: "modern-warfare-iii",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg",
-    ladders: ["Singles", "Duos", "Team"],
-  },
-  {
-    title: "Call of Duty: Modern Warfare II",
-    slug: "modern-warfare-ii",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg",
-    ladders: ["Singles", "Duos", "Team"],
-  },
-  {
-    title: "Call of Duty: MW2",
+    title: "Call of Duty: Modern Warfare 2",
     slug: "mw2",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg",
+    image: "/mw2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Vanguard",
-    slug: "vanguard",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg",
+    title: "Call of Duty: Black Ops",
+    slug: "black-ops",
+    image: "/bo1.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Black Ops Cold War",
-    slug: "black-ops-cold-war",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg",
+    title: "Call of Duty: Modern Warfare 3",
+    slug: "mw3",
+    image: "/mw3.jpg",
+    ladders: ["Singles", "Duos", "Team"],
+  },
+  {
+    title: "Call of Duty: Black Ops II",
+    slug: "black-ops-2",
+    image: "/bo2.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
 ];
