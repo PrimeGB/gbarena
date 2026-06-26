@@ -40,6 +40,76 @@ type MatchPost = {
   created_at: string;
 };
 
+function prettyText(value: string | null) {
+  if (!value) return "";
+
+  if (value === "mw2") return "Call of Duty: Modern Warfare 2";
+  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II";
+  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare 4";
+  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III";
+  if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
+  if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
+  if (value === "vanguard") return "Call of Duty: Vanguard";
+
+  return value
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function getGameImage(game: string | null) {
+  if (game === "mw2") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
+  if (game === "modern-warfare-ii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg";
+  if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
+  if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
+  if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
+  if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
+
+  return "/mw4.jpeg";
+}
+
+function getLadderName(ladder: string | null) {
+  if (ladder === "singles") return "Solos Ladder";
+  if (ladder === "duos") return "Duos Ladder";
+  return "Team Ladder";
+}
+
+function getRosterText(ladder: string) {
+  if (ladder === "singles") return "1 Player";
+  if (ladder === "duos") return "2 Players";
+  return "8 Players";
+}
+
+function normalizeRole(value: string | null | undefined): TeamRole {
+  const clean = String(value || "").toLowerCase();
+  if (clean === "leader") return "leader";
+  if (clean === "co-leader") return "co-leader";
+  if (clean === "captain") return "captain";
+  return "member";
+}
+
+function canManageMatches(role: TeamRole) {
+  return role === "leader" || role === "co-leader" || role === "captain";
+}
+
+function parseDateMs(value: string | null | undefined) {
+  if (!value) return 0;
+  const direct = new Date(value).getTime();
+  if (!Number.isNaN(direct)) return direct;
+  return 0;
+}
+
+function shouldHidePost(post: MatchPost) {
+  const now = Date.now();
+  const matchTime = parseDateMs(post.match_time);
+  const createdTime = parseDateMs(post.created_at);
+  const oneDayMs = 1000 * 60 * 60 * 24;
+
+  if (matchTime && now >= matchTime) return true;
+  if (createdTime && now - createdTime >= oneDayMs) return true;
+  return false;
+}
+
 export default function MatchFinderPage() {
   return (
     <Suspense fallback={<div style={{ color: "white", padding: 40 }}>Loading Match Finder...</div>}>
@@ -59,19 +129,31 @@ function MatchFinderContent() {
   const ladder = searchParams.get("ladder") || "team";
   const viewerTeamId = searchParams.get("teamId") || "";
 
+  const platformName = prettyText(platform);
+  const gameName = prettyText(game);
+  const gameImage = getGameImage(game);
+  const ladderName = getLadderName(ladder);
+  const rosterText = getRosterText(ladder);
+  const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;
+  const viewTeamUrl = viewerTeamId ? `/teams/${viewerTeamId}` : "/profile/teams";
+  const ladderUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;
+
   const [matches, setMatches] = useState<MatchPost[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [pageError, setPageError] = useState("");
   const [notice, setNotice] = useState("");
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmMatch, setConfirmMatch] = useState<MatchPost | null>(null);
+  const [viewMatch, setViewMatch] = useState<MatchPost | null>(null);
   const [cancelMatch, setCancelMatch] = useState<MatchPost | null>(null);
+  const [viewerRole, setViewerRole] = useState<TeamRole>("member");
 
-  function canManage(role: TeamRole) {
-    return role === "leader" || role === "co-leader" || role === "captain";
-  }
+  const viewerCanManageMatches = canManageMatches(viewerRole);
 
   async function loadMatches() {
+    setPageError("");
+
     const { data, error } = await supabase
       .from("match_posts")
       .select("*")
@@ -83,130 +165,475 @@ function MatchFinderContent() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      setNotice(error.message);
+      setPageError("Could not load match posts: " + error.message);
+      setMatches([]);
+      setHasLoaded(true);
       return;
     }
 
-    setMatches(data || []);
+    const openPosts = (data || []) as MatchPost[];
+    const visiblePosts = openPosts.filter((post) => !shouldHidePost(post));
+
+    setMatches(visiblePosts);
     setHasLoaded(true);
   }
+
+  // Real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("match_posts_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "match_posts",
+          filter: `platform=eq.${platform}&category=eq.${category}&game=eq.${game}&ladder=eq.${ladder}`,
+        },
+        () => loadMatches()
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [platform, category, game, ladder]);
 
   useEffect(() => {
     loadMatches();
   }, [platform, category, game, ladder]);
 
-  // -----------------------------
-  // ✅ ACCEPT MATCH (FIXED + ATOMIC)
-  // -----------------------------
-  async function acceptConfirmedMatch() {
-    if (!confirmMatch) return;
+  useEffect(() => {
+    async function loadViewerRole() {
+      if (!viewerTeamId || !user?.id) {
+        setViewerRole("member");
+        return;
+      }
 
-    setNotice("");
+      const { data } = await supabase
+        .from("team_members")
+        .select("role")
+        .eq("team_id", viewerTeamId)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (!user?.id) {
-      setNotice("You must be signed in.");
-      return;
+      if (data?.role) {
+        setViewerRole(normalizeRole(data.role));
+      } else {
+        setViewerRole("member");
+      }
     }
 
-    if (!viewerTeamId) {
-      setNotice("Missing team ID.");
-      return;
-    }
+    loadViewerRole();
+  }, [viewerTeamId, user?.id]);
 
-    setAcceptingId(confirmMatch.id);
-
-    const { data, error } = await supabase.rpc("accept_match_post", {
-      post_id: confirmMatch.id,
-      accepting_team: viewerTeamId,
-    });
-
-    setAcceptingId(null);
-    setConfirmMatch(null);
-
-    if (error) {
-      console.log("ACCEPT ERROR:", error);
-      setNotice(error.message);
-      await loadMatches();
-      return;
-    }
-
-    const result = Array.isArray(data) ? data[0] : data;
-    const matchId = result?.match_id;
-
-    if (!matchId) {
-      setNotice("Match already taken or expired.");
-      await loadMatches();
-      return;
-    }
-
-    await loadMatches();
-    router.push(`/matches/${matchId}`);
-  }
-
-  // -----------------------------
-  // ✅ CANCEL MATCH (FIXED)
-  // -----------------------------
+  // Fixed Cancel
   async function cancelConfirmedPost() {
     if (!cancelMatch) return;
 
+    setNotice("");
     setCancellingId(cancelMatch.id);
 
     const { error } = await supabase
       .from("match_posts")
       .update({ status: "cancelled" })
       .eq("id", cancelMatch.id)
-      .eq("team_id", viewerTeamId)
-      .eq("status", "open");
+      .eq("team_id", viewerTeamId);
 
     setCancellingId(null);
-    setCancelMatch(null);
 
     if (error) {
-      console.log("CANCEL ERROR:", error);
-      setNotice(error.message);
+      setNotice("Could not cancel match: " + error.message);
+    } else {
+      setNotice("✅ Match cancelled successfully.");
+      setCancelMatch(null);
+      await loadMatches();
+    }
+  }
+
+  // Fixed Accept
+  async function acceptConfirmedMatch() {
+    if (!confirmMatch) return;
+
+    setNotice("");
+    setAcceptingId(confirmMatch.id);
+
+    if (!user?.id) {
+      setNotice("You must be signed in to accept this match.");
+      setAcceptingId(null);
+      return;
+    }
+    if (!viewerTeamId) {
+      setNotice("Missing your team ID.");
+      setAcceptingId(null);
+      return;
+    }
+    if (!viewerCanManageMatches) {
+      setNotice("Only leaders, co-leaders, and captains can accept matches.");
+      setAcceptingId(null);
+      setConfirmMatch(null);
+      return;
+    }
+    if (String(confirmMatch.team_id) === String(viewerTeamId)) {
+      setNotice("You cannot accept your own match.");
+      setAcceptingId(null);
+      setConfirmMatch(null);
       return;
     }
 
-    await loadMatches();
+    // Safety check
+    const { data: current } = await supabase
+      .from("match_posts")
+      .select("status")
+      .eq("id", confirmMatch.id)
+      .single();
+
+    if (!current || current.status !== "open") {
+      setNotice("❌ This match is no longer available.");
+      setAcceptingId(null);
+      setConfirmMatch(null);
+      await loadMatches();
+      return;
+    }
+
+    const { data: acceptedPost, error: acceptError } = await supabase
+      .from("match_posts")
+      .update({ status: "accepted" })
+      .eq("id", confirmMatch.id)
+      .eq("status", "open")
+      .select("*")
+      .single();
+
+    if (acceptError || !acceptedPost) {
+      setNotice("❌ This match is no longer available.");
+      setAcceptingId(null);
+      setConfirmMatch(null);
+      await loadMatches();
+      return;
+    }
+
+    const post = acceptedPost as MatchPost;
+
+    const { data: officialMatch, error: matchError } = await supabase
+      .from("matches")
+      .insert({
+        match_post_id: post.id,
+        posting_team_id: post.team_id,
+        accepting_team_id: viewerTeamId,
+        platform: post.platform,
+        category: post.category,
+        game: post.game,
+        ladder: post.ladder,
+        game_mode: post.game_mode,
+        players: post.players,
+        match_time: post.match_time,
+        best_of: post.best_of,
+        preset: post.preset,
+        perks: post.perks,
+        launchers: post.launchers,
+        killstreaks: post.killstreaks,
+        field_upgrades: post.field_upgrades,
+        hardcore: post.hardcore,
+        friendly_fire: post.friendly_fire,
+        radar: post.radar,
+        spectating: post.spectating,
+        third_person: post.third_person,
+        round_length: post.round_length,
+        score_limit: post.score_limit,
+        health: post.health,
+        respawn_delay: post.respawn_delay,
+        bomb_timer: post.bomb_timer,
+        plant_time: post.plant_time,
+        defuse_time: post.defuse_time,
+        attachments: post.attachments,
+        status: "upcoming",
+        accepted_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    setAcceptingId(null);
+
+    if (matchError || !officialMatch) {
+      setNotice("Match accepted but official match failed to create.");
+      setConfirmMatch(null);
+      await loadMatches();
+      return;
+    }
+
+    router.push(`/matches/${officialMatch.id}`);
   }
 
   return (
     <>
-      <div style={{ padding: 20, color: "white" }}>
-        <h1>Match Finder</h1>
+      <style>{`
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html{background:#000;}
+        body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
+        a{text-decoration:none;}
+        button{font-family:Tahoma,Verdana,Arial,sans-serif;}
 
-        {notice && <div style={{ color: "yellow" }}>{notice}</div>}
+        .page{min-height:100vh;background:#02060a;padding:32px 22px;}
+        .wrap{max-width:1120px;margin:0 auto;background:#07111b;border:1px solid #315f88;}
 
-        {!hasLoaded && <div>Loading...</div>}
+        .header{min-height:104px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+        .game-header{display:flex;align-items:center;gap:18px;}
+        .game-cover{width:126px;height:78px;border:1px solid #315f88;background:#050c14;overflow:hidden;}
+        .game-cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+        .game-name{color:#f2c14e;font-size:15px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase;margin-bottom:8px;text-shadow:0 1px 2px #000;}
+        .ladder-name{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
+        .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:15px;font-weight:900;text-transform:uppercase;padding:14px 22px;text-shadow:0 2px 4px #000;}
+        .header-badge:hover{border-color:#d7ad4a;color:#d7ad4a;}
 
-        {matches.map((m) => (
-          <div key={m.id} style={{ margin: 10, padding: 10, border: "1px solid gray" }}>
-            <div>{m.players}</div>
-            <div>{m.game_mode}</div>
+        .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
+        .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;}
+        .nav a:hover{color:#d7ad4a;}
 
-            <button onClick={() => setConfirmMatch(m)}>Accept</button>
-            <button onClick={() => setCancelMatch(m)}>Cancel</button>
+        .title-bar{background:linear-gradient(to bottom,#1d496e,#0a1724);border-bottom:1px solid #315f88;padding:18px 24px;text-align:center;}
+        .title-bar h1{color:#d7ad4a;font-size:30px;text-transform:uppercase;text-shadow:0 1px 2px #000;}
+        .title-bar p{color:#cfe2f2;font-size:13px;margin-top:7px;}
+
+        .content{padding:18px;}
+        .finder-layout{display:grid;grid-template-columns:232px 1fr;gap:14px;}
+        .panel{background:#050b12;border:1px solid #244b70;}
+        .panel-header{min-height:36px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;padding:0 12px;color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+
+        .side-body{padding:12px;}
+        .ladder-card{border:1px solid #1f3d5a;background:#06101a;padding:12px;margin-bottom:12px;}
+        .ladder-title{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);}
+        .ladder-line{color:#cfe2f2;font-size:12px;line-height:23px;border-bottom:1px solid rgba(255,255,255,.05);}
+        .ladder-line:last-child{border-bottom:0;}
+        .ladder-line span{color:#8aa7c0;}
+
+        .help-box,.quick-create{height:40px;width:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;text-transform:uppercase;margin-top:10px;}
+        .help-box{border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;}
+        .quick-create{border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;}
+        .disabled-create{opacity:.45;cursor:not-allowed;}
+
+        .main-body{padding:12px;}
+        .notice-box{border:1px solid #d7ad4a;background:#201703;color:#ffd76a;font-size:12px;font-weight:900;text-transform:uppercase;padding:11px;margin-bottom:12px;text-align:center;}
+
+        .board{border:1px solid #244b70;background:#02070c;min-height:118px;}
+        .board-head,.match-row{display:grid;grid-template-columns:1fr 1.45fr 1fr 1fr 170px;}
+        .board-head{background:linear-gradient(to bottom,#112b42,#07111b);border-bottom:1px solid #244b70;}
+        .board-head div{color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;padding:10px;border-right:1px solid rgba(255,255,255,.06);text-align:center;}
+
+        .match-row{min-height:58px;border-bottom:1px solid rgba(255,255,255,.07);background:#050b12;}
+        .match-row:nth-child(even){background:#07111b;}
+        .match-row:hover{background:#081b2a;}
+        .match-cell{padding:10px;border-right:1px solid rgba(255,255,255,.055);display:flex;align-items:center;justify-content:center;color:#cfe2f2;font-size:13px;font-weight:900;text-align:center;}
+        .match-cell:last-child{border-right:0;}
+        .players{color:#fff;font-size:15px;}
+        .mode{color:#7fc7ff;}
+        .rules-type{color:#d7ad4a;text-transform:uppercase;}
+        .time{color:#cfe2f2;}
+        .actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;}
+
+        .mini-btn{min-width:66px;height:27px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+        .mini-btn.gold{border-color:#e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;}
+        .mini-btn.red-mini{border-color:#e34242;background:linear-gradient(to bottom,#bd1717,#5c0000);color:#fff;}
+        .mini-btn.disabled{opacity:.42;cursor:not-allowed;}
+        .mini-btn:hover:not(.disabled){filter:brightness(1.13);}
+
+        .empty-state,.error-state,.loading-state{padding:28px;text-align:center;color:#cfe2f2;font-size:13px;font-weight:900;text-transform:uppercase;}
+        .error-state{color:#ff9c9c;}
+
+        .footer{height:36px;background:#07111b;border-top:1px solid #244b70;display:flex;justify-content:center;align-items:center;color:#a9c3db;font-size:11px;}
+
+        .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.76);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+        .accept-modal{width:520px;max-width:95vw;border:1px solid #6ba8d6;background:#07111b;}
+        .accept-title{height:40px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;font-size:14px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;padding:0 14px;}
+        .accept-body{padding:16px;color:#cfe2f2;font-size:13px;line-height:22px;}
+        .accept-summary{border:1px solid #244b70;background:#050c14;padding:12px;margin:12px 0;color:#fff;font-size:12px;line-height:23px;}
+        .accept-warning{color:#d7ad4a;font-weight:900;text-transform:uppercase;}
+        .accept-actions{display:flex;gap:12px;padding:0 16px 16px;}
+        .accept-btn{height:40px;min-width:150px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;font-size:12px;font-weight:900;text-transform:uppercase;cursor:pointer;}
+        .accept-btn.red{border-color:#e34242;background:linear-gradient(to bottom,#bd1717,#5c0000);color:#fff;}
+        .accept-btn:disabled{opacity:.55;cursor:not-allowed;}
+      `}</style>
+
+      <main className="page">
+        <div className="wrap">
+          <header className="header">
+            <div className="game-header">
+              <div className="game-cover">
+                <img src={gameImage} alt={gameName} />
+              </div>
+              <div>
+                <div className="game-name">{gameName}</div>
+                <div className="ladder-name">{ladderName}</div>
+              </div>
+            </div>
+            <a className="header-badge" href={viewTeamUrl}>View Team</a>
+          </header>
+
+          <nav className="nav">
+            <a href="/home">Home</a>
+            <a href="/profile/teams">My Teams</a>
+            <a href="/members">Members</a>
+            <a href="/forums">Forums</a>
+            <a href={ladderUrl}>Ladder</a>
+          </nav>
+
+          <section className="title-bar">
+            <h1>Match Finder</h1>
+            <p>{platformName} / {gameName} / {ladderName}</p>
+          </section>
+
+          <section className="content">
+            <div className="finder-layout">
+              <aside className="panel">
+                <div className="panel-header">Ladder Menu</div>
+                <div className="side-body">
+                  <div className="ladder-card">
+                    <div className="ladder-title">Current Ladder</div>
+                    <div className="ladder-line"><span>Platform:</span> {platformName}</div>
+                    <div className="ladder-line"><span>Game:</span> {gameName}</div>
+                    <div className="ladder-line"><span>Ladder:</span> {ladderName}</div>
+                    <div className="ladder-line"><span>Roster:</span> {rosterText}</div>
+                  </div>
+                  <a className="help-box" href="/matches/finder/help">How Match Finder Works</a>
+                  {viewerCanManageMatches ? (
+                    <a className="quick-create" href={createUrl}>Create Match</a>
+                  ) : (
+                    <div className="quick-create disabled-create">Create Match Locked</div>
+                  )}
+                </div>
+              </aside>
+
+              <section className="panel">
+                <div className="panel-header">Open Match Posts</div>
+                <div className="main-body">
+                  {notice && <div className="notice-box">{notice}</div>}
+
+                  <div className="board">
+                    <div className="board-head">
+                      <div>Players</div>
+                      <div>Mode</div>
+                      <div>Rules</div>
+                      <div>Time</div>
+                      <div>Actions</div>
+                    </div>
+
+                    {pageError && <div className="error-state">{pageError}</div>}
+
+                    {!pageError && !hasLoaded && (
+                      <div className="loading-state">Loading match posts...</div>
+                    )}
+
+                    {!pageError && hasLoaded && matches.length === 0 && (
+                      <div className="empty-state">No open matches posted for this ladder yet.</div>
+                    )}
+
+                    {matches.map((match) => {
+                      const isMyPost = viewerTeamId && String(match.team_id) === String(viewerTeamId);
+
+                      return (
+                        <div className="match-row" key={match.id}>
+                          <div className="match-cell players">{match.players}</div>
+                          <div className="match-cell mode">{match.game_mode}</div>
+                          <div className="match-cell rules-type">{match.preset || "GB Default"}</div>
+                          <div className="match-cell time">{match.match_time}</div>
+
+                          <div className="match-cell">
+                            <div className="actions">
+                              <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>
+                                View
+                              </button>
+
+                              {isMyPost ? (
+                                viewerCanManageMatches ? (
+                                  <button className="mini-btn red-mini" type="button" onClick={() => setCancelMatch(match)}>
+                                    Cancel
+                                  </button>
+                                ) : (
+                                  <button className="mini-btn disabled">Cancel</button>
+                                )
+                              ) : user?.id && viewerCanManageMatches ? (
+                                <button className="mini-btn gold" type="button" onClick={() => setConfirmMatch(match)}>
+                                  Accept
+                                </button>
+                              ) : (
+                                <button className="mini-btn disabled">Accept</button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <footer className="footer">© 2026 Competitive Gaming Network</footer>
+        </div>
+      </main>
+
+      {/* Modals */}
+      {viewMatch && (
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Posted Match Rules</div>
+            <div className="accept-body">
+              <p className="accept-warning">Review the posted match rules before accepting.</p>
+              <div className="accept-summary">
+                Players: {viewMatch.players}<br />
+                Mode: {viewMatch.game_mode}<br />
+                Rules: {viewMatch.preset || "GB Default"}<br />
+                Time: {viewMatch.match_time}<br />
+                Best Of: {viewMatch.best_of}
+              </div>
+            </div>
+            <div className="accept-actions">
+              <button className="accept-btn red" onClick={() => setViewMatch(null)}>Close</button>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {confirmMatch && (
-        <div style={{ position: "fixed", top: 100, left: 100, background: "black", padding: 20 }}>
-          <p>Confirm accept?</p>
-          <button onClick={acceptConfirmedMatch}>
-            {acceptingId ? "Accepting..." : "Yes Accept"}
-          </button>
-          <button onClick={() => setConfirmMatch(null)}>No</button>
         </div>
       )}
 
       {cancelMatch && (
-        <div style={{ position: "fixed", top: 100, left: 100, background: "black", padding: 20 }}>
-          <p>Cancel post?</p>
-          <button onClick={cancelConfirmedPost}>
-            {cancellingId ? "Cancelling..." : "Yes Cancel"}
-          </button>
-          <button onClick={() => setCancelMatch(null)}>No</button>
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Cancel Match Post</div>
+            <div className="accept-body">
+              <p className="accept-warning">You are about to remove this posted match.</p>
+              <div className="accept-summary">
+                Players: {cancelMatch.players}<br />
+                Mode: {cancelMatch.game_mode}<br />
+                Rules: {cancelMatch.preset || "GB Default"}<br />
+                Time: {cancelMatch.match_time}
+              </div>
+            </div>
+            <div className="accept-actions">
+              <button className="accept-btn red" disabled={cancellingId === cancelMatch.id} onClick={cancelConfirmedPost}>
+                {cancellingId === cancelMatch.id ? "Cancelling..." : "Cancel Match"}
+              </button>
+              <button className="accept-btn" onClick={() => setCancelMatch(null)}>Keep Match</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmMatch && (
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Confirm Match Acceptance</div>
+            <div className="accept-body">
+              <p className="accept-warning">By accepting you agree to all rules.</p>
+              <div className="accept-summary">
+                Players: {confirmMatch.players}<br />
+                Mode: {confirmMatch.game_mode}<br />
+                Rules: {confirmMatch.preset || "GB Default"}<br />
+                Time: {confirmMatch.match_time}
+              </div>
+            </div>
+            <div className="accept-actions">
+              <button className="accept-btn" disabled={acceptingId === confirmMatch.id} onClick={acceptConfirmedMatch}>
+                {acceptingId === confirmMatch.id ? "Accepting..." : "Accept Match"}
+              </button>
+              <button className="accept-btn red" onClick={() => setConfirmMatch(null)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </>
