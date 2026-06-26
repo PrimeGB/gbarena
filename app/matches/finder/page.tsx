@@ -237,7 +237,7 @@ function MatchFinderContent() {
     loadViewerRole();
   }, [viewerTeamId, user?.id]);
 
-  async function acceptConfirmedMatch() {
+  async function () {
     if (!confirmMatch) return;
 
     setNotice("");
@@ -248,12 +248,12 @@ function MatchFinderContent() {
     }
 
     if (!viewerTeamId) {
-      setNotice("Missing your team ID. Go back to your team page and open Match Finder from there.");
+      setNotice("Missing your team ID. Open Match Finder from your team page.");
       return;
     }
 
     if (!viewerCanManageMatches) {
-      setNotice("Only team leaders, co-leaders, and captains can accept matches.");
+      setNotice("Only leaders, co-leaders, and captains can accept matches.");
       setConfirmMatch(null);
       return;
     }
@@ -264,36 +264,15 @@ function MatchFinderContent() {
       return;
     }
 
-    if (shouldHidePost(confirmMatch)) {
-      await supabase
-        .from("match_posts")
-        .update({ status: "expired" })
-        .eq("id", confirmMatch.id)
-        .eq("status", "open");
-
-      setNotice("This match post expired and has been removed.");
-      setConfirmMatch(null);
-      await loadMatches();
-      return;
-    }
-
     setAcceptingId(confirmMatch.id);
 
-    const { data: acceptedPost, error: acceptError } = await supabase
+    const { data: currentRow, error: currentError } = await supabase
       .from("match_posts")
-      .update({ status: "accepted" })
+      .select("id, status")
       .eq("id", confirmMatch.id)
-      .eq("status", "open")
-      .select("*");
+      .maybeSingle();
 
-    if (acceptError) {
-      setAcceptingId(null);
-      setNotice("Could not accept match: " + acceptError.message);
-      setConfirmMatch(null);
-      return;
-    }
-
-    if (!acceptedPost || acceptedPost.length === 0) {
+    if (currentError || !currentRow) {
       setAcceptingId(null);
       setNotice("This match is no longer available.");
       setConfirmMatch(null);
@@ -301,63 +280,41 @@ function MatchFinderContent() {
       return;
     }
 
-    const post = acceptedPost[0] as MatchPost;
-
-    const { data: officialMatch, error: matchError } = await supabase
-      .from("matches")
-      .insert({
-        match_post_id: post.id,
-        posting_team_id: post.team_id,
-        accepting_team_id: viewerTeamId,
-
-        platform: post.platform,
-        category: post.category,
-        game: post.game,
-        ladder: post.ladder,
-
-        game_mode: post.game_mode,
-        players: post.players,
-        match_time: post.match_time,
-        best_of: post.best_of,
-
-        preset: post.preset,
-        perks: post.perks,
-        launchers: post.launchers,
-        killstreaks: post.killstreaks,
-        field_upgrades: post.field_upgrades,
-        hardcore: post.hardcore,
-        friendly_fire: post.friendly_fire,
-        radar: post.radar,
-        spectating: post.spectating,
-        third_person: post.third_person,
-        round_length: post.round_length,
-        score_limit: post.score_limit,
-        health: post.health,
-        respawn_delay: post.respawn_delay,
-        bomb_timer: post.bomb_timer,
-        plant_time: post.plant_time,
-        defuse_time: post.defuse_time,
-        attachments: post.attachments,
-
-        status: "upcoming",
-        accepted_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
-    setAcceptingId(null);
-
-    if (matchError || !officialMatch) {
-      setNotice("Match post was accepted, but the official match could not be created.");
+    if (currentRow.status !== "open") {
+      setAcceptingId(null);
+      setNotice("This match is no longer available.");
       setConfirmMatch(null);
       await loadMatches();
       return;
     }
 
-    router.push(`/matches/${officialMatch.id}`);
+    const { data: rpcData, error: rpcError } = await supabase.rpc("accept_match_post", {
+      post_id: confirmMatch.id,
+      accepting_team: viewerTeamId,
+    });
+
+    setAcceptingId(null);
+    setConfirmMatch(null);
+
+    if (rpcError) {
+      console.error("accept_match_post rpcError:", rpcError);
+      setNotice("Could not accept match: " + (rpcError.message || JSON.stringify(rpcError)));
+      await loadMatches();
+      return;
+    }
+
+    const matchId = rpcData?.[0]?.match_id || rpcData?.match_id;
+
+    if (!matchId) {
+      setNotice("Match could not be created.");
+      await loadMatches();
+      return;
+    }
+
+    router.push(`/matches/${matchId}`);
   }
 
-  async function cancelConfirmedPost() {
+  async function () {
     if (!cancelMatch) return;
 
     setNotice("");
@@ -720,7 +677,7 @@ function MatchFinderContent() {
                 className="accept-btn red"
                 type="button"
                 disabled={cancellingId === cancelMatch.id}
-                onClick={cancelConfirmedPost}
+                onClick={async function cancelConfirmedPost() { ... }}
               >
                 {cancellingId === cancelMatch.id ? "Cancelling..." : "Cancel Match"}
               </button>
@@ -768,7 +725,7 @@ function MatchFinderContent() {
                 className="accept-btn"
                 type="button"
                 disabled={acceptingId === confirmMatch.id}
-                onClick={acceptConfirmedMatch}
+                onClick={async function acceptConfirmedMatch() { ... }}
               >
                 {acceptingId === confirmMatch.id ? "Accepting..." : "Accept Match"}
               </button>

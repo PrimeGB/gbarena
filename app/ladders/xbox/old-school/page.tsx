@@ -284,28 +284,41 @@ export default function CallOfDutyLaddersPage() {
         }
 
         .game-image{
-          height:140px;
-          background:#000;
-          border-bottom:1px solid #244b70;
-          overflow:hidden;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-        }
+  height:220px;
+  background:#000;
+  border-bottom:1px solid #244b70;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
 
-        .game-image img{
-          width:100%;
-          height:100%;
-          object-fit:contain;
-          object-position:center center;
-          display:block;
-          transition:transform .18s ease, filter .18s ease;
-        }
+/* dark frame behind image */
+.game-image::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at center, rgba(255,255,255,0.04), rgba(0,0,0,0.85));
+  z-index:1;
+}
 
-        .game-image:hover img{
-          transform:scale(1.03);
-          filter:brightness(1.12);
-        }
+.game-image img{
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  position:relative;
+  z-index:2;
+  transform:scale(0.92);
+  transition:transform .18s ease, filter .18s ease;
+}
+
+.game-image:hover img{
+  transform:scale(0.98);
+  filter:brightness(1.1);
+}
 
         .card-body{padding:14px;}
 
