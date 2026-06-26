@@ -237,7 +237,6 @@ function MatchFinderContent() {
     loadViewerRole();
   }, [viewerTeamId, user?.id]);
 
-  async function () {
     if (!confirmMatch) return;
 
     setNotice("");
