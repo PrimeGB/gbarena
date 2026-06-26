@@ -42,7 +42,6 @@ type MatchPost = {
 
 function prettyText(value: string | null) {
   if (!value) return "";
-
   if (value === "mw2") return "Call of Duty: Modern Warfare 2";
   if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II";
   if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare 4";
@@ -51,10 +50,7 @@ function prettyText(value: string | null) {
   if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
   if (value === "vanguard") return "Call of Duty: Vanguard";
 
-  return value
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  return value.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
 function getGameImage(game: string | null) {
@@ -64,7 +60,6 @@ function getGameImage(game: string | null) {
   if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
   if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
   if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
-
   return "/mw4.jpeg";
 }
 
@@ -95,8 +90,7 @@ function canManageMatches(role: TeamRole) {
 function parseDateMs(value: string | null | undefined) {
   if (!value) return 0;
   const direct = new Date(value).getTime();
-  if (!Number.isNaN(direct)) return direct;
-  return 0;
+  return !Number.isNaN(direct) ? direct : 0;
 }
 
 function shouldHidePost(post: MatchPost) {
@@ -104,7 +98,6 @@ function shouldHidePost(post: MatchPost) {
   const matchTime = parseDateMs(post.match_time);
   const createdTime = parseDateMs(post.created_at);
   const oneDayMs = 1000 * 60 * 60 * 24;
-
   if (matchTime && now >= matchTime) return true;
   if (createdTime && now - createdTime >= oneDayMs) return true;
   return false;
@@ -153,7 +146,6 @@ function MatchFinderContent() {
 
   async function loadMatches() {
     setPageError("");
-
     const { data, error } = await supabase
       .from("match_posts")
       .select("*")
@@ -182,16 +174,12 @@ function MatchFinderContent() {
   useEffect(() => {
     const channel = supabase
       .channel("match_posts_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "match_posts",
-          filter: `platform=eq.${platform}&category=eq.${category}&game=eq.${game}&ladder=eq.${ladder}`,
-        },
-        () => loadMatches()
-      )
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "match_posts",
+        filter: `platform=eq.${platform}&category=eq.${category}&game=eq.${game}&ladder=eq.${ladder}`,
+      }, loadMatches)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
@@ -207,7 +195,6 @@ function MatchFinderContent() {
         setViewerRole("member");
         return;
       }
-
       const { data } = await supabase
         .from("team_members")
         .select("role")
@@ -215,20 +202,13 @@ function MatchFinderContent() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data?.role) {
-        setViewerRole(normalizeRole(data.role));
-      } else {
-        setViewerRole("member");
-      }
+      setViewerRole(data?.role ? normalizeRole(data.role) : "member");
     }
-
     loadViewerRole();
   }, [viewerTeamId, user?.id]);
 
-  // Fixed Cancel
   async function cancelConfirmedPost() {
     if (!cancelMatch) return;
-
     setNotice("");
     setCancellingId(cancelMatch.id);
 
@@ -239,7 +219,6 @@ function MatchFinderContent() {
       .eq("team_id", viewerTeamId);
 
     setCancellingId(null);
-
     if (error) {
       setNotice("Could not cancel match: " + error.message);
     } else {
@@ -249,10 +228,8 @@ function MatchFinderContent() {
     }
   }
 
-  // Fixed Accept
   async function acceptConfirmedMatch() {
     if (!confirmMatch) return;
-
     setNotice("");
     setAcceptingId(confirmMatch.id);
 
@@ -279,7 +256,6 @@ function MatchFinderContent() {
       return;
     }
 
-    // Safety check
     const { data: current } = await supabase
       .from("match_posts")
       .select("status")
@@ -514,43 +490,30 @@ function MatchFinderContent() {
                     </div>
 
                     {pageError && <div className="error-state">{pageError}</div>}
-
-                    {!pageError && !hasLoaded && (
-                      <div className="loading-state">Loading match posts...</div>
-                    )}
-
+                    {!pageError && !hasLoaded && <div className="loading-state">Loading match posts...</div>}
                     {!pageError && hasLoaded && matches.length === 0 && (
                       <div className="empty-state">No open matches posted for this ladder yet.</div>
                     )}
 
                     {matches.map((match) => {
                       const isMyPost = viewerTeamId && String(match.team_id) === String(viewerTeamId);
-
                       return (
                         <div className="match-row" key={match.id}>
                           <div className="match-cell players">{match.players}</div>
                           <div className="match-cell mode">{match.game_mode}</div>
                           <div className="match-cell rules-type">{match.preset || "GB Default"}</div>
                           <div className="match-cell time">{match.match_time}</div>
-
                           <div className="match-cell">
                             <div className="actions">
-                              <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>
-                                View
-                              </button>
-
+                              <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>View</button>
                               {isMyPost ? (
                                 viewerCanManageMatches ? (
-                                  <button className="mini-btn red-mini" type="button" onClick={() => setCancelMatch(match)}>
-                                    Cancel
-                                  </button>
+                                  <button className="mini-btn red-mini" type="button" onClick={() => setCancelMatch(match)}>Cancel</button>
                                 ) : (
                                   <button className="mini-btn disabled">Cancel</button>
                                 )
                               ) : user?.id && viewerCanManageMatches ? (
-                                <button className="mini-btn gold" type="button" onClick={() => setConfirmMatch(match)}>
-                                  Accept
-                                </button>
+                                <button className="mini-btn gold" type="button" onClick={() => setConfirmMatch(match)}>Accept</button>
                               ) : (
                                 <button className="mini-btn disabled">Accept</button>
                               )}
@@ -580,8 +543,7 @@ function MatchFinderContent() {
                 Players: {viewMatch.players}<br />
                 Mode: {viewMatch.game_mode}<br />
                 Rules: {viewMatch.preset || "GB Default"}<br />
-                Time: {viewMatch.match_time}<br />
-                Best Of: {viewMatch.best_of}
+                Time: {viewMatch.match_time}
               </div>
             </div>
             <div className="accept-actions">
