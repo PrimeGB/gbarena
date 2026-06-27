@@ -587,7 +587,6 @@ function MatchFinderContent() {
                           <div className="match-cell mode">{match.game_mode}</div>
                           <div className="match-cell rules-type">{match.preset || "GB Default"}</div>
                           <div className="match-cell time">{match.match_time}</div>
-
                           <div className="match-cell">
                             <div className="actions">
                               <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>
