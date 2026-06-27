@@ -104,7 +104,6 @@ function parseDateMs(value: string | null | undefined) {
 function isPostPastTime(post: MatchPost) {
   const now = Date.now();
   const matchTime = parseDateMs(post.match_time);
-  // Auto-expire if the scheduled match time has passed
   if (matchTime && now >= matchTime) return true;
   return false;
 }
@@ -191,21 +190,74 @@ function MatchFinderContent() {
     setHasLoaded(true);
   }
 
+  // Effect 1: Handles Initial Load & Sets up the Realtime Database Listener
   useEffect(() => {
-    let cancelled = false;
+    loadMatches();
 
-    async function runLoad() {
-      if (cancelled) return;
-      await loadMatches();
-    }
+    // Setup Realtime pipeline listener for any modifications to 'match_posts'
+    const matchChannel = supabase
+      .channel("match-finder-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Listen for inserts, updates, deletes
+          schema: "public",
+          table: "match_posts",
+        },
+        (payload) => {
+          const oldRecord = payload.old as any;
+          const newRecord = payload.new as MatchPost;
 
-    runLoad();
+          // If a post status drops from open to something else (accepted, cancelled, expired), strip it immediately from view
+          if (payload.eventType === "UPDATE") {
+            if (newRecord.status !== "open") {
+              setMatches((prev) => prev.filter((m) => m.id !== newRecord.id));
+            } else {
+              // Ensure match matches the exact ladder filter configurations before parsing it on screen
+              if (
+                newRecord.platform === platform &&
+                newRecord.category === category &&
+                newRecord.game === game &&
+                newRecord.ladder === ladder &&
+                !isPostPastTime(newRecord)
+              ) {
+                setMatches((prev) => {
+                  const exists = prev.some((m) => m.id === newRecord.id);
+                  if (exists) {
+                    return prev.map((m) => (m.id === newRecord.id ? newRecord : m));
+                  }
+                  return [newRecord, ...prev];
+                });
+              }
+            }
+          }
+
+          if (payload.eventType === "INSERT") {
+            if (
+              newRecord.status === "open" &&
+              newRecord.platform === platform &&
+              newRecord.category === category &&
+              newRecord.game === game &&
+              newRecord.ladder === ladder &&
+              !isPostPastTime(newRecord)
+            ) {
+              setMatches((prev) => [newRecord, ...prev]);
+            }
+          }
+
+          if (payload.eventType === "DELETE") {
+            setMatches((prev) => prev.filter((m) => m.id !== oldRecord.id));
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      cancelled = true;
+      supabase.removeChannel(matchChannel);
     };
   }, [platform, category, game, ladder]);
 
+  // Effect 2: Sets up User Team Access Permission Roles
   useEffect(() => {
     async function loadViewerRole() {
       if (!viewerTeamId || !user?.id) {
@@ -266,14 +318,15 @@ function MatchFinderContent() {
 
       setNotice("This match post has passed its scheduled time and expired.");
       setConfirmMatch(null);
-      await loadMatches();
       return;
     }
 
     const matchPostId = confirmMatch.id;
     setAcceptingId(matchPostId);
 
-    // ATOMIC LOCK Check: Turns 'open' into 'accepted'. If already changed by another user, updatedRows returns empty.
+    // Filter local array instantly so the current client session has crisp layout behavior
+    setMatches((prev) => prev.filter((m) => m.id !== matchPostId));
+
     const { data: updatedRows, error: acceptError } = await supabase
       .from("match_posts")
       .update({ status: "accepted" })
@@ -285,6 +338,7 @@ function MatchFinderContent() {
       setAcceptingId(null);
       setNotice("Could not accept match: " + acceptError.message);
       setConfirmMatch(null);
+      await loadMatches();
       return;
     }
 
@@ -292,7 +346,6 @@ function MatchFinderContent() {
       setAcceptingId(null);
       setNotice("Too late! This match challenge was already accepted by another team.");
       setConfirmMatch(null);
-      await loadMatches();
       return;
     }
 
@@ -341,7 +394,6 @@ function MatchFinderContent() {
 
     if (matchError || !officialMatch) {
       setNotice("Match claimed, but schedule roster entry failed to populate.");
-      await loadMatches();
       return;
     }
 
@@ -378,6 +430,9 @@ function MatchFinderContent() {
     const matchIdToCancel = cancelMatch.id;
     setCancellingId(matchIdToCancel);
 
+    // Optimistically strip from view array locally
+    setMatches((prev) => prev.filter((m) => m.id !== matchIdToCancel));
+
     const { error } = await supabase
       .from("match_posts")
       .update({ status: "cancelled" })
@@ -389,11 +444,11 @@ function MatchFinderContent() {
 
     if (error) {
       setNotice("Could not cancel match post: " + error.message);
+      await loadMatches();
       return;
     }
 
     setNotice("Match post cancelled.");
-    await loadMatches();
   }
 
   return (
@@ -432,7 +487,7 @@ function MatchFinderContent() {
 
         .side-body{padding:12px;}
         .ladder-card{border:1px solid #1f3d5a;background:#06101a;padding:12px;margin-bottom:12px;}
-        .ladder-title{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);}
+        .ladder-card .ladder-title{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);}
         .ladder-line{color:#cfe2f2;font-size:12px;line-height:23px;border-bottom:1px solid rgba(255,255,255,.05);}
         .ladder-line:last-child{border-bottom:0;}
         .ladder-line span{color:#8aa7c0;}
@@ -469,8 +524,6 @@ function MatchFinderContent() {
 
         .empty-state,.error-state,.loading-state{padding:28px;text-align:center;color:#cfe2f2;font-size:13px;font-weight:900;text-transform:uppercase;}
         .error-state{color:#ff9c9c;}
-
-        .footer{height:36px;background:#07111b;border-top:1px solid #244b70;display:flex;justify-content:center;align-items:center;color:#a9c3db;font-size:11px;}
 
         .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.76);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
         .accept-modal{width:520px;max-width:95vw;border:1px solid #6ba8d6;background:#07111b;}
