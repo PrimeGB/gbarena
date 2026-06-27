@@ -237,9 +237,6 @@ function MatchFinderContent() {
     loadViewerRole();
   }, [viewerTeamId, user?.id]);
 
-  // ===================================
-  // FIXED ATOMIC ACCEPT MATCH FUNCTION
-  // ===================================
   async function acceptConfirmedMatch() {
     if (!confirmMatch) return;
 
@@ -283,27 +280,12 @@ function MatchFinderContent() {
     const matchPostId = confirmMatch.id;
     setAcceptingId(matchPostId);
 
-    // Fetch live status row to prevent race conditions or missing row details due to RLS configurations
-    const { data: currentPost } = await supabase
-      .from("match_posts")
-      .select("*")
-      .eq("id", matchPostId)
-      .maybeSingle();
-
-    if (!currentPost || currentPost.status !== "open") {
-      setAcceptingId(null);
-      setNotice("This match is no longer available.");
-      setConfirmMatch(null);
-      await loadMatches();
-      return;
-    }
-
-    // Execute safe transaction state atomic update
-    const { error: acceptError } = await supabase
+    const { data: updatedRows, error: acceptError } = await supabase
       .from("match_posts")
       .update({ status: "accepted" })
       .eq("id", matchPostId)
-      .eq("status", "open");
+      .eq("status", "open")
+      .select("*");
 
     if (acceptError) {
       setAcceptingId(null);
@@ -312,7 +294,16 @@ function MatchFinderContent() {
       return;
     }
 
-    // Create the official active upcoming match instance
+    if (!updatedRows || updatedRows.length === 0) {
+      setAcceptingId(null);
+      setNotice("This match is no longer available.");
+      setConfirmMatch(null);
+      await loadMatches();
+      return;
+    }
+
+    const currentPost = updatedRows[0];
+
     const { data: officialMatch, error: matchError } = await supabase
       .from("matches")
       .insert({
@@ -360,13 +351,9 @@ function MatchFinderContent() {
       return;
     }
 
-    // Direct clean navigation to the official generated upcoming match route
     router.push(`/matches/${officialMatch.id}`);
   }
 
-  // ===================================
-  // FIXED ROBUST CANCEL MATCH FUNCTION
-  // ===================================
   async function cancelConfirmedPost() {
     if (!cancelMatch) return;
 
@@ -397,7 +384,6 @@ function MatchFinderContent() {
     const matchIdToCancel = cancelMatch.id;
     setCancellingId(matchIdToCancel);
 
-    // Filter using only the specific unique item row ID to prevent database engine data-type errors
     const { error } = await supabase
       .from("match_posts")
       .update({ status: "cancelled" })
@@ -630,171 +616,3 @@ function MatchFinderContent() {
                     })}
                   </div>
                 </div>
-              </section>
-            </div>
-          </section>
-
-          <footer className="footer">© 2026 Competitive Gaming Network</footer>
-        </div>
-      </main>
-
-      {viewMatch && (
-        <div className="modal-backdrop">
-          <div className="accept-modal">
-            <div className="accept-title">Posted Match Rules</div>
-
-            <div className="accept-body">
-              <p className="accept-warning">Review the posted match rules and settings before accepting.</p>
-
-              <div className="accept-summary">
-                Players: {viewMatch.players}
-                <br />
-                Mode: {viewMatch.game_mode}
-                <br />
-                Rules: {viewMatch.preset || "GB Default"}
-                <br />
-                Time: {viewMatch.match_time}
-                <br />
-                Best Of: {viewMatch.best_of}
-                <br />
-                Perks: {viewMatch.perks || "Default"}
-                <br />
-                Launchers: {viewMatch.launchers || "Default"}
-                <br />
-                Killstreaks: {viewMatch.killstreaks || "Default"}
-                <br />
-                Field Upgrades: {viewMatch.field_upgrades || "Default"}
-                <br />
-                Hardcore: {viewMatch.hardcore || "Default"}
-                <br />
-                Friendly Fire: {viewMatch.friendly_fire || "Default"}
-                <br />
-                Radar: {viewMatch.radar || "Default"}
-                <br />
-                Spectating: {viewMatch.spectating || "Default"}
-                <br />
-                Third Person: {viewMatch.third_person || "Default"}
-                <br />
-                Round Length: {viewMatch.round_length || "Default"}
-                <br />
-                Score Limit: {viewMatch.score_limit || "Default"}
-                <br />
-                Health: {viewMatch.health || "Default"}
-                <br />
-                Respawn Delay: {viewMatch.respawn_delay || "Default"}
-                <br />
-                Bomb Timer: {viewMatch.bomb_timer || "Default"}
-                <br />
-                Plant Time: {viewMatch.plant_time || "Default"}
-                <br />
-                Defuse Time: {viewMatch.defuse_time || "Default"}
-                <br />
-                Attachments: {viewMatch.attachments || "Default"}
-              </div>
-            </div>
-
-            <div className="accept-actions">
-              <button className="accept-btn red" type="button" onClick={() => setViewMatch(null)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {cancelMatch && (
-        <div className="modal-backdrop">
-          <div className="accept-modal">
-            <div className="accept-title">Cancel Match Post</div>
-
-            <div className="accept-body">
-              <p className="accept-warning">You are about to remove this posted match from Match Finder.</p>
-
-              <div className="accept-summary">
-                Players: {cancelMatch.players}
-                <br />
-                Mode: {cancelMatch.game_mode}
-                <br />
-                Rules: {cancelMatch.preset || "GB Default"}
-                <br />
-                Time: {cancelMatch.match_time}
-              </div>
-
-              <p>
-                Once cancelled, this match post will no longer appear on Match Finder and other teams will not be able to accept it. Only the posting team's leader, co-leader, or captain may cancel this post.
-              </p>
-            </div>
-
-            <div className="accept-actions">
-              <button
-                className="accept-btn red"
-                type="button"
-                disabled={cancellingId === cancelMatch.id}
-                onClick={cancelConfirmedPost}
-              >
-                {cancellingId === cancelMatch.id ? "Cancelling..." : "Cancel Match"}
-              </button>
-
-              <button
-                className="accept-btn"
-                type="button"
-                disabled={cancellingId === cancelMatch.id}
-                onClick={() => setCancelMatch(null)}
-              >
-                Keep Match
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmMatch && (
-        <div className="modal-backdrop">
-          <div className="accept-modal">
-            <div className="accept-title">Confirm Match Acceptance</div>
-
-            <div className="accept-body">
-              <p className="accept-warning">
-                By accepting this match, you agree to all match rules, ladder rules, site rules, and the exact settings posted by the other team.
-              </p>
-
-              <div className="accept-summary">
-                Players: {confirmMatch.players}
-                <br />
-                Mode: {confirmMatch.game_mode}
-                <br />
-                Rules: {confirmMatch.preset || "GB Default"}
-                <br />
-                Time: {confirmMatch.match_time}
-              </div>
-
-              <p>
-                Failure to follow the posted settings or ladder rules may result in a dispute, penalty, or admin action. Only team leaders, co-leaders, and captains may accept official matches for their team.
-              </p>
-            </div>
-
-            <div className="accept-actions">
-              <button
-                className="accept-btn"
-                type="button"
-                disabled={acceptingId === confirmMatch.id}
-                onClick={acceptConfirmedMatch}
-              >
-                {acceptingId === confirmMatch.id ? "Accepting..." : "Accept Match"}
-              </button>
-
-              <button
-                className="accept-btn red"
-                type="button"
-                disabled={acceptingId === confirmMatch.id}
-                onClick={() => setConfirmMatch(null)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
