@@ -237,7 +237,7 @@ export default function MatchDetailsPage() {
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
   const [userTeamId, setUserTeamId] = useState("");
-  viewerCanManageMatch, setCanManageMatch] = useState(false);
+  const [const [viewerCanManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [comments, setComments] = useState<MatchCommentRow[]>([]);
