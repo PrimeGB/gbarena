@@ -608,11 +608,15 @@ function MatchFinderContent() {
                                 </button>
                               ) : (
                                 <button className="mini-btn disabled" type="button">Accept</button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                      )}
+                    </div>
                   </div>
-                </div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
+  );
+}
