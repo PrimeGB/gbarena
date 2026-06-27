@@ -221,6 +221,7 @@ function matchTimeHasPassed(matchTime: string | null | undefined) {
 
   return now.getTime() >= scheduled.getTime();
 }
+
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = String(params?.matchId || "");
@@ -237,7 +238,7 @@ export default function MatchDetailsPage() {
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
   const [userTeamId, setUserTeamId] = useState("");
-  const [const [viewerCanManageMatch, setCanManageMatch] = useState(false);
+  const [viewerCanManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [comments, setComments] = useState<MatchCommentRow[]>([]);
@@ -398,14 +399,14 @@ export default function MatchDetailsPage() {
     userTeamId === match.confirmation_team_id;
   const canSubmitScore =
     canReportScore &&
-    canManageMatch &&
+    viewerCanManageMatch &&
     userIsMatchTeam &&
     !scoreAlreadyReported &&
     !isFinalized &&
     !isDisputed &&
     !isCompleted;
   const canConfirmScore =
-    canManageMatch &&
+    viewerCanManageMatch &&
     userMustConfirm &&
     !isFinalized &&
     reportingStatus === "awaiting_confirmation";
@@ -418,7 +419,6 @@ export default function MatchDetailsPage() {
       : "Opponent";
   const commentsUnlocked = isCompleted || isFinalized || reportingStatus === "completed";
   const userAlreadyCommented = !!currentUser?.id && comments.some((item) => item.user_id === currentUser.id);
-
 
   async function reloadMatch() {
     if (!matchId) return;
@@ -813,7 +813,6 @@ export default function MatchDetailsPage() {
     setActionMessage("Dispute opened. Staff must resolve this match.");
     await reloadMatch();
   }
-
 
   return (
     <>
@@ -1691,7 +1690,7 @@ export default function MatchDetailsPage() {
                     </div>
                   )}
 
-                  {canReportScore && !canManageMatch && (
+                  {canReportScore && !viewerCanManageMatch && (
                     <div className="score-note">
                       Only team leader, co-leader, captain, or owner can report scores.
                     </div>
