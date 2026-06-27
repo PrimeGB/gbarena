@@ -280,6 +280,7 @@ function MatchFinderContent() {
     const matchPostId = confirmMatch.id;
     setAcceptingId(matchPostId);
 
+    // Atomically change the listing from "open" to "accepted" so nobody else can take it
     const { data: updatedRows, error: acceptError } = await supabase
       .from("match_posts")
       .update({ status: "accepted" })
@@ -351,7 +352,7 @@ function MatchFinderContent() {
       return;
     }
 
-    router.push(`/matches/${officialMatch.id}`);
+    router.push(`/teams/${viewerTeamId}`);
   }
 
   async function cancelConfirmedPost() {
@@ -607,15 +608,83 @@ function MatchFinderContent() {
                                 </button>
                               ) : (
                                 <button className="mini-btn disabled" type="button">Accept</button>
-                      )}
-                    </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </section>
-              </div>
+                </div>
+              </section>
             </div>
           </section>
         </div>
       </main>
+
+      {confirmMatch && (
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Confirm Match Acceptance</div>
+            <div className="accept-body">
+              <p className="accept-warning">
+                By accepting this match, you agree to all match rules and settings posted by the other team.
+              </p>
+              <div className="accept-summary">
+                Players: {confirmMatch.players}
+                <br />
+                Mode: {confirmMatch.game_mode}
+                <br />
+                Rules: {confirmMatch.preset || "GB Default"}
+                <br />
+                Time: {confirmMatch.match_time}
+              </div>
+            </div>
+            <div className="accept-actions">
+              <button
+                className="accept-btn"
+                type="button"
+                disabled={acceptingId === confirmMatch.id}
+                onClick={acceptConfirmedMatch}
+              >
+                {acceptingId === confirmMatch.id ? "Accepting..." : "Accept Match"}
+              </button>
+              <button
+                className="accept-btn red"
+                type="button"
+                disabled={acceptingId === confirmMatch.id}
+                onClick={() => setConfirmMatch(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMatch && (
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Posted Match Rules</div>
+            <div className="accept-body">
+              <div className="accept-summary">
+                Players: {viewMatch.players}
+                <br />
+                Mode: {viewMatch.game_mode}
+                <br />
+                Rules: {viewMatch.preset || "GB Default"}
+                <br />
+                Time: {viewMatch.match_time}
+              </div>
+            </div>
+            <div className="accept-actions">
+              <button className="accept-btn red" type="button" onClick={() => setViewMatch(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
