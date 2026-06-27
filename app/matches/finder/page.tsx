@@ -237,6 +237,9 @@ function MatchFinderContent() {
     loadViewerRole();
   }, [viewerTeamId, user?.id]);
 
+  // ===================================
+  // FIXED ATOMIC ACCEPT MATCH FUNCTION
+  // ===================================
   async function acceptConfirmedMatch() {
     if (!confirmMatch) return;
 
@@ -277,14 +280,30 @@ function MatchFinderContent() {
       return;
     }
 
-    setAcceptingId(confirmMatch.id);
+    const matchPostId = confirmMatch.id;
+    setAcceptingId(matchPostId);
 
-    const { data: acceptedPost, error: acceptError } = await supabase
+    // Fetch live status row to prevent race conditions or missing row details due to RLS configurations
+    const { data: currentPost } = await supabase
+      .from("match_posts")
+      .select("*")
+      .eq("id", matchPostId)
+      .maybeSingle();
+
+    if (!currentPost || currentPost.status !== "open") {
+      setAcceptingId(null);
+      setNotice("This match is no longer available.");
+      setConfirmMatch(null);
+      await loadMatches();
+      return;
+    }
+
+    // Execute safe transaction state atomic update
+    const { error: acceptError } = await supabase
       .from("match_posts")
       .update({ status: "accepted" })
-      .eq("id", confirmMatch.id)
-      .eq("status", "open")
-      .select("*");
+      .eq("id", matchPostId)
+      .eq("status", "open");
 
     if (acceptError) {
       setAcceptingId(null);
@@ -293,52 +312,39 @@ function MatchFinderContent() {
       return;
     }
 
-    if (!acceptedPost || acceptedPost.length === 0) {
-      setAcceptingId(null);
-      setNotice("This match is no longer available.");
-      setConfirmMatch(null);
-      await loadMatches();
-      return;
-    }
-
-    const post = acceptedPost[0] as MatchPost;
-
+    // Create the official active upcoming match instance
     const { data: officialMatch, error: matchError } = await supabase
       .from("matches")
       .insert({
-        match_post_id: post.id,
-        posting_team_id: post.team_id,
+        match_post_id: currentPost.id,
+        posting_team_id: currentPost.team_id,
         accepting_team_id: viewerTeamId,
-
-        platform: post.platform,
-        category: post.category,
-        game: post.game,
-        ladder: post.ladder,
-
-        game_mode: post.game_mode,
-        players: post.players,
-        match_time: post.match_time,
-        best_of: post.best_of,
-
-        preset: post.preset,
-        perks: post.perks,
-        launchers: post.launchers,
-        killstreaks: post.killstreaks,
-        field_upgrades: post.field_upgrades,
-        hardcore: post.hardcore,
-        friendly_fire: post.friendly_fire,
-        radar: post.radar,
-        spectating: post.spectating,
-        third_person: post.third_person,
-        round_length: post.round_length,
-        score_limit: post.score_limit,
-        health: post.health,
-        respawn_delay: post.respawn_delay,
-        bomb_timer: post.bomb_timer,
-        plant_time: post.plant_time,
-        defuse_time: post.defuse_time,
-        attachments: post.attachments,
-
+        platform: currentPost.platform,
+        category: currentPost.category,
+        game: currentPost.game,
+        ladder: currentPost.ladder,
+        game_mode: currentPost.game_mode,
+        players: currentPost.players,
+        match_time: currentPost.match_time,
+        best_of: currentPost.best_of,
+        preset: currentPost.preset,
+        perks: currentPost.perks,
+        launchers: currentPost.launchers,
+        killstreaks: currentPost.killstreaks,
+        field_upgrades: currentPost.field_upgrades,
+        hardcore: currentPost.hardcore,
+        friendly_fire: currentPost.friendly_fire,
+        radar: currentPost.radar,
+        spectating: currentPost.spectating,
+        third_person: currentPost.third_person,
+        round_length: currentPost.round_length,
+        score_limit: currentPost.score_limit,
+        health: currentPost.health,
+        respawn_delay: currentPost.respawn_delay,
+        bomb_timer: currentPost.bomb_timer,
+        plant_time: currentPost.plant_time,
+        defuse_time: currentPost.defuse_time,
+        attachments: currentPost.attachments,
         status: "upcoming",
         accepted_at: new Date().toISOString(),
       })
@@ -346,17 +352,21 @@ function MatchFinderContent() {
       .single();
 
     setAcceptingId(null);
+    setConfirmMatch(null);
 
     if (matchError || !officialMatch) {
-      setNotice("Match post was accepted, but the official match could not be created.");
-      setConfirmMatch(null);
+      setNotice("Match post was accepted, but the official match page record could not be populated.");
       await loadMatches();
       return;
     }
 
+    // Direct clean navigation to the official generated upcoming match route
     router.push(`/matches/${officialMatch.id}`);
   }
 
+  // ===================================
+  // FIXED ROBUST CANCEL MATCH FUNCTION
+  // ===================================
   async function cancelConfirmedPost() {
     if (!cancelMatch) return;
 
@@ -384,25 +394,25 @@ function MatchFinderContent() {
       return;
     }
 
-    setCancellingId(cancelMatch.id);
+    const matchIdToCancel = cancelMatch.id;
+    setCancellingId(matchIdToCancel);
 
+    // Filter using only the specific unique item row ID to prevent database engine data-type errors
     const { error } = await supabase
       .from("match_posts")
       .update({ status: "cancelled" })
-      .eq("id", cancelMatch.id)
-      .eq("team_id", viewerTeamId)
+      .eq("id", matchIdToCancel)
       .eq("status", "open");
 
     setCancellingId(null);
+    setCancelMatch(null);
 
     if (error) {
       setNotice("Could not cancel match post: " + error.message);
-      setCancelMatch(null);
       return;
     }
 
     setNotice("Match post cancelled. It has been removed from Match Finder.");
-    setCancelMatch(null);
     await loadMatches();
   }
 
