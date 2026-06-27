@@ -96,23 +96,16 @@ function canManageMatches(role: TeamRole) {
 
 function parseDateMs(value: string | null | undefined) {
   if (!value) return 0;
-
   const direct = new Date(value).getTime();
-
   if (!Number.isNaN(direct)) return direct;
-
   return 0;
 }
 
-function shouldHidePost(post: MatchPost) {
+function isPostPastTime(post: MatchPost) {
   const now = Date.now();
   const matchTime = parseDateMs(post.match_time);
-  const createdTime = parseDateMs(post.created_at);
-  const oneDayMs = 1000 * 60 * 60 * 24;
-
+  // Auto-expire if the scheduled match time has passed
   if (matchTime && now >= matchTime) return true;
-  if (createdTime && now - createdTime >= oneDayMs) return true;
-
   return false;
 }
 
@@ -157,16 +150,18 @@ function MatchFinderContent() {
 
   const viewerCanManageMatches = canManageMatches(viewerRole);
 
-  async function markOldPostsExpired(posts: MatchPost[]) {
-    const expiredIds = posts.filter((post) => shouldHidePost(post)).map((post) => post.id);
+  async function cleanAndFilterExpiredPosts(posts: MatchPost[]): Promise<MatchPost[]> {
+    const expiredIds = posts.filter((post) => isPostPastTime(post)).map((post) => post.id);
 
-    if (expiredIds.length === 0) return;
+    if (expiredIds.length > 0) {
+      await supabase
+        .from("match_posts")
+        .update({ status: "expired" })
+        .in("id", expiredIds)
+        .eq("status", "open");
+    }
 
-    await supabase
-      .from("match_posts")
-      .update({ status: "expired" })
-      .in("id", expiredIds)
-      .eq("status", "open");
+    return posts.filter((post) => !isPostPastTime(post));
   }
 
   async function loadMatches() {
@@ -189,13 +184,11 @@ function MatchFinderContent() {
       return;
     }
 
-    const openPosts = (data || []) as MatchPost[];
-    const visiblePosts = openPosts.filter((post) => !shouldHidePost(post));
+    const allOpenPosts = (data || []) as MatchPost[];
+    const nonExpiredPosts = await cleanAndFilterExpiredPosts(allOpenPosts);
 
-    setMatches(visiblePosts);
+    setMatches(nonExpiredPosts);
     setHasLoaded(true);
-
-    markOldPostsExpired(openPosts);
   }
 
   useEffect(() => {
@@ -264,14 +257,14 @@ function MatchFinderContent() {
       return;
     }
 
-    if (shouldHidePost(confirmMatch)) {
+    if (isPostPastTime(confirmMatch)) {
       await supabase
         .from("match_posts")
         .update({ status: "expired" })
         .eq("id", confirmMatch.id)
         .eq("status", "open");
 
-      setNotice("This match post expired and has been removed.");
+      setNotice("This match post has passed its scheduled time and expired.");
       setConfirmMatch(null);
       await loadMatches();
       return;
@@ -280,7 +273,7 @@ function MatchFinderContent() {
     const matchPostId = confirmMatch.id;
     setAcceptingId(matchPostId);
 
-    // Atomically change the listing from "open" to "accepted" so nobody else can take it
+    // ATOMIC LOCK Check: Turns 'open' into 'accepted'. If already changed by another user, updatedRows returns empty.
     const { data: updatedRows, error: acceptError } = await supabase
       .from("match_posts")
       .update({ status: "accepted" })
@@ -297,7 +290,7 @@ function MatchFinderContent() {
 
     if (!updatedRows || updatedRows.length === 0) {
       setAcceptingId(null);
-      setNotice("This match is no longer available.");
+      setNotice("Too late! This match challenge was already accepted by another team.");
       setConfirmMatch(null);
       await loadMatches();
       return;
@@ -347,7 +340,7 @@ function MatchFinderContent() {
     setConfirmMatch(null);
 
     if (matchError || !officialMatch) {
-      setNotice("Match post was accepted, but the official match page record could not be populated.");
+      setNotice("Match claimed, but schedule roster entry failed to populate.");
       await loadMatches();
       return;
     }
@@ -399,7 +392,7 @@ function MatchFinderContent() {
       return;
     }
 
-    setNotice("Match post cancelled. It has been removed from Match Finder.");
+    setNotice("Match post cancelled.");
     await loadMatches();
   }
 
@@ -596,8 +589,13 @@ function MatchFinderContent() {
 
                               {isMyPost ? (
                                 viewerCanManageMatches ? (
-                                  <button className="mini-btn red-mini" type="button" onClick={() => setCancelMatch(match)}>
-                                    Cancel
+                                  <button 
+                                    className="mini-btn red-mini" 
+                                    type="button" 
+                                    disabled={cancellingId === match.id}
+                                    onClick={() => setCancelMatch(match)}
+                                  >
+                                    {cancellingId === match.id ? "..." : "Cancel"}
                                   </button>
                                 ) : (
                                   <button className="mini-btn disabled" type="button">Cancel</button>
@@ -680,6 +678,27 @@ function MatchFinderContent() {
             <div className="accept-actions">
               <button className="accept-btn red" type="button" onClick={() => setViewMatch(null)}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelMatch && (
+        <div className="modal-backdrop">
+          <div className="accept-modal">
+            <div className="accept-title">Cancel Match Challenge</div>
+            <div className="accept-body">
+              <p style={{ color: "#ff9c9c", fontWeight: "bold", textTransform: "uppercase" }}>
+                Are you sure you want to pull this open challenge post off the board?
+              </p>
+            </div>
+            <div className="accept-actions">
+              <button className="accept-btn red" type="button" onClick={cancelConfirmedPost}>
+                Yes, Remove It
+              </button>
+              <button className="accept-btn" type="button" onClick={() => setCancelMatch(null)}>
+                Back
               </button>
             </div>
           </div>
