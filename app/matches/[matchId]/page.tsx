@@ -253,10 +253,12 @@ export default function MatchDetailsPage() {
       setUserTeamId("");
       setCanManageMatch(false);
 
+      // Fetch match and exclude cancelled or invalid statuses
       const { data: matchData, error: matchError } = await supabase
         .from("matches")
         .select("*")
         .eq("id", matchId)
+        .neq("status", "cancelled")
         .maybeSingle();
 
       if (matchError) {
@@ -266,7 +268,7 @@ export default function MatchDetailsPage() {
       }
 
       if (!matchData) {
-        setPageError("Match not found.");
+        setPageError("Match not found or has been cancelled.");
         setLoading(false);
         return;
       }
@@ -427,6 +429,7 @@ export default function MatchDetailsPage() {
       .from("matches")
       .select("*")
       .eq("id", matchId)
+      .neq("status", "cancelled")
       .maybeSingle();
 
     if (data) {

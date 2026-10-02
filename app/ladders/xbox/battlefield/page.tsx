@@ -318,7 +318,9 @@ export default function XboxBattlefieldPage() {
                             className="ladder-item"
                             key={`${game.title}-${ladder}`}
                           >
-                            <div className="ladder-name">{ladder} Ladder</div>
+                            <div className="ladder-name">
+                              {ladder} Ladder
+                            </div>
 
                             <a className="ladder-link" href={teamHubUrl}>
                               View/Create Team
@@ -330,6 +332,31 @@ export default function XboxBattlefieldPage() {
                           </div>
                         );
                       })}
+
+                      {game.slug === "battlefield-6" && (
+                        <div className="ladder-item">
+                          <a
+                            className="ladder-name"
+                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
+                          >
+                            RedSec
+                          </a>
+
+                          <a
+                            className="ladder-link"
+                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
+                          >
+                            Enter RedSec
+                          </a>
+
+                          <a
+                            className="ladder-link"
+                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
+                          >
+                            Duos / Trios / Quads
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

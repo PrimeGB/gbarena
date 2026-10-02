@@ -325,7 +325,7 @@ function MatchFinderContent() {
     setAcceptingId(matchPostId);
 
     // Filter local array instantly so the current client session has crisp layout behavior
-    setMatches((prev) => prev.filter((m) => m.id !== matchPostId));
+    await loadMatches();
 
     const { data: updatedRows, error: acceptError } = await supabase
       .from("match_posts")
