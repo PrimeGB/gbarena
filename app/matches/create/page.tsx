@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 
@@ -106,6 +106,7 @@ export default function CreateMatchPage() {
 }
 
 function CreateMatchContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser() as any;
 
@@ -471,7 +472,6 @@ function CreateMatchContent() {
         .rules-link{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:38px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;}
         .rules-link:hover{color:#d7ad4a;border-color:#d7ad4a;}
 
-        .success-box{border:1px solid #35a852;background:#06230d;color:#8cff9d;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
         .error-box{border:1px solid #923131;background:#210707;color:#ff9c9c;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
 
         .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;}
@@ -485,6 +485,7 @@ function CreateMatchContent() {
 
         .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
         .settings-modal{width:820px;max-width:96vw;max-height:90vh;overflow:auto;border:1px solid #315f88;background:#050b12;box-shadow:0 0 30px rgba(0,80,140,.55);}
+        .success-modal{width:420px;max-width:96vw;border:1px solid #35a852;background:#050b12;box-shadow:0 0 30px rgba(53,168,82,.3);}
         .modal-title{min-height:38px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13px;font-weight:900;text-transform:uppercase;}
         .modal-close{width:24px;height:24px;border:1px solid #315f88;background:#000;color:#fff;font-weight:900;cursor:pointer;}
         .modal-body{padding:15px;}
@@ -577,7 +578,6 @@ function CreateMatchContent() {
                 <div className="panel-header">Match Post Form</div>
 
                 <div className="main-body">
-                  {postSuccess && <div className="success-box">{postSuccess}</div>}
                   {postError && <div className="error-box">{postError}</div>}
 
                   <div className="form-section">
@@ -942,6 +942,33 @@ function CreateMatchContent() {
           <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
       </main>
+
+      {postSuccess && (
+        <div className="modal-backdrop">
+          <section
+            className="success-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="match-post-success-title"
+          >
+            <div className="modal-title" id="match-post-success-title">
+              Match Successfully Posted
+            </div>
+            <div className="modal-body">
+              <div className="modal-actions">
+                <button
+                  className="action-btn"
+                  type="button"
+                  onClick={() => router.push(viewTeamUrl)}
+                  autoFocus
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
 
       {redSecRulesOpen && (
         <div className="modal-backdrop">
