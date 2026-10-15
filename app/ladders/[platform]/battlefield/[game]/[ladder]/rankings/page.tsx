@@ -148,7 +148,7 @@ export default function BattlefieldRankingsPage() {
         ) : error ? (
           <p className="state error">{error}</p>
         ) : rankedTeams.length === 0 ? (
-          <p className="state">No teams are ranked on this ladder yet.</p>
+          <p className="state">No ranked teams yet.</p>
         ) : (
           <div className="table-wrap">
             <table>
