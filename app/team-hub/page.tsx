@@ -58,6 +58,7 @@ function prettyText(value: string | null) {
 }
 
 function getLadderName(ladder: string | null) {
+  if (ladder === "redsec") return "RedSec Ladder";
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
   if (ladder === "team") return "Team Ladder";

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 const battlefieldTitles = [
   {
     title: "Battlefield 6",
@@ -263,9 +265,9 @@ export default function XboxBattlefieldPage() {
       <main className="page">
         <div className="wrapper">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
@@ -278,11 +280,11 @@ export default function XboxBattlefieldPage() {
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
-            <a href="/players/top">Top Players</a>
+            <Link href="/home">Home</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
+            <Link href="/teams/top">Top Teams</Link>
+            <Link href="/players/top">Top Players</Link>
           </nav>
 
           <section className="title-bar">
@@ -299,15 +301,35 @@ export default function XboxBattlefieldPage() {
                 <div className="game-card" key={game.title}>
                   <div className="game-title">{game.title}</div>
 
-                  <a
+                  <Link
                     className="game-image"
-                    href={`/ladders/xbox/battlefield/${game.slug}`}
+                    href={`/ladders/pc/battlefield/${game.slug}`}
                   >
                     <img src={game.image} alt={game.title} />
-                  </a>
+                  </Link>
 
                   <div className="card-body">
                     <div className="ladder-list">
+                      {game.slug === "battlefield-6" && (
+                        <div className="ladder-item" key={`${game.title}-redsec`}>
+                          <div className="ladder-name">RedSec</div>
+
+                          <Link
+                            className="ladder-link"
+                            href={`/team-hub?platform=pc&category=battlefield&game=${game.slug}&ladder=redsec`}
+                          >
+                            View/Create Team
+                          </Link>
+
+                          <Link
+                            className="ladder-link"
+                            href={`/ladders/pc/battlefield/${game.slug}/redsec/rankings`}
+                          >
+                            Current Ladder Rankings
+                          </Link>
+                        </div>
+                      )}
+
                       {game.ladders.map((ladder) => {
                         const currentLadderSlug = ladderSlug(ladder);
                         const teamHubUrl = `/team-hub?platform=pc&category=battlefield&game=${game.slug}&ladder=${currentLadderSlug}`;
@@ -320,36 +342,17 @@ export default function XboxBattlefieldPage() {
                           >
                             <div className="ladder-name">{ladder} Ladder</div>
 
-                            <a className="ladder-link" href={teamHubUrl}>
+                            <Link className="ladder-link" href={teamHubUrl}>
                               View/Create Team
-                            </a>
+                            </Link>
 
-                            <a className="ladder-link" href={rankingsUrl}>
+                            <Link className="ladder-link" href={rankingsUrl}>
                               Current Ladder Rankings
-                            </a>
+                            </Link>
                           </div>
                         );
                       })}
 
-                      {game.slug === "battlefield-6" && (
-                        <div className="ladder-item" key={`${game.title}-redsec`}>
-                          <div className="ladder-name">RedSec</div>
-
-                          <a
-                            className="ladder-link"
-                            href={`/team-hub?platform=pc&category=battlefield&game=${game.slug}&ladder=redsec`}
-                          >
-                            View/Create Team
-                          </a>
-
-                          <a
-                            className="ladder-link"
-                            href={`/ladders/pc/battlefield/${game.slug}/redsec`}
-                          >
-                            Current Ladder Rankings
-                          </a>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
