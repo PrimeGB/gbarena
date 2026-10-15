@@ -107,3 +107,5 @@ with check (
 );
 
 grant select, insert, update on public.team_invites to authenticated;
+
+notify pgrst, 'reload schema';
