@@ -64,6 +64,36 @@ function getRequiredRosterSize(ladder: string | null, players: string) {
   return 1;
 }
 
+function toLocalDateTimeValue(date: Date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function getNextQuarterHour(date: Date) {
+  const quarterHourMs = 15 * 60 * 1000;
+  return new Date((Math.floor(date.getTime() / quarterHourMs) + 1) * quarterHourMs);
+}
+
+function getScheduledTimeMs(matchTime: string, createdAt: string | null) {
+  const directTime = new Date(matchTime).getTime();
+  if (!Number.isNaN(directTime)) return directTime;
+
+  const legacyTime = matchTime.trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!legacyTime || !createdAt) return 0;
+
+  const scheduled = new Date(createdAt);
+  if (Number.isNaN(scheduled.getTime())) return 0;
+
+  let hours = Number(legacyTime[1]);
+  const minutes = Number(legacyTime[2]);
+  const period = legacyTime[3].toUpperCase();
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  scheduled.setHours(hours, minutes, 0, 0);
+
+  return scheduled.getTime();
+}
+
 type RulesType = "GB Variant" | "CDL" | "Custom";
 type CrossPlayType = "Off" | "On";
 
@@ -104,7 +134,10 @@ function CreateMatchContent() {
   const [players, setPlayers] = useState(playerOptions[0]);
   const [teamRoster, setTeamRoster] = useState<{ id: string; username: string }[]>([]);
   const [selectedRosterPlayers, setSelectedRosterPlayers] = useState<string[]>([]);
-  const [matchTime, setMatchTime] = useState("8:00 PM");
+  const [matchDateTime, setMatchDateTime] = useState(() =>
+    toLocalDateTimeValue(getNextQuarterHour(new Date()))
+  );
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [bestOf, setBestOf] = useState(isRedSec ? "Best of 1" : "Best of 3");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewPresetOpen, setViewPresetOpen] = useState<RulesType | null>(null);
@@ -213,32 +246,10 @@ function CreateMatchContent() {
   const bestOfOptions = isRedSec ? ["Best of 1", "Best of 2"] : ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
   const rosterLimit = getRequiredRosterSize(ladder, players);
 
-  const timeSlots = [
-    "12:00 AM", "12:15 AM", "12:30 AM", "12:45 AM",
-    "1:00 AM", "1:15 AM", "1:30 AM", "1:45 AM",
-    "2:00 AM", "2:15 AM", "2:30 AM", "2:45 AM",
-    "3:00 AM", "3:15 AM", "3:30 AM", "3:45 AM",
-    "4:00 AM", "4:15 AM", "4:30 AM", "4:45 AM",
-    "5:00 AM", "5:15 AM", "5:30 AM", "5:45 AM",
-    "6:00 AM", "6:15 AM", "6:30 AM", "6:45 AM",
-    "7:00 AM", "7:15 AM", "7:30 AM", "7:45 AM",
-    "8:00 AM", "8:15 AM", "8:30 PM", "8:45 PM",
-    "9:00 AM", "9:15 AM", "9:30 AM", "9:45 AM",
-    "10:00 AM", "10:15 AM", "10:30 AM", "10:45 AM",
-    "11:00 AM", "11:15 AM", "11:30 AM", "11:45 AM",
-    "12:00 PM", "12:15 PM", "12:30 PM", "12:45 PM",
-    "1:00 PM", "1:15 PM", "1:30 PM", "1:45 PM",
-    "2:00 PM", "2:15 PM", "2:30 PM", "2:45 PM",
-    "3:00 PM", "3:15 PM", "3:30 PM", "3:45 PM",
-    "4:00 PM", "4:15 PM", "4:30 PM", "4:45 PM",
-    "5:00 PM", "5:15 PM", "5:30 PM", "5:45 PM",
-    "6:00 PM", "6:15 PM", "6:30 PM", "6:45 PM",
-    "7:00 PM", "7:15 PM", "7:30 PM", "7:45 PM",
-    "8:00 PM", "8:15 PM", "8:30 PM", "8:45 PM",
-    "9:00 PM", "9:15 PM", "9:30 PM", "9:45 PM",
-    "10:00 PM", "10:15 PM", "10:30 PM", "10:45 PM",
-    "11:00 PM", "11:15 PM", "11:30 PM", "11:45 PM",
-  ];
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const presetText = isRedSec
     ? "RedSec settings are controlled by the GameBattles RedSec ruleset."
@@ -276,6 +287,12 @@ function CreateMatchContent() {
       return;
     }
 
+    const scheduledTime = new Date(matchDateTime);
+    if (Number.isNaN(scheduledTime.getTime()) || scheduledTime.getTime() <= Date.now()) {
+      setPostError("Choose a match date and time in the future.");
+      return;
+    }
+
     if (rosterLimit > 1) {
       if (teamRoster.length < rosterLimit) {
         setPostError(`This ${ladderName} match requires at least ${rosterLimit} rostered players on the team before posting.`);
@@ -289,6 +306,31 @@ function CreateMatchContent() {
     }
 
     setPosting(true);
+    const scheduledIso = scheduledTime.toISOString();
+    const { data: existingPosts, error: existingPostError } = await supabase
+      .from("match_posts")
+      .select("match_time, created_at")
+      .eq("platform", platform)
+      .eq("category", category)
+      .eq("game", game)
+      .eq("ladder", ladder)
+      .eq("status", "open");
+
+    if (existingPostError) {
+      setPosting(false);
+      setPostError("Could not check whether this ladder time is already booked: " + existingPostError.message);
+      return;
+    }
+
+    if (
+      existingPosts?.some(
+        (post) => getScheduledTimeMs(String(post.match_time || ""), post.created_at) === scheduledTime.getTime()
+      )
+    ) {
+      setPosting(false);
+      setPostError("That time already has an open match post for this ladder. Choose another time.");
+      return;
+    }
 
     const { error } = await supabase.from("match_posts").insert({
       team_id: teamId,
@@ -298,7 +340,7 @@ function CreateMatchContent() {
       ladder,
       game_mode: gameMode,
       players,
-      match_time: matchTime,
+      match_time: scheduledIso,
       best_of: bestOf,
       preset: rulesType,
       crossplay,
@@ -325,7 +367,11 @@ function CreateMatchContent() {
     setPosting(false);
 
     if (error) {
-      setPostError("Match could not be posted: " + error.message);
+      setPostError(
+        error.code === "23505"
+          ? "That time was just booked by another team. Choose another time."
+          : "Match could not be posted: " + error.message
+      );
       return;
     }
 
@@ -771,21 +817,19 @@ function CreateMatchContent() {
                         <label>Date / Time</label>
                         <div>
                           <div className="date-time-box">
-                            <div className="locked-day">Today</div>
-
-                            <select
+                            <input
                               className="time-select"
-                              value={matchTime}
-                              onChange={(e) => setMatchTime(e.target.value)}
-                            >
-                              {timeSlots.map((slot) => (
-                                <option key={slot}>{slot}</option>
-                              ))}
-                            </select>
+                              type="datetime-local"
+                              value={matchDateTime}
+                              min={toLocalDateTimeValue(getNextQuarterHour(new Date(currentTime)))}
+                              step={900}
+                              onChange={(e) => setMatchDateTime(e.target.value)}
+                              required
+                            />
                           </div>
 
                           <div className="small-note">
-                            Date is locked to today. Time can only be posted in 15 minute slots.
+                            Choose a future date and time. Match times are available in 15-minute increments.
                           </div>
                         </div>
                       </div>

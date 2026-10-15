@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
@@ -109,11 +109,39 @@ function parseDateMs(value: string | null | undefined) {
   return 0;
 }
 
+function getScheduledTime(post: MatchPost) {
+  const directTime = parseDateMs(post.match_time);
+  if (directTime) return directTime;
+
+  const legacyTime = String(post.match_time || "").trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!legacyTime || !post.created_at) return 0;
+
+  const scheduled = new Date(post.created_at);
+  if (Number.isNaN(scheduled.getTime())) return 0;
+
+  let hours = Number(legacyTime[1]);
+  const minutes = Number(legacyTime[2]);
+  const period = legacyTime[3].toUpperCase();
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  scheduled.setHours(hours, minutes, 0, 0);
+
+  return scheduled.getTime();
+}
+
 function isPostPastTime(post: MatchPost) {
-  const now = Date.now();
-  const matchTime = parseDateMs(post.match_time);
-  if (matchTime && now >= matchTime) return true;
-  return false;
+  const matchTime = getScheduledTime(post);
+  return matchTime > 0 && Date.now() >= matchTime;
+}
+
+function formatMatchTime(post: MatchPost) {
+  const scheduledTime = getScheduledTime(post);
+  if (!scheduledTime) return post.match_time;
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(scheduledTime);
 }
 
 export default function MatchFinderPage() {
@@ -157,21 +185,25 @@ function MatchFinderContent() {
 
   const viewerCanManageMatches = canManageMatches(viewerRole);
 
-  async function cleanAndFilterExpiredPosts(posts: MatchPost[]): Promise<MatchPost[]> {
+  const cleanAndFilterExpiredPosts = useCallback(async (posts: MatchPost[]): Promise<MatchPost[]> => {
     const expiredIds = posts.filter((post) => isPostPastTime(post)).map((post) => post.id);
 
     if (expiredIds.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from("match_posts")
         .update({ status: "expired" })
         .in("id", expiredIds)
         .eq("status", "open");
+
+      if (error) {
+        setNotice("Expired match posts were hidden but could not be marked expired: " + error.message);
+      }
     }
 
     return posts.filter((post) => !isPostPastTime(post));
-  }
+  }, []);
 
-  async function loadMatches() {
+  const loadMatches = useCallback(async () => {
     setPageError("");
 
     const { data, error } = await supabase
@@ -196,7 +228,7 @@ function MatchFinderContent() {
 
     setMatches(nonExpiredPosts);
     setHasLoaded(true);
-  }
+  }, [platform, category, game, ladder, cleanAndFilterExpiredPosts]);
 
   // Effect 1: Handles Initial Load & Sets up the Realtime Database Listener
   useEffect(() => {
@@ -263,7 +295,28 @@ function MatchFinderContent() {
     return () => {
       supabase.removeChannel(matchChannel);
     };
-  }, [platform, category, game, ladder]);
+  }, [platform, category, game, ladder, loadMatches]);
+
+  useEffect(() => {
+    const nextExpiry = matches
+      .map(getScheduledTime)
+      .filter((time) => time > Date.now())
+      .sort((a, b) => a - b)[0];
+
+    const expiryTimer = nextExpiry
+      ? window.setTimeout(() => void loadMatches(), Math.max(0, nextExpiry - Date.now() + 100))
+      : undefined;
+
+    function refreshWhenVisible() {
+      if (document.visibilityState === "visible") void loadMatches();
+    }
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      if (expiryTimer) window.clearTimeout(expiryTimer);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [matches, loadMatches]);
 
   // Effect 2: Sets up User Team Access Permission Roles
   useEffect(() => {
@@ -318,14 +371,19 @@ function MatchFinderContent() {
     }
 
     if (isPostPastTime(confirmMatch)) {
-      await supabase
+      const { error } = await supabase
         .from("match_posts")
         .update({ status: "expired" })
         .eq("id", confirmMatch.id)
         .eq("status", "open");
 
-      setNotice("This match post has passed its scheduled time and expired.");
+      setNotice(
+        error
+          ? "This match post has passed its scheduled time and was hidden, but could not be marked expired: " + error.message
+          : "This match post has passed its scheduled time and expired."
+      );
       setConfirmMatch(null);
+      await loadMatches();
       return;
     }
 
@@ -641,7 +699,7 @@ function MatchFinderContent() {
                           <div className="match-cell players">{match.players}</div>
                           <div className="match-cell mode">{match.game_mode}</div>
                           <div className="match-cell rules-type">{match.preset || "GB Default"}</div>
-                          <div className="match-cell time">{match.match_time}</div>
+                          <div className="match-cell time">{formatMatchTime(match)}</div>
                           <div className="match-cell">
                             <div className="actions">
                               <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>
@@ -696,7 +754,7 @@ function MatchFinderContent() {
                 <br />
                 Rules: {confirmMatch.preset || "GB Default"}
                 <br />
-                Time: {confirmMatch.match_time}
+                Time: {formatMatchTime(confirmMatch)}
               </div>
             </div>
             <div className="accept-actions">
@@ -733,7 +791,7 @@ function MatchFinderContent() {
                 <br />
                 Rules: {viewMatch.preset || "GB Default"}
                 <br />
-                Time: {viewMatch.match_time}
+                Time: {formatMatchTime(viewMatch)}
               </div>
             </div>
             <div className="accept-actions">
