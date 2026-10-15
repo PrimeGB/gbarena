@@ -94,6 +94,7 @@ export default function BattlefieldRankingsPage() {
         .eq("category", "battlefield")
         .eq("game", game)
         .eq("ladder", ladder)
+        .or("wins.gt.0,losses.gt.0")
         .order("rating_points", { ascending: false })
         .order("wins", { ascending: false })
         .order("losses", { ascending: true });
@@ -147,7 +148,7 @@ export default function BattlefieldRankingsPage() {
         ) : error ? (
           <p className="state error">{error}</p>
         ) : rankedTeams.length === 0 ? (
-          <p className="state">No teams have joined this ladder yet.</p>
+          <p className="state">No teams are ranked on this ladder yet.</p>
         ) : (
           <div className="table-wrap">
             <table>
