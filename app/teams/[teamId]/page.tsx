@@ -322,7 +322,8 @@ export default function TeamPage() {
   const teamWins = Number(team?.wins || 0);
   const teamLosses = Number(team?.losses || 0);
   const teamStreak = Number(team?.streak || 0);
-  const teamXp = Number(team?.xp ?? 100);
+  const hasPlayedMatch = teamWins + teamLosses > 0;
+  const teamXp = hasPlayedMatch ? Number(team?.xp ?? 0) : 0;
   const teamRatingPoints = Number(team?.rating_points ?? 100);
   const teamLevel = Math.max(1, Math.floor(teamRatingPoints / 100));
   const cleanTeamPlace = ordinal(teamPlace);
@@ -378,6 +379,7 @@ export default function TeamPage() {
         .eq("category", teamData?.category || "call-of-duty")
         .eq("game", teamData?.game || "modern-warfare-4")
         .eq("ladder", teamData?.ladder || "team")
+        .or("wins.gt.0,losses.gt.0")
         .order("rating_points", { ascending: false })
         .order("wins", { ascending: false })
         .order("losses", { ascending: true })
