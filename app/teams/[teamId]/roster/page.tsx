@@ -912,7 +912,7 @@ export default function EditRosterPage() {
                         <td>
                           <a
                             className="player-link"
-                            href={`/profile/${member.user_id}`}
+                            href={`/profile?userId=${encodeURIComponent(member.user_id)}`}
                           >
                             {member.username}
                           </a>

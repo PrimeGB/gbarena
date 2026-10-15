@@ -1059,7 +1059,10 @@ export default function TeamPage() {
                         rosterMembers.map((member) => (
                           <tr key={member.user_id}>
                             <td className="member-name">
-                              <a className="status-box" href={`/profile/${member.user_id}`}>
+                              <a
+                                className="status-box"
+                                href={`/profile?userId=${encodeURIComponent(member.user_id)}`}
+                              >
                                 <span className="online-guy"></span>
                               </a>
 
