@@ -22,8 +22,14 @@ function prettyText(value: string | null) {
     .join(" ");
 }
 
+function isMissingTableError(error: any) {
+  const msg = String(error?.message || "").toLowerCase();
+  return error?.code === "42P01" || msg.includes("does not exist") || (msg.includes("relation") && msg.includes("does not exist"));
+}
+
 export default function ProfileTeamsPage() {
   const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +45,7 @@ export default function ProfileTeamsPage() {
 
     if (!user?.id) {
       setTeams([]);
+      setPendingInvites([]);
       setLoading(false);
       return;
     }
@@ -53,8 +60,29 @@ export default function ProfileTeamsPage() {
       .select("team_id, teams(id, name, tag, platform, category, game, ladder, created_at)")
       .eq("user_id", user.id);
 
+    let invitedRows: any[] = [];
+
+    try {
+      const { data, error } = await supabase
+        .from("team_invites")
+        .select("id, team_id, status, teams(id, name, tag, platform, category, game, ladder, created_at)")
+        .eq("user_id", user.id)
+        .eq("status", "pending");
+
+      if (error && !isMissingTableError(error)) {
+        throw error;
+      }
+
+      invitedRows = data || [];
+    } catch {
+      invitedRows = [];
+    }
+
     const memberTeams =
       memberRows?.map((row: any) => row.teams).filter(Boolean) || [];
+
+    const pendingTeams =
+      invitedRows?.map((row: any) => row.teams).filter(Boolean) || [];
 
     const combinedTeams = [...(ownedTeams || []), ...memberTeams];
 
@@ -63,7 +91,58 @@ export default function ProfileTeamsPage() {
     );
 
     setTeams(uniqueTeams);
+    setPendingInvites(pendingTeams);
     setLoading(false);
+  }
+
+  async function handleInviteResponse(teamId: string, accepted: boolean) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.id) return;
+
+    if (accepted) {
+      const { data: existingMember } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!existingMember) {
+        const { error: addError } = await supabase
+          .from("team_members")
+          .insert({
+            team_id: teamId,
+            user_id: user.id,
+            role: "member",
+          });
+
+        if (addError) {
+          alert(addError.message);
+          return;
+        }
+      }
+    }
+
+    const { error } = await supabase
+      .from("team_invites")
+      .update({ status: accepted ? "accepted" : "declined" })
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
+      .eq("status", "pending");
+
+    if (error) {
+      if (isMissingTableError(error)) {
+        alert("Team invites are not set up yet. Run the SQL in sql/create_team_invites.sql in Supabase.");
+        return;
+      }
+      alert(error.message);
+      return;
+    }
+
+    await loadTeams();
   }
 
   return (
@@ -91,7 +170,9 @@ export default function ProfileTeamsPage() {
         .team-name{color:#fff;font-size:18px;font-weight:bold;text-transform:uppercase;margin-bottom:6px;}
         .team-meta{color:#a9c3db;font-size:11px;line-height:18px;}
         .team-tag{color:#f2c14e;font-weight:bold;}
-        .view-btn{height:34px;background:linear-gradient(to bottom,#1d5d90,#0a1f33);border:1px solid #4daeff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;text-transform:uppercase;}
+        .view-btn{height:34px;background:linear-gradient(to bottom,#1d5d90,#0a1f33);border:1px solid #4daeff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;text-transform:uppercase;cursor:pointer;}
+        .reject-btn{background:linear-gradient(to bottom,#5b1f1f,#2a1010);border-color:#9e4b4b;}
+        .pending-box{margin-top:18px;}
       `}</style>
 
       <div className="top-strip">
@@ -150,6 +231,46 @@ export default function ProfileTeamsPage() {
                     </a>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {pendingInvites.length > 0 && (
+              <div className="box pending-box">
+                <div className="box-title">Pending Team Invites</div>
+                <div className="box-body">
+                  <div className="team-list">
+                    {pendingInvites.map((invite: any) => {
+                      const team = invite;
+                      if (!team) return null;
+
+                      return (
+                        <div className="team-card" key={`invite-${team.id}`}>
+                          <div>
+                            <div className="team-name">{team.name || "Unnamed Team"}</div>
+                            <div className="team-meta">
+                              Tag: <span className="team-tag">{team.tag || "TAG"}</span>
+                              <br />
+                              Platform: {prettyText(team.platform)}
+                              <br />
+                              Game: {prettyText(team.game)}
+                              <br />
+                              Ladder: {prettyText(team.ladder)}
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <button className="view-btn" onClick={() => handleInviteResponse(team.id, true)}>
+                              Accept
+                            </button>
+                            <button className="view-btn reject-btn" onClick={() => handleInviteResponse(team.id, false)}>
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
           </div>

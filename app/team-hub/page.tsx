@@ -44,6 +44,13 @@ type NameStatus = "idle" | "checking" | "available" | "taken";
 
 function prettyText(value: string | null) {
   if (!value) return "";
+
+  const normalized = value.toLowerCase();
+  if (normalized === "battlefield-6") return "Battlefield 6";
+  if (normalized === "battlefield-2042") return "Battlefield 2042";
+  if (normalized === "battlefield-v") return "Battlefield V";
+  if (normalized === "battlefield-1") return "Battlefield 1";
+
   return value
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

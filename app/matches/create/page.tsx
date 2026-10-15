@@ -13,6 +13,11 @@ function prettyText(value: string | null) {
   if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
   if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III";
   if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
+  if (value === "battlefield-6") return "Battlefield 6";
+  if (value === "battlefield-2042") return "Battlefield 2042";
+  if (value === "battlefield-v") return "Battlefield V";
+  if (value === "battlefield-1") return "Battlefield 1";
+  if (value === "redsec") return "RedSec";
 
   return value
     .split("-")
@@ -27,7 +32,11 @@ function getGameImage(game: string | null) {
   if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
   if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
   if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
-  return "/mw4.jpeg";
+  if (game === "battlefield-6") return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
+  if (game === "battlefield-2042") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg";
+  if (game === "battlefield-v") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
+  if (game === "battlefield-1") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
+  return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
 }
 
 function getLadderName(ladder: string | null) {
@@ -36,10 +45,23 @@ function getLadderName(ladder: string | null) {
   return "Team Ladder";
 }
 
-function getPlayerOptions(ladder: string | null) {
+function getPlayerOptions(ladder: string | null, isRedSec: boolean) {
+  if (isRedSec) return ["2v2", "3v3", "4v4"];
   if (ladder === "singles") return ["1v1"];
   if (ladder === "duos") return ["2v2"];
   return ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
+}
+
+function getRequiredRosterSize(ladder: string | null, players: string) {
+  const normalized = String(players || "").toLowerCase();
+
+  if (ladder === "singles" || normalized === "1v1") return 1;
+  if (ladder === "duos" || normalized.startsWith("2v")) return 2;
+
+  const match = normalized.match(/(\d+)v/);
+  if (match) return Number(match[1]);
+
+  return 1;
 }
 
 type RulesType = "GB Variant" | "CDL" | "Custom";
@@ -63,22 +85,30 @@ function CreateMatchContent() {
   const game = searchParams.get("game") || "modern-warfare-4";
   const ladder = searchParams.get("ladder") || "team";
 
+  const isRedSec = game === "redsec" || ladder === "redsec";
+
   const platformName = prettyText(platform);
-  const gameName = prettyText(game);
+  const gameName = isRedSec ? "RedSec" : prettyText(game);
   const ladderName = getLadderName(ladder);
   const gameImage = getGameImage(game);
   const viewTeamUrl = teamId ? `/teams/${teamId}` : "/profile/teams";
 
-  const playerOptions = useMemo(() => getPlayerOptions(ladder), [ladder]);
+  const playerOptions = useMemo(
+    () => getPlayerOptions(ladder, isRedSec),
+    [ladder, isRedSec]
+  );
 
-  const [gameMode, setGameMode] = useState("Search and Destroy");
+  const [gameMode, setGameMode] = useState(isRedSec ? "RedSec" : "Search and Destroy");
   const [rulesType, setRulesType] = useState<RulesType>("GB Variant");
   const [crossplay, setCrossplay] = useState<CrossPlayType>("Off");
   const [players, setPlayers] = useState(playerOptions[0]);
+  const [teamRoster, setTeamRoster] = useState<{ id: string; username: string }[]>([]);
+  const [selectedRosterPlayers, setSelectedRosterPlayers] = useState<string[]>([]);
   const [matchTime, setMatchTime] = useState("8:00 PM");
-  const [bestOf, setBestOf] = useState("Best of 3");
+  const [bestOf, setBestOf] = useState(isRedSec ? "Best of 1" : "Best of 3");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewPresetOpen, setViewPresetOpen] = useState<RulesType | null>(null);
+  const [redSecRulesOpen, setRedSecRulesOpen] = useState(false);
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
   const [postSuccess, setPostSuccess] = useState("");
@@ -113,7 +143,75 @@ function CreateMatchContent() {
 
   useEffect(() => {
     setPlayers(playerOptions[0]);
+    setSelectedRosterPlayers([]);
   }, [playerOptions]);
+
+  useEffect(() => {
+    setSelectedRosterPlayers([]);
+  }, [players, teamId]);
+
+  useEffect(() => {
+    if (!teamId) {
+      setTeamRoster([]);
+      setSelectedRosterPlayers([]);
+      return;
+    }
+
+    async function loadTeamRoster() {
+      const { data: memberRows, error: memberError } = await supabase
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", teamId);
+
+      if (memberError || !memberRows || memberRows.length === 0) {
+        setTeamRoster([]);
+        setSelectedRosterPlayers([]);
+        return;
+      }
+
+      const memberIds = memberRows
+        .map((member: any) => member.user_id)
+        .filter(Boolean) as string[];
+
+      if (memberIds.length === 0) {
+        setTeamRoster([]);
+        setSelectedRosterPlayers([]);
+        return;
+      }
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("id", memberIds);
+
+      if (profileError) {
+        setTeamRoster([]);
+        setSelectedRosterPlayers([]);
+        return;
+      }
+
+      const roster = (profiles || []).map((profile: any) => ({
+        id: profile.id,
+        username: profile.username || "Player",
+      }));
+
+      setTeamRoster(roster);
+      setSelectedRosterPlayers((current) => current.filter((id) => roster.some((player) => player.id === id)));
+    }
+
+    loadTeamRoster();
+  }, [teamId]);
+
+  useEffect(() => {
+    if (isRedSec) {
+      setGameMode("RedSec");
+      setRulesType("GB Variant");
+      setBestOf((current) => (current === "Best of 1" || current === "Best of 2" ? current : "Best of 1"));
+    }
+  }, [isRedSec]);
+
+  const bestOfOptions = isRedSec ? ["Best of 1", "Best of 2"] : ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
+  const rosterLimit = getRequiredRosterSize(ladder, players);
 
   const timeSlots = [
     "12:00 AM", "12:15 AM", "12:30 AM", "12:45 AM",
@@ -124,7 +222,7 @@ function CreateMatchContent() {
     "5:00 AM", "5:15 AM", "5:30 AM", "5:45 AM",
     "6:00 AM", "6:15 AM", "6:30 AM", "6:45 AM",
     "7:00 AM", "7:15 AM", "7:30 AM", "7:45 AM",
-    "8:00 AM", "8:15 AM", "8:30 AM", "8:45 AM",
+    "8:00 AM", "8:15 AM", "8:30 PM", "8:45 PM",
     "9:00 AM", "9:15 AM", "9:30 AM", "9:45 AM",
     "10:00 AM", "10:15 AM", "10:30 AM", "10:45 AM",
     "11:00 AM", "11:15 AM", "11:30 AM", "11:45 AM",
@@ -142,10 +240,27 @@ function CreateMatchContent() {
     "11:00 PM", "11:15 PM", "11:30 PM", "11:45 PM",
   ];
 
-  const presetText =
-    rulesType === "Custom"
+  const presetText = isRedSec
+    ? "RedSec settings are controlled by the GameBattles RedSec ruleset."
+    : rulesType === "Custom"
       ? `Custom · Players ${players} · Cross Play ${crossplay} · Perks ${perks} · Launchers ${launchers} · Killstreaks ${killstreaks}`
       : `${rulesType} locked preset · Players ${players} · Cross Play ${crossplay} · Preset settings cannot be edited`;
+
+  function toggleRosterPlayer(playerId: string) {
+    setSelectedRosterPlayers((current) => {
+      const isSelected = current.includes(playerId);
+
+      if (isSelected) {
+        return current.filter((id) => id !== playerId);
+      }
+
+      if (current.length >= rosterLimit) {
+        return current;
+      }
+
+      return [...current, playerId];
+    });
+  }
 
   async function handlePostMatch() {
     setPostError("");
@@ -159,6 +274,18 @@ function CreateMatchContent() {
     if (!teamId) {
       setPostError("Missing team ID. Go back to your team page and click Create Match again.");
       return;
+    }
+
+    if (rosterLimit > 1) {
+      if (teamRoster.length < rosterLimit) {
+        setPostError(`This ${ladderName} match requires at least ${rosterLimit} rostered players on the team before posting.`);
+        return;
+      }
+
+      if (selectedRosterPlayers.length !== rosterLimit) {
+        setPostError(`Select exactly ${rosterLimit} rostered players for this ${ladderName} match before posting.`);
+        return;
+      }
     }
 
     setPosting(true);
@@ -283,9 +410,20 @@ function CreateMatchContent() {
         .settings-button.locked{opacity:.45;cursor:not-allowed;}
         .settings-button.locked:hover{color:#fff;border-color:#4b95d8;}
 
+        .disabled-settings{opacity:.42;filter:grayscale(.35);}
+        .disabled-settings .settings-button{cursor:not-allowed;}
+
         .rules-box{border:1px solid #315b7d;background:#02070c;padding:13px;color:#cfe2f2;font-size:12px;line-height:22px;}
         .crossplay-box{border:1px solid #315b7d;background:#02070c;padding:13px;max-width:410px;}
         .small-note{color:#8aa7c0;font-size:11px;line-height:18px;margin-top:8px;}
+        .error-note{color:#ff9d9d;}
+        .roster-picker{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;}
+        .roster-pill{padding:8px 12px;border:1px solid #315f88;background:#0b1c2d;color:#dfeaf7;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s ease;}
+        .roster-pill:hover{border-color:#f2c14e;color:#f2c14e;}
+        .roster-pill.active{background:linear-gradient(to bottom,#1d496e,#0a1724);border-color:#f2c14e;color:#f2c14e;box-shadow:0 0 12px rgba(242,193,78,.25);}
+
+        .rules-link{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:38px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;}
+        .rules-link:hover{color:#d7ad4a;border-color:#d7ad4a;}
 
         .success-box{border:1px solid #35a852;background:#06230d;color:#8cff9d;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
         .error-box{border:1px solid #923131;background:#210707;color:#ff9c9c;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
@@ -301,14 +439,23 @@ function CreateMatchContent() {
 
         .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
         .settings-modal{width:820px;max-width:96vw;max-height:90vh;overflow:auto;border:1px solid #315f88;background:#050b12;box-shadow:0 0 30px rgba(0,80,140,.55);}
-        .modal-title{height:38px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:13px;font-weight:900;text-transform:uppercase;}
+        .modal-title{min-height:38px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13px;font-weight:900;text-transform:uppercase;}
         .modal-close{width:24px;height:24px;border:1px solid #315f88;background:#000;color:#fff;font-weight:900;cursor:pointer;}
         .modal-body{padding:15px;}
         .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .setting-row{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;border:1px solid #1f3d5a;background:#07111b;padding:10px;}
-        .preset-list{border:1px solid #1f3d5a;background:#07111b;padding:12px;color:#cfe2f2;font-size:12px;line-height:22px;}
-        .preset-list div{border-bottom:1px solid rgba(255,255,255,.06);padding:5px 0;}
+        .preset-list{border:1px solid #1f3d5a;background:#07111b;padding:16px;color:#cfe2f2;font-size:12px;line-height:22px;}
+        .preset-list div{border-bottom:1px solid rgba(255,255,255,.06);padding:7px 0;}
         .preset-list div:last-child{border-bottom:none;}
+        .redsec-rules{color:#cfe2f2;font-size:13px;line-height:22px;}
+        .redsec-rules h2{color:#d7ad4a;font-size:18px;margin-bottom:12px;text-transform:uppercase;}
+        .redsec-rules h3{color:#fff;font-size:14px;margin-top:22px;margin-bottom:8px;text-transform:uppercase;border-bottom:1px solid #244b70;padding-bottom:6px;}
+        .redsec-rules p{margin-bottom:12px;}
+        .redsec-rules ul,.redsec-rules ol{margin:8px 0 14px 22px;}
+        .redsec-rules li{margin-bottom:7px;}
+        .redsec-rules .disclaimer{border:1px solid #315b7d;background:#081522;padding:13px;margin-bottom:18px;}
+        .redsec-rules .example{border-left:3px solid #d7ad4a;background:#081522;padding:10px 13px;margin:10px 0 14px;}
+        .redsec-rules strong{color:#fff;}
         .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:15px;}
 
         @media(max-width:850px){
@@ -371,7 +518,7 @@ function CreateMatchContent() {
                     <div>Platform: {platformName}</div>
                     <div>Game: {gameName}</div>
                     <div>Ladder: {ladderName}</div>
-                    <div>Rules: {rulesType}</div>
+                    <div>Rules: {isRedSec ? "RedSec Rules" : rulesType}</div>
                     <div>Cross Play: {crossplay}</div>
                     <div>Players: {players}</div>
                     <div>Team ID: {teamId ? "Loaded" : "Missing"}</div>
@@ -393,32 +540,52 @@ function CreateMatchContent() {
                     <div className="form-body">
                       <div className="row">
                         <label>Game Mode</label>
-                        <select className="mode-select" value={gameMode} onChange={(e) => setGameMode(e.target.value)}>
-                          <option>Search and Destroy</option>
-                          <option>Hardpoint</option>
-                          <option>Control</option>
-                          <option>Domination</option>
-                          <option>Team Deathmatch</option>
-                          <option>Kill Confirmed</option>
-                          <option>Headquarters</option>
-                          <option>Capture the Flag</option>
-                          <option>Gunfight</option>
-                        </select>
+
+                        {isRedSec ? (
+                          <div className="locked-player-box">RedSec</div>
+                        ) : (
+                          <select
+                            className="mode-select"
+                            value={gameMode}
+                            onChange={(e) => setGameMode(e.target.value)}
+                          >
+                            <option>Search and Destroy</option>
+                            <option>Hardpoint</option>
+                            <option>Control</option>
+                            <option>Domination</option>
+                            <option>Team Deathmatch</option>
+                            <option>Kill Confirmed</option>
+                            <option>Headquarters</option>
+                            <option>Capture the Flag</option>
+                            <option>Gunfight</option>
+                          </select>
+                        )}
                       </div>
 
                       <div className="row">
                         <label>Maps</label>
-                        <div className="rules-box">
-                          Maps will be generated once this match is accepted.
-                          <br />
-                          The map pool will be based on the selected game, ladder, mode, ruleset, and Best Of.
-                        </div>
+
+                        {isRedSec ? (
+                          <div className="rules-box">
+                            <strong>Lyndon Oil Works</strong>
+                          </div>
+                        ) : (
+                          <div className="rules-box">
+                            Maps will be generated once this match is accepted.
+                            <br />
+                            The map pool will be based on the selected game, ladder, mode, ruleset, and Best Of.
+                          </div>
+                        )}
                       </div>
 
                       <div className="row">
                         <label>Cross Play</label>
                         <div className="crossplay-box">
-                          <select className="small-select" value={crossplay} onChange={(e) => setCrossplay(e.target.value as CrossPlayType)}>
+                          <select
+                            className="small-select"
+                            value={crossplay}
+                            onChange={(e) => setCrossplay(e.target.value as CrossPlayType)}
+                          >
                             <option>Off</option>
                             <option>On</option>
                           </select>
@@ -433,54 +600,130 @@ function CreateMatchContent() {
 
                       <div className="row">
                         <label>Rules</label>
-                        <div>
-                          <select className="rules-select" value={rulesType} onChange={(e) => setRulesType(e.target.value as RulesType)}>
-                            <option>GB Variant</option>
-                            <option>CDL</option>
-                            <option>Custom</option>
-                          </select>
-                          <div className="small-note">
-                            GB Variant and CDL are locked presets. Custom allows manual rule editing.
+
+                        {isRedSec ? (
+                          <div>
+                            <button
+                              className="rules-link"
+                              type="button"
+                              onClick={() => setRedSecRulesOpen(true)}
+                            >
+                              Read RedSec Rules
+                            </button>
+
+                            <div className="small-note">
+                              GameBattles RedSec rules must be followed for this match.
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div>
+                            <select
+                              className="rules-select"
+                              value={rulesType}
+                              onChange={(e) => setRulesType(e.target.value as RulesType)}
+                            >
+                              <option>GB Variant</option>
+                              <option>CDL</option>
+                              <option>Custom</option>
+                            </select>
+
+                            <div className="small-note">
+                              GB Variant and CDL are locked presets. Custom allows manual rule editing.
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="row">
                         <label>Settings</label>
-                        <div className="settings-summary">
-                          <div className="settings-title">Match Settings</div>
-                          <div className="settings-copy">{presetText}</div>
 
-                          <div className="settings-buttons">
-                            <button className="settings-button" type="button" onClick={() => setViewPresetOpen("GB Variant")}>
-                              View GB Preset Settings
-                            </button>
+                        {isRedSec ? (
+                          <div className="settings-summary disabled-settings">
+                            <div className="settings-title">Match Settings</div>
+                            <div className="settings-copy">
+                              RedSec settings are controlled by the GameBattles RedSec ruleset.
+                              These settings cannot be changed when posting a RedSec match.
+                            </div>
 
-                            <button className="settings-button" type="button" onClick={() => setViewPresetOpen("CDL")}>
-                              View CDL Settings
-                            </button>
+                            <div className="settings-buttons">
+                              <button
+                                className="settings-button locked"
+                                type="button"
+                                disabled
+                              >
+                                View Settings
+                              </button>
 
-                            <button
-                              className={rulesType === "Custom" ? "settings-button" : "settings-button locked"}
-                              type="button"
-                              disabled={rulesType !== "Custom"}
-                              onClick={() => setSettingsOpen(true)}
-                            >
-                              Edit Custom Settings
-                            </button>
+                              <button
+                                className="settings-button locked"
+                                type="button"
+                                disabled
+                              >
+                                Edit Settings
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="settings-summary">
+                            <div className="settings-title">Match Settings</div>
+                            <div className="settings-copy">{presetText}</div>
+
+                            <div className="settings-buttons">
+                              <button
+                                className="settings-button"
+                                type="button"
+                                onClick={() => setViewPresetOpen("GB Variant")}
+                              >
+                                View GB Preset Settings
+                              </button>
+
+                              <button
+                                className="settings-button"
+                                type="button"
+                                onClick={() => setViewPresetOpen("CDL")}
+                              >
+                                View CDL Settings
+                              </button>
+
+                              <button
+                                className={rulesType === "Custom" ? "settings-button" : "settings-button locked"}
+                                type="button"
+                                disabled={rulesType !== "Custom"}
+                                onClick={() => setSettingsOpen(true)}
+                              >
+                                Edit Custom Settings
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="row">
                         <label>Players</label>
-                        {playerOptions.length === 1 ? (
+
+                        {isRedSec ? (
+                          <select
+                            className="small-select"
+                            value={players}
+                            onChange={(e) => setPlayers(e.target.value)}
+                          >
+                            <option>2v2</option>
+                            <option>3v3</option>
+                            <option>4v4</option>
+                          </select>
+                        ) : playerOptions.length === 1 ? (
                           <div>
                             <div className="locked-player-box">{playerOptions[0]}</div>
-                            <div className="small-note">Player count is locked because this is a {ladderName}.</div>
+                            <div className="small-note">
+                              Player count is locked because this is a {ladderName}.
+                            </div>
                           </div>
                         ) : (
-                          <select className="small-select" value={players} onChange={(e) => setPlayers(e.target.value)}>
+                          <select
+                            className="small-select"
+                            value={players}
+                            onChange={(e) => setPlayers(e.target.value)}
+                          >
                             {playerOptions.map((option) => (
                               <option key={option}>{option}</option>
                             ))}
@@ -488,26 +731,70 @@ function CreateMatchContent() {
                         )}
                       </div>
 
+                      {rosterLimit > 1 && teamRoster.length > 0 && (
+                        <div className="row">
+                          <label>Match Roster</label>
+                          <div>
+                            <div className="small-note">
+                              Select exactly {rosterLimit} rostered players from your team for this matchup.
+                            </div>
+                            <div className="roster-picker">
+                              {teamRoster.map((player) => {
+                                const isSelected = selectedRosterPlayers.includes(player.id);
+
+                                return (
+                                  <button
+                                    key={player.id}
+                                    type="button"
+                                    className={isSelected ? "roster-pill active" : "roster-pill"}
+                                    onClick={() => toggleRosterPlayer(player.id)}
+                                  >
+                                    {player.username}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {rosterLimit > 1 && teamRoster.length === 0 && (
+                        <div className="row">
+                          <label>Match Roster</label>
+                          <div className="small-note error-note">
+                            This team does not have enough rostered players to post a {ladderName} match yet.
+                          </div>
+                        </div>
+                      )}
+
                       <div className="row">
                         <label>Date / Time</label>
                         <div>
                           <div className="date-time-box">
                             <div className="locked-day">Today</div>
-                            <select className="time-select" value={matchTime} onChange={(e) => setMatchTime(e.target.value)}>
+
+                            <select
+                              className="time-select"
+                              value={matchTime}
+                              onChange={(e) => setMatchTime(e.target.value)}
+                            >
                               {timeSlots.map((slot) => (
                                 <option key={slot}>{slot}</option>
                               ))}
                             </select>
                           </div>
 
-                          <div className="small-note">Date is locked to today. Time can only be posted in 15 minute slots.</div>
+                          <div className="small-note">
+                            Date is locked to today. Time can only be posted in 15 minute slots.
+                          </div>
                         </div>
                       </div>
 
                       <div className="row">
                         <label>Best Of</label>
+
                         <div className="best-of-scroll">
-                          {["Best of 1", "Best of 3", "Best of 5", "Best of 7"].map((option) => (
+                          {bestOfOptions.map((option) => (
                             <button
                               key={option}
                               type="button"
@@ -524,35 +811,82 @@ function CreateMatchContent() {
 
                   <div className="form-section">
                     <div className="form-title">Rules Reminder</div>
+
                     <div className="form-body">
-                      <div className="rules-box">
-                        • This match is being created for the <strong>{ladderName}</strong>.
-                        <br />
-                        • Selected ruleset: <strong>{rulesType}</strong>.
-                        <br />
-                        • Cross Play: <strong>{crossplay}</strong>.
-                        <br />
-                        • Player count is locked to <strong>{players}</strong> for this ladder.
-                        <br />
-                        • Maps will generate once the match is accepted.
-                        <br />
-                        • Results must be reported after the match.
-                        <br />
-                        • Screenshots or proof may be needed for disputes.
-                      </div>
+                      {isRedSec ? (
+                        <div className="rules-box">
+                          <strong>REDSEC MATCH RULES</strong>
+                          <br />
+                          <br />
+                          • This match is being created for the <strong>RedSec</strong> ladder.
+                          <br />
+                          • Map: <strong>Lyndon Oil Works</strong>.
+                          <br />
+                          • Cross Play: <strong>{crossplay}</strong>.
+                          <br />
+                          • Players: <strong>{players}</strong>.
+                          <br />
+                          • RedSec match settings are controlled by the GameBattles RedSec ruleset.
+                          <br />
+                          • Match settings cannot be changed by the match poster.
+                          <br />
+                          • The rules must be followed by all players participating in the match.
+                          <br />
+                          • Results must be reported after the match.
+                          <br />
+                          • Screenshots or proof may be needed for disputes.
+                          <br />
+                          <br />
+                          <button
+                            className="rules-link"
+                            type="button"
+                            onClick={() => setRedSecRulesOpen(true)}
+                          >
+                            Read Full RedSec Rules
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="rules-box">
+                          • This match is being created for the <strong>{ladderName}</strong>.
+                          <br />
+                          • Selected ruleset: <strong>{rulesType}</strong>.
+                          <br />
+                          • Cross Play: <strong>{crossplay}</strong>.
+                          <br />
+                          • Player count is locked to <strong>{players}</strong> for this ladder.
+                          <br />
+                          • Maps will generate once the match is accepted.
+                          <br />
+                          • Results must be reported after the match.
+                          <br />
+                          • Screenshots or proof may be needed for disputes.
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="actions">
-                    <button className="action-btn gold" type="button" disabled={posting} onClick={handlePostMatch}>
+                    <button
+                      className="action-btn gold"
+                      type="button"
+                      disabled={posting}
+                      onClick={handlePostMatch}
+                    >
                       {posting ? "Posting..." : "Post Match"}
                     </button>
 
-                    <a className="action-btn" href={`/matches/finder?teamId=${teamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}>
+                    <a
+                      className="action-btn"
+                      href={`/matches/finder?teamId=${teamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}
+                    >
                       Match Finder
                     </a>
 
-                    <button className="action-btn red" type="button" onClick={() => history.back()}>
+                    <button
+                      className="action-btn red"
+                      type="button"
+                      onClick={() => history.back()}
+                    >
                       Cancel
                     </button>
                   </div>
@@ -565,12 +899,187 @@ function CreateMatchContent() {
         </div>
       </main>
 
-      {viewPresetOpen && (
+      {redSecRulesOpen && (
+        <div className="modal-backdrop">
+          <div className="settings-modal">
+            <div className="modal-title">
+              REDSEC — KILL RACE RULES
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setRedSecRulesOpen(false)}
+              >
+                X
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="redsec-rules">
+                <h2>REDSEC — KILL RACE RULES</h2>
+
+                <div className="disclaimer">
+                  <strong>Early Production Disclaimer</strong>
+                  <br />
+                  <br />
+                  This website is still very early in production. This ladder may not function
+                  exactly as it will when finished, and rules, settings, and match procedures
+                  may be tweaked as development continues.
+                  <br />
+                  <br />
+                  With that being said — <strong>THANK YOU for playing GameBattles!</strong> Any
+                  and all feedback is welcome. Expect tweaks, changes, and improvements as we
+                  continue building the ladder.
+                </div>
+
+                <h3>The Kill Race</h3>
+
+                <p>
+                  The RedSec ladder is essentially a <strong>Kill Race</strong>.
+                </p>
+
+                <p>
+                  Because the available game settings cannot be changed very much, the rules
+                  are intentionally simple.
+                </p>
+
+                <h3>How a Match Works</h3>
+
+                <p><strong>2v2</strong></p>
+
+                <ol>
+                  <li>Both teams join the same game with their two opponents.</li>
+                  <li>The website determines which team hosts the first game.</li>
+                  <li>The <strong>hosting team plays first.</strong></li>
+                  <li>
+                    When the game begins, the two non-host players will launch from the
+                    helicopter and eliminate themselves as quickly as possible.
+                  </li>
+                  <li>
+                    They will respawn and repeat this until they are no longer able to respawn
+                    and enter spectator mode.
+                  </li>
+                  <li>
+                    The hosting team then plays out the game, attempting to earn as many kills
+                    as possible.
+                  </li>
+                  <li><strong>Every kill is worth 1 point.</strong></li>
+                  <li>
+                    <div className="example">
+                      <strong>Example:</strong>
+                      <br />
+                      Player A: 3 kills
+                      <br />
+                      Player B: 2 kills
+                      <br />
+                      Team Total: <strong>5 points</strong>
+                    </div>
+                  </li>
+                  <li>
+                    The team continues playing until they can no longer respawn.
+                  </li>
+                  <li>
+                    Winning the individual game does <strong>not</strong> determine the match
+                    winner. The only thing that matters is the total number of kills.
+                  </li>
+                  <li>
+                    Once the first game is complete, the teams <strong>switch hosts and run it back.</strong>
+                  </li>
+                  <li>
+                    The team with the most total points after both games wins the match.
+                  </li>
+                </ol>
+
+                <h3>3v3</h3>
+
+                <p>The same rules apply.</p>
+
+                <p>
+                  The only difference is that <strong>only one player from the opposing team
+                  needs to enter spectator mode</strong> while the hosting team plays.
+                </p>
+
+                <h3>4v4</h3>
+
+                <p>The same Kill Race rules apply.</p>
+
+                <p>
+                  However, <strong>at least one player on the hosting team MUST be streaming
+                  their gameplay</strong> and have the stream verified with the opposing team
+                  before the game begins.
+                </p>
+
+                <p>
+                  The scoreboard must be shown <strong>clearly at the end of the game</strong> so
+                  the opposing team can verify the final kill count.
+                </p>
+
+                <p>
+                  <strong>
+                    Backing out of the game early, ending the stream before the game is
+                    complete, or closing the stream before the final scoreboard can be clearly
+                    seen may result in a loss.
+                  </strong>
+                </p>
+
+                <h3>Proof</h3>
+
+                <p>
+                  Players should capture <strong>video and/or picture proof</strong> of their
+                  games in case there is a dispute or an issue with the reported score.
+                </p>
+
+                <p>
+                  Proof may be requested when a match result is disputed.
+                </p>
+
+                <h3>Keep It Simple</h3>
+
+                <p>
+                  That's really all there is to it.
+                </p>
+
+                <p>
+                  The Kill Race is designed to be straightforward:
+                  <strong> play your game, get your kills, record the score, switch hosts,
+                  and run it back.</strong>
+                </p>
+
+                <p>
+                  These rules apply to all RedSec matches, with the only differences being the
+                  spectator requirements for <strong>3v3</strong> and the streaming/scoreboard
+                  requirements for <strong>4v4</strong>.
+                </p>
+
+                <p>
+                  As the ladder develops, rules may be <strong>tweaked, added, removed, or
+                  changed</strong> when necessary.
+                </p>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  className="action-btn"
+                  type="button"
+                  onClick={() => setRedSecRulesOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewPresetOpen && !isRedSec && (
         <div className="modal-backdrop">
           <div className="settings-modal">
             <div className="modal-title">
               {viewPresetOpen} Settings
-              <button className="modal-close" type="button" onClick={() => setViewPresetOpen(null)}>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setViewPresetOpen(null)}
+              >
                 X
               </button>
             </div>
@@ -617,7 +1126,11 @@ function CreateMatchContent() {
               )}
 
               <div className="modal-actions">
-                <button className="action-btn" type="button" onClick={() => setViewPresetOpen(null)}>
+                <button
+                  className="action-btn"
+                  type="button"
+                  onClick={() => setViewPresetOpen(null)}
+                >
                   Close
                 </button>
               </div>
@@ -626,12 +1139,16 @@ function CreateMatchContent() {
         </div>
       )}
 
-      {settingsOpen && (
+      {settingsOpen && !isRedSec && (
         <div className="modal-backdrop">
           <div className="settings-modal">
             <div className="modal-title">
               Custom Match Settings
-              <button className="modal-close" type="button" onClick={() => setSettingsOpen(false)}>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+              >
                 X
               </button>
             </div>
@@ -668,11 +1185,19 @@ function CreateMatchContent() {
               </div>
 
               <div className="modal-actions">
-                <button className="action-btn" type="button" onClick={() => setSettingsOpen(false)}>
+                <button
+                  className="action-btn"
+                  type="button"
+                  onClick={() => setSettingsOpen(false)}
+                >
                   Save Settings
                 </button>
 
-                <button className="action-btn red" type="button" onClick={() => setSettingsOpen(false)}>
+                <button
+                  className="action-btn red"
+                  type="button"
+                  onClick={() => setSettingsOpen(false)}
+                >
                   Cancel
                 </button>
               </div>

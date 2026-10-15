@@ -310,8 +310,8 @@ export default function XboxBattlefieldPage() {
                     <div className="ladder-list">
                       {game.ladders.map((ladder) => {
                         const currentLadderSlug = ladderSlug(ladder);
-                        const teamHubUrl = `/team-hub?platform=xbox&category=battlefield&game=${game.slug}&ladder=${currentLadderSlug}`;
-                        const rankingsUrl = `/ladders/xbox/battlefield/${game.slug}/${currentLadderSlug}/rankings`;
+                        const teamHubUrl = `/team-hub?platform=playstation&category=battlefield&game=${game.slug}&ladder=${currentLadderSlug}`;
+                        const rankingsUrl = `/ladders/playstation/batttlefield/${game.slug}/${currentLadderSlug}/rankings`;
 
                         return (
                           <div
@@ -330,6 +330,26 @@ export default function XboxBattlefieldPage() {
                           </div>
                         );
                       })}
+
+                      {game.slug === "battlefield-6" && (
+                        <div className="ladder-item" key={`${game.title}-redsec`}>
+                          <div className="ladder-name">RedSec</div>
+
+                          <a
+                            className="ladder-link"
+                            href={`/team-hub?platform=playstation&category=battlefield&game=${game.slug}&ladder=redsec`}
+                          >
+                            View/Create Team
+                          </a>
+
+                          <a
+                            className="ladder-link"
+                            href={`/ladders/playstation/batttlefield/${game.slug}/redsec`}
+                          >
+                            Current Ladder Rankings
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

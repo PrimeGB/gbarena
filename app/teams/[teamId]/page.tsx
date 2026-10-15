@@ -68,6 +68,10 @@ function prettyText(value: string | null | undefined) {
   if (value === "modern-warfare-4") return "Modern Warfare 4";
   if (value === "modern-warfare-iii") return "Modern Warfare III";
   if (value === "black-ops-6") return "Black Ops 6";
+  if (value === "battlefield-6") return "Battlefield 6";
+  if (value === "battlefield-2042") return "Battlefield 2042";
+  if (value === "battlefield-v") return "Battlefield V";
+  if (value === "battlefield-1") return "Battlefield 1";
 
   return value
     .split("-")
@@ -170,11 +174,27 @@ function gameCover(game: string | null | undefined) {
     return "https://upload.wikimedia.org/wikipedia/en/7/7e/Call_of_Duty_Modern_Warfare_III_cover_art.jpg";
   }
 
+  if (game === "battlefield-6") {
+    return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
+  }
+
+  if (game === "battlefield-2042") {
+    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg";
+  }
+
+  if (game === "battlefield-v") {
+    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
+  }
+
+  if (game === "battlefield-1") {
+    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
+  }
+
   if (game === "modern-warfare-4") {
     return "/mw4.jpeg";
   }
 
-  return "/mw4.jpeg";
+  return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
 }
 
 function profileGamertag(profile: any, platform: string | null | undefined) {
@@ -251,10 +271,6 @@ function eligibilityStatus(member: any): "green" | "yellow" | "red" {
 
   if (member?.can_play === false || status === "ineligible" || status === "banned" || status === "suspended") {
     return "red";
-  }
-
-  if (member?.accepted === false || status === "pending" || status === "invited" || status === "waiting") {
-    return "yellow";
   }
 
   return "green";

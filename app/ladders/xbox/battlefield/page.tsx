@@ -334,26 +334,21 @@ export default function XboxBattlefieldPage() {
                       })}
 
                       {game.slug === "battlefield-6" && (
-                        <div className="ladder-item">
+                        <div className="ladder-item" key={`${game.title}-redsec`}>
+                          <div className="ladder-name">RedSec</div>
+
                           <a
-                            className="ladder-name"
-                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
+                            className="ladder-link"
+                            href={`/team-hub?platform=xbox&category=battlefield&game=${game.slug}&ladder=redsec`}
                           >
-                            RedSec
+                            View/Create Team
                           </a>
 
                           <a
                             className="ladder-link"
-                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
+                            href={`/ladders/xbox/battlefield/${game.slug}/redsec`}
                           >
-                            Enter RedSec
-                          </a>
-
-                          <a
-                            className="ladder-link"
-                            href="/ladders/xbox/battlefield/battlefield-6/redsec"
-                          >
-                            Duos / Trios / Quads
+                            Current Ladder Rankings
                           </a>
                         </div>
                       )}

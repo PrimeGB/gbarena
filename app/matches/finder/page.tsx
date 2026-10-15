@@ -50,6 +50,10 @@ function prettyText(value: string | null) {
   if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
   if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
   if (value === "vanguard") return "Call of Duty: Vanguard";
+  if (value === "battlefield-6") return "Battlefield 6";
+  if (value === "battlefield-2042") return "Battlefield 2042";
+  if (value === "battlefield-v") return "Battlefield V";
+  if (value === "battlefield-1") return "Battlefield 1";
 
   return value
     .split("-")
@@ -64,8 +68,12 @@ function getGameImage(game: string | null) {
   if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
   if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
   if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
+  if (game === "battlefield-6") return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
+  if (game === "battlefield-2042") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg";
+  if (game === "battlefield-v") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
+  if (game === "battlefield-1") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
 
-  return "/mw4.jpeg";
+  return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
 }
 
 function getLadderName(ladder: string | null) {

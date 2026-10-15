@@ -20,6 +20,10 @@ const gameNames: Record<string, string> = {
   "modern-warfare-ii": "Call of Duty: Modern Warfare II",
   vanguard: "Call of Duty: Vanguard",
   "black-ops-cold-war": "Call of Duty: Black Ops Cold War",
+  "battlefield-6": "Battlefield 6",
+  "battlefield-2042": "Battlefield 2042",
+  "battlefield-v": "Battlefield V",
+  "battlefield-1": "Battlefield 1",
 };
 
 export default function CreateTeamPage() {
