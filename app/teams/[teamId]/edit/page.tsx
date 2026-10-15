@@ -28,7 +28,6 @@ export default function EditTeamProfilePage() {
   const teamId = params.teamId;
 
   const [team, setTeam] = useState<TeamProfile | null>(null);
-  const [teamName, setTeamName] = useState("");
   const [teamTag, setTeamTag] = useState("");
   const [teamBio, setTeamBio] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -77,7 +76,6 @@ export default function EditTeamProfilePage() {
       }
 
       setTeam(profile);
-      setTeamName(profile.name || "");
       setTeamTag(profile.tag || "");
       setTeamBio(profile.bio || "");
       setLoading(false);
@@ -107,12 +105,7 @@ export default function EditTeamProfilePage() {
     event.preventDefault();
     setError("");
 
-    const cleanName = teamName.trim();
     const cleanTag = teamTag.trim().toUpperCase();
-    if (cleanName.length < 4) {
-      setError("Team name must be at least 4 characters.");
-      return;
-    }
     if (cleanTag.length < 1 || cleanTag.length > 5) {
       setError("Clan tag must be 1 to 5 characters.");
       return;
@@ -130,7 +123,6 @@ export default function EditTeamProfilePage() {
       const { error: updateError } = await supabase
         .from("teams")
         .update({
-          name: cleanName,
           tag: cleanTag,
           bio: teamBio.trim(),
           logo_url: logoUrl,
@@ -174,12 +166,11 @@ export default function EditTeamProfilePage() {
         ) : team ? (
           <form onSubmit={saveTeam}>
             <label>
-              Team name
+              Team name (cannot be changed)
               <input
-                value={teamName}
-                onChange={(event) => setTeamName(event.target.value)}
-                maxLength={60}
-                required
+                value={team.name || ""}
+                readOnly
+                aria-readonly="true"
               />
             </label>
 
@@ -305,6 +296,11 @@ export default function EditTeamProfilePage() {
           color: #fff;
           padding: 10px;
           font: 14px Tahoma, Verdana, Arial, sans-serif;
+        }
+        input[readonly] {
+          color: #8ea4b6;
+          background: #101a23;
+          cursor: not-allowed;
         }
         textarea {
           resize: vertical;
