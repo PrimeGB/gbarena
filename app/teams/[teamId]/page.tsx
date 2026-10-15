@@ -786,9 +786,10 @@ export default function TeamPage() {
         .roster-table th:last-child,.roster-table td:last-child{text-align:center;width:13%;}
 
         .member-name{
-          color:#7fc7ff;font-weight:bold;display:flex;align-items:center;gap:18px;
-          padding-left:18px !important;
+          color:#7fc7ff;font-weight:bold;padding-left:18px !important;
         }
+
+        .member-identity{display:flex;align-items:center;gap:18px;}
 
         .status-box{
           width:24px;height:22px;
@@ -1059,16 +1060,18 @@ export default function TeamPage() {
                         rosterMembers.map((member) => (
                           <tr key={member.user_id}>
                             <td className="member-name">
-                              <a
-                                className="status-box"
-                                href={`/profile?userId=${encodeURIComponent(member.user_id)}`}
-                              >
-                                <span className="online-guy"></span>
-                              </a>
+                              <div className="member-identity">
+                                <a
+                                  className="status-box"
+                                  href={`/profile?userId=${encodeURIComponent(member.user_id)}`}
+                                >
+                                  <span className="online-guy"></span>
+                                </a>
 
-                              <span className="member-text">
-                                <span className="member-gt">{member.display_gt}</span>
-                              </span>
+                                <span className="member-text">
+                                  <span className="member-gt">{member.display_gt}</span>
+                                </span>
+                              </div>
                             </td>
 
                             <td className="rank">{prettyText(normalizeRole(member.role))}</td>
@@ -1082,13 +1085,15 @@ export default function TeamPage() {
                       ) : (
                         <tr>
                           <td className="member-name">
-                            <a className="status-box" href="/profile">
-                              <span className="online-guy"></span>
-                            </a>
+                            <div className="member-identity">
+                              <a className="status-box" href="/profile">
+                                <span className="online-guy"></span>
+                              </a>
 
-                            <span className="member-text">
-                              <span className="member-gt">{leaderName}</span>
-                            </span>
+                              <span className="member-text">
+                                <span className="member-gt">{leaderName}</span>
+                              </span>
+                            </div>
                           </td>
                           <td className="rank">Leader</td>
                           <td>Unranked</td>
