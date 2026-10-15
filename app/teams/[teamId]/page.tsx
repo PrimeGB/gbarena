@@ -789,11 +789,9 @@ export default function TeamPage() {
         }
 
         .status-box{
-          width:24px;height:22px;border:1px solid #244b70;background:#02070c;
+          width:24px;height:22px;
           display:flex;align-items:center;justify-content:center;flex-shrink:0;
         }
-
-        .status-box:hover{border-color:#d7ad4a;}
 
         .member-text{display:flex;align-items:baseline;gap:0;line-height:16px;}
         .member-gt{color:#7fc7ff;font-size:13px;font-weight:900;}
