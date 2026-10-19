@@ -40,6 +40,12 @@ type MatchPost = {
   created_at: string;
 };
 
+type EligibleMatchPlayer = {
+  id: string;
+  username: string;
+  gamingId: string;
+};
+
 function prettyText(value: string | null) {
   if (!value) return "";
 
@@ -179,11 +185,101 @@ function MatchFinderContent() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmMatch, setConfirmMatch] = useState<MatchPost | null>(null);
+  const [acceptingRoster, setAcceptingRoster] = useState<EligibleMatchPlayer[]>([]);
+  const [selectedAcceptingRoster, setSelectedAcceptingRoster] = useState<string[]>([]);
+  const [loadingAcceptingRoster, setLoadingAcceptingRoster] = useState(false);
   const [viewMatch, setViewMatch] = useState<MatchPost | null>(null);
   const [cancelMatch, setCancelMatch] = useState<MatchPost | null>(null);
   const [viewerRole, setViewerRole] = useState<TeamRole>("member");
 
   const viewerCanManageMatches = canManageMatches(viewerRole);
+
+  const requiredMatchPlayers = (players: string) => {
+    const count = String(players || "").toLowerCase().match(/^(\d+)v/);
+    return count ? Number(count[1]) : 1;
+  };
+
+  function beginMatchAcceptance(match: MatchPost) {
+    setNotice("");
+    setAcceptingRoster([]);
+    setSelectedAcceptingRoster([]);
+    setLoadingAcceptingRoster(true);
+    setConfirmMatch(match);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadEligibleRoster() {
+      setAcceptingRoster([]);
+      setSelectedAcceptingRoster([]);
+      if (!confirmMatch || !viewerTeamId) return;
+
+      setLoadingAcceptingRoster(true);
+      const { data: members, error: membersError } = await supabase
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", viewerTeamId);
+
+      if (membersError) {
+        if (!cancelled) {
+          setNotice("Could not load your team roster: " + membersError.message);
+          setLoadingAcceptingRoster(false);
+        }
+        return;
+      }
+
+      const memberIds = (members || []).map((member) => member.user_id);
+      if (!memberIds.length) {
+        if (!cancelled) setLoadingAcceptingRoster(false);
+        return;
+      }
+
+      const [{ data: profiles, error: profilesError }, { data: accounts, error: accountsError }] =
+        await Promise.all([
+          supabase.from("profiles").select("id,username").in("id", memberIds),
+          supabase
+            .from("gaming_accounts")
+            .select("user_id,account_id")
+            .in("user_id", memberIds)
+            .eq("platform", confirmMatch.platform)
+            .eq("category", confirmMatch.category)
+            .eq("game", confirmMatch.game),
+        ]);
+
+      if (profilesError || accountsError) {
+        if (!cancelled) {
+          setNotice(
+            "Could not load required gaming IDs: " +
+              (profilesError?.message || accountsError?.message),
+          );
+          setLoadingAcceptingRoster(false);
+        }
+        return;
+      }
+
+      const accountByUserId = new Map(
+        (accounts || []).map((account) => [account.user_id, account.account_id]),
+      );
+      const eligible = (profiles || [])
+        .map((profile) => ({
+          id: profile.id,
+          username: profile.username || "Player",
+          gamingId: accountByUserId.get(profile.id) || "",
+        }))
+        .filter((player) => player.gamingId);
+
+      if (!cancelled) {
+        setAcceptingRoster(eligible);
+        setLoadingAcceptingRoster(false);
+      }
+    }
+
+    void loadEligibleRoster();
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmMatch, viewerTeamId]);
 
   const cleanAndFilterExpiredPosts = useCallback(async (posts: MatchPost[]): Promise<MatchPost[]> => {
     const expiredIds = posts.filter((post) => isPostPastTime(post)).map((post) => post.id);
@@ -370,6 +466,12 @@ function MatchFinderContent() {
       return;
     }
 
+    const requiredPlayers = requiredMatchPlayers(confirmMatch.players);
+    if (selectedAcceptingRoster.length !== requiredPlayers) {
+      setNotice(`Select exactly ${requiredPlayers} rostered players with the required gaming ID.`);
+      return;
+    }
+
     if (isPostPastTime(confirmMatch)) {
       const { error } = await supabase
         .from("match_posts")
@@ -393,12 +495,11 @@ function MatchFinderContent() {
     // Filter local array instantly so the current client session has crisp layout behavior
     await loadMatches();
 
-    const { data: updatedRows, error: acceptError } = await supabase
-      .from("match_posts")
-      .update({ status: "accepted" })
-      .eq("id", matchPostId)
-      .eq("status", "open")
-      .select("*");
+    const { error: acceptError } = await supabase.rpc("accept_match_post", {
+      post_id: matchPostId,
+      accepting_team: viewerTeamId,
+      accepting_roster: selectedAcceptingRoster,
+    });
 
     if (acceptError) {
       setAcceptingId(null);
@@ -408,60 +509,8 @@ function MatchFinderContent() {
       return;
     }
 
-    if (!updatedRows || updatedRows.length === 0) {
-      setAcceptingId(null);
-      setNotice("Too late! This match challenge was already accepted by another team.");
-      setConfirmMatch(null);
-      return;
-    }
-
-    const currentPost = updatedRows[0];
-
-    const { data: officialMatch, error: matchError } = await supabase
-      .from("matches")
-      .insert({
-        match_post_id: currentPost.id,
-        posting_team_id: currentPost.team_id,
-        accepting_team_id: viewerTeamId,
-        platform: currentPost.platform,
-        category: currentPost.category,
-        game: currentPost.game,
-        ladder: currentPost.ladder,
-        game_mode: currentPost.game_mode,
-        players: currentPost.players,
-        match_time: currentPost.match_time,
-        best_of: currentPost.best_of,
-        preset: currentPost.preset,
-        perks: currentPost.perks,
-        launchers: currentPost.launchers,
-        killstreaks: currentPost.killstreaks,
-        field_upgrades: currentPost.field_upgrades,
-        hardcore: currentPost.hardcore,
-        friendly_fire: currentPost.friendly_fire,
-        radar: currentPost.radar,
-        spectating: currentPost.spectating,
-        third_person: currentPost.third_person,
-        round_length: currentPost.round_length,
-        score_limit: currentPost.score_limit,
-        health: currentPost.health,
-        respawn_delay: currentPost.respawn_delay,
-        bomb_timer: currentPost.bomb_timer,
-        plant_time: currentPost.plant_time,
-        defuse_time: currentPost.defuse_time,
-        attachments: currentPost.attachments,
-        status: "upcoming",
-        accepted_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
     setAcceptingId(null);
     setConfirmMatch(null);
-
-    if (matchError || !officialMatch) {
-      setNotice("Match claimed, but schedule roster entry failed to populate.");
-      return;
-    }
 
     router.push(`/teams/${viewerTeamId}`);
   }
@@ -596,6 +645,10 @@ function MatchFinderContent() {
         .accept-title{height:40px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;color:#d7ad4a;font-size:14px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;padding:0 14px;}
         .accept-body{padding:16px;color:#cfe2f2;font-size:13px;line-height:22px;}
         .accept-summary{border:1px solid #244b70;background:#050c14;padding:12px;margin:12px 0;color:#fff;font-size:12px;line-height:23px;}
+        .accept-roster{display:grid;gap:7px;margin:12px 0;}
+        .accept-roster-option{display:flex;align-items:center;gap:8px;border:1px solid #244b70;background:#07111b;color:#fff;padding:8px;font-size:12px;text-align:left;cursor:pointer;}
+        .accept-roster-option.active{border-color:#58b7ff;background:#102a40;}
+        .accept-roster-note{color:#f0c36b;font-size:12px;line-height:18px;}
         .accept-warning{color:#d7ad4a;font-weight:900;text-transform:uppercase;}
         .accept-actions{display:flex;gap:12px;padding:0 16px 16px;}
         .accept-btn{height:40px;min-width:150px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;font-size:12px;font-weight:900;text-transform:uppercase;cursor:pointer;}
@@ -720,7 +773,7 @@ function MatchFinderContent() {
                                   <button className="mini-btn disabled" type="button">Cancel</button>
                                 )
                               ) : user?.id && viewerCanManageMatches ? (
-                                <button className="mini-btn gold" type="button" onClick={() => setConfirmMatch(match)}>
+                                <button className="mini-btn gold" type="button" onClick={() => beginMatchAcceptance(match)}>
                                   Accept
                                 </button>
                               ) : (
@@ -756,12 +809,53 @@ function MatchFinderContent() {
                 <br />
                 Time: {formatMatchTime(confirmMatch)}
               </div>
+              <div className="accept-roster-note">
+                Select {requiredMatchPlayers(confirmMatch.players)} players with a saved ID for {prettyText(confirmMatch.platform)} / {prettyText(confirmMatch.game)}.
+              </div>
+              {loadingAcceptingRoster ? (
+                <div className="accept-roster-note">Loading eligible team roster...</div>
+              ) : acceptingRoster.length ? (
+                <div className="accept-roster">
+                  {acceptingRoster.map((player) => {
+                    const selected = selectedAcceptingRoster.includes(player.id);
+                    return (
+                      <button
+                        className={selected ? "accept-roster-option active" : "accept-roster-option"}
+                        type="button"
+                        key={player.id}
+                        onClick={() =>
+                          setSelectedAcceptingRoster((current) => {
+                            if (current.includes(player.id)) {
+                              return current.filter((id) => id !== player.id);
+                            }
+                            if (current.length >= requiredMatchPlayers(confirmMatch.players)) {
+                              return current;
+                            }
+                            return [...current, player.id];
+                          })
+                        }
+                      >
+                        <input type="checkbox" checked={selected} readOnly />
+                        {player.username} — {player.gamingId}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="accept-roster-note">
+                  No eligible players have a saved ID for this game/platform. Add the required ID from Profile → Edit Profile.
+                </div>
+              )}
             </div>
             <div className="accept-actions">
               <button
                 className="accept-btn"
                 type="button"
-                disabled={acceptingId === confirmMatch.id}
+                disabled={
+                  acceptingId === confirmMatch.id ||
+                  loadingAcceptingRoster ||
+                  selectedAcceptingRoster.length !== requiredMatchPlayers(confirmMatch.players)
+                }
                 onClick={acceptConfirmedMatch}
               >
                 {acceptingId === confirmMatch.id ? "Accepting..." : "Accept Match"}

@@ -22,6 +22,12 @@ type TeamRow = {
   created_at: string | null;
 };
 
+type TeamRosterId = {
+  userId: string;
+  username: string;
+  accountId: string;
+};
+
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
   if (value === "mw2") return "Modern Warfare 2";
@@ -73,6 +79,7 @@ export default function LadderRankingsPage() {
   const ladder = String(params?.ladder || "singles");
 
   const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [teamRosterIds, setTeamRosterIds] = useState<Record<string, TeamRosterId[]>>({});
   const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,6 +143,69 @@ export default function LadderRankingsPage() {
 
       const loadedTeams = (data || []) as TeamRow[];
       setTeams(loadedTeams);
+
+      const teamIds = loadedTeams.map((team) => team.id);
+      if (teamIds.length > 0) {
+        const { data: members, error: membersError } = await supabase
+          .from("team_members")
+          .select("team_id,user_id")
+          .in("team_id", teamIds);
+
+        if (membersError) {
+          setError("Team roster IDs could not be loaded: " + membersError.message);
+          setLoading(false);
+          return;
+        }
+
+        const memberIds = (members || []).map((member) => member.user_id);
+        if (memberIds.length > 0) {
+          const [{ data: profiles, error: profilesError }, { data: accounts, error: accountsError }] =
+            await Promise.all([
+              supabase.from("profiles").select("id,username").in("id", memberIds),
+              supabase
+                .from("gaming_accounts")
+                .select("user_id,account_id")
+                .in("user_id", memberIds)
+                .eq("platform", "xbox")
+                .eq("category", "call-of-duty")
+                .eq("game", game),
+            ]);
+
+          if (profilesError || accountsError) {
+            setError(
+              "Team roster IDs could not be loaded: " +
+                (profilesError?.message || accountsError?.message),
+            );
+            setLoading(false);
+            return;
+          }
+
+          const usernameById = new Map(
+            (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
+          );
+          const accountByUserId = new Map(
+            (accounts || []).map((account) => [account.user_id, account.account_id]),
+          );
+          const rosterMap: Record<string, TeamRosterId[]> = {};
+
+          (members || []).forEach((member) => {
+            const accountId = accountByUserId.get(member.user_id);
+            if (!accountId) return;
+            rosterMap[member.team_id] ||= [];
+            rosterMap[member.team_id].push({
+              userId: member.user_id,
+              username: usernameById.get(member.user_id) || "Player",
+              accountId,
+            });
+          });
+
+          setTeamRosterIds(rosterMap);
+        } else {
+          setTeamRosterIds({});
+        }
+      } else {
+        setTeamRosterIds({});
+      }
 
       const sortedNow = [...loadedTeams].sort((a, b) => {
         const ratingA = Number(a.rating_points || 100);
@@ -457,6 +527,15 @@ export default function LadderRankingsPage() {
           text-transform:uppercase;
         }
 
+        .team-roster-ids{
+          max-width:330px;
+          margin-top:4px;
+          color:#b8d4e8;
+          font-size:10px;
+          font-weight:700;
+          line-height:14px;
+        }
+
         .wins{color:#24e455;font-weight:900;text-align:center;}
         .losses{color:#ff3d3d;font-weight:900;text-align:center;}
         .center{text-align:center;}
@@ -598,6 +677,11 @@ export default function LadderRankingsPage() {
                               <span className="team-name-wrap">
                                 <span className="team-name">{team.name || "Unnamed Team"}</span>
                                 <span className="team-tag">{team.tag || "No Tag"}</span>
+                                {teamRosterIds[team.id]?.map((member) => (
+                                  <span className="team-roster-ids" key={`${team.id}-${member.userId}`}>
+                                    {member.username}: {member.accountId}
+                                  </span>
+                                ))}
                               </span>
                             </a>
                           </td>

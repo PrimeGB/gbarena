@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import {
+  GamingAccount,
+  gamingCategories,
+  gamingGames,
+  gamingPlatformLabel,
+  gamingPlatforms,
+} from "../../../lib/gamingAccounts";
 
 type AppUser = { id: string; email?: string | null };
 
@@ -57,6 +64,13 @@ export default function EditProfilePage() {
   const [gtPlaystation, setGtPlaystation] = useState("");
   const [gtNintendo, setGtNintendo] = useState("");
   const [gtPc, setGtPc] = useState("");
+  const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
+  const [gamingAccountPlatform, setGamingAccountPlatform] = useState<string>("xbox");
+  const [gamingAccountCategory, setGamingAccountCategory] = useState<string>("call-of-duty");
+  const [gamingAccountGame, setGamingAccountGame] = useState<string>("modern-warfare-4");
+  const [gamingAccountId, setGamingAccountId] = useState("");
+  const [gamingAccountError, setGamingAccountError] = useState("");
+  const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [friendsCount, setFriendsCount] = useState(0);
@@ -148,6 +162,89 @@ export default function EditProfilePage() {
 
     if (!loading) loadProfileAndRelations();
   }, [loading, user?.id]);
+
+  useEffect(() => {
+    const userId = currentUser?.id;
+    if (!userId) return;
+
+    async function loadGamingAccounts() {
+      const { data, error } = await supabase
+        .from("gaming_accounts")
+        .select("id,user_id,platform,category,game,account_id")
+        .eq("user_id", userId)
+        .order("platform")
+        .order("game");
+
+      if (error) {
+        setGamingAccountError("Gaming accounts could not be loaded: " + error.message);
+        return;
+      }
+
+      setGamingAccounts((data || []) as GamingAccount[]);
+    }
+
+    void loadGamingAccounts();
+  }, [currentUser?.id]);
+
+  async function saveGamingAccount() {
+    const cleanId = gamingAccountId.trim();
+    if (!currentUser?.id || !cleanId) {
+      setGamingAccountError("Enter a gaming ID before saving.");
+      return;
+    }
+
+    setSavingGamingAccount(true);
+    setGamingAccountError("");
+
+    const { data, error } = await supabase
+      .from("gaming_accounts")
+      .upsert(
+        {
+          user_id: currentUser.id,
+          platform: gamingAccountPlatform,
+          category: gamingAccountCategory,
+          game: gamingAccountGame,
+          account_id: cleanId,
+        },
+        { onConflict: "user_id,platform,category,game" },
+      )
+      .select("id,user_id,platform,category,game,account_id")
+      .single();
+
+    if (error) {
+      setGamingAccountError(error.message);
+    } else {
+      setGamingAccounts((current) => [
+        ...current.filter(
+          (account) =>
+            account.platform !== gamingAccountPlatform ||
+            account.category !== gamingAccountCategory ||
+            account.game !== gamingAccountGame,
+        ),
+        data as GamingAccount,
+      ]);
+      setGamingAccountId("");
+    }
+
+    setSavingGamingAccount(false);
+  }
+
+  async function removeGamingAccount(account: GamingAccount) {
+    setGamingAccountError("");
+    const { error } = await supabase
+      .from("gaming_accounts")
+      .delete()
+      .eq("id", account.id);
+
+    if (error) {
+      setGamingAccountError(error.message);
+      return;
+    }
+
+    setGamingAccounts((current) =>
+      current.filter((item) => item.id !== account.id),
+    );
+  }
 
   function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -846,6 +943,7 @@ export default function EditProfilePage() {
 
             <main>
               {activeTab === "main" && (
+                <>
                 <div className="box">
                   <div className="box-title">Main Profile Settings</div>
 
@@ -941,6 +1039,95 @@ export default function EditProfilePage() {
                     </div>
                   </div>
                 </div>
+                <div className="box">
+                  <div className="box-title">Gaming Accounts</div>
+                  <div className="box-body">
+                    <div className="notice">
+                      Save one platform ID for each game you compete in. IDs used for an open or active match cannot be changed until that commitment ends.
+                    </div>
+                    <div className="form-row">
+                      <label>Platform</label>
+                      <select
+                        value={gamingAccountPlatform}
+                        onChange={(event) => setGamingAccountPlatform(event.target.value)}
+                      >
+                        {gamingPlatforms.map((platform) => (
+                          <option key={platform.value} value={platform.value}>{platform.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label>Game Category</label>
+                      <select
+                        value={gamingAccountCategory}
+                        onChange={(event) => {
+                          const nextCategory = event.target.value;
+                          setGamingAccountCategory(nextCategory);
+                          setGamingAccountGame(
+                            gamingGames.find((game) => game.category === nextCategory)?.value || "",
+                          );
+                        }}
+                      >
+                        {gamingCategories.map((category) => (
+                          <option key={category.value} value={category.value}>{category.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label>Game</label>
+                      <select
+                        value={gamingAccountGame}
+                        onChange={(event) => setGamingAccountGame(event.target.value)}
+                      >
+                        {gamingGames.filter((game) => game.category === gamingAccountCategory).map((game) => (
+                          <option key={game.value} value={game.value}>{game.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label>Gaming ID</label>
+                      <input
+                        value={gamingAccountId}
+                        maxLength={80}
+                        onChange={(event) => setGamingAccountId(event.target.value)}
+                        placeholder="Enter your in-game/platform ID"
+                      />
+                    </div>
+                    <div className="save-row">
+                      <button
+                        className="save-button"
+                        type="button"
+                        disabled={savingGamingAccount}
+                        onClick={saveGamingAccount}
+                      >
+                        {savingGamingAccount ? "Saving..." : "Save Gaming Account"}
+                      </button>
+                    </div>
+                    {gamingAccountError && <div className="error-text">{gamingAccountError}</div>}
+                    {gamingAccounts.length > 0 ? (
+                      <div className="manage-grid">
+                        {gamingAccounts.map((account) => (
+                          <div className="manage-card" key={account.id}>
+                            <div>
+                              <strong>{gamingPlatformLabel(account.platform)}</strong>
+                              <div className="field-note">{account.category} / {account.game}: {account.account_id}</div>
+                            </div>
+                            <button
+                              className="edit-button"
+                              type="button"
+                              onClick={() => void removeGamingAccount(account)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="field-note">No game-specific accounts saved yet.</div>
+                    )}
+                  </div>
+                </div>
+                </>
               )}
 
               {activeTab === "teams" && (

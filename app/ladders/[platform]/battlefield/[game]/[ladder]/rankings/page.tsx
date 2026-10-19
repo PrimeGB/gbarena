@@ -15,6 +15,12 @@ type TeamRow = {
   rating_points: number | null;
 };
 
+type RosterIdentity = {
+  userId: string;
+  username: string;
+  accountId: string;
+};
+
 const platformNames: Record<string, string> = {
   xbox: "Xbox",
   playstation: "PlayStation",
@@ -40,6 +46,7 @@ export default function BattlefieldRankingsPage() {
     ladder: string;
   }>();
   const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [rostersByTeam, setRostersByTeam] = useState<Record<string, RosterIdentity[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -103,7 +110,67 @@ export default function BattlefieldRankingsPage() {
       if (queryError) {
         setError(queryError.message);
       } else {
-        setTeams((data || []) as TeamRow[]);
+        const loadedTeams = (data || []) as TeamRow[];
+        setTeams(loadedTeams);
+
+        if (loadedTeams.length) {
+          const { data: members, error: memberError } = await supabase
+            .from("team_members")
+            .select("team_id,user_id")
+            .in("team_id", loadedTeams.map((team) => team.id));
+
+          if (cancelled) return;
+          if (memberError) {
+            setError("Team gaming IDs could not be loaded: " + memberError.message);
+          } else {
+            const memberIds = (members || []).map((member) => member.user_id);
+            if (memberIds.length) {
+              const [{ data: profiles, error: profileError }, { data: accounts, error: accountError }] =
+                await Promise.all([
+                  supabase.from("profiles").select("id,username").in("id", memberIds),
+                  supabase
+                    .from("gaming_accounts")
+                    .select("user_id,account_id")
+                    .in("user_id", memberIds)
+                    .eq("platform", platform)
+                    .eq("category", "battlefield")
+                    .eq("game", game),
+                ]);
+
+              if (cancelled) return;
+              if (profileError || accountError) {
+                setError(
+                  "Team gaming IDs could not be loaded: " +
+                    (profileError?.message || accountError?.message),
+                );
+              } else {
+                const usernameById = new Map(
+                  (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
+                );
+                const accountByUserId = new Map(
+                  (accounts || []).map((account) => [account.user_id, account.account_id]),
+                );
+                const rosterMap: Record<string, RosterIdentity[]> = {};
+
+                (members || []).forEach((member) => {
+                  const accountId = accountByUserId.get(member.user_id);
+                  if (!accountId) return;
+                  rosterMap[member.team_id] ||= [];
+                  rosterMap[member.team_id].push({
+                    userId: member.user_id,
+                    username: usernameById.get(member.user_id) || "Player",
+                    accountId,
+                  });
+                });
+                setRostersByTeam(rosterMap);
+              }
+            } else {
+              setRostersByTeam({});
+            }
+          }
+        } else {
+          setRostersByTeam({});
+        }
       }
       setLoading(false);
     }
@@ -171,6 +238,13 @@ export default function BattlefieldRankingsPage() {
                         {team.tag ? `[${team.tag}] ` : ""}
                         {team.name || "Unnamed Team"}
                       </Link>
+                      <div className="roster-identities">
+                        {(rostersByTeam[team.id] || []).map((member) => (
+                          <span key={member.userId}>
+                            {member.username}: {member.accountId}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td>{team.rating_points ?? 100}</td>
                     <td>{team.wins ?? 0}</td>
@@ -211,6 +285,15 @@ export default function BattlefieldRankingsPage() {
         .back-link:hover,
         td a:hover {
           color: #f2c14e;
+        }
+        .roster-identities {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 2px 10px;
+          margin-top: 4px;
+          color: #b8dfff;
+          font-size: 10px;
+          line-height: 15px;
         }
         header {
           padding: 8px 20px 18px;

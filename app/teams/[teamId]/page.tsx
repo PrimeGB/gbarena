@@ -55,6 +55,7 @@ type RosterMember = {
   role: string | null;
   username: string;
   display_gt: string;
+  gaming_id: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -292,6 +293,7 @@ export default function TeamPage() {
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
+  const [pageError, setPageError] = useState("");
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -359,6 +361,7 @@ export default function TeamPage() {
       if (!teamId) return;
 
       setLoading(true);
+      setPageError("");
 
       const { data: teamData } = await supabase
         .from("teams")
@@ -401,6 +404,7 @@ export default function TeamPage() {
 
       let profileMap: Record<string, any> = {};
       let rankMap: Record<string, number> = {};
+      let gamingIdMap: Record<string, string> = {};
 
       if (memberUserIds.length > 0) {
         const { data: memberProfiles } = await supabase
@@ -410,6 +414,22 @@ export default function TeamPage() {
 
         (memberProfiles || []).forEach((profile: any) => {
           profileMap[profile.id] = profile;
+        });
+
+        const { data: accountRows, error: accountError } = await supabase
+          .from("gaming_accounts")
+          .select("user_id,account_id")
+          .in("user_id", memberUserIds)
+          .eq("platform", teamData?.platform || "xbox")
+          .eq("category", teamData?.category || "call-of-duty")
+          .eq("game", teamData?.game || "modern-warfare-4");
+
+        if (accountError) {
+          setPageError("Gaming IDs could not be loaded: " + accountError.message);
+        }
+
+        (accountRows || []).forEach((account) => {
+          gamingIdMap[account.user_id] = account.account_id;
         });
 
         const { data: rankedProfiles } = await supabase
@@ -434,6 +454,7 @@ export default function TeamPage() {
           role: member.role || "member",
           username,
           display_gt: displayGt,
+          gaming_id: gamingIdMap[member.user_id] || null,
           gb_rank_points: Number(profile.gb_rank_points || 0),
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
@@ -499,7 +520,7 @@ export default function TeamPage() {
       }
 
       const leaderRoster = loadedRoster.find((member) => String(member.user_id) === String(teamData?.owner_id));
-      setLeaderName(leaderRoster?.display_gt || leaderRoster?.username || "Leader");
+      setLeaderName(leaderRoster?.username || "Leader");
 
       setLoading(false);
     }
@@ -796,8 +817,9 @@ export default function TeamPage() {
           display:flex;align-items:center;justify-content:center;flex-shrink:0;
         }
 
-        .member-text{display:flex;align-items:baseline;gap:0;line-height:16px;}
+        .member-text{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:16px;}
         .member-gt{color:#7fc7ff;font-size:13px;font-weight:900;}
+        .member-gaming-id{color:#c2d8eb;font-size:11px;font-weight:700;}
         .member-username{display:none;}
 
         .online-guy{width:10px;height:14px;position:relative;display:inline-block;}
@@ -912,6 +934,11 @@ export default function TeamPage() {
             <div className="loading-text">Loading Team...</div>
           ) : (
             <section className="content">
+              {pageError && (
+                <div role="alert" style={{ color: "#ff9b4c", padding: "12px 16px" }}>
+                  {pageError}
+                </div>
+              )}
               <div className="main">
                 <div className="panel">
                   <div className="team-head">
@@ -1069,7 +1096,10 @@ export default function TeamPage() {
                                 </a>
 
                                 <span className="member-text">
-                                  <span className="member-gt">{member.display_gt}</span>
+                                  <span className="member-gt">{member.username}</span>
+                                  <span className="member-gaming-id">
+                                    {member.gaming_id || "Gaming ID not linked"}
+                                  </span>
                                 </span>
                               </div>
                             </td>

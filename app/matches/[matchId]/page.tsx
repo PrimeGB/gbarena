@@ -111,6 +111,14 @@ type MatchCommentRow = {
   username?: string | null;
 };
 
+type MatchParticipant = {
+  id: string;
+  team_id: string;
+  team_name_at_match: string;
+  username_at_match: string;
+  account_id_at_match: string;
+};
+
 function clean(value: string | null | undefined, fallback = "TBD") {
   if (!value) return fallback;
   return value;
@@ -242,6 +250,7 @@ export default function MatchDetailsPage() {
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [comments, setComments] = useState<MatchCommentRow[]>([]);
+  const [participants, setParticipants] = useState<MatchParticipant[]>([]);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
@@ -275,6 +284,19 @@ export default function MatchDetailsPage() {
 
       const officialMatch = matchData as MatchRow;
       setMatch(officialMatch);
+
+      const { data: participantRows, error: participantError } = await supabase
+        .from("match_participants")
+        .select("id,team_id,team_name_at_match,username_at_match,account_id_at_match")
+        .eq("match_id", officialMatch.id)
+        .order("username_at_match");
+
+      if (participantError) {
+        setPageError("Match participation history could not be loaded: " + participantError.message);
+        setLoading(false);
+        return;
+      }
+      setParticipants((participantRows || []) as MatchParticipant[]);
 
       const teamIds = [
         officialMatch.posting_team_id,
@@ -971,6 +993,29 @@ export default function MatchDetailsPage() {
           text-transform:uppercase;
         }
 
+        .participants-grid{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:12px;
+          padding:14px 16px;
+          border-bottom:1px solid #242424;
+          background:#0b0b0b;
+        }
+
+        .participants-team{
+          border:1px solid #252525;
+          background:#080808;
+          padding:10px;
+        }
+
+        .participant-line{
+          color:#d7d7d7;
+          font-size:12px;
+          line-height:21px;
+        }
+
+        .participant-line strong{color:#ff9b4c;}
+
         .team-record{
           color:#aaa;
           font-size:13px;
@@ -1544,6 +1589,33 @@ export default function MatchDetailsPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              </section>
+
+              <section className="match-info">
+                <div className="section-title">Locked Match Rosters & Gaming IDs</div>
+                <div className="participants-grid">
+                  {[match.posting_team_id, match.accepting_team_id].map((teamId, index) => {
+                    const sideParticipants = participants.filter((participant) => participant.team_id === teamId);
+                    const teamName = sideParticipants[0]?.team_name_at_match || (
+                      index === 0
+                        ? postingTeam?.name || "Posting Team"
+                        : acceptingTeam?.name || "Accepting Team"
+                    );
+
+                    return (
+                      <div className="participants-team" key={teamId || index}>
+                        <div className="participant-line"><strong>{teamName}</strong></div>
+                        {sideParticipants.length ? sideParticipants.map((participant) => (
+                          <div className="participant-line" key={participant.id}>
+                            {participant.username_at_match} — {participant.account_id_at_match}
+                          </div>
+                        )) : (
+                          <div className="participant-line">No participant history is available for this match.</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
 

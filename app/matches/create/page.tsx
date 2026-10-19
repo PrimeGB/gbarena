@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import { GamingAccount } from "../../../lib/gamingAccounts";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -133,7 +134,9 @@ function CreateMatchContent() {
   const [rulesType, setRulesType] = useState<RulesType>("GB Variant");
   const [crossplay, setCrossplay] = useState<CrossPlayType>("Off");
   const [players, setPlayers] = useState(playerOptions[0]);
-  const [teamRoster, setTeamRoster] = useState<{ id: string; username: string }[]>([]);
+  const [teamRoster, setTeamRoster] = useState<
+    { id: string; username: string; gaming_id: string | null }[]
+  >([]);
   const [selectedRosterPlayers, setSelectedRosterPlayers] = useState<string[]>([]);
   const [matchDateTime, setMatchDateTime] = useState(() =>
     toLocalDateTimeValue(getNextQuarterHour(new Date()))
@@ -197,7 +200,14 @@ function CreateMatchContent() {
         .select("user_id")
         .eq("team_id", teamId);
 
-      if (memberError || !memberRows || memberRows.length === 0) {
+      if (memberError) {
+        setTeamRoster([]);
+        setSelectedRosterPlayers([]);
+        setPostError("Team roster could not be loaded: " + memberError.message);
+        return;
+      }
+
+      if (!memberRows || memberRows.length === 0) {
         setTeamRoster([]);
         setSelectedRosterPlayers([]);
         return;
@@ -213,20 +223,38 @@ function CreateMatchContent() {
         return;
       }
 
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", memberIds);
+      const [{ data: profiles, error: profileError }, { data: accounts, error: accountError }] =
+        await Promise.all([
+          supabase.from("profiles").select("id, username").in("id", memberIds),
+          supabase
+            .from("gaming_accounts")
+            .select("id,user_id,platform,game,account_id")
+            .in("user_id", memberIds)
+            .eq("platform", platform)
+            .eq("category", category)
+            .eq("game", game),
+        ]);
 
-      if (profileError) {
+      if (profileError || accountError) {
         setTeamRoster([]);
         setSelectedRosterPlayers([]);
+        setPostError(
+          "Team roster IDs could not be loaded: " +
+            (profileError?.message || accountError?.message),
+        );
         return;
       }
 
+      const accountsByUserId = new Map(
+        ((accounts || []) as GamingAccount[]).map((account) => [
+          account.user_id,
+          account.account_id,
+        ]),
+      );
       const roster = (profiles || []).map((profile: any) => ({
         id: profile.id,
         username: profile.username || "Player",
+        gaming_id: accountsByUserId.get(profile.id) || null,
       }));
 
       setTeamRoster(roster);
@@ -234,7 +262,7 @@ function CreateMatchContent() {
     }
 
     loadTeamRoster();
-  }, [teamId]);
+  }, [teamId, platform, category, game]);
 
   useEffect(() => {
     if (isRedSec) {
@@ -294,16 +322,22 @@ function CreateMatchContent() {
       return;
     }
 
-    if (rosterLimit > 1) {
-      if (teamRoster.length < rosterLimit) {
-        setPostError(`This ${ladderName} match requires at least ${rosterLimit} rostered players on the team before posting.`);
-        return;
-      }
+    const eligibleRoster = teamRoster.filter((player) => player.gaming_id);
+    if (eligibleRoster.length < rosterLimit) {
+      setPostError(
+        `This ${ladderName} match requires ${rosterLimit} rostered players with a saved ${platformName} ID for ${gameName}.`,
+      );
+      return;
+    }
 
-      if (selectedRosterPlayers.length !== rosterLimit) {
-        setPostError(`Select exactly ${rosterLimit} rostered players for this ${ladderName} match before posting.`);
-        return;
-      }
+    if (selectedRosterPlayers.length !== rosterLimit) {
+      setPostError(`Select exactly ${rosterLimit} rostered players for this ${ladderName} match before posting.`);
+      return;
+    }
+
+    if (selectedRosterPlayers.some((id) => !eligibleRoster.some((player) => player.id === id))) {
+      setPostError("Every selected player must have a saved gaming ID for this game and platform.");
+      return;
     }
 
     setPosting(true);
@@ -363,6 +397,7 @@ function CreateMatchContent() {
       defuse_time: defuseTime,
       attachments,
       status: "open",
+      posting_roster: selectedRosterPlayers,
     });
 
     setPosting(false);
@@ -777,12 +812,12 @@ function CreateMatchContent() {
                         )}
                       </div>
 
-                      {rosterLimit > 1 && teamRoster.length > 0 && (
+                      {teamRoster.length > 0 && (
                         <div className="row">
                           <label>Match Roster</label>
                           <div>
                             <div className="small-note">
-                              Select exactly {rosterLimit} rostered players from your team for this matchup.
+                              Select exactly {rosterLimit} rostered players with a saved {platformName} ID for {gameName}.
                             </div>
                             <div className="roster-picker">
                               {teamRoster.map((player) => {
@@ -793,9 +828,10 @@ function CreateMatchContent() {
                                     key={player.id}
                                     type="button"
                                     className={isSelected ? "roster-pill active" : "roster-pill"}
+                                    disabled={!player.gaming_id}
                                     onClick={() => toggleRosterPlayer(player.id)}
                                   >
-                                    {player.username}
+                                    {player.username} — {player.gaming_id || "ID required"}
                                   </button>
                                 );
                               })}
@@ -804,7 +840,7 @@ function CreateMatchContent() {
                         </div>
                       )}
 
-                      {rosterLimit > 1 && teamRoster.length === 0 && (
+                      {teamRoster.length === 0 && (
                         <div className="row">
                           <label>Match Roster</label>
                           <div className="small-note error-note">

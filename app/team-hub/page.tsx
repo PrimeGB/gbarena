@@ -481,7 +481,9 @@ function TeamHubContent() {
       .single();
 
     if (teamError || !newTeam) {
-      setCreateError("Team could not be created. Check your teams table in Supabase.");
+      setCreateError(
+        teamError?.message || "Team could not be created. Check your teams table in Supabase."
+      );
       setCreatingTeam(false);
       return;
     }
@@ -493,7 +495,9 @@ function TeamHubContent() {
     });
 
     if (memberError) {
-      setCreateError("Team was created, but leader could not be added.");
+      setCreateError(
+        "Team was created, but leader could not be added: " + memberError.message
+      );
       setCreatingTeam(false);
       return;
     }

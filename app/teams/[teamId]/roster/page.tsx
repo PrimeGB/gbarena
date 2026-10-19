@@ -23,6 +23,7 @@ type RosterMember = {
   role: TeamRole;
   username: string;
   display_gt: string;
+  gaming_id: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -290,6 +291,25 @@ export default function EditRosterPage() {
       .select("*")
       .in("id", memberUserIds);
 
+    const { data: accountRows, error: accountError } = await supabase
+      .from("gaming_accounts")
+      .select("user_id,account_id")
+      .in("user_id", memberUserIds)
+      .eq("platform", teamData.platform || "xbox")
+      .eq("category", teamData.category || "call-of-duty")
+      .eq("game", teamData.game || "modern-warfare-4");
+
+    if (accountError) {
+      setError("Gaming IDs could not be loaded: " + accountError.message);
+      setLoading(false);
+      return;
+    }
+
+    const gamingIdMap: Record<string, string> = {};
+    (accountRows || []).forEach((account) => {
+      gamingIdMap[account.user_id] = account.account_id;
+    });
+
     const profileMap: Record<string, any> = {};
 
     (memberProfiles || []).forEach((profile: any) => {
@@ -320,6 +340,7 @@ export default function EditRosterPage() {
           profile,
           teamData.platform
         ),
+        gaming_id: gamingIdMap[String(member.user_id)] || null,
         gb_rank_points: Number(profile.gb_rank_points || 0),
         gb_wins: Number(profile.gb_wins || 0),
         gb_losses: Number(profile.gb_losses || 0),
@@ -925,7 +946,7 @@ export default function EditRosterPage() {
                         </td>
 
                         <td className="gamertag">
-                          {member.display_gt}
+                          {member.gaming_id || "Gaming ID not linked"}
                         </td>
 
                         <td>

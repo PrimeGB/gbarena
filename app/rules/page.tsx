@@ -80,6 +80,8 @@ export default function RulesPage() {
             <h2>5. Match Rules</h2>
             <ul>
               <li>Teams must play matches with the correct players listed on their roster.</li>
+              <li>Once a match is accepted, both team rosters are locked until the match is completed or cancelled.</li>
+              <li>Every selected participant must have a saved gaming ID for that platform and game; the accepted match records and displays both teams' IDs.</li>
               <li>Players must follow the rules for the specific game, ladder, tournament, map, mode, and settings.</li>
               <li>Matches should be played fully unless both sides clearly agree to cancel or reschedule.</li>
               <li>Disputes must include clear proof such as screenshots, video, scoreboard, match ID, or messages.</li>
@@ -95,6 +97,9 @@ export default function RulesPage() {
             <h2>7. Teams & Rosters</h2>
             <ul>
               <li>Only eligible rostered players may compete in official matches.</li>
+              <li>Players must save the correct game-specific platform ID before being selected for a match.</li>
+              <li>A player may compete for only one team on a given ladder at a time.</li>
+              <li>Players cannot leave a team with an active or pending match commitment, and no transfer cooldown applies after they are eligible to leave.</li>
               <li>Team names, player names, logos, and bios must follow community standards.</li>
               <li>Teams may not use offensive names, stolen branding, impersonation, or misleading identity.</li>
             </ul>

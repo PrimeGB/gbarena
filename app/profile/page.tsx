@@ -4,6 +4,12 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
+import {
+  GamingAccount,
+  gamingCategoryLabel,
+  gamingGameLabel,
+  gamingPlatformLabel,
+} from "../../lib/gamingAccounts";
 
 type Profile = {
   id?: string;
@@ -68,6 +74,7 @@ function ProfilePageContent() {
     !!currentUser?.id && (!requestedUserId || requestedUserId === currentUser.id);
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
   const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
   const [topFriends, setTopFriends] = useState<TopFriend[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
@@ -164,6 +171,7 @@ function ProfilePageContent() {
   useEffect(() => {
     if (!viewedUserId) {
       setProfile(null);
+      setGamingAccounts([]);
       setTopTeams([]);
       setTopFriends([]);
       setGbRankDisplay("Unranked");
@@ -178,6 +186,19 @@ function ProfilePageContent() {
       .then(async ({ data }) => {
         const loadedProfile = data || null;
         setProfile(loadedProfile);
+
+        const { data: accountRows, error: accountsError } = await supabase
+          .from("gaming_accounts")
+          .select("id,user_id,platform,category,game,account_id")
+          .eq("user_id", viewedUserId)
+          .order("platform")
+          .order("game");
+
+        if (accountsError) {
+          setError("Gaming accounts could not be loaded: " + accountsError.message);
+        } else {
+          setGamingAccounts((accountRows || []) as GamingAccount[]);
+        }
 
         const rankPoints = loadedProfile?.gb_rank_points || 0;
 
@@ -365,7 +386,6 @@ function ProfilePageContent() {
   const gbLosses = profile?.gb_losses || 0;
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
-  const favoriteGame = profile?.favorite_game || "Not Set";
   const playerLocation = profile?.location || "Not Set";
   const playerBio = profile?.player_bio || "";
   const avatarUrl = profile?.avatar_url || "";
@@ -374,6 +394,8 @@ function ProfilePageContent() {
   const psnGT = profile?.gt_playstation || profile?.psn_gt || "";
   const nintendoGT = profile?.gt_nintendo || profile?.nintendo_gt || "";
   const pcGT = profile?.gt_pc || profile?.pc_gt || "";
+  const eaGT =
+    gamingAccounts.find((account) => account.platform === "ea")?.account_id || "";
   const displayAwards = Array.isArray(profile?.display_awards) ? profile?.display_awards || [] : [];
   const topAwards: Award[] = Array.from({ length: 6 }).map((_, index) => ({
     id: index + 1,
@@ -926,6 +948,10 @@ function ProfilePageContent() {
           color:#b98cff !important;
         }
 
+        .system-ea{
+          color:#ff7a1a !important;
+        }
+
         .status-online{
           color:#00ff88 !important;
           font-weight:bold;
@@ -1373,10 +1399,7 @@ function ProfilePageContent() {
             <a className="tab active" href="/profile">Profile</a>
             <a className="tab" href="/profile/teams">Teams</a>
             <a className="tab" href="/profile/friends">Friends</a>
-            <a className="tab" href="/profile/matches">Matches</a>
             <a className="tab" href="/profile/awards">Awards</a>
-            <a className="tab" href="/profile/photos">Photos</a>
-            <a className="tab" href="/teams/create">Create Team</a>
             <a className="tab" href="/players">Find Players</a>
             <a className="tab inbox-tab" href="/profile/inbox">
               Inbox
@@ -1553,7 +1576,7 @@ function ProfilePageContent() {
                           <td>Username</td>
                           <td>{playerName}</td>
                           <td>
-                            <a className="system-link system-xbox" href="/profile/edit">
+                            <a className="system-link system-xbox" href="https://account.microsoft.com/" target="_blank" rel="noopener noreferrer">
                               Xbox
                             </a>
                           </td>
@@ -1564,7 +1587,7 @@ function ProfilePageContent() {
                           <td>Current Status</td>
                           <td className={statusClass}>{statusText}</td>
                           <td>
-                            <a className="system-link system-playstation" href="/profile/edit">
+                            <a className="system-link system-playstation" href="https://www.playstation.com/acct/management/" target="_blank" rel="noopener noreferrer">
                               PlayStation
                             </a>
                           </td>
@@ -1572,10 +1595,10 @@ function ProfilePageContent() {
                         </tr>
 
                         <tr>
-                          <td>Favorite Game</td>
-                          <td>{favoriteGame || "Not Set"}</td>
+                          <td>Location</td>
+                          <td>{playerLocation}</td>
                           <td>
-                            <a className="system-link system-nintendo" href="/profile/edit">
+                            <a className="system-link system-nintendo" href="https://accounts.nintendo.com/" target="_blank" rel="noopener noreferrer">
                               Nintendo
                             </a>
                           </td>
@@ -1583,10 +1606,10 @@ function ProfilePageContent() {
                         </tr>
 
                         <tr>
-                          <td>Favorite System</td>
-                          <td>{favoriteSystem}</td>
+                          <td></td>
+                          <td></td>
                           <td>
-                            <a className="system-link system-pc" href="/profile/edit">
+                            <a className="system-link system-pc" href="https://store.steampowered.com/account/" target="_blank" rel="noopener noreferrer">
                               PC
                             </a>
                           </td>
@@ -1594,13 +1617,52 @@ function ProfilePageContent() {
                         </tr>
 
                         <tr>
-                          <td>Location</td>
-                          <td>{playerLocation}</td>
                           <td></td>
                           <td></td>
+                          <td>
+                            <a className="system-link system-ea" href="https://myaccount.ea.com/cp-ui/aboutme/index" target="_blank" rel="noopener noreferrer">
+                              EA
+                            </a>
+                          </td>
+                          <td>{eaGT || "Not Linked"}</td>
                         </tr>
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                <div className="box">
+                  <div className="box-title">Gaming Accounts</div>
+                  <div className="box-body">
+                    {gamingAccounts.length ? (
+                      <table className="info-table">
+                        <thead>
+                          <tr>
+                            <th>Platform</th>
+                            <th>Game Category</th>
+                            <th>Game</th>
+                            <th>Gaming ID</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gamingAccounts.map((account) => (
+                            <tr key={account.id}>
+                              <td>{gamingPlatformLabel(account.platform)}</td>
+                              <td>{gamingCategoryLabel(account.category)}</td>
+                              <td>{gamingGameLabel(account.category, account.game)}</td>
+                              <td>{account.account_id}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="info-empty">No gaming accounts linked.</div>
+                    )}
+                    {isViewingOwnProfile && (
+                      <a className="quick-link" href="/profile/edit">
+                        Manage Gaming Accounts
+                      </a>
+                    )}
                   </div>
                 </div>
 
