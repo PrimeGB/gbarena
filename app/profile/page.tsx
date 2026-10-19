@@ -596,44 +596,14 @@ function ProfilePageContent() {
         }
 
         .discord-banner{
-          width:100%;
-          height:100%;
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          gap:7px;
-          padding:0 10px;
-          background:linear-gradient(to bottom,#07111b,#03070c);
-          color:#fff;
+          display:block;
           text-decoration:none;
         }
 
-        .discord-banner-icon{
-          width:25px;
-          height:25px;
-          flex:none;
-          color:#8ea0ff;
-        }
-
-        .discord-banner-copy{
-          display:flex;
-          flex-direction:column;
-          gap:1px;
-          text-transform:uppercase;
-        }
-
-        .discord-banner-title{
-          font-size:10px;
-          line-height:12px;
-          font-weight:900;
-          letter-spacing:.4px;
-        }
-
-        .discord-banner-subtitle{
-          font-size:7px;
-          font-weight:bold;
-          letter-spacing:.8px;
-          color:#9aa7bd;
+        .discord-banner-art{
+          width:100%;
+          height:100%;
+          display:block;
         }
 
         .header-ad:hover img{
@@ -1412,19 +1382,32 @@ function ProfilePageContent() {
               rel="noopener noreferrer"
             >
               <svg
-                className="discord-banner-icon"
-                viewBox="0 0 64 64"
-                aria-hidden="true"
+                className="discord-banner-art"
+                viewBox="0 0 360 64"
+                preserveAspectRatio="none"
+                role="img"
+                aria-labelledby="discord-banner-title"
               >
-                <path
-                  fill="currentColor"
-                  d="M50.6 14.7a48 48 0 0 0-11.8-3.6l-1.5 3.1a44 44 0 0 0-10.6 0l-1.5-3.1a48 48 0 0 0-11.8 3.6C6 25.8 4 36.6 5 47.2a48 48 0 0 0 14.5 7.3l3.1-5.1a31 31 0 0 1-4.9-2.4l1.2-.9c9.4 4.4 19.7 4.4 29 0l1.2.9a31 31 0 0 1-4.9 2.4l3.1 5.1A48 48 0 0 0 57 47.2c1.2-12.3-2-23-6.4-32.5ZM23.8 39.4c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Zm16.4 0c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Z"
-                />
+                <title id="discord-banner-title">Join the GameBattles Discord</title>
+                <defs>
+                  <linearGradient id="discord-banner-bg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#142f47" />
+                    <stop offset="1" stopColor="#07111b" />
+                  </linearGradient>
+                </defs>
+                <rect width="360" height="64" fill="url(#discord-banner-bg)" />
+                <path d="M0 52H360" stroke="#244b70" strokeWidth="1" />
+                <path d="M0 4H360" stroke="#2f6f9f" strokeOpacity=".35" />
+                <g transform="translate(11 8) scale(.72)" fill="#8ea0ff">
+                  <path d="M50.6 14.7a48 48 0 0 0-11.8-3.6l-1.5 3.1a44 44 0 0 0-10.6 0l-1.5-3.1a48 48 0 0 0-11.8 3.6C6 25.8 4 36.6 5 47.2a48 48 0 0 0 14.5 7.3l3.1-5.1a31 31 0 0 1-4.9-2.4l1.2-.9c9.4 4.4 19.7 4.4 29 0l1.2.9a31 31 0 0 1-4.9 2.4l3.1 5.1A48 48 0 0 0 57 47.2c1.2-12.3-2-23-6.4-32.5ZM23.8 39.4c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Zm16.4 0c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Z" />
+                </g>
+                <text x="82" y="29" fill="#f2c14e" fontFamily="Arial, sans-serif" fontSize="13" fontWeight="700" letterSpacing=".6">
+                  JOIN THE GAMEBATTLES DISCORD
+                </text>
+                <text x="82" y="43" fill="#d7eaff" fontFamily="Arial, sans-serif" fontSize="9" letterSpacing=".5">
+                  FIND PLAYERS • SET UP YOUR NEXT MATCH
+                </text>
               </svg>
-              <span className="discord-banner-copy">
-                <span className="discord-banner-title">Join the GameBattles Discord</span>
-                <span className="discord-banner-subtitle">Find your next match</span>
-              </span>
             </a>
           </header>
 
