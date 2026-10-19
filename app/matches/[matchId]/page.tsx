@@ -19,6 +19,7 @@ type MatchRow = {
   match_time?: string | null;
   best_of?: string | null;
   preset?: string | null;
+  crossplay?: string | null;
   perks?: string | null;
   launchers?: string | null;
   killstreaks?: string | null;
@@ -171,18 +172,6 @@ function staffMatchId(id: string) {
   return `${partOne}${partTwo}${partThree}`.slice(0, 8);
 }
 
-function getMaps(gameMode: string | null | undefined) {
-  const mode = String(gameMode || "").toLowerCase();
-
-  if (mode.includes("search")) return ["Bog", "Pipeline", "Vacant", "Crash", "Backlot"];
-  if (mode.includes("hardpoint")) return ["Hackney Yard", "Gun Runner", "Ramazza", "Cave", "Shoothouse"];
-  if (mode.includes("control")) return ["Raid", "Express", "Checkmate", "Garrison", "Moscow"];
-  if (mode.includes("domination")) return ["Strike", "Vacant", "Crash", "Crossfire", "Backlot"];
-  if (mode.includes("deathmatch")) return ["Shipment", "Shoot House", "Rust", "Vacant", "Crash"];
-
-  return ["Bog", "Pipeline", "Vacant", "Crash", "Backlot"];
-}
-
 function getBestOfNumber(bestOf: string | null | undefined) {
   const found = String(bestOf || "").match(/\d+/);
   if (!found) return 3;
@@ -241,7 +230,6 @@ export default function MatchDetailsPage() {
   const [acceptingTeam, setAcceptingTeam] = useState<TeamRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
-  const [mapsOpen, setMapsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
@@ -398,11 +386,34 @@ export default function MatchDetailsPage() {
 
   const pageTitle = useMemo(() => {
     if (!match) return "Match Details";
-    return `${prettyText(match.game)} - ${ladderName(match.ladder)}`;
+    return `${prettyText(match.game)} - ${prettyText(match.game_mode)} - ${ladderName(match.ladder)}`;
   }, [match]);
 
   const bestOfNumber = getBestOfNumber(match?.best_of);
-  const maps = getMaps(match?.game_mode).slice(0, bestOfNumber);
+  const matchSettings = match
+    ? [
+        { label: "Rules", value: match.preset },
+        { label: "Best Of", value: match.best_of },
+        { label: "Cross Play", value: match.crossplay },
+        { label: "Perks", value: match.perks },
+        { label: "Launchers", value: match.launchers },
+        { label: "Killstreaks", value: match.killstreaks },
+        { label: "Field Upgrades", value: match.field_upgrades },
+        { label: "Hardcore", value: match.hardcore },
+        { label: "Friendly Fire", value: match.friendly_fire },
+        { label: "Radar", value: match.radar },
+        { label: "Spectating", value: match.spectating },
+        { label: "Third Person", value: match.third_person },
+        { label: "Round Length", value: match.round_length },
+        { label: "Score Limit", value: match.score_limit },
+        { label: "Health", value: match.health },
+        { label: "Respawn Delay", value: match.respawn_delay },
+        { label: "Bomb Timer", value: match.bomb_timer },
+        { label: "Plant Time", value: match.plant_time },
+        { label: "Defuse Time", value: match.defuse_time },
+        { label: "Attachments", value: match.attachments },
+      ].filter((setting) => !!setting.value?.trim() && setting.value !== "TBD")
+    : [];
   const matchTimePassed = matchTimeHasPassed(match?.match_time);
   const rawStatus = String(match?.status || "upcoming").toLowerCase();
   const displayStatus =
@@ -410,7 +421,6 @@ export default function MatchDetailsPage() {
   const canReportScore = matchTimePassed || rawStatus === "playing" || rawStatus === "completed";
   const isDisputed = rawStatus === "disputed";
   const isCompleted = rawStatus === "completed";
-  const showMapsDropdown = bestOfNumber > 3;
   const reportingStatus = String(match?.reporting_status || "none").toLowerCase();
   const isFinalized = !!match?.finalized;
   const scoreAlreadyReported = reportingStatus !== "none" && reportingStatus !== "";
@@ -1117,49 +1127,6 @@ export default function MatchDetailsPage() {
         .status-pill.awaiting{color:#5fa8ff;border-color:#5fa8ff;}
         .status-pill.disputed{color:#ffd24c;border-color:#ffd24c;}
 
-        .maps-inline{
-          color:#fff;
-          font-size:13px;
-          font-weight:900;
-          line-height:20px;
-          display:inline-flex;
-          flex-wrap:wrap;
-          gap:16px;
-          vertical-align:middle;
-          max-width:calc(100% - 112px);
-        }
-
-        .map-item{
-          white-space:nowrap;
-        }
-
-        .map-toggle{
-          border:0;
-          background:transparent;
-          color:#fff;
-          font-size:14px;
-          font-weight:900;
-          cursor:pointer;
-          padding:0;
-        }
-
-        .map-arrow{
-          color:#d66f16;
-          margin-left:8px;
-          font-size:11px;
-        }
-
-        .map-list{
-          margin-left:108px;
-          margin-top:4px;
-          padding:7px 9px;
-          border:1px solid #252525;
-          background:#080808;
-          color:#cfcfcf;
-          line-height:23px;
-          font-size:13px;
-        }
-
         .details-btn{
           height:23px;
           padding:0 12px;
@@ -1472,14 +1439,6 @@ export default function MatchDetailsPage() {
             flex-direction:column;
           }
 
-          .map-list{
-            margin-left:0;
-          }
-
-          .maps-inline{
-            max-width:100%;
-            margin-top:5px;
-          }
         }
       `}</style>
 
@@ -1593,7 +1552,7 @@ export default function MatchDetailsPage() {
               </section>
 
               <section className="match-info">
-                <div className="section-title">Locked Match Rosters & Gaming IDs</div>
+                <div className="section-title">Match Roster</div>
                 <div className="participants-grid">
                   {[match.posting_team_id, match.accepting_team_id].map((teamId, index) => {
                     const sideParticipants = participants.filter((participant) => participant.team_id === teamId);
@@ -1647,38 +1606,13 @@ export default function MatchDetailsPage() {
 
                   <div>
                     <div className="info-line">
-                      <span className="info-label">Maps:</span>
+                      <span className="info-label">Best Of:</span>
+                      <span className="info-value">{clean(match.best_of)}</span>
+                    </div>
 
-                      {showMapsDropdown ? (
-                        <>
-                          <button
-                            className="map-toggle"
-                            type="button"
-                            onClick={() => setMapsOpen(!mapsOpen)}
-                          >
-                            Map 1 - {maps[0]}
-                            <span className="map-arrow">{mapsOpen ? "▲" : "▼"}</span>
-                          </button>
-
-                          {mapsOpen && (
-                            <div className="map-list">
-                              {maps.map((mapName, index) => (
-                                <div key={`${mapName}-${index}`}>
-                                  Map {index + 1} - {mapName}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <span className="maps-inline">
-                          {maps.map((mapName, index) => (
-                            <span className="map-item" key={`${mapName}-${index}`}>
-                              Map {index + 1} - {mapName}
-                            </span>
-                          ))}
-                        </span>
-                      )}
+                    <div className="info-line">
+                      <span className="info-label">Rules:</span>
+                      <span className="info-value">{clean(match.preset, "GB Variant")}</span>
                     </div>
 
                     <div className="info-line">
@@ -1767,19 +1701,13 @@ export default function MatchDetailsPage() {
 
                   {canReportScore && !viewerCanManageMatch && (
                     <div className="score-note">
-                      Only team leader, co-leader, captain, or owner can report scores.
+                      Team leaders, co-leaders, and captains can report the match.
                     </div>
                   )}
 
                   {reportingStatus === "awaiting_confirmation" && !canConfirmScore && (
                     <div className="score-note">
                       Score has been submitted and is awaiting confirmation from {confirmationTeamName}.
-                    </div>
-                  )}
-
-                  {reportingStatus === "completed" && (
-                    <div className="score-note">
-                      Result confirmed. Match is complete.
                     </div>
                   )}
 
@@ -1874,7 +1802,7 @@ export default function MatchDetailsPage() {
         <div className="modal-backdrop">
           <div className="settings-modal">
             <div className="modal-title">
-              Match Settings
+              {prettyText(match.game)} Match Settings
               <button
                 className="modal-close"
                 type="button"
@@ -1885,25 +1813,11 @@ export default function MatchDetailsPage() {
             </div>
 
             <div className="modal-body">
-              <div className="setting-line">Rules: <span>{clean(match.preset, "GB Variant")}</span></div>
-              <div className="setting-line">Best Of: <span>{clean(match.best_of)}</span></div>
-              <div className="setting-line">Perks: <span>{clean(match.perks)}</span></div>
-              <div className="setting-line">Launchers: <span>{clean(match.launchers)}</span></div>
-              <div className="setting-line">Killstreaks: <span>{clean(match.killstreaks)}</span></div>
-              <div className="setting-line">Field Upgrades: <span>{clean(match.field_upgrades)}</span></div>
-              <div className="setting-line">Hardcore: <span>{clean(match.hardcore)}</span></div>
-              <div className="setting-line">Friendly Fire: <span>{clean(match.friendly_fire)}</span></div>
-              <div className="setting-line">Radar: <span>{clean(match.radar)}</span></div>
-              <div className="setting-line">Spectating: <span>{clean(match.spectating)}</span></div>
-              <div className="setting-line">Third Person: <span>{clean(match.third_person)}</span></div>
-              <div className="setting-line">Round Length: <span>{clean(match.round_length)}</span></div>
-              <div className="setting-line">Score Limit: <span>{clean(match.score_limit)}</span></div>
-              <div className="setting-line">Health: <span>{clean(match.health)}</span></div>
-              <div className="setting-line">Respawn Delay: <span>{clean(match.respawn_delay)}</span></div>
-              <div className="setting-line">Bomb Timer: <span>{clean(match.bomb_timer)}</span></div>
-              <div className="setting-line">Plant Time: <span>{clean(match.plant_time)}</span></div>
-              <div className="setting-line">Defuse Time: <span>{clean(match.defuse_time)}</span></div>
-              <div className="setting-line">Attachments: <span>{clean(match.attachments)}</span></div>
+              {matchSettings.map((setting) => (
+                <div className="setting-line" key={setting.label}>
+                  {setting.label}: <span>{setting.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

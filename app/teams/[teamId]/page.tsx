@@ -54,8 +54,6 @@ type RosterMember = {
   user_id: string;
   role: string | null;
   username: string;
-  display_gt: string;
-  gaming_id: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -198,75 +196,6 @@ function gameCover(game: string | null | undefined) {
   return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
 }
 
-function profileGamertag(profile: any, platform: string | null | undefined) {
-  const cleanPlatform = String(platform || "").toLowerCase();
-  const username = profile?.username || "Player";
-
-  const fallbackGt =
-    String(username).toLowerCase() === "prime" ? "Prime#3139" : username;
-
-  if (cleanPlatform === "xbox") {
-    return (
-      profile?.xbox_gamertag ||
-      profile?.xbox_gt ||
-      profile?.xbox ||
-      profile?.gamertag ||
-      profile?.gt ||
-      profile?.user_gt ||
-      profile?.platform_gt ||
-      profile?.display_gt ||
-      fallbackGt
-    );
-  }
-
-  if (cleanPlatform === "playstation") {
-    return (
-      profile?.playstation_gamertag ||
-      profile?.psn ||
-      profile?.psn_id ||
-      profile?.gamertag ||
-      profile?.gt ||
-      profile?.user_gt ||
-      profile?.platform_gt ||
-      profile?.display_gt ||
-      fallbackGt
-    );
-  }
-
-  if (cleanPlatform === "nintendo") {
-    return (
-      profile?.nintendo_gamertag ||
-      profile?.nintendo_id ||
-      profile?.switch_code ||
-      profile?.friend_code ||
-      profile?.gamertag ||
-      profile?.gt ||
-      profile?.user_gt ||
-      profile?.platform_gt ||
-      profile?.display_gt ||
-      fallbackGt
-    );
-  }
-
-  if (cleanPlatform === "pc") {
-    return (
-      profile?.pc_gamertag ||
-      profile?.steam ||
-      profile?.steam_id ||
-      profile?.battle_net ||
-      profile?.battlenet ||
-      profile?.gamertag ||
-      profile?.gt ||
-      profile?.user_gt ||
-      profile?.platform_gt ||
-      profile?.display_gt ||
-      fallbackGt
-    );
-  }
-
-  return profile?.gamertag || profile?.gt || profile?.display_gt || fallbackGt;
-}
-
 function eligibilityStatus(member: any): "green" | "yellow" | "red" {
   const status = String(member?.status || member?.invite_status || "").toLowerCase();
 
@@ -293,7 +222,6 @@ export default function TeamPage() {
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
-  const [pageError, setPageError] = useState("");
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -361,7 +289,6 @@ export default function TeamPage() {
       if (!teamId) return;
 
       setLoading(true);
-      setPageError("");
 
       const { data: teamData } = await supabase
         .from("teams")
@@ -404,7 +331,6 @@ export default function TeamPage() {
 
       let profileMap: Record<string, any> = {};
       let rankMap: Record<string, number> = {};
-      let gamingIdMap: Record<string, string> = {};
 
       if (memberUserIds.length > 0) {
         const { data: memberProfiles } = await supabase
@@ -414,22 +340,6 @@ export default function TeamPage() {
 
         (memberProfiles || []).forEach((profile: any) => {
           profileMap[profile.id] = profile;
-        });
-
-        const { data: accountRows, error: accountError } = await supabase
-          .from("gaming_accounts")
-          .select("user_id,account_id")
-          .in("user_id", memberUserIds)
-          .eq("platform", teamData?.platform || "xbox")
-          .eq("category", teamData?.category || "call-of-duty")
-          .eq("game", teamData?.game || "modern-warfare-4");
-
-        if (accountError) {
-          setPageError("Gaming IDs could not be loaded: " + accountError.message);
-        }
-
-        (accountRows || []).forEach((account) => {
-          gamingIdMap[account.user_id] = account.account_id;
         });
 
         const { data: rankedProfiles } = await supabase
@@ -447,14 +357,11 @@ export default function TeamPage() {
       const loadedRoster = (memberRows || []).map((member: any) => {
         const profile = profileMap[member.user_id] || {};
         const username = profile.username || "Player";
-        const displayGt = profileGamertag(profile, teamData?.platform || "xbox");
 
         return {
           user_id: member.user_id,
           role: member.role || "member",
           username,
-          display_gt: displayGt,
-          gaming_id: gamingIdMap[member.user_id] || null,
           gb_rank_points: Number(profile.gb_rank_points || 0),
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
@@ -817,9 +724,8 @@ export default function TeamPage() {
           display:flex;align-items:center;justify-content:center;flex-shrink:0;
         }
 
-        .member-text{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:16px;}
+        .member-text{display:block;line-height:16px;}
         .member-gt{color:#7fc7ff;font-size:13px;font-weight:900;}
-        .member-gaming-id{color:#c2d8eb;font-size:11px;font-weight:700;}
         .member-username{display:none;}
 
         .online-guy{width:10px;height:14px;position:relative;display:inline-block;}
@@ -934,11 +840,6 @@ export default function TeamPage() {
             <div className="loading-text">Loading Team...</div>
           ) : (
             <section className="content">
-              {pageError && (
-                <div role="alert" style={{ color: "#ff9b4c", padding: "12px 16px" }}>
-                  {pageError}
-                </div>
-              )}
               <div className="main">
                 <div className="panel">
                   <div className="team-head">
@@ -1097,9 +998,6 @@ export default function TeamPage() {
 
                                 <span className="member-text">
                                   <span className="member-gt">{member.username}</span>
-                                  <span className="member-gaming-id">
-                                    {member.gaming_id || "Gaming ID not linked"}
-                                  </span>
                                 </span>
                               </div>
                             </td>
