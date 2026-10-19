@@ -6,9 +6,6 @@ import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
 import {
   GamingAccount,
-  gamingCategoryLabel,
-  gamingGameLabel,
-  gamingPlatformLabel,
 } from "../../lib/gamingAccounts";
 
 type Profile = {
@@ -1401,6 +1398,11 @@ function ProfilePageContent() {
             <a className="tab" href="/profile/friends">Friends</a>
             <a className="tab" href="/profile/awards">Awards</a>
             <a className="tab" href="/players">Find Players</a>
+            {isViewingOwnProfile && (
+              <a className="tab" href="/profile/edit?focus=gaming-account">
+                Gaming Accounts
+              </a>
+            )}
             <a className="tab inbox-tab" href="/profile/inbox">
               Inbox
               {unreadInboxCount > 0 && <span className="mail-dot"></span>}
@@ -1628,41 +1630,6 @@ function ProfilePageContent() {
                         </tr>
                       </tbody>
                     </table>
-                  </div>
-                </div>
-
-                <div className="box">
-                  <div className="box-title">Gaming Accounts</div>
-                  <div className="box-body">
-                    {gamingAccounts.length ? (
-                      <table className="info-table">
-                        <thead>
-                          <tr>
-                            <th>Platform</th>
-                            <th>Game Category</th>
-                            <th>Game</th>
-                            <th>Gaming ID</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {gamingAccounts.map((account) => (
-                            <tr key={account.id}>
-                              <td>{gamingPlatformLabel(account.platform)}</td>
-                              <td>{gamingCategoryLabel(account.category)}</td>
-                              <td>{gamingGameLabel(account.category, account.game)}</td>
-                              <td>{account.account_id}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="info-empty">No gaming accounts linked.</div>
-                    )}
-                    {isViewingOwnProfile && (
-                      <a className="quick-link" href="/profile/edit">
-                        Manage Gaming Accounts
-                      </a>
-                    )}
                   </div>
                 </div>
 
