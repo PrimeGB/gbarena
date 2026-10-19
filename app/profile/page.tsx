@@ -1620,7 +1620,7 @@ function ProfilePageContent() {
                           <td></td>
                           <td></td>
                           <td>
-                            <a className="system-link system-ea" href="https://myaccount.ea.com/cp-ui/aboutme/index" target="_blank" rel="noopener noreferrer">
+                            <a className="system-link system-ea" href="/profile/edit?platform=ea&focus=gaming-account">
                               EA
                             </a>
                           </td>

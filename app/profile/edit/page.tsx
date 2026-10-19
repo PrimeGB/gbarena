@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import {
@@ -43,9 +44,12 @@ const realGames = [
   "EA Sports FC",
 ];
 
-export default function EditProfilePage() {
+function EditProfileContent() {
+  const searchParams = useSearchParams();
   const { user, loading } = useUser() as any;
   const currentUser = user as AppUser | null;
+  const gamingAccountSectionRef = useRef<HTMLDivElement | null>(null);
+  const gamingAccountIdInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<EditTab>("main");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -77,6 +81,28 @@ export default function EditProfilePage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("platform") !== "ea") return;
+
+    setGamingAccountPlatform("ea");
+    if (searchParams.get("focus") !== "gaming-account") return;
+
+    requestAnimationFrame(() => {
+      gamingAccountSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      gamingAccountIdInputRef.current?.focus({ preventScroll: true });
+    });
+  }, [searchParams]);
+
+  useEffect(() => {
+    const existingAccount = gamingAccounts.find(
+      (account) =>
+        account.platform === gamingAccountPlatform &&
+        account.category === gamingAccountCategory &&
+        account.game === gamingAccountGame,
+    );
+    setGamingAccountId(existingAccount?.account_id || "");
+  }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame]);
 
   const favoriteGameIsValid = useMemo(() => {
     if (!favoriteGame.trim()) return true;
@@ -1039,11 +1065,13 @@ export default function EditProfilePage() {
                     </div>
                   </div>
                 </div>
-                <div className="box">
+                <div className="box" ref={gamingAccountSectionRef}>
                   <div className="box-title">Gaming Accounts</div>
                   <div className="box-body">
                     <div className="notice">
-                      Save one platform ID for each game you compete in. IDs used for an open or active match cannot be changed until that commitment ends.
+                      {gamingAccountPlatform === "ea"
+                        ? "Enter the EA ID shown in your EA account, then save it here. Signing in on EA does not automatically share your ID with GameBattles. IDs used for an open or active match cannot be changed until that commitment ends."
+                        : "Save one platform ID for each game you compete in. IDs used for an open or active match cannot be changed until that commitment ends."}
                     </div>
                     <div className="form-row">
                       <label>Platform</label>
@@ -1087,10 +1115,11 @@ export default function EditProfilePage() {
                     <div className="form-row">
                       <label>Gaming ID</label>
                       <input
+                        ref={gamingAccountIdInputRef}
                         value={gamingAccountId}
                         maxLength={80}
                         onChange={(event) => setGamingAccountId(event.target.value)}
-                        placeholder="Enter your in-game/platform ID"
+                        placeholder={gamingAccountPlatform === "ea" ? "Enter your EA ID" : "Enter your in-game/platform ID"}
                       />
                     </div>
                     <div className="save-row">
@@ -1246,5 +1275,13 @@ export default function EditProfilePage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function EditProfilePage() {
+  return (
+    <Suspense fallback={<div style={{ color: "white", padding: 40 }}>Loading profile editor...</div>}>
+      <EditProfileContent />
+    </Suspense>
   );
 }
