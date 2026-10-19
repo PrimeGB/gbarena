@@ -600,40 +600,40 @@ function ProfilePageContent() {
           height:100%;
           display:flex;
           align-items:center;
-          justify-content:center;
-          gap:8px;
-          background:radial-gradient(ellipse at 24% 50%,#5865f2 0%,#404ac3 40%,#19294a 100%);
+          justify-content:flex-end;
+          gap:7px;
+          padding:0 10px;
+          background:linear-gradient(to bottom,#07111b,#03070c);
           color:#fff;
           text-decoration:none;
-          text-shadow:0 2px 4px rgba(0,0,0,.55);
         }
 
         .discord-banner-icon{
-          width:30px;
-          height:30px;
+          width:25px;
+          height:25px;
           flex:none;
-          filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+          color:#8ea0ff;
         }
 
         .discord-banner-copy{
           display:flex;
           flex-direction:column;
-          gap:2px;
+          gap:1px;
           text-transform:uppercase;
         }
 
         .discord-banner-title{
-          font-size:12px;
-          line-height:14px;
+          font-size:10px;
+          line-height:12px;
           font-weight:900;
-          letter-spacing:.6px;
+          letter-spacing:.4px;
         }
 
         .discord-banner-subtitle{
-          font-size:8px;
+          font-size:7px;
           font-weight:bold;
-          letter-spacing:1.2px;
-          color:#dfe2ff;
+          letter-spacing:.8px;
+          color:#9aa7bd;
         }
 
         .header-ad:hover img{
