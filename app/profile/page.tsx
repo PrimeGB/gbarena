@@ -595,6 +595,47 @@ function ProfilePageContent() {
           filter:brightness(.82) contrast(1.12) saturate(.95);
         }
 
+        .discord-banner{
+          width:100%;
+          height:100%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap:8px;
+          background:radial-gradient(ellipse at 24% 50%,#5865f2 0%,#404ac3 40%,#19294a 100%);
+          color:#fff;
+          text-decoration:none;
+          text-shadow:0 2px 4px rgba(0,0,0,.55);
+        }
+
+        .discord-banner-icon{
+          width:30px;
+          height:30px;
+          flex:none;
+          filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+        }
+
+        .discord-banner-copy{
+          display:flex;
+          flex-direction:column;
+          gap:2px;
+          text-transform:uppercase;
+        }
+
+        .discord-banner-title{
+          font-size:12px;
+          line-height:14px;
+          font-weight:900;
+          letter-spacing:.6px;
+        }
+
+        .discord-banner-subtitle{
+          font-size:8px;
+          font-weight:bold;
+          letter-spacing:1.2px;
+          color:#dfe2ff;
+        }
+
         .header-ad:hover img{
           filter:brightness(.9) contrast(1.14) saturate(1);
         }
@@ -1365,12 +1406,25 @@ function ProfilePageContent() {
             </div>
 
             <a
-              className="header-ad"
+              className="header-ad discord-banner"
               href="https://discord.gg/nKZdS2BDS6"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <img src="/bc4b22ea-8e19-47ac-8e15-b369edac44fa.png" alt="Join the GameBattles Discord" />
+              <svg
+                className="discord-banner-icon"
+                viewBox="0 0 64 64"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M50.6 14.7a48 48 0 0 0-11.8-3.6l-1.5 3.1a44 44 0 0 0-10.6 0l-1.5-3.1a48 48 0 0 0-11.8 3.6C6 25.8 4 36.6 5 47.2a48 48 0 0 0 14.5 7.3l3.1-5.1a31 31 0 0 1-4.9-2.4l1.2-.9c9.4 4.4 19.7 4.4 29 0l1.2.9a31 31 0 0 1-4.9 2.4l3.1 5.1A48 48 0 0 0 57 47.2c1.2-12.3-2-23-6.4-32.5ZM23.8 39.4c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Zm16.4 0c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Z"
+                />
+              </svg>
+              <span className="discord-banner-copy">
+                <span className="discord-banner-title">Join the GameBattles Discord</span>
+                <span className="discord-banner-subtitle">Find your next match</span>
+              </span>
             </a>
           </header>
 
