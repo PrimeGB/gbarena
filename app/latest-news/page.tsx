@@ -187,6 +187,24 @@ export default function LatestNewsPage() {
           color:#a9c3db;
           font-size:10px;
         }
+
+        @media(max-width:768px){
+          .layout.news-layout{
+            width:100%;
+            grid-template-columns:minmax(0,1fr);
+          }
+          .nav{
+            height:auto;
+            flex-wrap:wrap;
+            gap:8px 12px;
+            padding:10px;
+          }
+          .news-head{
+            flex-wrap:wrap;
+            gap:6px;
+          }
+          .news-title{overflow-wrap:anywhere;}
+        }
       `}</style>
 
       <div className="top-strip">
@@ -210,7 +228,7 @@ export default function LatestNewsPage() {
           <a href="/support">Support</a>
         </nav>
 
-        <div className="layout">
+        <div className="layout news-layout">
           <aside className="panel">
             <div className="panel-title">News Categories</div>
             <a className="side-link" href="#">Latest Updates</a>

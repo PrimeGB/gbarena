@@ -53,6 +53,30 @@ Additional titles may be added based on community demand.
 
 ---
 
+## Staff Portal Access
+
+The staff portal uses an Owner-managed roster with individual work-area grants for
+match review, forum moderation, awards, and staff-directory updates. Only an Owner
+can assign or remove staff access; the directory permission can edit position and
+duty descriptions but cannot change permissions.
+
+Before using the portal in a deployed environment, apply the staff portal Supabase
+migration and promote the initial Owner through the trusted Supabase SQL Editor
+using [the one-time Owner bootstrap script](./sql/bootstrap_staff_owner.sql).
+Do not add the Owner's account email or service-role credentials to source control,
+and do not enable self-service Owner claims.
+
+The grants define work-area boundaries. Each area's data-changing tools must also
+enforce `has_staff_permission(...)` in its database policies or RPCs before being
+made available as operational staff tools.
+
+Match reviewers can enter an official score with a required written reason.
+Finalization and team/player record updates happen atomically, only once, and are
+saved to a staff review log. Forum-moderation and award actions are not enabled
+until their workflows and database checks are implemented.
+
+---
+
 ## Roadmap
 
 ### Phase 1

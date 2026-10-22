@@ -24,3 +24,141 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+img,
+video,
+iframe {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    width: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .site-header {
+    padding: 8px 12px !important;
+  }
+
+  .site-header-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100% !important;
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  .site-nav {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 12px !important;
+  }
+
+  .site-nav a {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .wrapper,
+  .container,
+  .page,
+  .page-wrap,
+  .wrapper-inner,
+  .main,
+  .main-container,
+  .content,
+  .content-wrap,
+  .content-wrapper,
+  .page-container,
+  .main-content,
+  .shell,
+  .match-shell,
+  .team-shell,
+  .profile-shell,
+  .wrapper-outer,
+  .site-wrapper,
+  .content-shell,
+  .page-shell,
+  .main-wrapper,
+  .content-area {
+    width: calc(100% - 20px) !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body .news-layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  [class*="wrapper"],
+  [class*="container"],
+  [class*="shell"] {
+    max-width: 100%;
+  }
+
+  main {
+    max-width: 100%;
+  }
+
+  section,
+  article,
+  aside,
+  header,
+  footer {
+    max-width: 100%;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 7vw, 2.2rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  h2 {
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 42px;
+  }
+}

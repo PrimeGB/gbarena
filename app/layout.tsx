@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import DevelopmentNotice from "./components/DevelopmentNotice";
 import "./globals.css";
+import "./staff/staff-responsive.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <header style={{background:'#07111b',borderBottom:'1px solid #123',padding:'10px 18px',zIndex:90}}>
-          <div style={{maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <header className="site-header" style={{background:'#07111b',borderBottom:'1px solid #123',padding:'10px 18px',zIndex:90}}>
+          <div className="site-header-inner" style={{maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <Link href="/home" style={{color:'#eaf5ff',fontWeight:900,textDecoration:'none',fontSize:18}}>GameBattles</Link>
-            <nav style={{display:'flex',gap:14}}>
+            <nav className="site-nav" style={{display:'flex',gap:14}}>
               <Link href="/home" style={{color:'#cfeefe',textDecoration:'none'}}>Home</Link>
               <Link href="/forums" style={{color:'#cfeefe',textDecoration:'none'}}>Forums</Link>
               <Link href="/teams/top" style={{color:'#cfeefe',textDecoration:'none'}}>Teams</Link>

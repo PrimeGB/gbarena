@@ -1,12 +1,48 @@
-import Link from "next/link";
+"use client";
 
-const staffRoles = [
-  { role: "Owner", name: "Unassigned", description: "Site administration and staff oversight" },
-  { role: "Admin", name: "Unassigned", description: "Community operations and member support" },
-  { role: "Referee", name: "Unassigned", description: "Competitive match and dispute review" },
-];
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
+
+type StaffDirectoryEntry = {
+  user_id: string;
+  username: string;
+  position: string;
+  duties: string;
+  is_owner: boolean;
+};
 
 export default function StaffPage() {
+  const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [directoryUnavailable, setDirectoryUnavailable] = useState(false);
+
+  useEffect(() => {
+    async function loadStaff() {
+      try {
+        const { data, error: directoryError } = await supabase.rpc(
+          "get_staff_directory"
+        );
+
+        if (directoryError) {
+          console.error("Staff directory could not be loaded:", directoryError);
+          setDirectoryUnavailable(true);
+          setLoading(false);
+          return;
+        }
+
+        setStaff((data || []) as StaffDirectoryEntry[]);
+        setLoading(false);
+      } catch (directoryError) {
+        console.error("Staff directory request failed:", directoryError);
+        setDirectoryUnavailable(true);
+        setLoading(false);
+      }
+    }
+
+    void loadStaff();
+  }, []);
+
   return (
     <main className="staff-page">
       <style>{`
@@ -114,8 +150,22 @@ export default function StaffPage() {
           text-align:center;
         }
         @media(max-width:600px){
-          .masthead{align-items:flex-start;flex-direction:column;}
-          .staff-row{grid-template-columns:1fr;gap:7px;}
+          .staff-page{padding:12px 10px;}
+          .staff-wrap{width:100%;overflow:hidden;}
+          .topbar{justify-content:center;flex-wrap:wrap;gap:12px;padding:10px;}
+          .topbar a{min-height:36px;display:inline-flex;align-items:center;}
+          .masthead{align-items:stretch;flex-direction:column;padding:18px 16px;gap:14px;}
+          .site-title{font-size:clamp(22px,7vw,30px);overflow-wrap:anywhere;}
+          .site-subtitle{font-size:10px;line-height:1.5;letter-spacing:.6px;}
+          .login-button{width:100%;min-height:46px;}
+          .page-title{padding:14px 16px;font-size:15px;}
+          .intro{padding:14px 16px;font-size:14px;line-height:1.6;}
+          .roster{padding:0 12px 14px;}
+          .roster-heading{margin-bottom:8px;}
+          .staff-row{grid-template-columns:1fr;gap:7px;padding:13px 11px;}
+          .role,.person,.description{overflow-wrap:anywhere;line-height:1.5;}
+          .notice{margin:0 12px 14px;padding:12px;font-size:12px;}
+          .footer{padding:14px 10px;line-height:1.6;}
         }
       `}</style>
 
@@ -131,7 +181,7 @@ export default function StaffPage() {
             <div className="site-title">GameBattles Staff</div>
             <div className="site-subtitle">Community team and match officials</div>
           </div>
-          <Link className="login-button" href="/login?next=%2Fstaff">
+          <Link className="login-button" href="/login?next=%2Fstaff%2Fdashboard">
             Staff Login
           </Link>
         </header>
@@ -143,23 +193,35 @@ export default function StaffPage() {
 
         <section className="roster" aria-label="Staff roles">
           <div className="roster-heading">Staff members</div>
-          {staffRoles.map((staff) => (
-            <div className="staff-row" key={staff.role}>
-              <div className="role">{staff.role}</div>
+          {loading && <p className="intro">Loading the staff directory...</p>}
+          {directoryUnavailable && (
+            <p className="intro">
+              The staff directory is being set up. Please check back soon.
+            </p>
+          )}
+          {!loading && !directoryUnavailable && staff.length === 0 && (
+            <p className="intro">No staff positions have been assigned yet.</p>
+          )}
+          {staff.map((member) => (
+            <div className="staff-row" key={member.user_id}>
+              <div className="role">{member.position}</div>
               <div>
-                <div className="person">{staff.name}</div>
-                <div className="description">{staff.description}</div>
+                <div className="person">{member.username}</div>
+                <div className="description">{member.duties}</div>
               </div>
             </div>
           ))}
         </section>
 
         <div className="notice">
-          Staff names and permissions have not been assigned yet. Signing in uses the regular account login;
-          staff-only access requires role permissions to be configured.
+          Staff work areas are granted individually. Only the Owner can assign or remove
+          staff access; having a staff position does not grant access to unrelated areas.
         </div>
 
-        <footer className="footer">© 2026 Competitive Gaming Network</footer>
+        <footer className="footer">
+          <Link href="/login?next=%2Fstaff%2Fdashboard">Open Staff Portal</Link>
+          {" · "}© 2026 Competitive Gaming Network
+        </footer>
       </div>
     </main>
   );

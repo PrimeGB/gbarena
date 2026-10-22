@@ -1,0 +1,125 @@
+.staff-mobile-page {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .staff-mobile-page {
+    padding: 12px !important;
+  }
+
+  .staff-mobile-shell {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .staff-mobile-nav {
+    flex-wrap: wrap;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .staff-mobile-nav a {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .staff-mobile-header {
+    padding: 20px 16px !important;
+  }
+
+  .staff-mobile-header h1 {
+    font-size: clamp(24px, 8vw, 32px) !important;
+  }
+
+  .staff-mobile-section,
+  .staff-mobile-history-header {
+    padding: 14px !important;
+  }
+
+  .staff-mobile-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .staff-mobile-form {
+    width: 100%;
+  }
+
+  .staff-mobile-form input,
+  .staff-mobile-form textarea,
+  .staff-mobile-form button,
+  .staff-mobile-action {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .staff-mobile-list {
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .staff-mobile-card {
+    padding: 12px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .staff-mobile-card-header,
+  .staff-mobile-history-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px !important;
+  }
+
+  .staff-mobile-details {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .staff-mobile-details > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .staff-mobile-details dt {
+    color: #91abc1;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .staff-mobile-details dd {
+    margin: 3px 0 0;
+    overflow-wrap: anywhere;
+  }
+
+  .staff-mobile-action {
+    justify-self: stretch !important;
+  }
+
+  .staff-mobile-page a {
+    overflow-wrap: anywhere;
+  }
+
+  .staff-portal-page .staff-mobile-section {
+    padding: 16px !important;
+  }
+
+  .staff-portal-page fieldset {
+    min-width: 0;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .staff-mobile-page {
+    padding: 8px !important;
+  }
+
+  .staff-mobile-header {
+    padding: 16px 12px !important;
+  }
+
+  .staff-mobile-section,
+  .staff-mobile-history-header {
+    padding: 12px !important;
+  }
+}

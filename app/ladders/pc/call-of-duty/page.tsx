@@ -277,6 +277,83 @@ export default function PCCallOfDutyPage() {
           color:#a9c3db;
           font-size:11px;
         }
+
+        @media(max-width:768px){
+          .page{padding:10px;}
+          main.page > .wrapper{
+            width:100% !important;
+            margin:0;
+          }
+          .top-strip{
+            height:auto;
+            min-height:28px;
+            flex-wrap:wrap;
+            justify-content:flex-start;
+            gap:8px 14px;
+            padding:8px 12px;
+          }
+          .header{
+            min-height:0;
+            flex-wrap:wrap;
+            justify-content:flex-start;
+            gap:14px;
+            padding:14px;
+          }
+          .header > div:first-child{min-width:0;}
+          .logo-main{
+            font-size:clamp(24px,9vw,38px);
+            line-height:1.1;
+            overflow-wrap:anywhere;
+          }
+          .logo-sub{
+            font-size:10px;
+            letter-spacing:1px;
+            line-height:1.4;
+          }
+          .nav{
+            height:auto;
+            flex-wrap:wrap;
+            justify-content:flex-start;
+            gap:10px 16px;
+            padding:10px 12px;
+          }
+          .title-bar{padding:16px 12px;}
+          .title-bar h1{font-size:clamp(22px,7vw,30px);}
+          .title-bar p{font-size:13px;line-height:1.5;}
+          .content{padding:12px;}
+          .games-grid{grid-template-columns:minmax(0,1fr);gap:12px;}
+          .game-card{min-width:0;}
+          .game-title{
+            height:auto;
+            min-height:44px;
+            padding:10px 12px;
+            overflow-wrap:anywhere;
+          }
+          .game-image{
+            height:auto;
+            aspect-ratio:16 / 9;
+          }
+          .ladder-item{
+            grid-template-columns:minmax(0,1fr);
+            row-gap:6px;
+            padding:10px;
+          }
+          .ladder-name{
+            min-width:0;
+            overflow-wrap:anywhere;
+          }
+          .ladder-link{
+            font-size:10px;
+            white-space:normal;
+            overflow-wrap:anywhere;
+          }
+          .footer{
+            min-height:34px;
+            height:auto;
+            padding:8px;
+            text-align:center;
+          }
+        }
       `}</style>
 
       <main className="page">

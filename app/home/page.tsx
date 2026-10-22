@@ -1,4 +1,5 @@
 import AuthNav from "../components/AuthNav";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -654,6 +655,142 @@ export default function Home() {
           text-shadow:0 1px 2px #000;
           font-size:clamp(10px,.95vw,16px);
         }
+
+        .mobile-home{display:none;}
+
+      @media(max-width:768px){
+        html,body{
+          width:100%;
+          height:auto;
+          min-height:100%;
+          overflow-x:hidden;
+          overflow-y:auto;
+        }
+        .page{
+          width:100%;
+          min-height:100vh;
+          height:auto;
+          padding:10px;
+          align-items:flex-start;
+          overflow:visible;
+        }
+        .homepage{
+          width:100%;
+          height:auto;
+          min-height:100vh;
+          aspect-ratio:auto;
+          overflow:visible;
+          filter:none;
+          background:#06111c;
+          border:1px solid #176095;
+        }
+        .dark-blue-blend,
+        .controller-overlay,
+        .hotspot,
+        .drop-wrap,
+        .search-box,
+        .lower-layout,
+        .footer-cover{display:none;}
+        .real-top-bar{
+          position:relative;
+          width:100%;
+          height:auto;
+          min-height:44px;
+          overflow:visible;
+          padding:6px 10px;
+        }
+        .auth-holder{
+          position:relative;
+          inset:auto;
+          width:100%;
+          height:auto;
+          justify-content:flex-start;
+          white-space:normal;
+        }
+        .auth-holder .top-right-group{
+          flex-wrap:wrap;
+          gap:8px !important;
+          min-height:36px;
+        }
+        .auth-holder .top-btn,
+        .auth-holder .top-sep{
+          min-height:36px;
+          font-size:14px !important;
+        }
+        .top-help{display:none;}
+        .mobile-home{
+          display:block;
+          padding:18px 14px 24px;
+        }
+        .mobile-home-hero{
+          min-height:190px;
+          display:flex;
+          flex-direction:column;
+          justify-content:flex-end;
+          padding:20px;
+          border:1px solid #24577b;
+          background:
+            linear-gradient(0deg,rgba(2,8,14,.96),rgba(2,8,14,.12)),
+            url("/homepage.png") center 35% / cover no-repeat;
+        }
+        .mobile-home-title{
+          color:#fff;
+          font-size:clamp(27px,8vw,38px);
+          font-weight:900;
+          letter-spacing:.02em;
+          line-height:1.05;
+          text-shadow:0 2px 8px #000;
+        }
+        .mobile-home-tagline{
+          margin-top:8px;
+          color:#ffd95c;
+          font-size:11px;
+          font-weight:900;
+          letter-spacing:.12em;
+        }
+        .mobile-home-section{margin-top:18px;}
+        .mobile-home-heading{
+          margin:0 0 10px;
+          color:#ffd95c;
+          font-size:13px;
+          font-weight:900;
+          letter-spacing:.08em;
+          text-transform:uppercase;
+        }
+        .mobile-home-links{
+          display:grid;
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          gap:9px;
+        }
+        .mobile-home-links a{
+          min-height:48px;
+          display:flex;
+          align-items:center;
+          padding:10px 12px;
+          border:1px solid #1a4b70;
+          background:linear-gradient(#102b41,#091725);
+          color:#f3f8fc;
+          font-size:13px;
+          font-weight:700;
+          line-height:1.35;
+          overflow-wrap:anywhere;
+        }
+        .mobile-home-links a:active{background:#19486b;}
+        .mobile-home-footer{
+          margin-top:22px;
+          padding-top:14px;
+          border-top:1px solid #1a4b70;
+          color:#9cb2c5;
+          font-size:11px;
+          line-height:1.5;
+          text-align:center;
+        }
+      }
+
+      @media(max-width:360px){
+        .page{padding:0;}
+        .mobile-home{padding:14px 10px 20px;}
+        .mobile-home-links{grid-template-columns:1fr;}
       `}</style>
 
       <main className="page">
@@ -865,6 +1002,50 @@ export default function Home() {
               </div>
             </section>
           </div>
+
+          <section className="mobile-home">
+            <div className="mobile-home-hero">
+              <div className="mobile-home-title">GAMEBATTLES</div>
+              <div className="mobile-home-tagline">WHERE GAMING FINDS ITS EDGE</div>
+            </div>
+            <div className="mobile-home-section">
+              <h2 className="mobile-home-heading">Compete</h2>
+              <div className="mobile-home-links">
+                <Link href="/ladders/playstation">PlayStation ladders</Link>
+                <Link href="/ladders/xbox">Xbox ladders</Link>
+                <Link href="/ladders/nintendo">Nintendo ladders</Link>
+                <Link href="/ladders/pc">PC ladders</Link>
+                <Link href="/matches/finder">Find a match</Link>
+                <Link href="/teams/top">Top teams</Link>
+              </div>
+            </div>
+            <div className="mobile-home-section">
+              <h2 className="mobile-home-heading">Community</h2>
+              <div className="mobile-home-links">
+                <Link href="/members">Members</Link>
+                <Link href="/forums">Forums</Link>
+                <Link href="/staff">Staff</Link>
+                <Link href="/latest-news">Latest news</Link>
+                <Link href="/players/top">Top players</Link>
+                <Link href="/suggestions">Suggestions</Link>
+              </div>
+            </div>
+            <div className="mobile-home-section">
+              <h2 className="mobile-home-heading">GameBattles</h2>
+              <div className="mobile-home-links">
+                <Link href="/about">About us</Link>
+                <Link href="/history">History</Link>
+                <Link href="/rules">Rules</Link>
+                <Link href="/getting-started">Getting started</Link>
+                <Link href="/contact">Contact</Link>
+                <Link href="/support">Support</Link>
+                <a href="https://discord.gg/nKZdS2BDS6">Discord</a>
+              </div>
+            </div>
+            <footer className="mobile-home-footer">
+              © 2026 Competitive Gaming Network
+            </footer>
+          </section>
 
           <footer className="footer-cover">
             © 2026 Competitive Gaming Network
