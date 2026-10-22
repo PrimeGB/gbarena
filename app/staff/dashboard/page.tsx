@@ -15,8 +15,8 @@ import "../staff-responsive.css";
 const workAreas = [
   {
     key: "match_review",
-    title: "Match and dispute review",
-    description: "Review disputed matches and their open tickets.",
+    title: "Disputed match tickets",
+    description: "Review submitted disputes and finalize official match results.",
     href: "/staff/matches",
   },
   {
@@ -33,8 +33,8 @@ const workAreas = [
   },
   {
     key: "staff_directory",
-    title: "Staff directory and duties",
-    description: "Update public position and duty descriptions without changing access.",
+    title: "Trusted staff roster and duties",
+    description: "Update staff positions and duty descriptions without changing access.",
     href: null,
   },
 ] as const;
@@ -77,24 +77,23 @@ export default function StaffDashboardPage() {
   const hasPortalAccess = isOwner || permissions.length > 0;
 
   const loadDashboard = useCallback(async (userId: string) => {
-    const [{ data: profile, error: profileError }, { data: grants, error: grantsError }, { data: directory, error: directoryError }] =
+    const [{ data: profile, error: profileError }, { data: grants, error: grantsError }] =
       await Promise.all([
         supabase.from("profiles").select("role").eq("id", userId).maybeSingle(),
         supabase
           .from("staff_access_grants")
           .select("permission_key")
           .eq("user_id", userId),
-        supabase.rpc("get_staff_directory"),
       ]);
 
     setError("");
-    if (profileError || grantsError || directoryError) {
+    if (profileError || grantsError) {
       setRole("");
       setPermissions([]);
       setStaff([]);
       setError(
         `Staff access could not be loaded: ${
-          profileError?.message || grantsError?.message || directoryError?.message
+          profileError?.message || grantsError?.message
         }`
       );
       setLoadedUserId(userId);
@@ -103,12 +102,29 @@ export default function StaffDashboardPage() {
     }
 
     const profileRow = profile as ProfileRow | null;
-    const directoryRows = (directory || []) as StaffDirectoryEntry[];
+    const permissionRows = (grants || []) as PermissionRow[];
+    const userPermissions = permissionRows.map((grant) => grant.permission_key);
     setRole(profileRow?.role || "");
-    setPermissions(
-      ((grants || []) as PermissionRow[]).map((grant) => grant.permission_key)
-    );
-    setStaff(directoryRows);
+    setPermissions(userPermissions);
+
+    if (profileRow?.role !== "owner" && userPermissions.length === 0) {
+      setStaff([]);
+      setLoadedUserId(userId);
+      setLoading(false);
+      return;
+    }
+
+    const { data: directory, error: directoryError } =
+      await supabase.rpc("get_staff_directory");
+    if (directoryError) {
+      setStaff([]);
+      setError(`Staff roster could not be loaded: ${directoryError.message}`);
+      setLoadedUserId(userId);
+      setLoading(false);
+      return;
+    }
+
+    setStaff((directory || []) as StaffDirectoryEntry[]);
     setLoadedUserId(userId);
     setLoading(false);
   }, []);
@@ -213,10 +229,6 @@ export default function StaffDashboardPage() {
   return (
     <main className="staff-mobile-page staff-portal-page" style={styles.page}>
       <section className="staff-mobile-shell" style={styles.shell}>
-        <nav className="staff-mobile-nav" style={styles.nav}>
-          <Link href="/staff">Public Staff Directory</Link>
-          <Link href="/home">Home</Link>
-        </nav>
         <header className="staff-mobile-header" style={styles.header}>
           <p style={styles.eyebrow}>GAMEBATTLES STAFF</p>
           <h1 style={styles.title}>Staff Portal</h1>
@@ -225,6 +237,9 @@ export default function StaffDashboardPage() {
             or site-wide administration.
           </p>
         </header>
+        <nav className="staff-mobile-nav" style={styles.nav}>
+          <Link href="/home">Back to GameBattles</Link>
+        </nav>
 
         {authLoading ||
         (user && (loading || loadedUserId !== user.id)) ? (
@@ -249,17 +264,28 @@ export default function StaffDashboardPage() {
             {notice && <p style={styles.notice} role="status">{notice}</p>}
 
             <section className="staff-mobile-section" style={styles.section}>
-              <h2 style={styles.sectionTitle}>Your work areas</h2>
+              <h2 style={styles.sectionTitle}>Staff work areas</h2>
               <div className="staff-mobile-grid" style={styles.cards}>
                 {workAreas
                   .filter((area) => isOwner || permissions.includes(area.key))
                   .map((area) => (
-                    <article key={area.key} style={styles.card}>
+                    <article
+                      key={area.key}
+                      className={area.key === "match_review" ? "staff-ticket-card" : undefined}
+                      style={styles.card}
+                    >
+                      {area.key === "match_review" && (
+                        <p className="staff-ticket-kicker">TICKET QUEUE</p>
+                      )}
                       <h3 style={styles.cardTitle}>{area.title}</h3>
                       <p style={styles.cardText}>{area.description}</p>
                       {area.href ? (
-                        <Link href={area.href} style={styles.cardLink}>
-                          Open review queue
+                        <Link
+                          href={area.href}
+                          className={area.key === "match_review" ? "staff-ticket-link" : undefined}
+                          style={styles.cardLink}
+                        >
+                          {area.key === "match_review" ? "Open ticket queue" : "Open work area"}
                         </Link>
                       ) : area.key === "staff_directory" ? (
                         <a href="#staff-directory" style={styles.cardLink}>
@@ -340,7 +366,7 @@ export default function StaffDashboardPage() {
             )}
 
             <section className="staff-mobile-section" style={styles.section}>
-              <h2 id="staff-directory" style={styles.sectionTitle}>Current staff</h2>
+              <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
               {staff.length === 0 ? (
                 <p style={styles.help}>No staff assignments have been created yet.</p>
               ) : (
@@ -413,7 +439,7 @@ export default function StaffDashboardPage() {
 const styles: Record<string, CSSProperties> = {
   page: {
     minHeight: "100vh",
-    padding: "32px 18px",
+    padding: "16px 18px",
     background: "radial-gradient(circle at top, #102a40, #02060a 55%)",
     color: "#d7e2ee",
     fontFamily: "Tahoma, Verdana, Arial, sans-serif",

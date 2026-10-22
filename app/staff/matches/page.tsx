@@ -216,12 +216,12 @@ export default function StaffMatchReviewPage() {
     <main className="staff-mobile-page staff-match-review-page" style={styles.page}>
       <section className="staff-mobile-shell" style={styles.shell}>
         <nav className="staff-mobile-nav" style={styles.nav}>
-          <Link href="/staff/dashboard">Staff Portal</Link>
-          <Link href="/staff">Public Staff Directory</Link>
+          <Link href="/staff/dashboard">Staff Dashboard</Link>
+          <Link href="/home">Home</Link>
         </nav>
         <header className="staff-mobile-header" style={styles.header}>
           <p style={styles.eyebrow}>STAFF WORK AREA</p>
-          <h1 style={styles.title}>Match and Dispute Review</h1>
+          <h1 style={styles.title}>Disputed Match Tickets</h1>
           <p style={styles.subtitle}>
             Review disputed matches, enter the official series score, and provide
             a written reason. Finalization updates standings once and records the
@@ -404,7 +404,7 @@ export default function StaffMatchReviewPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
-    padding: "32px 18px",
+    padding: "16px 18px",
     background: "radial-gradient(circle at top, #102a40, #02060a 55%)",
     color: "#d7e2ee",
     fontFamily: "Tahoma, Verdana, Arial, sans-serif",

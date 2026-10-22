@@ -2,6 +2,53 @@
   width: 100%;
 }
 
+body:has(.staff-mobile-page) > .site-header {
+  display: none;
+}
+
+.staff-portal-page .staff-mobile-header {
+  padding: 18px 24px 16px !important;
+  border-bottom: 0 !important;
+}
+
+.staff-portal-page .staff-mobile-header h1 {
+  margin: 4px 0 6px !important;
+}
+
+.staff-portal-page .staff-mobile-nav {
+  justify-content: flex-start !important;
+  padding: 8px 24px !important;
+  border-top: 1px solid #244b70;
+}
+
+.staff-ticket-card {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-color: #8b5a26 !important;
+  background: linear-gradient(145deg, #172638, #091521 72%) !important;
+  box-shadow: inset 4px 0 #d8a43a;
+}
+
+.staff-ticket-kicker {
+  margin: 0 0 10px;
+  color: #f2c14e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.staff-ticket-link {
+  margin-top: auto !important;
+  padding: 10px 14px;
+  border: 1px solid #e0ac47;
+  background: linear-gradient(#876018, #4c340d);
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 900;
+}
+
 @media (max-width: 600px) {
   .staff-mobile-page {
     padding: 12px !important;
@@ -101,6 +148,18 @@
 
   .staff-portal-page .staff-mobile-section {
     padding: 16px !important;
+  }
+
+  .staff-portal-page .staff-mobile-header {
+    padding: 16px 16px 14px !important;
+  }
+
+  .staff-portal-page .staff-mobile-nav {
+    padding: 8px 16px !important;
+  }
+
+  .staff-ticket-card {
+    min-height: 170px;
   }
 
   .staff-portal-page fieldset {
