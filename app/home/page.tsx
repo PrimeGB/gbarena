@@ -973,7 +973,7 @@ export default function Home() {
                 <span className="social"><span className="social-icon discord-icon">☯</span>Discord</span>
                 <span className="arrow">›</span>
               </a>
-              <a className="side-link" href="/social/tiktok">
+              <a className="side-link" href="https://www.tiktok.com/@gamebattlescommunity?lang=en" target="_blank" rel="noopener noreferrer">
                 <span className="social"><span className="social-icon tiktok-icon">♪</span>TikTok</span>
                 <span className="arrow">›</span>
               </a>
