@@ -49,6 +49,15 @@ type Award = {
   description: string;
 };
 
+type AwardHistoryEntry = {
+  id: number;
+  name: string;
+  award_group: string;
+  reason: string;
+  granted_at: string;
+  granted_by: string | null;
+};
+
 type TopTeam = {
   id: string;
   name: string;
@@ -75,6 +84,7 @@ function ProfilePageContent() {
   const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
   const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
   const [topFriends, setTopFriends] = useState<TopFriend[]>([]);
+  const [earnedAwards, setEarnedAwards] = useState<AwardHistoryEntry[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -172,6 +182,7 @@ function ProfilePageContent() {
       setGamingAccounts([]);
       setTopTeams([]);
       setTopFriends([]);
+      setEarnedAwards([]);
       setGbRankDisplay("Unranked");
       return;
     }
@@ -184,6 +195,21 @@ function ProfilePageContent() {
       .then(async ({ data }) => {
         const loadedProfile = data || null;
         setProfile(loadedProfile);
+
+        if (loadedProfile?.username) {
+          const { data: awardRows, error: awardsError } = await supabase.rpc(
+            "staff_player_award_history",
+            { target_username: loadedProfile.username }
+          );
+          if (awardsError) {
+            console.error("Player award history could not be loaded:", awardsError);
+            setEarnedAwards([]);
+          } else {
+            setEarnedAwards((awardRows || []) as AwardHistoryEntry[]);
+          }
+        } else {
+          setEarnedAwards([]);
+        }
 
         const { data: accountRows, error: accountsError } = await supabase
           .from("gaming_accounts")
@@ -398,13 +424,20 @@ function ProfilePageContent() {
   const eaGT =
     gamingAccounts.find((account) => account.platform === "ea")?.account_id || "";
   const displayAwards = Array.isArray(profile?.display_awards) ? profile?.display_awards || [] : [];
-  const topAwards: Award[] = Array.from({ length: 6 }).map((_, index) => ({
-    id: index + 1,
-    name: displayAwards[index] || "Award Slot",
-    type: "shield",
-    label: "?",
-    description: displayAwards[index] ? "Displayed award." : "Waiting to earn.",
-  }));
+  const topAwards: Award[] = Array.from({ length: 6 }).map((_, index) => {
+    const earnedAward = earnedAwards[index];
+    return {
+      id: earnedAward?.id || index + 1,
+      name: earnedAward?.name || displayAwards[index] || "Award Slot",
+      type: "shield",
+      label: earnedAward ? "★" : "?",
+      description: earnedAward
+        ? `${earnedAward.award_group} · ${earnedAward.reason}`
+        : displayAwards[index]
+          ? "Displayed award."
+          : "Waiting to earn.",
+    };
+  });
   const statusText = isViewingOwnProfile ? "Online" : "Offline";
   const statusClass = isViewingOwnProfile ? "status-online" : "status-offline";
   const rankNumber = Number(gbRankDisplay);

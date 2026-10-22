@@ -1,350 +1,495 @@
 "use client";
 
-type Award = {
+import Link from "next/link";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useUser } from "@/lib/useUser";
+import { supabase } from "@/lib/supabase";
+
+type CatalogAward = {
   id: number;
   name: string;
-  group: string;
+  award_group: string;
   purpose: string;
-  col: number;
-  row: number;
+  exclusive: boolean;
+  active_award_count: number;
 };
 
-const awards: Award[] = [
-  { id: 1, name: "Founder Trophy", group: "Founder", purpose: "Given to original founding members who joined before public launch.", col: 0, row: 0 },
-  { id: 2, name: "Founder Badge", group: "Founder", purpose: "Permanent badge for original early supporters.", col: 1, row: 0 },
-  { id: 3, name: "Alpha Tester Medal", group: "Tester", purpose: "Given to users who tested the earliest private build.", col: 2, row: 0 },
-  { id: 4, name: "Beta Tester Medal", group: "Tester", purpose: "Given to users who helped test before public launch.", col: 3, row: 0 },
-  { id: 5, name: "Community Contributor Plaque", group: "Community", purpose: "Given to users who helped grow the community.", col: 4, row: 0 },
-  { id: 6, name: "Staff Pick Star", group: "Community", purpose: "Given to users selected by staff for standout activity.", col: 5, row: 0 },
+type ActiveAward = {
+  id: number;
+  award_name: string;
+  recipient_type: "player" | "team";
+  target_name: string;
+  reason: string;
+  granted_at: string;
+  granted_by: string;
+  exclusive: boolean;
+};
 
-  { id: 7, name: "Tournament Winner Trophy", group: "Tournament", purpose: "Given to winners of official tournaments.", col: 0, row: 1 },
-  { id: 8, name: "Tournament Runner-Up Trophy", group: "Tournament", purpose: "Given to second-place tournament teams or players.", col: 1, row: 1 },
-  { id: 9, name: "Tournament Finalist Trophy", group: "Tournament", purpose: "Given to finalists in official tournaments.", col: 2, row: 1 },
-  { id: 10, name: "Grand Champion Crown", group: "Champion", purpose: "Given to top-level championship winners.", col: 3, row: 1 },
-  { id: 11, name: "World Champion Trophy", group: "Champion", purpose: "Given to the highest world-level champion.", col: 4, row: 1 },
-  { id: 12, name: "Major Champion Shield", group: "Champion", purpose: "Given to winners of major competitive events.", col: 5, row: 1 },
+type AwardTarget = {
+  id: string;
+  target_type: "player" | "team";
+  label: string;
+};
 
-  { id: 13, name: "Top 100 Team Ribbon", group: "Ranking", purpose: "Given to teams reaching Top 100.", col: 0, row: 2 },
-  { id: 14, name: "Top 50 Team Ribbon", group: "Ranking", purpose: "Given to teams reaching Top 50.", col: 1, row: 2 },
-  { id: 15, name: "Top 25 Team Ribbon", group: "Ranking", purpose: "Given to teams reaching Top 25.", col: 2, row: 2 },
-  { id: 16, name: "Top 10 Team Ribbon", group: "Ranking", purpose: "Given to teams reaching Top 10.", col: 3, row: 2 },
-  { id: 17, name: "Top 5 Team Ribbon", group: "Ranking", purpose: "Given to teams reaching Top 5.", col: 4, row: 2 },
-  { id: 18, name: "#1 Ranked Team Shield", group: "Ranking", purpose: "Given to the team holding the number one rank.", col: 5, row: 2 },
-
-  { id: 19, name: "Ladder Champion Shield", group: "Ladder", purpose: "Given to ladder champions.", col: 0, row: 3 },
-  { id: 20, name: "Season Champion Shield", group: "Season", purpose: "Given to season winners.", col: 1, row: 3 },
-  { id: 21, name: "Undefeated Season Shield", group: "Season", purpose: "Given to teams or players with an undefeated season.", col: 2, row: 3 },
-  { id: 22, name: "Rival Slayer Shield", group: "Rivalry", purpose: "Given for defeating a major rival.", col: 3, row: 3 },
-  { id: 23, name: "First Win Badge", group: "Wins", purpose: "Given after a first official win.", col: 4, row: 3 },
-  { id: 24, name: "100 Wins Badge", group: "Wins", purpose: "Given after 100 wins.", col: 5, row: 3 },
-
-  { id: 25, name: "500 Wins Badge", group: "Wins", purpose: "Given after 500 wins.", col: 0, row: 4 },
-  { id: 26, name: "1000 Wins Badge", group: "Wins", purpose: "Given after 1000 wins.", col: 1, row: 4 },
-  { id: 27, name: "1 Year Service Medal", group: "Service", purpose: "Given after one year as a member.", col: 2, row: 4 },
-  { id: 28, name: "3 Year Service Medal", group: "Service", purpose: "Given after three years as a member.", col: 3, row: 4 },
-  { id: 29, name: "5 Year Service Medal", group: "Service", purpose: "Given after five years as a member.", col: 4, row: 4 },
-  { id: 30, name: "Community Legend Crown", group: "Legacy", purpose: "Given to legendary community members.", col: 5, row: 4 },
-
-  { id: 31, name: "Hall of Fame Plaque", group: "Legacy", purpose: "Given to Hall of Fame members.", col: 4, row: 4 },
-  { id: 32, name: "GameBattles Immortal Crystal", group: "Legacy", purpose: "Given as the highest lifetime achievement award.", col: 5, row: 4 },
-
-  { id: 33, name: "Launch Supporter Medal", group: "Launch", purpose: "Given to users who supported the launch period.", col: 0, row: 0 },
-  { id: 34, name: "Discord Founder Badge", group: "Launch", purpose: "Given to early Discord members.", col: 1, row: 0 },
-  { id: 35, name: "Username Reserved Badge", group: "Launch", purpose: "Given to users who reserved names early.", col: 2, row: 0 },
-  { id: 36, name: "Early Access Shield", group: "Launch", purpose: "Given to users who tested the private build.", col: 3, row: 0 },
-  { id: 37, name: "Bug Hunter Medal", group: "Tester", purpose: "Given to users who reported useful bugs.", col: 4, row: 0 },
-  { id: 38, name: "Feedback Veteran Medal", group: "Tester", purpose: "Given to users who gave strong site feedback.", col: 5, row: 0 },
-
-  { id: 39, name: "Profile Pioneer Badge", group: "User", purpose: "Given to users who completed profiles early.", col: 0, row: 1 },
-  { id: 40, name: "Team Builder Shield", group: "Team", purpose: "Given to users who created active teams.", col: 1, row: 1 },
-  { id: 41, name: "Roster Leader Medal", group: "Team", purpose: "Given to leaders who built full rosters.", col: 2, row: 1 },
-  { id: 42, name: "Captain's Honor Shield", group: "Team", purpose: "Given to trusted captains.", col: 3, row: 1 },
-  { id: 43, name: "Recruiter Badge", group: "Team", purpose: "Given to users who invited active members.", col: 4, row: 1 },
-  { id: 44, name: "Verified Team Badge", group: "Team", purpose: "Given to verified teams.", col: 5, row: 1 },
-
-  { id: 45, name: "Match Finder Medal", group: "Matches", purpose: "Given to active match finder users.", col: 0, row: 2 },
-  { id: 46, name: "Clutch Victory Medal", group: "Matches", purpose: "Given for a major comeback win.", col: 1, row: 2 },
-  { id: 47, name: "Clean Sweep Trophy", group: "Matches", purpose: "Given for sweeping a match series.", col: 2, row: 2 },
-  { id: 48, name: "Perfect Record Shield", group: "Matches", purpose: "Given for a perfect record milestone.", col: 3, row: 2 },
-  { id: 49, name: "Playoff Champion Trophy", group: "Playoffs", purpose: "Given to playoff bracket winners.", col: 4, row: 2 },
-  { id: 50, name: "Playoff Finalist Medal", group: "Playoffs", purpose: "Given to playoff finalists.", col: 5, row: 2 },
-
-  { id: 51, name: "Division Champion Shield", group: "Division", purpose: "Given to division winners.", col: 0, row: 3 },
-  { id: 52, name: "Elite Division Shield", group: "Division", purpose: "Given to elite division players or teams.", col: 1, row: 3 },
-  { id: 53, name: "Pro Division Medal", group: "Division", purpose: "Given to pro division players or teams.", col: 2, row: 3 },
-  { id: 54, name: "Rookie Breakout Badge", group: "User", purpose: "Given to standout new players.", col: 3, row: 3 },
-  { id: 55, name: "Forum Veteran Badge", group: "Community", purpose: "Given to active forum members.", col: 4, row: 3 },
-  { id: 56, name: "Helpful Member Medal", group: "Community", purpose: "Given to users who help others.", col: 5, row: 3 },
-
-  { id: 57, name: "Sportsmanship Ribbon", group: "Community", purpose: "Given for respectful competition.", col: 0, row: 4 },
-  { id: 58, name: "Content Creator Plaque", group: "Creator", purpose: "Given to creators who promote the site.", col: 1, row: 4 },
-  { id: 59, name: "Featured Player Plaque", group: "Featured", purpose: "Given to players featured by staff.", col: 2, row: 4 },
-  { id: 60, name: "Legendary Team Crystal", group: "Legacy", purpose: "Given to legendary teams.", col: 5, row: 4 },
-];
-
-function AwardImage({ award }: { award: Award }) {
-  return (
-    <div
-      className="award-image"
-      style={{
-        backgroundImage: "url('/awards/award-board.png')",
-        backgroundPosition: `${award.col * 20}% ${award.row * 25}%`,
-      }}
-    />
-  );
-}
+type AwardRequest = {
+  id: number;
+  award_name: string;
+  exclusive: boolean;
+  requested_by: string;
+  recipient_username: string;
+  reason: string;
+  evidence: string;
+  status: string;
+  created_at: string;
+};
 
 export default function StaffAwardsPage() {
+  const { user, loading: authLoading } = useUser();
+  const [catalog, setCatalog] = useState<CatalogAward[]>([]);
+  const [activeAwards, setActiveAwards] = useState<ActiveAward[]>([]);
+  const [requests, setRequests] = useState<AwardRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [search, setSearch] = useState("");
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipientOptions, setRecipientOptions] = useState<AwardTarget[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<AwardTarget | null>(null);
+  const [awardName, setAwardName] = useState("");
+  const [reason, setReason] = useState("");
+  const [evidence, setEvidence] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+
+  const loadAwards = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError("");
+    const { data: permission, error: permissionError } = await supabase.rpc(
+      "has_staff_permission",
+      { permission_key: "awards" }
+    );
+    if (permissionError || permission !== true) {
+      setIsStaff(false);
+      setCatalog([]);
+      setActiveAwards([]);
+      setRequests([]);
+      setError(permissionError?.message || "This account cannot access award administration.");
+      setLoading(false);
+      return;
+    }
+
+    const [
+      { data: catalogData, error: catalogError },
+      { data: activeData, error: activeError },
+      { data: requestData, error: requestError },
+    ] = await Promise.all([
+      supabase.rpc("staff_list_awards"),
+      supabase.rpc("staff_list_active_awards"),
+      supabase.rpc("staff_list_award_requests"),
+    ]);
+    const loadError = catalogError || activeError || requestError;
+    if (loadError) {
+      setIsStaff(false);
+      setCatalog([]);
+      setActiveAwards([]);
+      setRequests([]);
+      setError(`Award administration could not be loaded: ${loadError.message}`);
+      setLoading(false);
+      return;
+    }
+    setIsStaff(true);
+    setCatalog((catalogData || []) as CatalogAward[]);
+    setActiveAwards((activeData || []) as ActiveAward[]);
+    setRequests((requestData || []) as AwardRequest[]);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      void Promise.resolve().then(loadAwards);
+    } else if (!authLoading) {
+      void Promise.resolve().then(() => setLoading(false));
+    }
+  }, [authLoading, loadAwards, user]);
+
+  async function grantAward(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedRecipient) {
+      setError("Search for and select a player or team.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    setNotice("");
+    const { error: grantError } = selectedRecipient.target_type === "player"
+      ? await supabase.rpc("staff_award_user", {
+          target_username: selectedRecipient.label,
+          award_name: awardName,
+          award_reason: reason.trim(),
+          award_evidence: evidence.trim(),
+        })
+      : await supabase.rpc("staff_award_team", {
+          target_team_id: selectedRecipient.id,
+          award_name: awardName,
+          award_reason: reason.trim(),
+          award_evidence: evidence.trim(),
+        });
+    setSaving(false);
+    if (grantError) {
+      setError(`Award could not be granted: ${grantError.message}`);
+      return;
+    }
+    setNotice(`${awardName} granted to ${selectedRecipient.label}.`);
+    setRecipientSearch("");
+    setRecipientOptions([]);
+    setSelectedRecipient(null);
+    setReason("");
+    setEvidence("");
+    await loadAwards();
+  }
+
+  async function searchRecipients(value: string) {
+    setRecipientSearch(value);
+    setSelectedRecipient(null);
+    if (value.trim().length < 2) {
+      setRecipientOptions([]);
+      return;
+    }
+    const { data, error: searchError } = await supabase.rpc(
+      "staff_search_award_targets",
+      { query_text: value.trim() }
+    );
+    if (searchError) {
+      setError(`Recipients could not be searched: ${searchError.message}`);
+      setRecipientOptions([]);
+      return;
+    }
+    setRecipientOptions((data || []) as AwardTarget[]);
+  }
+
+  async function revokeAward(award: ActiveAward) {
+    const revokeReason = window.prompt(
+      `Why are you revoking ${award.award_name} from ${award.target_name}?`
+    );
+    if (!revokeReason || revokeReason.trim().length < 10) {
+      setError("Enter a revocation reason of at least 10 characters.");
+      return;
+    }
+    const { error: revokeError } = await supabase.rpc("staff_revoke_award", {
+      award_record_id: award.id,
+      revoke_reason: revokeReason.trim(),
+    });
+    if (revokeError) {
+      setError(`Award could not be revoked: ${revokeError.message}`);
+      return;
+    }
+    setNotice(`${award.award_name} revoked and recorded in the audit log.`);
+    await loadAwards();
+  }
+
+  async function reviewRequest(request: AwardRequest, approve: boolean) {
+    const decisionReason = window.prompt(
+      `${approve ? "Why are you approving" : "Why are you rejecting"} request ${request.id}?`
+    );
+    if (!decisionReason || decisionReason.trim().length < 10) {
+      setError("Enter a review reason of at least 10 characters.");
+      return;
+    }
+    const { error: reviewError } = await supabase.rpc("staff_review_award_request", {
+      award_request_id: request.id,
+      approve_request: approve,
+      decision_reason: decisionReason.trim(),
+    });
+    if (reviewError) {
+      setError(`Award request could not be reviewed: ${reviewError.message}`);
+      return;
+    }
+    setNotice(`Award request ${request.id} ${approve ? "approved" : "rejected"}.`);
+    await loadAwards();
+  }
+
+  const filteredCatalog = catalog.filter((award) =>
+    `${award.name} ${award.award_group} ${award.purpose}`
+      .toLowerCase()
+      .includes(search.trim().toLowerCase())
+  );
+
   return (
-    <>
-      <style>{`
-        *{ margin:0; padding:0; box-sizing:border-box; }
+    <main style={styles.page}>
+      <section style={styles.shell}>
+        <nav style={styles.nav}>
+          <Link href="/staff/dashboard">Staff Dashboard</Link>
+          <Link href="/home">GameBattles Home</Link>
+        </nav>
+        <header style={styles.header}>
+          <p style={styles.eyebrow}>AUTHORIZED STAFF WORK AREA</p>
+          <h1 style={styles.title}>Awards &amp; Trophy Management</h1>
+          <p style={styles.subheading}>
+            Every grant, revocation, and request decision requires a reason and is
+            recorded against the staff member who took the action.
+          </p>
+        </header>
+        {authLoading || loading ? (
+          <p style={styles.message}>Checking award access...</p>
+        ) : !user ? (
+          <p style={styles.message}>
+            Sign in with an authorized staff account to continue.{" "}
+            <Link href="/login?next=%2Fstaff%2Fawards">Staff login</Link>
+          </p>
+        ) : !isStaff ? (
+          <p role="alert" style={styles.error}>{error}</p>
+        ) : (
+          <div style={styles.content}>
+            {error && <p role="alert" style={styles.error}>{error}</p>}
+            {notice && <p role="status" style={styles.notice}>{notice}</p>}
 
-        body{
-          background:#000;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-          color:#d7e2ee;
-        }
+            <section style={styles.panel}>
+              <h2 style={styles.sectionTitle}>Grant an award</h2>
+              <form onSubmit={grantAward} style={styles.form}>
+                <label style={styles.label}>
+                  Search players and teams
+                  <input
+                    required
+                    value={selectedRecipient?.label || recipientSearch}
+                    onChange={(event) => void searchRecipients(event.target.value)}
+                    placeholder="Enter at least two characters"
+                    style={styles.input}
+                  />
+                  {recipientOptions.length > 0 && (
+                    <div style={styles.suggestions}>
+                      {recipientOptions.map((option) => (
+                        <button
+                          type="button"
+                          key={`${option.target_type}-${option.id}`}
+                          onClick={() => {
+                            setSelectedRecipient(option);
+                            setRecipientSearch(option.label);
+                            setRecipientOptions([]);
+                          }}
+                          style={styles.suggestion}
+                        >
+                          {option.label} · {option.target_type}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </label>
+                <label style={styles.label}>
+                  Award
+                  <select
+                    required
+                    value={awardName}
+                    onChange={(event) => setAwardName(event.target.value)}
+                    style={styles.input}
+                  >
+                    <option value="">Select an award</option>
+                    {catalog.map((award) => (
+                      <option key={award.id} value={award.name}>
+                        {award.name}{award.exclusive ? " — Founder only" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={styles.label}>
+                  Reason (10–1000 characters)
+                  <textarea
+                    required
+                    minLength={10}
+                    maxLength={1000}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    style={styles.input}
+                  />
+                </label>
+                <label style={styles.label}>
+                  Evidence (optional)
+                  <textarea
+                    maxLength={3000}
+                    value={evidence}
+                    onChange={(event) => setEvidence(event.target.value)}
+                    style={styles.input}
+                  />
+                </label>
+                <button type="submit" disabled={saving || !selectedRecipient} style={styles.button}>
+                  {saving ? "Saving..." : "Grant award"}
+                </button>
+              </form>
+            </section>
 
-        a{text-decoration:none;}
-
-        .page{
-          min-height:100vh;
-          background:
-            radial-gradient(circle at top,rgba(40,90,140,.35),transparent 42%),
-            linear-gradient(to bottom,#02060a,#000);
-          padding:28px;
-        }
-
-        .wrap{
-          max-width:1280px;
-          margin:0 auto;
-          background:#07111b;
-          border:1px solid #315f88;
-          box-shadow:0 0 35px rgba(0,80,140,.45), inset 0 0 24px rgba(0,0,0,.75);
-        }
-
-        .top{
-          height:34px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
-          display:flex;
-          justify-content:flex-end;
-          align-items:center;
-          gap:18px;
-          padding:0 14px;
-        }
-
-        .top a{
-          color:#fff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .header{
-          padding:22px;
-          background:linear-gradient(to bottom,#173956,#07111b);
-          border-bottom:2px solid #315f88;
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-        }
-
-        .title{
-          color:#f2c14e;
-          font-size:32px;
-          font-weight:900;
-          text-transform:uppercase;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .sub{
-          color:#cfe2f2;
-          font-size:13px;
-          margin-top:8px;
-          line-height:20px;
-        }
-
-        .staff-badge{
-          border:1px solid #d7ad4a;
-          background:linear-gradient(to bottom,#4c3509,#120b02);
-          color:#f2c14e;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          padding:12px 18px;
-          box-shadow:0 0 14px rgba(242,193,78,.22);
-        }
-
-        .notice{
-          margin:18px;
-          padding:14px;
-          border:1px solid #244b70;
-          background:#050c14;
-          color:#cfe2f2;
-          font-size:13px;
-          line-height:21px;
-        }
-
-        .section-title{
-          margin:0 18px 12px;
-          height:34px;
-          background:linear-gradient(to bottom,#18344f,#091521);
-          border:1px solid #244b70;
-          color:#f2c14e;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
-        }
-
-        .award-grid{
-          display:grid;
-          grid-template-columns:repeat(4,1fr);
-          gap:14px;
-          padding:0 18px 18px;
-        }
-
-        .award-card{
-          background:#050c14;
-          border:1px solid #315f88;
-          min-height:260px;
-          padding:10px;
-          box-shadow:inset 0 0 14px rgba(0,0,0,.75);
-          display:grid;
-          grid-template-columns:94px 1fr;
-          gap:10px;
-        }
-
-        .award-card:hover{
-          border-color:#d7ad4a;
-          box-shadow:0 0 12px rgba(215,173,74,.24), inset 0 0 14px rgba(0,0,0,.75);
-        }
-
-        .award-art{
-          width:94px;
-          height:128px;
-          border:1px solid #244b70;
-          background:#000;
-          overflow:hidden;
-          align-self:start;
-        }
-
-        .award-image{
-          width:100%;
-          height:100%;
-          background-repeat:no-repeat;
-          background-size:600% 500%;
-          filter:brightness(1.08) contrast(1.08);
-        }
-
-        .award-fields{
-          display:flex;
-          flex-direction:column;
-        }
-
-        .award-name{
-          width:100%;
-          background:#02070c;
-          border:1px solid #315b7d;
-          color:#fff;
-          padding:7px;
-          font-size:12px;
-          font-weight:bold;
-          margin-bottom:7px;
-        }
-
-        .award-group{
-          width:100%;
-          background:#02070c;
-          border:1px solid #315b7d;
-          color:#f2c14e;
-          padding:7px;
-          font-size:11px;
-          font-weight:bold;
-          margin-bottom:7px;
-        }
-
-        .award-purpose{
-          width:100%;
-          min-height:92px;
-          background:#02070c;
-          border:1px solid #315b7d;
-          color:#d7e2ee;
-          padding:7px;
-          font-size:11px;
-          line-height:15px;
-          resize:none;
-        }
-
-        .footer{
-          height:34px;
-          border-top:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#a9c3db;
-          font-size:11px;
-        }
-
-        @media(max-width:1100px){
-          .award-grid{ grid-template-columns:repeat(2,1fr); }
-        }
-
-        @media(max-width:750px){
-          .award-grid{ grid-template-columns:1fr; }
-          .header{ flex-direction:column; align-items:flex-start; gap:12px; }
-        }
-      `}</style>
-
-      <main className="page">
-        <div className="wrap">
-          <div className="top">
-            <a href="/home">Home</a>
-            <a href="/profile">Profile</a>
-            <a href="/staff/awards">Awards Center</a>
-          </div>
-
-          <header className="header">
-            <div>
-              <div className="title">Awards Center</div>
-              <div className="sub">
-                Award builder for founder rewards, user rewards, tester rewards, ladder rewards, team rewards, tournament rewards, and staff-issued honors.
-              </div>
-            </div>
-
-            <div className="staff-badge">Staff Access Only Later</div>
-          </header>
-
-          <div className="notice">
-            This page is for compiling the full GameBattles award library. Awards use the approved realistic competitive-gaming style:
-            metallic trophies, medals, shields, ribbons, plaques, crowns, and crystal awards.
-          </div>
-
-          <div className="section-title">Award Library — 60 Awards</div>
-
-          <section className="award-grid">
-            {awards.map((award) => (
-              <div className="award-card" key={award.id}>
-                <div className="award-art">
-                  <AwardImage award={award} />
+            <section style={styles.panel}>
+              <h2 style={styles.sectionTitle}>Pending award requests</h2>
+              {requests.length === 0 ? (
+                <p style={styles.empty}>No pending requests.</p>
+              ) : (
+                <div style={styles.list}>
+                  {requests.filter((request) => request.status === "pending").map((request) => (
+                    <article key={request.id} style={styles.card}>
+                      <strong>{request.award_name} · {request.recipient_username}</strong>
+                      <p>{request.reason}</p>
+                      {request.evidence && <p>Evidence: {request.evidence}</p>}
+                      <small>Requested by {request.requested_by}</small>
+                      <div style={styles.actions}>
+                        <button onClick={() => void reviewRequest(request, true)} style={styles.button}>
+                          Approve
+                        </button>
+                        <button onClick={() => void reviewRequest(request, false)} style={styles.secondaryButton}>
+                          Reject
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
+              )}
+            </section>
 
-                <div className="award-fields">
-                  <input className="award-name" defaultValue={award.name} />
-                  <input className="award-group" defaultValue={award.group} />
-                  <textarea className="award-purpose" defaultValue={award.purpose} />
+            <section style={styles.panel}>
+              <h2 style={styles.sectionTitle}>Active player awards</h2>
+              {activeAwards.length === 0 ? (
+                <p style={styles.empty}>No staff-issued active awards yet.</p>
+              ) : (
+                <div style={styles.list}>
+                  {activeAwards.map((award) => (
+                    <article key={award.id} style={styles.card}>
+                      <div style={styles.cardHeader}>
+                        <strong>{award.award_name} · {award.target_name} ({award.recipient_type})</strong>
+                        <button
+                          onClick={() => void revokeAward(award)}
+                          style={styles.secondaryButton}
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                      <p>{award.reason}</p>
+                      <small>
+                        Granted by {award.granted_by} · {new Date(award.granted_at).toLocaleString()}
+                      </small>
+                    </article>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </section>
+              )}
+            </section>
 
-          <footer className="footer">© 2026 Competitive Gaming Network</footer>
-        </div>
-      </main>
-    </>
+            <section style={styles.panel}>
+              <h2 style={styles.sectionTitle}>Award catalog ({catalog.length})</h2>
+              <input
+                aria-label="Search awards"
+                placeholder="Search awards, groups, or descriptions"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                style={styles.input}
+              />
+              <div style={styles.catalog}>
+                {filteredCatalog.map((award) => (
+                  <article key={award.id} style={styles.card}>
+                    <strong>{award.name}</strong>
+                    <p style={styles.group}>{award.award_group}{award.exclusive ? " · Founder only" : ""}</p>
+                    <p>{award.purpose}</p>
+                    <small>{award.active_award_count} active grants</small>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    padding: "24px 14px",
+    background: "radial-gradient(circle at top, #123654, #02060a 55%)",
+    color: "#d7e2ee",
+    fontFamily: "Tahoma, Verdana, Arial, sans-serif",
+  },
+  shell: {
+    maxWidth: 1120,
+    margin: "0 auto",
+    border: "1px solid #315f88",
+    background: "#07111b",
+    boxShadow: "0 0 28px rgba(0,80,140,.3)",
+  },
+  nav: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "12px 16px",
+    background: "#050b12",
+    borderBottom: "1px solid #244b70",
+    fontSize: 12,
+  },
+  header: {
+    padding: "22px 18px",
+    background: "linear-gradient(to bottom, #173956, #07111b)",
+    borderBottom: "2px solid #315f88",
+  },
+  eyebrow: { margin: 0, color: "#f2c14e", fontSize: 11, fontWeight: 900 },
+  title: { margin: "8px 0", color: "#fff", fontSize: 28 },
+  subheading: { margin: 0, color: "#cfe2f2", fontSize: 13, lineHeight: 1.6 },
+  content: { display: "grid", gap: 16, padding: 18 },
+  panel: { padding: 14, border: "1px solid #244b70", background: "#050b12" },
+  sectionTitle: {
+    margin: "0 0 12px",
+    color: "#f2c14e",
+    fontSize: 15,
+    textTransform: "uppercase",
+  },
+  form: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 },
+  label: { display: "grid", gap: 6, color: "#d7e2ee", fontSize: 12, fontWeight: 700 },
+  input: {
+    width: "100%",
+    minHeight: 40,
+    padding: 9,
+    border: "1px solid #315b7d",
+    background: "#02070c",
+    color: "#fff",
+    font: "inherit",
+    borderRadius: 2,
+  },
+  button: {
+    minHeight: 40,
+    padding: "9px 14px",
+    border: "1px solid #e8c46a",
+    background: "linear-gradient(to bottom, #d6a943, #7b560e)",
+    color: "#07111b",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  secondaryButton: {
+    minHeight: 36,
+    padding: "8px 12px",
+    border: "1px solid #4b95d8",
+    background: "linear-gradient(to bottom, #1c4b72, #0a1724)",
+    color: "#fff",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  list: { display: "grid", gap: 10 },
+  suggestions: { display: "grid", maxHeight: 220, overflowY: "auto", border: "1px solid #315b7d" },
+  suggestion: {
+    padding: 9,
+    border: 0,
+    borderBottom: "1px solid #244b70",
+    background: "#07111b",
+    color: "#fff",
+    textAlign: "left",
+    cursor: "pointer",
+  },
+  card: { padding: 12, border: "1px solid #244b70", background: "#07111b", lineHeight: 1.55 },
+  cardHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  actions: { display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" },
+  catalog: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+    gap: 10,
+    marginTop: 12,
+  },
+  group: { color: "#f2c14e", fontWeight: 800 },
+  empty: { color: "#a9c3db", fontSize: 13 },
+  message: { padding: 20, lineHeight: 1.7 },
+  notice: { margin: 0, padding: 12, border: "1px solid #2c7a59", color: "#c8f2d8" },
+  error: { margin: 0, padding: 12, border: "1px solid #a83e3e", color: "#ffd5d5" },
+};

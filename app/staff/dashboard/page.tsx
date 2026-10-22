@@ -20,26 +20,90 @@ const workAreas = [
     href: "/staff/matches",
   },
   {
-    key: "forum_moderation",
-    title: "Forum moderation",
-    description: "Handle community forum moderation duties assigned to you.",
-    href: null,
+    key: "staff_reports",
+    title: "Player reports and enforcement",
+    description: "Review new cases, manage evidence, and record decisions.",
+    href: "#reports-inbox",
   },
   {
     key: "awards",
     title: "Awards management",
     description: "Work with community and competition awards.",
-    href: null,
+    href: "/staff/awards",
   },
   {
     key: "staff_directory",
-    title: "Trusted staff roster and duties",
-    description: "Update staff positions and duty descriptions without changing access.",
+    title: "Staff roles and oversight",
+    description: "Review staff positions, duties, and rank assignments.",
     href: null,
   },
 ] as const;
 
-type PermissionKey = (typeof workAreas)[number]["key"];
+type PermissionKey =
+  | (typeof workAreas)[number]["key"]
+  | "basic_moderation"
+  | "escalated_reports"
+  | "moderation_review"
+  | "staff_access"
+  | "audit_log"
+  | "team_enforcement";
+
+type StaffRank = "member" | "staff" | "senior_staff" | "admin";
+
+const rankNames: Record<string, string> = {
+  owner: "Founder — Prime",
+  admin: "Administrator",
+  senior_staff: "Senior Staff",
+  staff: "Moderator",
+  referee: "Referee",
+  member: "User",
+};
+
+const rankPermissions: Record<string, PermissionKey[]> = {
+  owner: workAreas.map((area) => area.key),
+  admin: ["match_review", "staff_reports", "awards", "staff_directory", "team_enforcement", "audit_log"],
+  senior_staff: ["staff_reports", "basic_moderation", "escalated_reports", "moderation_review"],
+  staff: ["staff_reports", "basic_moderation"],
+};
+
+type DashboardOverview = {
+  role: string;
+  open_disputes: number;
+  new_reports: number;
+  priority_cases: number;
+  pending_awards: number;
+  my_cases: number;
+  recent_actions: {
+    action: string;
+    target_type: string;
+    target_id: string | null;
+    case_id: number | null;
+    reason: string;
+    previous_values: Record<string, unknown> | null;
+    new_values: Record<string, unknown> | null;
+    created_at: string;
+    actor_username: string;
+  }[];
+};
+
+type StaffCase = {
+  id: number;
+  case_number: string;
+  report_type: string;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  reported_by: string | null;
+  reporter_username: string | null;
+  assigned_to: string | null;
+  assignee_username: string | null;
+  target_username: string | null;
+  target_team_name: string | null;
+  evidence: string;
+  decision: string;
+  created_at: string;
+};
 
 type StaffDirectoryEntry = {
   user_id: string;
@@ -62,6 +126,8 @@ export default function StaffDashboardPage() {
   const [role, setRole] = useState("");
   const [permissions, setPermissions] = useState<PermissionKey[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [cases, setCases] = useState<StaffCase[]>([]);
   const [emailAllowed, setEmailAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedUserIdentity, setLoadedUserIdentity] = useState("");
@@ -71,7 +137,8 @@ export default function StaffDashboardPage() {
   const [username, setUsername] = useState("");
   const [position, setPosition] = useState("");
   const [duties, setDuties] = useState("");
-  const [selectedPermissions, setSelectedPermissions] = useState<PermissionKey[]>([]);
+  const [staffRank, setStaffRank] = useState<StaffRank>("staff");
+  const [rankReason, setRankReason] = useState("");
 
   const isOwner = role === "owner";
   const canEditDirectory = isOwner || permissions.includes("staff_directory");
@@ -133,28 +200,37 @@ export default function StaffDashboardPage() {
 
     const profileRow = profile as ProfileRow | null;
     const permissionRows = (grants || []) as PermissionRow[];
-    const userPermissions = permissionRows.map((grant) => grant.permission_key);
+    const userPermissions = rankPermissions[profileRow?.role || ""] ||
+      permissionRows.map((grant) => grant.permission_key);
     setRole(profileRow?.role || "");
     setPermissions(userPermissions);
 
-    if (profileRow?.role !== "owner" && userPermissions.length === 0) {
+    const [
+      { data: directory, error: directoryError },
+      { data: overviewData, error: overviewError },
+      { data: caseData, error: caseError },
+    ] = await Promise.all([
+      supabase.rpc("get_staff_directory"),
+      supabase.rpc("staff_dashboard_overview"),
+      supabase.rpc("staff_list_cases"),
+    ]);
+    if (directoryError || overviewError || caseError) {
       setStaff([]);
-      setLoadedUserIdentity(userIdentity);
-      setLoading(false);
-      return;
-    }
-
-    const { data: directory, error: directoryError } =
-      await supabase.rpc("get_staff_directory");
-    if (directoryError) {
-      setStaff([]);
-      setError(`Staff roster could not be loaded: ${directoryError.message}`);
+      setOverview(null);
+      setCases([]);
+      setError(
+        `Staff dashboard could not be loaded: ${
+          directoryError?.message || overviewError?.message || caseError?.message
+        }`
+      );
       setLoadedUserIdentity(userIdentity);
       setLoading(false);
       return;
     }
 
     setStaff((directory || []) as StaffDirectoryEntry[]);
+    setOverview(overviewData as DashboardOverview);
+    setCases((caseData || []) as StaffCase[]);
     setLoadedUserIdentity(userIdentity);
     setLoading(false);
   }, []);
@@ -173,21 +249,26 @@ export default function StaffDashboardPage() {
     setError("");
     setNotice("");
 
-    if (!username.trim() || !position.trim() || !duties.trim()) {
-      setError("Enter a username, position, and duty description.");
+    if (!username.trim()) {
+      setError("Enter an existing account username.");
       return;
     }
-    if (selectedPermissions.length === 0) {
-      setError("Select at least one work area.");
+    if (staffRank !== "member" && (!position.trim() || !duties.trim())) {
+      setError("Enter a staff position and duty description.");
+      return;
+    }
+    if (rankReason.trim().length < 10) {
+      setError("Enter a reason of at least 10 characters for the rank assignment.");
       return;
     }
 
     setSaving(true);
-    const { error: assignError } = await supabase.rpc("staff_assign_member", {
+    const { error: assignError } = await supabase.rpc("staff_set_rank", {
       target_username: username.trim(),
-      staff_position: position.trim(),
-      staff_duties: duties.trim(),
-      permissions: selectedPermissions,
+      target_role: staffRank,
+      staff_position: staffRank === "member" ? "" : position.trim(),
+      staff_duties: staffRank === "member" ? "" : duties.trim(),
+      decision_reason: rankReason.trim(),
     });
     setSaving(false);
 
@@ -199,19 +280,30 @@ export default function StaffDashboardPage() {
     setUsername("");
     setPosition("");
     setDuties("");
-    setSelectedPermissions([]);
-    setNotice("Staff position and work-area access saved.");
+    setRankReason("");
+    setStaffRank("staff");
+    setNotice("Staff rank and audit entry saved.");
     if (user) await loadDashboard(user.id, user.email || "");
   }
 
   async function removeStaffMember(memberUsername: string) {
-    if (!window.confirm(`Remove staff access for ${memberUsername}?`)) return;
+    const reason = window.prompt(
+      `Why are you removing staff access for ${memberUsername}?`
+    );
+    if (!reason || reason.trim().length < 10) {
+      setError("Enter a removal reason of at least 10 characters.");
+      return;
+    }
 
     setError("");
     setNotice("");
 
-    const { error: removeError } = await supabase.rpc("staff_remove_member", {
+    const { error: removeError } = await supabase.rpc("staff_set_rank", {
       target_username: memberUsername,
+      target_role: "member",
+      staff_position: "",
+      staff_duties: "",
+      decision_reason: reason.trim(),
     });
 
     if (removeError) {
@@ -234,10 +326,12 @@ export default function StaffDashboardPage() {
     const formData = new FormData(event.currentTarget);
     const memberPosition = String(formData.get("position") || "").trim();
     const memberDuties = String(formData.get("duties") || "").trim();
+    const decisionReason = String(formData.get("reason") || "").trim();
     const { error: updateError } = await supabase.rpc("staff_update_directory", {
       target_username: memberUsername,
       staff_position: memberPosition,
       staff_duties: memberDuties,
+      decision_reason: decisionReason,
     });
 
     if (updateError) {
@@ -249,12 +343,26 @@ export default function StaffDashboardPage() {
     if (user) await loadDashboard(user.id, user.email || "");
   }
 
-  function togglePermission(permission: PermissionKey) {
-    setSelectedPermissions((current) =>
-      current.includes(permission)
-        ? current.filter((item) => item !== permission)
-        : [...current, permission]
-    );
+  async function updateCaseStatus(event: FormEvent<HTMLFormElement>, staffCase: StaffCase) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const status = String(data.get("status") || staffCase.status);
+    const priority = String(data.get("priority") || staffCase.priority);
+    const assignedUsername = String(data.get("assignee") || "");
+    const decision = String(data.get("decision") || "");
+    const { error: caseUpdateError } = await supabase.rpc("staff_update_case", {
+      target_case_id: staffCase.id,
+      new_status: status,
+      new_priority: priority,
+      assigned_username: assignedUsername || null,
+      decision_note: decision,
+    });
+    if (caseUpdateError) {
+      setError(`Case ${staffCase.case_number} could not be updated: ${caseUpdateError.message}`);
+      return;
+    }
+    setNotice(`Case ${staffCase.case_number} updated and recorded in the audit log.`);
+    if (user) await loadDashboard(user.id, user.email || "");
   }
 
   return (
@@ -262,14 +370,34 @@ export default function StaffDashboardPage() {
       <section className="staff-mobile-shell" style={styles.shell}>
         <header className="staff-mobile-header" style={styles.header}>
           <p style={styles.eyebrow}>GAMEBATTLES STAFF</p>
-          <h1 style={styles.title}>Staff Portal</h1>
+          <div style={styles.titleRow}>
+            <div>
+              <h1 style={styles.title}>Administration Command Center</h1>
+              <p style={styles.subheading}>
+                Competitive operations · disputes · player safety · awards
+              </p>
+            </div>
+            {role && (
+              <span style={styles.rankBadge}>
+                {rankNames[role] || "Staff"}
+              </span>
+            )}
+          </div>
           <p style={styles.subheading}>
-            Work access is granted by area. Staff permissions do not include account
-            or site-wide administration.
+            Authorized staff workspace. Tools and actions are limited by rank and
+            recorded for accountability.
           </p>
         </header>
         <nav className="staff-mobile-nav" style={styles.nav}>
           <Link href="/home">Back to GameBattles</Link>
+          {user && hasPortalAccess && (
+            <>
+              {permissions.includes("staff_reports") && <a href="#reports-inbox">Reports</a>}
+              {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
+              {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
+              {(isOwner || permissions.includes("staff_directory")) && <a href="#staff-directory">Staff roster</a>}
+            </>
+          )}
         </nav>
 
         {authLoading ||
@@ -295,6 +423,139 @@ export default function StaffDashboardPage() {
           <>
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
+
+            <section className="staff-mobile-section" style={styles.section}>
+              <h2 style={styles.sectionTitle}>Dashboard / Overview</h2>
+              <p style={styles.cardText}>
+                Rank: <strong>{rankNames[role] || "Staff"}</strong>
+              </p>
+              <div className="staff-mobile-grid" style={styles.cards}>
+                {[
+                  ["Open disputes", overview?.open_disputes],
+                  ["New reports", overview?.new_reports],
+                  ["Priority cases", overview?.priority_cases],
+                  ["Pending awards", overview?.pending_awards],
+                  ["Assigned to me", overview?.my_cases],
+                ].map(([label, value]) => (
+                  <article key={String(label)} style={styles.card}>
+                    <p style={styles.metricLabel}>{label}</p>
+                    <strong style={styles.metricValue}>{value ?? "—"}</strong>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            {permissions.includes("staff_reports") && (
+              <section id="reports-inbox" className="staff-mobile-section" style={styles.section}>
+                <h2 style={styles.sectionTitle}>Reports and enforcement inbox</h2>
+                {cases.length === 0 ? (
+                  <p style={styles.help}>No player reports or enforcement cases are open.</p>
+                ) : (
+                  <div className="staff-mobile-list" style={styles.staffList}>
+                    {cases.map((staffCase) => (
+                      <article key={staffCase.id} className="staff-mobile-card" style={styles.staffCard}>
+                        <div className="staff-mobile-card-header" style={styles.staffCardHeader}>
+                          <strong style={styles.cardTitle}>
+                            {staffCase.case_number} · {staffCase.title}
+                          </strong>
+                          <span style={styles.statusBadge}>
+                            {staffCase.priority.toUpperCase()} · {staffCase.status.replaceAll("_", " ").toUpperCase()}
+                          </span>
+                        </div>
+                        <p style={styles.cardText}>
+                          {staffCase.report_type.toUpperCase()} report · from {staffCase.reporter_username || "Unknown"} · player {staffCase.target_username || "—"} · team {staffCase.target_team_name || "—"}
+                        </p>
+                        <p style={styles.cardText}>{staffCase.description}</p>
+                        {staffCase.evidence && (
+                          <p style={styles.help}>Evidence: {staffCase.evidence}</p>
+                        )}
+                        <form
+                          className="staff-mobile-form"
+                          style={styles.form}
+                          onSubmit={(event) => updateCaseStatus(event, staffCase)}
+                        >
+                          <label style={styles.label}>
+                            Status
+                            <select name="status" defaultValue={staffCase.status} style={styles.input}>
+                              {["new", "under_review", "awaiting_evidence", "escalated", "resolved", "dismissed"].map((status) => (
+                                <option key={status} value={status}>{status.replaceAll("_", " ")}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label style={styles.label}>
+                            Reason for this case update
+                            <textarea
+                              name="reason"
+                              minLength={10}
+                              maxLength={1000}
+                              rows={2}
+                              style={styles.input}
+                              required
+                            />
+                          </label>
+                          <label style={styles.label}>
+                            Priority
+                            <select name="priority" defaultValue={staffCase.priority} style={styles.input}>
+                              {["low", "normal", "high", "urgent"].map((priority) => (
+                                <option key={priority} value={priority}>{priority}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label style={styles.label}>
+                            {isOwner || permissions.includes("staff_directory")
+                              ? "Assign to staff username"
+                              : "Assign to yourself (enter your staff username)"}
+                            <input
+                              name="assignee"
+                              defaultValue={staffCase.assignee_username || ""}
+                              style={styles.input}
+                            />
+                          </label>
+                          <label style={styles.label}>
+                            Decision / audit reason
+                            <textarea
+                              name="decision"
+                              placeholder="Reason for this case update"
+                              minLength={10}
+                              maxLength={1000}
+                              rows={2}
+                              style={styles.input}
+                              required
+                            />
+                          </label>
+                          <button type="submit" style={styles.secondaryButton}>Save case update</button>
+                        </form>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {overview && overview.recent_actions.length > 0 && (
+              <section className="staff-mobile-section" style={styles.section}>
+                <h2 style={styles.sectionTitle}>Recent staff actions</h2>
+                <div className="staff-mobile-list" style={styles.staffList}>
+                  {overview.recent_actions.map((action, index) => (
+                    <article key={`${action.action}-${action.created_at}-${index}`} style={styles.staffCard}>
+                      <strong style={styles.cardTitle}>
+                        {action.action.replaceAll("_", " ")} · {action.target_type}
+                      </strong>
+                      <p style={styles.cardText}>
+                        {action.actor_username} · {new Date(action.created_at).toLocaleString()}
+                      </p>
+                      <p style={styles.help}>{action.reason}</p>
+                      {action.previous_values && action.new_values && (
+                        <p style={styles.help}>
+                          Before: {JSON.stringify(action.previous_values)} · After:{" "}
+                          {JSON.stringify(action.new_values)}
+                        </p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="staff-mobile-section" style={styles.section}>
               <h2 style={styles.sectionTitle}>Staff work areas</h2>
@@ -326,10 +587,7 @@ export default function StaffDashboardPage() {
                           Manage directory details
                         </a>
                       ) : (
-                        <p style={styles.help}>
-                          This access area is defined; its staff action tools are not
-                          connected yet.
-                        </p>
+                        <p style={styles.help}>This rank has access to this staff area.</p>
                       )}
                     </article>
                   ))}
@@ -346,8 +604,8 @@ export default function StaffDashboardPage() {
               <section className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
-                  Only the Owner can assign or remove staff. Choose only the work
-                  areas this person needs. Owner-level access cannot be assigned here.
+                  Founder — Prime is the only rank that can grant or remove staff
+                  ranks. Every change requires a reason and is recorded.
                 </p>
                 <form className="staff-mobile-form" onSubmit={assignStaffMember} style={styles.form}>
                   <label style={styles.label}>
@@ -361,45 +619,32 @@ export default function StaffDashboardPage() {
                     />
                   </label>
                   <label style={styles.label}>
-                    Position
-                    <input
-                      maxLength={60}
-                      value={position}
-                      onChange={(event) => setPosition(event.target.value)}
-                      style={styles.input}
-                      required
-                    />
+                    Rank
+                    <select value={staffRank} onChange={(event) => setStaffRank(event.target.value as StaffRank)} style={styles.input}>
+                      <option value="member">User — remove staff access</option>
+                      <option value="staff">Moderator</option>
+                      <option value="senior_staff">Senior Staff</option>
+                      <option value="admin">Administrator</option>
+                    </select>
                   </label>
-                  <label style={styles.label}>
-                    Duties
-                    <textarea
-                      maxLength={400}
-                      value={duties}
-                      onChange={(event) => setDuties(event.target.value)}
-                      style={styles.input}
-                      rows={3}
-                      required
-                    />
-                  </label>
-                  <fieldset style={styles.fieldset}>
-                    <legend style={styles.legend}>Allowed work areas</legend>
-                    {workAreas.map((area) => (
-                      <label key={area.key} style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={selectedPermissions.includes(area.key)}
-                          onChange={() => togglePermission(area.key)}
-                        />
-                        {area.title}
+                  {staffRank !== "member" && (
+                    <>
+                      <label style={styles.label}>
+                        Position
+                        <input maxLength={60} value={position} onChange={(event) => setPosition(event.target.value)} style={styles.input} required />
                       </label>
-                    ))}
-                    <p style={styles.help}>
-                      Staff-access assignment is Owner-only and is not an assignable
-                      permission.
-                    </p>
-                  </fieldset>
+                      <label style={styles.label}>
+                        Duties
+                        <textarea maxLength={400} value={duties} onChange={(event) => setDuties(event.target.value)} style={styles.input} rows={3} required />
+                      </label>
+                    </>
+                  )}
+                  <label style={styles.label}>
+                    Reason for rank change
+                    <textarea maxLength={1000} minLength={10} value={rankReason} onChange={(event) => setRankReason(event.target.value)} style={styles.input} rows={2} required />
+                  </label>
                   <button type="submit" disabled={saving} style={styles.button}>
-                    {saving ? "Saving..." : "Save staff assignment"}
+                    {saving ? "Saving..." : "Save rank change"}
                   </button>
                 </form>
               </section>
@@ -440,6 +685,17 @@ export default function StaffDashboardPage() {
                               defaultValue={member.duties}
                               maxLength={400}
                               rows={3}
+                              style={styles.input}
+                              required
+                            />
+                          </label>
+                          <label style={styles.label}>
+                            Reason for directory change
+                            <textarea
+                              name="reason"
+                              minLength={10}
+                              maxLength={1000}
+                              rows={2}
                               style={styles.input}
                               required
                             />
@@ -501,9 +757,10 @@ const styles: Record<string, CSSProperties> = {
     background: "#0b1823",
   },
   header: {
-    padding: "26px 22px",
-    borderBottom: "1px solid #244b70",
-    background: "linear-gradient(to bottom, #173956, #07111b)",
+    padding: "30px 24px 24px",
+    borderBottom: "2px solid #315f88",
+    background:
+      "radial-gradient(ellipse at 85% 0%, rgba(53,119,165,.28), transparent 42%), linear-gradient(115deg, #102a40, #07111b 70%)",
   },
   eyebrow: {
     margin: 0,
@@ -512,14 +769,49 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 900,
     letterSpacing: 1,
   },
-  title: { margin: "8px 0", color: "#fff", fontSize: 28 },
+  title: { margin: "8px 0", color: "#fff", fontSize: 30, letterSpacing: "-0.03em" },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    flexWrap: "wrap",
+    margin: "6px 0 12px",
+  },
+  rankBadge: {
+    padding: "9px 13px",
+    border: "1px solid #d7ad4a",
+    background: "linear-gradient(#4c3509, #120b02)",
+    color: "#f2c14e",
+    fontSize: 12,
+    fontWeight: 900,
+    textTransform: "uppercase",
+  },
   subheading: { margin: 0, color: "#b8cede", lineHeight: 1.6 },
   section: { padding: "20px 22px", borderBottom: "1px solid #17334a" },
-  sectionTitle: { margin: "0 0 14px", color: "#f2c14e", fontSize: 17 },
+  sectionTitle: {
+    margin: "0 0 14px",
+    paddingBottom: 10,
+    borderBottom: "1px solid #244b70",
+    color: "#f2c14e",
+    fontSize: 15,
+    fontWeight: 900,
+    letterSpacing: ".06em",
+    textTransform: "uppercase",
+  },
   cards: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 },
-  card: { padding: 14, border: "1px solid #244b70", background: "#091521" },
+  card: {
+    padding: 16,
+    border: "1px solid #244b70",
+    background: "linear-gradient(145deg, #0d1e2d, #07111b)",
+    boxShadow: "inset 0 1px rgba(255,255,255,.025)",
+  },
   cardTitle: { display: "block", color: "#fff", fontSize: 14 },
   cardText: { margin: "8px 0 0", color: "#a9c3db", fontSize: 13, lineHeight: 1.5 },
+  metricLabel: { margin: 0, color: "#a9c3db", fontSize: 12, textTransform: "uppercase" },
+  metricValue: { display: "block", marginTop: 8, color: "#f2c14e", fontSize: 32, lineHeight: 1 },
+  staffCardHeader: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  statusBadge: { color: "#f2c14e", fontSize: 11, fontWeight: 900, textAlign: "right" },
   cardLink: { display: "inline-block", marginTop: 12, color: "#f2c14e", fontSize: 13, fontWeight: 700 },
   message: { padding: 22, color: "#cfe2f2", lineHeight: 1.6 },
   help: { color: "#91abc1", fontSize: 13, lineHeight: 1.55 },
@@ -540,6 +832,14 @@ const styles: Record<string, CSSProperties> = {
     display: "inline-flex",
     justifyContent: "center",
     padding: "11px 16px",
+    border: "1px solid #e8c46a",
+    background: "linear-gradient(#d6a943, #7b560e)",
+    color: "#07111b",
+    fontWeight: 900,
+    cursor: "pointer",
+    textDecoration: "none",
+  },
+  logoutButton: {
     border: "1px solid #e34242",
     background: "linear-gradient(#bd1717, #5c0000)",
     color: "#fff",

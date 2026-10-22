@@ -53,30 +53,36 @@ Additional titles may be added based on community demand.
 
 ---
 
-## Staff Portal Access
+## Staff Administration
 
-The staff portal uses a private, Owner-managed roster with individual work-area
-grants for match review, forum moderation, awards, and staff-roster updates. Only
-an Owner can assign or remove staff access; the roster permission can edit position
-and duty descriptions but cannot change permissions. The staff roster is available
-only to approved accounts, and staff members still need an assigned work area to
-use its tools.
+The private staff portal uses role-based permissions enforced by Supabase RPCs:
 
-Before using the portal in a deployed environment, apply the staff portal Supabase
-and staff-email allowlist Supabase migrations, then promote the initial Owner
-through the trusted Supabase SQL Editor using
-[the one-time Owner bootstrap script](./sql/bootstrap_staff_owner.sql).
-Do not add the Owner's account email or service-role credentials to source control,
-and do not enable self-service Owner claims.
+| Rank | Authority |
+| --- | --- |
+| Moderator | Review reports and handle basic moderation cases |
+| Senior Staff | Moderator duties, escalations, and review of report decisions |
+| Administrator | Match disputes, awards, staff oversight, and enforcement work |
+| Founder — Prime | Full staff authority, including rank assignment and exclusive awards |
 
-The grants define work-area boundaries. Each area's data-changing tools must also
-enforce `has_staff_permission(...)` in its database policies or RPCs before being
-made available as operational staff tools.
+Apply the staff portal, private-roster, approved-email, and staff-administration
+Supabase migrations in timestamp order before deploying these workflows. The staff
+administration migration promotes the two configured Founder accounts and will
+stop unless both accounts and their profile rows exist. It has not been applied to
+production as part of this code change. Do not add account emails or service-role
+credentials to source control, and do not enable self-service Founder claims.
 
-Match reviewers can enter an official score with a required written reason.
-Finalization and team/player record updates happen atomically, only once, and are
-saved to a staff review log. Forum-moderation and award actions are not enabled
-until their workflows and database checks are implemented.
+Only Founder — Prime can assign or remove staff ranks. Rank and directory changes,
+case decisions, match corrections, and award grants/revocations are recorded in the
+append-only staff activity log with a reason and relevant before/after values.
+Ordinary staff cannot edit or erase audit history.
+
+Player reports are submitted through `/report` and reviewed in the staff dashboard.
+Players can request profile awards through `/awards`; authorized staff search
+players or teams, review requests, and manage grants in `/staff/awards`.
+Staff-granted awards appear on player and team profiles; revoked awards remain
+visible only to authorized award staff.
+Match review continues to use the existing dispute-ticket workflow and writes its
+finalized score changes to the activity log.
 
 ---
 

@@ -297,6 +297,33 @@ export default function SupportPage() {
             </section>
 
             <section className="panel">
+              <div className="panel-header">Player Reports</div>
+              <div className="panel-body">
+                <p>
+                  Report player or team conduct, cheating, harassment,
+                  impersonation, abuse, and other concerns to staff.
+                </p>
+
+                <a className="button blue" href="/report">
+                  Submit a Report
+                </a>
+              </div>
+            </section>
+
+            <section className="panel">
+              <div className="panel-header">Awards &amp; Trophies</div>
+              <div className="panel-body">
+                <p>
+                  Browse GameBattles awards and submit a request for staff review.
+                </p>
+
+                <a className="button blue" href="/awards">
+                  Awards Center
+                </a>
+              </div>
+            </section>
+
+            <section className="panel">
               <div className="panel-header">Disputes</div>
               <div className="panel-body">
                 <p>
