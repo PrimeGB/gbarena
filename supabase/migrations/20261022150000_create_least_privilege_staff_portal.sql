@@ -5,9 +5,6 @@ create table if not exists public.staff_assignments (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-if best_of_number not in (3, 5, 7) then
-  raise exception 'This match has an unsupported best-of format';
-end if;
 
 create table if not exists public.staff_access_grants (
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -151,6 +148,9 @@ begin
     when best_of_number = 5 then 3
     else 2
   end;
+  if best_of_number not in (3, 5, 7) then
+    raise exception 'This match has an unsupported best-of format';
+  end if;
 
   if posting_score < 0
     or accepting_score < 0
@@ -408,7 +408,7 @@ create or replace function public.get_staff_directory()
 returns table (
   user_id uuid,
   username text,
-  position text,
+  "position" text,
   duties text,
   is_owner boolean
 )
@@ -678,6 +678,7 @@ as $$
 declare
   target_profile_id uuid;
   profile_count integer;
+  target_is_owner boolean;
 begin
   if not public.has_staff_permission('staff_directory') then
     raise exception 'You do not have permission to update the staff directory';

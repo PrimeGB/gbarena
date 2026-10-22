@@ -114,7 +114,7 @@ create or replace function public.get_staff_directory()
 returns table (
   user_id uuid,
   username text,
-  position text,
+  "position" text,
   duties text,
   is_owner boolean
 )
