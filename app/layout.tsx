@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import DevelopmentNotice from "./components/DevelopmentNotice";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,15 +32,16 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <header style={{background:'#07111b',borderBottom:'1px solid #123',padding:'10px 18px',zIndex:90}}>
           <div style={{maxWidth:1200,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-            <a href="/home" style={{color:'#eaf5ff',fontWeight:900,textDecoration:'none',fontSize:18}}>GameBattles</a>
+            <Link href="/home" style={{color:'#eaf5ff',fontWeight:900,textDecoration:'none',fontSize:18}}>GameBattles</Link>
             <nav style={{display:'flex',gap:14}}>
-              <a href="/home" style={{color:'#cfeefe',textDecoration:'none'}}>Home</a>
-              <a href="/forums" style={{color:'#cfeefe',textDecoration:'none'}}>Forums</a>
-              <a href="/teams/top" style={{color:'#cfeefe',textDecoration:'none'}}>Teams</a>
+              <Link href="/home" style={{color:'#cfeefe',textDecoration:'none'}}>Home</Link>
+              <Link href="/forums" style={{color:'#cfeefe',textDecoration:'none'}}>Forums</Link>
+              <Link href="/teams/top" style={{color:'#cfeefe',textDecoration:'none'}}>Teams</Link>
             </nav>
           </div>
         </header>
         {children}
+        <DevelopmentNotice />
       </body>
     </html>
   );

@@ -26,6 +26,7 @@ type Profile = {
   favorite_system?: string | null;
   favorite_game?: string | null;
   location?: string | null;
+  role?: string | null;
   player_bio?: string | null;
   avatar_url?: string | null;
   logo_url?: string | null;
@@ -177,7 +178,7 @@ function ProfilePageContent() {
 
     supabase
       .from("profiles")
-      .select("id, username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, location, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at")
+      .select("id, username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, location, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at")
       .eq("id", viewedUserId)
       .single()
       .then(async ({ data }) => {
@@ -384,6 +385,9 @@ function ProfilePageContent() {
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
   const playerLocation = profile?.location || "Not Set";
+  const playerRole = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    : "Member";
   const playerBio = profile?.player_bio || "";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
@@ -1645,8 +1649,8 @@ function ProfilePageContent() {
                         </tr>
 
                         <tr>
-                          <td></td>
-                          <td></td>
+                          <td>Role</td>
+                          <td>{playerRole}</td>
                           <td>
                             <a className="system-link system-pc" href="https://store.steampowered.com/account/" target="_blank" rel="noopener noreferrer">
                               PC

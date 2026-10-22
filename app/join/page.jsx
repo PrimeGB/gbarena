@@ -302,6 +302,18 @@ const regionsByCountry = {
 
 const countries = Object.keys(regionsByCountry);
 
+function isDuplicateUsernameError(error) {
+  const message = [error?.message, error?.details, error?.hint]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    message.includes("profiles_username_key") ||
+    (error?.code === "23505" && message.includes("username"))
+  );
+}
+
 const months = [
   { value: "01", label: "January" },
   { value: "02", label: "February" },
@@ -343,6 +355,7 @@ export default function JoinPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const currentYear = new Date().getFullYear();
@@ -514,7 +527,36 @@ export default function JoinPage() {
 
       if (signupError) {
         console.error("Signup error:", signupError);
-        setError(signupError.message);
+        let duplicateUsername = isDuplicateUsernameError(signupError);
+
+        if (
+          !duplicateUsername &&
+          /database error saving new user/i.test(signupError.message)
+        ) {
+          const { data: existingUsername, error: usernameLookupError } =
+            await supabase
+              .from("profiles")
+              .select("username")
+              .ilike("username", cleanUsername)
+              .limit(1)
+              .maybeSingle();
+
+          if (usernameLookupError) {
+            console.error(
+              "Could not verify username after signup failed:",
+              usernameLookupError
+            );
+          } else {
+            duplicateUsername = !!existingUsername;
+          }
+        }
+
+        if (duplicateUsername) {
+          setUsernameStatus("taken");
+          setError("That username is already taken. Please choose another one.");
+        } else {
+          setError(signupError.message);
+        }
         setShowAgreement(false);
         setLoading(false);
         return;
@@ -530,6 +572,13 @@ export default function JoinPage() {
         return;
       }
 
+      if (data.user.identities?.length === 0) {
+        setError("An account with this email already exists. Please log in instead.");
+        setShowAgreement(false);
+        setLoading(false);
+        return;
+      }
+
       const userId = data.user.id;
       if (!userId) {
         console.error("No user ID returned:", data.user);
@@ -539,49 +588,67 @@ export default function JoinPage() {
         return;
       }
 
-      const { error: profileError } = await supabase.from("profiles").insert([
-        {
-          id: userId,
-          username: cleanUsername,
-          email: cleanEmail,
-          date_of_birth: dateOfBirth,
-          country: cleanCountry,
-          location: cleanRegion,
-          agreed_to_rules: true,
-          agreed_to_rules_at: new Date().toISOString(),
-          xbox_gt: null,
-          psn_gt: null,
-          nintendo_gt: null,
-          pc_gt: null,
-        },
-      ]);
+      if (data.session) {
+        const { data: existingProfile, error: profileLookupError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", userId)
+          .maybeSingle();
 
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        setError(
-          profileError?.message || "That username or email is already in use."
-        );
-        setShowAgreement(false);
-        setLoading(false);
-        return;
+        if (profileLookupError) {
+          console.error("Could not check for an existing signup profile:", profileLookupError);
+        }
+
+        if (profileLookupError || !existingProfile) {
+          const { error: profileError } = await supabase.from("profiles").insert([
+            {
+              id: userId,
+              username: cleanUsername,
+              email: cleanEmail,
+              date_of_birth: dateOfBirth,
+              country: cleanCountry,
+              location: cleanRegion,
+              agreed_to_rules: true,
+              agreed_to_rules_at: new Date().toISOString(),
+              xbox_gt: null,
+              psn_gt: null,
+              nintendo_gt: null,
+              pc_gt: null,
+            },
+          ]);
+
+          if (profileError) {
+            console.error("Profile creation error after auth signup:", profileError);
+          }
+        }
       }
 
-      await supabase.rpc("send_system_message", {
-  target_user_id: userData.user.id,
-  message_subject: "Welcome To GameBattles",
-  message_body:
-    "Welcome to GameBattles and thank you for joining our community.\n\nGameBattles is built around competitive gaming, teamwork, rivalries, ladders, tournaments, and bringing players together across multiple platforms and titles.\n\nGetting Started:\n• Complete your profile\n• Link your gaming accounts\n• Add friends\n• Create or join a team\n• Explore available ladders\n• Start competing and building your record\n\nCommunity Expectations:\nAll members are expected to treat other players with respect, compete fairly, and follow all site rules and ladder regulations.\n\nPlease remember that cheating, harassment, account abuse, match manipulation, or attempts to exploit the platform may result in warnings, suspensions, ladder restrictions, or permanent account removal.\n\nBy continuing to use GameBattles you agree to follow all posted rules, policies, and future updates made by staff.\n\nGood luck and welcome to the competition.\n\n— The GameBattles Staff Team",
-  message_type_value: "system",
-  related_type_value: "welcome",
-  related_id_value: null,
-});
+      if (data.session) {
+        const { error: welcomeMessageError } = await supabase.rpc("send_system_message", {
+          target_user_id: userId,
+          message_subject: "Welcome To GameBattles",
+          message_body:
+            "Welcome to GameBattles and thank you for joining our community.\n\nGameBattles is built around competitive gaming, teamwork, rivalries, ladders, tournaments, and bringing players together across multiple platforms and titles.\n\nGetting Started:\n• Complete your profile\n• Link your gaming accounts\n• Add friends\n• Create or join a team\n• Explore available ladders\n• Start competing and building your record\n\nCommunity Expectations:\nAll members are expected to treat other players with respect, compete fairly, and follow all site rules and ladder regulations.\n\nPlease remember that cheating, harassment, account abuse, match manipulation, or attempts to exploit the platform may result in warnings, suspensions, ladder restrictions, or permanent account removal.\n\nBy continuing to use GameBattles you agree to follow all posted rules, policies, and future updates made by staff.\n\nGood luck and welcome to the competition.\n\n— The GameBattles Staff Team",
+          message_type_value: "system",
+          related_type_value: "welcome",
+          related_id_value: null,
+        });
+
+        if (welcomeMessageError) {
+          console.error("Welcome message could not be sent:", welcomeMessageError);
+        }
+      }
+
       setShowAgreement(false);
+      setConfirmationRequired(!data.session);
       setSuccess(true);
       setLoading(false);
 
-      setTimeout(() => {
-        router.push("/login");
-      }, 1600);
+      if (data.session) {
+        setTimeout(() => {
+          router.push("/login");
+        }, 1600);
+      }
     } catch (err) {
       console.error("Unexpected error during account creation:", err);
       setError("An unexpected error occurred. Please try again.");
@@ -1197,8 +1264,9 @@ export default function JoinPage() {
 
             {success && (
               <div className="success">
-                Account created. Check your email if confirmation is required.
-                Redirecting to login...
+                {confirmationRequired
+                  ? `Account created. Check ${email.trim()} for a confirmation email before logging in.`
+                  : "Account created successfully. Email confirmation is not enabled, so you can log in now. Redirecting to login..."}
               </div>
             )}
 

@@ -186,13 +186,15 @@ export default function Home() {
 
         .hotspot:hover,
         .drop-wrap:hover{
-          background:rgba(0,120,210,.16);
+          background:linear-gradient(to bottom,#1c4b72,#0b2e4c);
           box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);
         }
 
         .nav-zone{
           top:24.25%;
           height:5.45%;
+          background:linear-gradient(to bottom,#153957,#092039);
+          border-right:1px solid rgba(74,145,205,.55);
         }
 
         .home{ left:.85%; width:9.1%; }
@@ -202,6 +204,24 @@ export default function Home() {
         .pc{ left:45.7%; width:7.05%; }
         .members{ left:52.8%; width:10.15%; }
         .forums{ left:63%; width:9.25%; }
+        .staff-zone{
+          left:72.35%;
+          width:7.2%;
+        }
+
+        .nav-label{
+          position:absolute;
+          inset:0;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:#fff;
+          font-family:Tahoma,Verdana,Arial,sans-serif;
+          font-size:clamp(9px,.85vw,14px);
+          font-weight:900;
+          text-shadow:0 1px 3px #000;
+          pointer-events:none;
+        }
 
         .general{
           left:70.95%;
@@ -721,10 +741,13 @@ export default function Home() {
           <a className="hotspot general" href="/general-info"></a>
           <a className="hotspot getting" href="/getting-started"></a>
 
-          <a className="hotspot nav-zone home" href="/home"></a>
+          <a className="hotspot nav-zone home" href="/home">
+            <span className="nav-label">HOME</span>
+          </a>
 
           <div className="drop-wrap nav-zone playstation">
             <a className="drop-click" href="/ladders/playstation"></a>
+            <span className="nav-label">PLAYSTATION</span>
             <div className="dropdown">
               <a href="/ladders/playstation/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
               <a href="/ladders/playstation/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
@@ -738,6 +761,7 @@ export default function Home() {
 
           <div className="drop-wrap nav-zone xbox">
             <a className="drop-click" href="/ladders/xbox"></a>
+            <span className="nav-label">XBOX</span>
             <div className="dropdown">
               <a href="/ladders/xbox/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
               <a href="/ladders/xbox/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
@@ -751,6 +775,7 @@ export default function Home() {
 
           <div className="drop-wrap nav-zone nintendo">
             <a className="drop-click" href="/ladders/nintendo"></a>
+            <span className="nav-label">NINTENDO</span>
             <div className="dropdown">
               <a href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
               <a href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
@@ -760,6 +785,7 @@ export default function Home() {
 
           <div className="drop-wrap nav-zone pc">
             <a className="drop-click" href="/ladders/pc"></a>
+            <span className="nav-label">PC</span>
             <div className="dropdown">
               <a href="/ladders/pc/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
               <a href="/ladders/pc/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
@@ -770,8 +796,15 @@ export default function Home() {
             </div>
           </div>
 
-          <a className="hotspot nav-zone members" href="/members"></a>
-          <a className="hotspot nav-zone forums" href="/forums"></a>
+          <a className="hotspot nav-zone members" href="/members">
+            <span className="nav-label">MEMBERS</span>
+          </a>
+          <a className="hotspot nav-zone forums" href="/forums">
+            <span className="nav-label">FORUMS</span>
+          </a>
+          <a className="hotspot nav-zone staff-zone" href="/staff">
+            <span className="nav-label">STAFF</span>
+          </a>
 
           <form className="search-box" action="/search">
             <input name="q" />

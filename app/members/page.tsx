@@ -1,31 +1,103 @@
+import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 type ProfileResult = {
   id: string;
   username: string | null;
-  email: string | null;
+  gt_xbox: string | null;
+  xbox_gt: string | null;
+  gt_pc: string | null;
+  pc_gt: string | null;
   country?: string | null;
   location?: string | null;
 };
 
-export default async function MembersPage({ searchParams }: any) {
+type GamingAccountResult = {
+  user_id: string;
+  platform: string;
+  account_id: string;
+};
+
+type MembersPageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+const profileSearchFields = ["username", "gt_xbox", "xbox_gt", "gt_pc", "pc_gt"] as const;
+
+export default async function MembersPage({ searchParams }: MembersPageProps) {
   const params = await searchParams;
-  const search = String(params?.q || "").trim();
+  const search = typeof params.q === "string" ? params.q.trim() : "";
+  const searchTerm = search.replace(/[%_]/g, "");
 
   let results: ProfileResult[] = [];
+  const accountsByUser = new Map<string, GamingAccountResult[]>();
   let searchError = "";
 
-  if (search.length >= 2) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, username, email, country, location")
-      .or(`username.ilike.%${search}%,email.ilike.%${search}%`)
-      .limit(20);
+  if (searchTerm.length >= 2) {
+    const pattern = `%${searchTerm}%`;
+    const profileColumns = "id, username, gt_xbox, xbox_gt, gt_pc, pc_gt, country, location";
+    const [profileResponses, accountResponse] = await Promise.all([
+      Promise.all(
+        profileSearchFields.map((field) =>
+          supabase
+            .from("profiles")
+            .select(profileColumns)
+            .ilike(field, pattern)
+            .limit(20),
+        ),
+      ),
+      supabase
+        .from("gaming_accounts")
+        .select("user_id, platform, account_id")
+        .in("platform", ["ea", "xbox", "pc"])
+        .ilike("account_id", pattern)
+        .limit(100),
+    ]);
 
-    if (error) {
-      searchError = error.message;
+    const profileError = profileResponses.find((response) => response.error)?.error;
+    if (profileError || accountResponse.error) {
+      searchError = profileError?.message || accountResponse.error?.message || "Unknown search error";
     } else {
-      results = data || [];
+      const profilesById = new Map<string, ProfileResult>();
+      for (const response of profileResponses) {
+        for (const profile of response.data || []) {
+          profilesById.set(profile.id, profile);
+        }
+      }
+
+      const matchedAccounts = (accountResponse.data || []) as GamingAccountResult[];
+      for (const account of matchedAccounts) {
+        if (!accountsByUser.has(account.user_id)) {
+          accountsByUser.set(account.user_id, []);
+        }
+        accountsByUser.get(account.user_id)?.push(account);
+      }
+
+      const missingProfileIds = [...accountsByUser.keys()].filter(
+        (userId) => !profilesById.has(userId),
+      );
+      if (missingProfileIds.length > 0) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(profileColumns)
+          .in("id", missingProfileIds);
+
+        if (error) {
+          searchError = error.message;
+        } else {
+          for (const profile of data || []) {
+            profilesById.set(profile.id, profile);
+          }
+        }
+      }
+
+      if (!searchError) {
+        results = [...profilesById.values()]
+          .sort((first, second) =>
+            (first.username || "").localeCompare(second.username || ""),
+          )
+          .slice(0, 20);
+      }
     }
   }
 
@@ -57,8 +129,8 @@ export default async function MembersPage({ searchParams }: any) {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/profile">My Profile</a>
+        <Link href="/">Home</Link>
+        <Link href="/profile">My Profile</Link>
         <a href="/support">Support</a>
       </div>
 
@@ -76,10 +148,10 @@ export default async function MembersPage({ searchParams }: any) {
           <div className="content">
             <h1>Find A Player</h1>
 
-            <p>Search for a player by username or email.</p>
+            <p>Search by username, EA ID, Xbox gamertag, or PC name.</p>
 
             <form className="search-box" action="/members" method="get">
-              <input name="q" placeholder="Enter username or email..." defaultValue={search} />
+              <input name="q" placeholder="Enter a username or gaming ID..." defaultValue={search} />
               <button type="submit">Search Members</button>
             </form>
 
@@ -98,7 +170,20 @@ export default async function MembersPage({ searchParams }: any) {
                 {results.map((player) => (
                   <div className="result" key={player.id}>
                     <div className="username">{player.username || "Unnamed Player"}</div>
-                    <div className="meta">Email: {player.email || "Hidden"}</div>
+                    {[
+                      { platform: "Xbox", name: player.gt_xbox || player.xbox_gt },
+                      { platform: "PC", name: player.gt_pc || player.pc_gt },
+                      ...(accountsByUser.get(player.id) || []).map((account) => ({
+                        platform: account.platform.toUpperCase(),
+                        name: account.account_id,
+                      })),
+                    ]
+                      .filter((account) => account.name)
+                      .map((account, index) => (
+                        <div className="meta" key={`${account.platform}-${index}`}>
+                          {account.platform}: {account.name}
+                        </div>
+                      ))}
                     <div className="meta">
                       Location: {[player.location, player.country].filter(Boolean).join(", ") || "Not Set"}
                     </div>

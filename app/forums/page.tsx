@@ -42,6 +42,28 @@ type ForumPostRow = {
   created_at: string;
 };
 
+const forumSections: {
+  title: string;
+  description: string;
+  categories: ForumCategory[];
+}[] = [
+  {
+    title: "General Site Information",
+    description: "Announcements, site news, help, and community discussion.",
+    categories: ["News & Updates", "General Info", "Questions", "Site Suggestions"],
+  },
+  {
+    title: "Teams & Recruiting",
+    description: "Find teammates, recruit players, and organize your team.",
+    categories: ["Teams"],
+  },
+  {
+    title: "Community Highlights",
+    description: "Share clips and standout moments with the community.",
+    categories: ["Top Clips"],
+  },
+];
+
 export default function ForumsPage() {
   const [subject, setSubject] = useState("");
   const [system, setSystem] = useState("PlayStation");
@@ -52,6 +74,7 @@ export default function ForumsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<ForumCategory>("All");
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [lastPostTime, setLastPostTime] = useState<number>(0);
 
   const [posts, setPosts] = useState<ForumPost[]>([
@@ -194,17 +217,35 @@ export default function ForumsPage() {
     "address leak",
   ];
 
-  const filteredPosts = useMemo(() => {
-    return posts
-      .filter((post) => activeCategory === "All" || post.category === activeCategory)
-      .sort((a, b) => {
-        const recentSort = b.createdAt - a.createdAt;
-        if (Math.abs(recentSort) < 1000 * 60 * 30) {
-          return b.replies - a.replies;
-        }
-        return recentSort;
-      });
-  }, [posts, activeCategory]);
+  const visibleForumSections = useMemo(
+    () =>
+      forumSections
+        .map((section) => ({
+          ...section,
+          boards: section.categories
+            .filter((boardCategory) => activeCategory === "All" || boardCategory === activeCategory)
+            .map((boardCategory) => {
+              const boardPosts = posts
+                .filter((post) => post.category === boardCategory)
+                .sort((a, b) => b.createdAt - a.createdAt);
+              const replyCount = boardPosts.reduce((total, post) => total + post.replies, 0);
+
+              return {
+                category: boardCategory,
+                description: boardCategory === "Teams"
+                  ? "Find teammates, recruit players, and organize your team."
+                  : boardCategory === "Top Clips"
+                    ? "Share clips and standout moments with the community."
+                    : section.description,
+                latestPost: boardPosts[0],
+                threadCount: boardPosts.length,
+                postCount: boardPosts.length + replyCount,
+              };
+            }),
+        }))
+        .filter((section) => section.boards.length > 0),
+    [posts, activeCategory]
+  );
 
   function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
@@ -255,6 +296,7 @@ export default function ForumsPage() {
     setMessage("");
     setError("");
     setActiveCategory(category);
+    setShowCreatePost(false);
 
     // persist to Supabase (best-effort)
     (async () => {
@@ -312,153 +354,64 @@ export default function ForumsPage() {
         body{background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
         a{text-decoration:none;}
 
-        .wrapper{width:1180px;margin:0 auto;}
-
-        .top-strip{
-          height:22px;
-          background:linear-gradient(to bottom,#c40000,#6a0000);
-          border-bottom:1px solid #140000;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
+        .wrapper{width:min(1120px,100%);margin:0 auto;padding:24px 18px;}
+        .forum-page{background:#0a1119;border:1px solid #263b4d;}
+        .forum-heading{
+          display:flex;align-items:center;justify-content:space-between;gap:16px;
+          padding:18px 20px;background:#101c28;border-bottom:1px solid #263b4d;
         }
-
-        .top-strip a{
-          color:#fff;
-          font-size:10px;
-          margin-right:14px;
-          font-weight:bold;
+        .forum-heading h1{color:#f2c14e;font-size:20px;text-transform:uppercase;letter-spacing:.5px;}
+        .forum-heading p{margin-top:5px;color:#9aabba;font-size:12px;}
+        .new-post-button,.post-button{
+          border:1px solid #ff4d4d;background:linear-gradient(to bottom,#c40000,#6a0000);
+          color:#fff;font-size:11px;font-weight:bold;padding:9px 14px;cursor:pointer;text-transform:uppercase;
         }
-
-        .header{
-          height:92px;
-          background:#0a1622;
-          border-left:1px solid #3b7fc2;
-          border-right:1px solid #3b7fc2;
-          border-bottom:2px solid #4f93d6;
-          display:flex;
-          align-items:center;
-          padding:0 16px;
+        .forum-toolbar{
+          display:flex;align-items:center;justify-content:space-between;gap:12px;
+          padding:10px 16px;background:#0c151e;border-bottom:1px solid #263b4d;
         }
-
-        .logo-main{font-size:30px;font-weight:bold;color:#eaf5ff;line-height:1;}
-        .logo-sub{color:#f2c14e;font-size:10px;text-transform:uppercase;margin-top:5px;}
-
-        .forum-page{
-          margin-top:10px;
-          background:#0a1622;
-          border:1px solid #3b7fc2;
+        .forum-breadcrumb{color:#95a8b8;font-size:11px;}
+        .forum-breadcrumb button{
+          border:0;background:none;color:#7fc0ff;font:inherit;cursor:pointer;
         }
-
-        .forum-title{
-          height:30px;
-          background:#0f2a40;
-          border-bottom:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          padding-left:10px;
-          color:#f2c14e;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
+        .forum-columns,.forum-row{
+          display:grid;grid-template-columns:minmax(260px,1.5fr) minmax(220px,1fr) 90px 90px;
+          align-items:center;gap:16px;
         }
-
-        .forum-layout{
-          display:grid;
-          grid-template-columns:260px 1fr;
-          gap:10px;
-          padding:10px;
+        .forum-columns{
+          padding:9px 16px;background:#17222d;color:#c3ced8;font-size:10px;
+          font-weight:bold;text-transform:uppercase;
         }
-
-        .box{
-          background:#07111b;
-          border:1px solid #3b7fc2;
-          margin-bottom:10px;
+        .forum-section{border-bottom:1px solid #263b4d;}
+        .forum-section-title{
+          padding:11px 16px;background:#111d28;color:#dca541;
+          font-size:13px;font-weight:bold;
         }
-
-        .box-title{
-          height:24px;
-          background:linear-gradient(to bottom,#1f4c73,#0b2438);
-          border-bottom:1px solid #3b7fc2;
-          color:#f2c14e;
-          font-size:10px;
-          font-weight:bold;
-          text-transform:uppercase;
-          display:flex;
-          align-items:center;
-          padding-left:8px;
+        .forum-section-description{padding:0 16px 9px;background:#111d28;color:#8193a1;font-size:11px;}
+        .forum-row{min-height:70px;padding:10px 16px;border-top:1px solid #1c2b37;background:#0a1119;}
+        .forum-row:nth-child(even){background:#0d1620;}
+        .forum-board-name{
+          padding:0;border:0;background:none;color:#7fc0ff;font:inherit;font-size:13px;
+          font-weight:bold;text-align:left;cursor:pointer;
         }
-
-        .box-body{padding:8px;font-size:11px;line-height:18px;}
-
-        .forum-link{
-          display:block;
-          width:100%;
-          text-align:left;
-          color:#d7eaff;
-          padding:7px 5px;
-          border:none;
-          border-bottom:1px solid #13293d;
-          background:transparent;
-          font-size:10px;
-          cursor:pointer;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
+        .forum-board-name:hover,.latest-topic a:hover{color:#fff;text-decoration:underline;}
+        .forum-board-description{margin-top:5px;color:#9aabba;font-size:11px;line-height:16px;}
+        .latest-topic{min-width:0;font-size:11px;}
+        .latest-topic a{
+          display:block;overflow:hidden;color:#d7eaff;font-weight:bold;text-overflow:ellipsis;white-space:nowrap;
         }
-
-        .forum-link:hover,
-        .forum-link.active{
-          background:#12324b;
-          color:#fff;
-        }
-
-        .notice{
-          color:#f2c14e;
-          font-weight:bold;
-        }
-
-        .post-table{
-          width:100%;
-          border-collapse:collapse;
-          font-size:10px;
-        }
-
-        .post-table th{
-          background:#0f2a40;
-          color:#f2c14e;
-          border-bottom:1px solid #3b7fc2;
-          padding:7px;
-          text-align:left;
-          text-transform:uppercase;
-        }
-
-        .post-table td{
-          border-bottom:1px solid #13293d;
-          padding:7px;
-          color:#d7eaff;
-        }
-
-        .post-subject{
-          color:#7fc0ff;
-          font-weight:bold;
-        }
-
-        .tag{
-          display:inline-block;
-          border:1px solid #3b7fc2;
-          background:#0a1622;
-          color:#f2c14e;
-          padding:2px 5px;
-          margin-right:4px;
-          font-size:9px;
-        }
+        .latest-topic span{display:block;margin-top:4px;color:#8193a1;}
+        .board-count{text-align:center;color:#d7eaff;font-size:12px;font-weight:bold;}
+        .board-count span{display:none;}
+        .empty-forums{padding:22px 16px;color:#9aabba;font-size:12px;}
 
         .create-form label{
           display:block;
           color:#f2c14e;
           font-size:10px;
           font-weight:bold;
-          margin-top:5px;
-          margin-bottom:3px;
+          margin-top:12px;
+          margin-bottom:6px;
           text-transform:uppercase;
         }
 
@@ -469,198 +422,167 @@ export default function ForumsPage() {
           background:#000;
           border:1px solid #3b7fc2;
           color:#fff;
-          padding:5px;
-          font-size:10px;
+          min-height:38px;padding:8px 10px;font-size:12px;
         }
 
         .create-form textarea{
-          min-height:52px;
+          min-height:120px;
           resize:vertical;
         }
 
         .form-grid{
-          display:grid;
-          grid-template-columns:1fr 1fr 1fr 1fr 1fr;
-          gap:6px;
+          display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;
         }
 
-        .post-button{
-          margin-top:8px;
-          background:linear-gradient(to bottom,#c40000,#6a0000);
-          border:1px solid #ff4d4d;
-          color:#fff;
-          font-size:10px;
-          font-weight:bold;
-          padding:7px 12px;
-          cursor:pointer;
-          text-transform:uppercase;
+        .post-modal-backdrop{
+          position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+          padding:20px;background:rgba(0,0,0,.82);
         }
-
-        .error{
-          margin-top:8px;
-          background:#2a0000;
-          border:1px solid #ff4d4d;
-          color:#ffb3b3;
-          padding:7px;
-          font-size:10px;
+        .post-modal{
+          width:min(760px,100%);max-height:90vh;overflow:auto;
+          background:#0a1622;border:1px solid #3b7fc2;box-shadow:0 16px 50px #000;
         }
-
-        .safety-list li{
-          margin-left:18px;
-          margin-bottom:6px;
+        .post-modal-header{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:14px 16px;background:#0f2a40;border-bottom:1px solid #3b7fc2;
+          color:#f2c14e;font-size:13px;font-weight:bold;text-transform:uppercase;
         }
-
-        .clip-card{
-          background:#0a1622;
-          border:1px solid #1f4c73;
-          padding:7px;
-          margin-bottom:7px;
+        .post-modal-close{
+          border:0;background:none;color:#d7e2ee;font-size:20px;cursor:pointer;
         }
-
-        .clip-title{
-          color:#7fc0ff;
-          font-weight:bold;
-          font-size:10px;
-        }
-
-        .clip-meta{
-          color:#a9c3db;
-          font-size:9px;
-          margin-top:3px;
+        .post-modal-body{padding:16px;}
+        .post-button{margin-top:12px;}
+        .form-error{
+          margin-top:10px;padding:9px;border:1px solid #ff4d4d;background:#2a0000;
+          color:#ffb3b3;font-size:12px;line-height:18px;
         }
 
         .footer{
-          margin-top:8px;
-          height:26px;
-          background:#0a1622;
-          border:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#a9c3db;
-          font-size:10px;
+          margin-top:10px;padding:10px;text-align:center;color:#8193a1;font-size:11px;
+        }
+        @media(max-width:760px){
+          .wrapper{padding:14px 10px;}
+          .forum-heading{align-items:flex-start;padding:14px;}
+          .forum-heading h1{font-size:17px;}
+          .forum-columns{display:none;}
+          .forum-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px;}
+          .board-count{text-align:right;font-size:11px;}
+          .board-count span{display:inline;color:#8193a1;font-size:10px;font-weight:normal;}
+          .latest-topic{grid-column:1/-1;grid-row:2;}
+          .forum-section-title{padding:10px 12px;}
+          .forum-section-description{padding:0 12px 9px;}
+          .form-grid{grid-template-columns:1fr 1fr;}
+          .forum-toolbar{padding:9px 12px;}
+        }
+        @media(max-width:430px){
+          .forum-heading{flex-direction:column;}
+          .new-post-button{width:100%;}
+          .form-grid{grid-template-columns:1fr;}
         }
       `}</style>
+      <div className="wrapper">
+        <div className="forum-page">
+          <div className="forum-heading">
+            <div>
+              <h1>GameBattles Forums</h1>
+              <p>Browse discussions, find teammates, and catch up on the latest posts.</p>
+            </div>
+            <button
+              className="new-post-button"
+              type="button"
+              onClick={() => {
+                setCategory(activeCategory === "All" ? "Teams" : activeCategory);
+                setError("");
+                setShowCreatePost(true);
+              }}
+            >
+              New Post
+            </button>
+          </div>
 
-      <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/rules">Rules</a>
-        <a href="/support">Support</a>
-        <a href="/profile">My Profile</a>
+          <div className="forum-toolbar">
+            <div className="forum-breadcrumb">
+              {activeCategory === "All" ? (
+                "All Forums"
+              ) : (
+                <>
+                  <button type="button" onClick={() => setActiveCategory("All")}>All Forums</button>
+                  {" / "}{activeCategory}
+                </>
+              )}
+            </div>
+            <a className="forum-breadcrumb" href="/rules">Forum Rules</a>
+          </div>
+
+          <div className="forum-columns" aria-hidden="true">
+            <span>Forum</span>
+            <span>Latest Post</span>
+            <span>Threads</span>
+            <span>Posts</span>
+          </div>
+
+          {visibleForumSections.length ? visibleForumSections.map((section) => (
+            <section className="forum-section" key={section.title}>
+              <div className="forum-section-title">{section.title}</div>
+              <div className="forum-section-description">{section.description}</div>
+              {section.boards.map((board) => (
+                <div className="forum-row" key={board.category}>
+                  <div>
+                    <button
+                      className="forum-board-name"
+                      type="button"
+                      onClick={() => setActiveCategory(board.category)}
+                    >
+                      {board.category}
+                    </button>
+                    <div className="forum-board-description">{board.description}</div>
+                  </div>
+                  <div className="latest-topic">
+                    {board.latestPost ? (
+                      <>
+                        <a href={`/forums/${board.latestPost.id}`} title={board.latestPost.subject}>
+                          {board.latestPost.subject}
+                        </a>
+                        <span>by {board.latestPost.author} · {new Date(board.latestPost.createdAt).toLocaleDateString()}</span>
+                      </>
+                    ) : (
+                      <span>No posts yet</span>
+                    )}
+                  </div>
+                  <div className="board-count"><span>Threads: </span>{board.threadCount}</div>
+                  <div className="board-count"><span>Posts: </span>{board.postCount}</div>
+                </div>
+              ))}
+            </section>
+          )) : (
+            <div className="empty-forums">No forum boards found.</div>
+          )}
+        </div>
+
+        <footer className="footer">© 2026 Competitive Gaming Network</footer>
       </div>
 
-      <div className="wrapper">
-        <header className="header">
-          <div>
-            <div className="logo-main">GameBattles</div>
-            <div className="logo-sub">Where Gaming Finds Its Edge</div>
-          </div>
-        </header>
-
-        <div className="forum-page">
-          <div className="forum-title">Forums Frontpage</div>
-
-          <div className="forum-layout">
-            <aside>
-              <div className="box">
-                <div className="box-title">Forum Navigation</div>
-                <div className="box-body">
-                  <button className={`forum-link ${activeCategory === "All" ? "active" : ""}`} onClick={() => setActiveCategory("All")}>All Posts</button>
-                  <a className="forum-link" href="/rules">Forum Rules</a>
-                  <button className={`forum-link ${activeCategory === "News & Updates" ? "active" : ""}`} onClick={() => setActiveCategory("News & Updates")}>News & Updates</button>
-                  <button className={`forum-link ${activeCategory === "Teams" ? "active" : ""}`} onClick={() => setActiveCategory("Teams")}>Teams</button>
-                  <button className={`forum-link ${activeCategory === "General Info" ? "active" : ""}`} onClick={() => setActiveCategory("General Info")}>General Info</button>
-                  <button className={`forum-link ${activeCategory === "Questions" ? "active" : ""}`} onClick={() => setActiveCategory("Questions")}>Questions</button>
-                  <button className={`forum-link ${activeCategory === "Site Suggestions" ? "active" : ""}`} onClick={() => setActiveCategory("Site Suggestions")}>Site Suggestions</button>
-                  <button className={`forum-link ${activeCategory === "Top Clips" ? "active" : ""}`} onClick={() => setActiveCategory("Top Clips")}>Top Clips</button>
-                  <a className="forum-link" href="#">New Users Lounge</a>
-                  <a className="forum-link" href="#">View Today's Posts</a>
-                </div>
-              </div>
-
-              <div className="box">
-                <div className="box-title">Top Clips</div>
-                <div className="box-body">
-                  <div className="clip-card">
-                    <div className="clip-title">Clip Review Coming Soon</div>
-                    <div className="clip-meta">Submit clips later for review</div>
-                  </div>
-                  <div className="clip-card">
-                    <div className="clip-title">Best plays will be featured</div>
-                    <div className="clip-meta">Community highlights area</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="box">
-                <div className="box-title">Safety Rules</div>
-                <div className="box-body">
-                  <p className="notice">Allowed:</p>
-                  <ul className="safety-list">
-                    <li>Swearing</li>
-                    <li>Trash talk</li>
-                    <li>Competitive banter</li>
-                    <li>Drug discussion without selling</li>
-                  </ul>
-
-                  <p className="notice">Never allowed:</p>
-                  <ul className="safety-list">
-                    <li>Illegal sexual content</li>
-                    <li>Minor exploitation content</li>
-                    <li>Threats or doxxing</li>
-                    <li>Account selling or trading</li>
-                    <li>Cheat selling or hacking guides</li>
-                  </ul>
-                </div>
-              </div>
-            </aside>
-
-            <main>
-              <div className="box">
-                <div className="box-title">
-                  Latest Forum Posts — {activeCategory}
-                </div>
-                <div className="box-body">
-                  <table className="post-table">
-                    <thead>
-                      <tr>
-                        <th>Subject</th>
-                        <th>System</th>
-                        <th>Game</th>
-                        <th>Ladder</th>
-                        <th>Category</th>
-                        <th>Author</th>
-                        <th>Replies</th>
-                        <th>Views</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filteredPosts.map((post, index) => (
-                        <tr key={index}>
-                          <td>
-                            <div>
-                              <a className="post-subject" href={`/forums/${post.id}`}>{post.subject}</a>
-                            </div>
-                            <span className="tag">{post.type}</span>
-                          </td>
-                          <td>{post.system}</td>
-                          <td>{post.game}</td>
-                          <td>{post.ladder}</td>
-                          <td>{post.category}</td>
-                          <td>{post.author}</td>
-                          <td>{post.replies}</td>
-                          <td>{post.views}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="box">
-                <div className="box-title">Create Forum Post</div>
-                <div className="box-body">
+      {showCreatePost && (
+        <div className="post-modal-backdrop" onClick={() => setShowCreatePost(false)}>
+          <section
+            className="post-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-post-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="post-modal-header">
+              <span id="new-post-title">Create Forum Post</span>
+              <button
+                className="post-modal-close"
+                type="button"
+                aria-label="Close new post"
+                onClick={() => setShowCreatePost(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="post-modal-body">
                   <form className="create-form" onSubmit={handleCreatePost}>
                     <label>Subject</label>
                     <input
@@ -738,26 +660,12 @@ export default function ForumsPage() {
                       Submit Post
                     </button>
 
-                    {error && <div className="error">{error}</div>}
+                    {error && <div className="form-error" role="alert">{error}</div>}
                   </form>
-                </div>
-              </div>
-
-              <div className="box">
-                <div className="box-title">News & Updates</div>
-                <div className="box-body">
-                  This section will be used for official site updates, ladder changes,
-                  new features, tournament announcements, maintenance notices, and community news.
-                </div>
-              </div>
-            </main>
-          </div>
+            </div>
+          </section>
         </div>
-
-        <footer className="footer">
-          © 2026 Competitive Gaming Network
-        </footer>
-      </div>
+      )}
     </>
   );
 }

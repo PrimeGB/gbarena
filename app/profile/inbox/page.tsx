@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 
@@ -24,10 +25,16 @@ type MessageRow = {
   created_at: string;
 };
 
-function senderName(message: MessageRow) {
+type MessageFolder = "inbox" | "sent";
+
+function senderName(message: MessageRow, profileNames: Record<string, string>) {
   if (message.sender_type === "system") return "GameBattles";
   if (message.sender_type === "staff") return "Staff";
-  return "User";
+  return (message.sender_id && profileNames[message.sender_id]) || "Player";
+}
+
+function recipientName(message: MessageRow, profileNames: Record<string, string>) {
+  return profileNames[message.recipient_id] || "Player";
 }
 
 function senderClass(message: MessageRow) {
@@ -46,66 +53,207 @@ function canReply(message: MessageRow | null) {
 export default function InboxPage() {
   const { user, loading } = useUser();
   const currentUser = user as AppUser | null;
-  const loadedOnce = useRef(false);
 
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [sentMessages, setSentMessages] = useState<MessageRow[]>([]);
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  const [folder, setFolder] = useState<MessageFolder>("inbox");
   const [selected, setSelected] = useState<MessageRow | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sentError, setSentError] = useState("");
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [recipientUsername, setRecipientUsername] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    async function loadInbox() {
-      if (loadedOnce.current) return;
-      loadedOnce.current = true;
+    let active = true;
 
+    async function loadMessages() {
       if (!currentUser?.id) {
+        setMessages([]);
+        setSentMessages([]);
+        setProfileNames({});
+        setSentError("");
+        setSelected(null);
         setPageLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("recipient_id", currentUser.id)
-        .eq("is_archived", false)
-        .order("created_at", { ascending: false });
+      setPageLoading(true);
+      setError("");
+      setSentError("");
 
-      if (error) {
-        setError(error.message);
+      const [inboxResult, sentResult] = await Promise.all([
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("recipient_id", currentUser.id)
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("sender_id", currentUser.id)
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (!active) return;
+
+      if (inboxResult.error) {
+        setError(inboxResult.error.message);
         setMessages([]);
+        setSentMessages([]);
+        setPageLoading(false);
+        return;
+      }
+
+      const inboxMessages = (inboxResult.data || []) as MessageRow[];
+      const outgoingMessages = (sentResult.data || []) as MessageRow[];
+      setSentError(sentResult.error?.message || "");
+      setMessages(inboxMessages);
+      setSentMessages(outgoingMessages);
+
+      const profileIds = [...new Set([
+        ...inboxMessages.map((message) => message.sender_id),
+        ...outgoingMessages.map((message) => message.recipient_id),
+      ].filter((id): id is string => Boolean(id)))];
+
+      if (profileIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id,username")
+          .in("id", profileIds);
+
+        if (!active) return;
+        if (profilesError) {
+          setError(profilesError.message);
+          setPageLoading(false);
+          return;
+        }
+
+        const names: Record<string, string> = {};
+        (profiles || []).forEach((profile) => {
+          if (profile.username) names[profile.id] = profile.username;
+        });
+        setProfileNames(names);
       } else {
-        setMessages((data || []) as MessageRow[]);
+        setProfileNames({});
       }
 
       setPageLoading(false);
     }
 
-    if (!loading) loadInbox();
+    if (!loading) void loadMessages();
+    return () => {
+      active = false;
+    };
   }, [loading, currentUser?.id]);
 
   async function openMessage(message: MessageRow) {
     setSelected(message);
+    setComposeOpen(false);
     setReplyOpen(false);
     setReplyBody("");
     setNotice("");
 
-    if (!message.is_read && currentUser?.id) {
-      await supabase
+    if (folder === "inbox" && !message.is_read && currentUser?.id) {
+      const { error: readError } = await supabase
         .from("messages")
         .update({ is_read: true })
         .eq("id", message.id)
         .eq("recipient_id", currentUser.id);
 
-      setMessages((old) =>
-        old.map((item) =>
-          item.id === message.id ? { ...item, is_read: true } : item
-        )
-      );
+      if (readError) {
+        setNotice(`Message could not be marked as read: ${readError.message}`);
+        return;
+      }
+
+      const updatedMessage = { ...message, is_read: true };
+      setMessages((old) => old.map((item) => item.id === message.id ? updatedMessage : item));
+      setSelected(updatedMessage);
     }
+  }
+
+  async function sendNewMessage() {
+    if (!currentUser?.id || sendingMessage) return;
+
+    const trimmedUsername = recipientUsername.trim();
+    const trimmedSubject = composeSubject.trim();
+    const trimmedBody = composeBody.trim();
+    if (!trimmedUsername || !trimmedSubject || !trimmedBody) {
+      setNotice("Enter a recipient, subject, and message.");
+      return;
+    }
+    if (trimmedSubject.length > 120 || trimmedBody.length > 5000) {
+      setNotice("Subject must be 120 characters or fewer and messages 5,000 characters or fewer.");
+      return;
+    }
+
+    setSendingMessage(true);
+    setNotice("");
+
+    const { data: recipient, error: recipientError } = await supabase
+      .from("profiles")
+      .select("id,username")
+      .ilike("username", trimmedUsername)
+      .maybeSingle();
+
+    if (recipientError || !recipient) {
+      setNotice(recipientError?.message || "No account was found with that username.");
+      setSendingMessage(false);
+      return;
+    }
+    if (recipient.id === currentUser.id) {
+      setNotice("You can't send a message to yourself.");
+      setSendingMessage(false);
+      return;
+    }
+
+    const { error: sendError } = await supabase.from("messages").insert({
+      sender_id: currentUser.id,
+      recipient_id: recipient.id,
+      sender_type: "player",
+      subject: trimmedSubject,
+      body: trimmedBody,
+      message_type: "player",
+      is_read: false,
+      is_archived: false,
+    });
+
+    setSendingMessage(false);
+    if (sendError) {
+      setNotice(`Message could not be sent: ${sendError.message}`);
+      return;
+    }
+
+    setProfileNames((old) => ({ ...old, [recipient.id]: recipient.username || trimmedUsername }));
+    setRecipientUsername("");
+    setComposeSubject("");
+    setComposeBody("");
+    setComposeOpen(false);
+    setFolder("sent");
+    setSelected(null);
+    setNotice("Message sent.");
+
+    const { data: sent, error: refreshError } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("sender_id", currentUser.id)
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false });
+    if (refreshError) {
+      setNotice(`Message sent, but the sent folder could not be refreshed: ${refreshError.message}`);
+      return;
+    }
+    setSentMessages((sent || []) as MessageRow[]);
   }
 
   async function sendReply() {
@@ -128,10 +276,22 @@ export default function InboxPage() {
     setSendingReply(false);
 
     if (error) {
-      setNotice("Reply could not be sent.");
+      setNotice(`Reply could not be sent: ${error.message}`);
       return;
     }
 
+    setSentMessages((old) => [{
+      id: `local-${Date.now()}`,
+      sender_id: currentUser.id,
+      recipient_id: selected.sender_id as string,
+      sender_type: "player",
+      subject: `RE: ${selected.subject}`,
+      body: replyBody.trim(),
+      message_type: "player",
+      is_read: false,
+      is_archived: false,
+      created_at: new Date().toISOString(),
+    }, ...old]);
     setReplyBody("");
     setReplyOpen(false);
     setNotice("Reply sent.");
@@ -174,6 +334,8 @@ export default function InboxPage() {
   if (!currentUser) {
     return <div className="inbox-loading">You must be logged in to view inbox.</div>;
   }
+
+  const visibleMessages = folder === "inbox" ? messages : sentMessages;
 
   return (
     <>
@@ -318,6 +480,36 @@ export default function InboxPage() {
           padding:10px;
         }
 
+        .folder-tabs{
+          display:flex;
+          gap:6px;
+          padding:10px 10px 0;
+        }
+
+        .folder-tab,.compose-button{
+          border:1px solid #315f88;
+          background:#0b1d2c;
+          color:#d7eaff;
+          font-size:11px;
+          font-weight:900;
+          text-transform:uppercase;
+          padding:8px 10px;
+          cursor:pointer;
+        }
+
+        .folder-tab.active{
+          background:#15324b;
+          border-color:#2f6f9f;
+          color:#f2c14e;
+        }
+
+        .compose-button{
+          margin-left:auto;
+          border-color:#b32222;
+          background:linear-gradient(#9d0000,#4b0000);
+          color:#fff;
+        }
+
         .message-row{
           border:1px solid rgba(255,255,255,.08);
           background:linear-gradient(to bottom,#071827,#030910);
@@ -441,6 +633,41 @@ export default function InboxPage() {
           line-height:19px;
         }
 
+        .compose-form{
+          display:grid;
+          gap:10px;
+          padding:14px;
+        }
+
+        .compose-form label{
+          display:grid;
+          gap:5px;
+          color:#cfe2f2;
+          font-size:11px;
+          font-weight:900;
+          text-transform:uppercase;
+        }
+
+        .compose-form input,.compose-form textarea{
+          width:100%;
+          background:#02070c;
+          border:1px solid #315b7d;
+          color:#fff;
+          padding:10px;
+          font-size:13px;
+        }
+
+        .compose-form textarea{
+          min-height:180px;
+          resize:vertical;
+          line-height:19px;
+        }
+
+        .compose-actions{
+          display:flex;
+          gap:8px;
+        }
+
         .notice{
           color:#8cff9d;
           font-size:12px;
@@ -476,10 +703,10 @@ export default function InboxPage() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
@@ -494,13 +721,13 @@ export default function InboxPage() {
           </header>
 
           <nav className="nav">
-            <a href="/profile">Profile</a>
-            <a href="/profile/teams">Teams</a>
-            <a href="/profile/friends">Friends</a>
-            <a href="/profile/matches">Matches</a>
-            <a href="/profile/awards">Awards</a>
-            <a href="/profile/photos">Photos</a>
-            <a className="active" href="/profile/inbox">Inbox</a>
+            <Link href="/profile">Profile</Link>
+            <Link href="/profile/teams">Teams</Link>
+            <Link href="/profile/friends">Friends</Link>
+            <Link href="/profile/matches">Matches</Link>
+            <Link href="/profile/awards">Awards</Link>
+            <Link href="/profile/photos">Photos</Link>
+            <Link className="active" href="/profile/inbox">Inbox</Link>
           </nav>
 
           {error ? (
@@ -508,22 +735,71 @@ export default function InboxPage() {
           ) : (
             <section className="content">
               <div className="panel">
-                <div className="panel-title">Received Messages</div>
+                <div className="panel-title">
+                  {folder === "inbox" ? "Inbox" : "Sent Messages"}
+                </div>
 
+                <div className="folder-tabs">
+                  <button
+                    className={`folder-tab ${folder === "inbox" ? "active" : ""}`}
+                    type="button"
+                    onClick={() => {
+                      setFolder("inbox");
+                      setSelected(null);
+                      setComposeOpen(false);
+                      setNotice("");
+                    }}
+                  >
+                    Inbox
+                  </button>
+                  <button
+                    className={`folder-tab ${folder === "sent" ? "active" : ""}`}
+                    type="button"
+                    onClick={() => {
+                      setFolder("sent");
+                      setSelected(null);
+                      setComposeOpen(false);
+                      setNotice("");
+                    }}
+                  >
+                    Sent
+                  </button>
+                  <button
+                    className="compose-button"
+                    type="button"
+                    onClick={() => {
+                      setComposeOpen(true);
+                      setSelected(null);
+                      setNotice("");
+                    }}
+                  >
+                    New Message
+                  </button>
+                </div>
                 <div className="message-list">
-                  {messages.length === 0 ? (
-                    <div className="empty">No messages in your inbox.</div>
+                  {folder === "sent" && sentError ? (
+                    <div className="error">{sentError}</div>
+                  ) : visibleMessages.length === 0 ? (
+                    <div className="empty">
+                      {folder === "inbox" ? "No messages in your inbox." : "No sent messages yet."}
+                    </div>
                   ) : (
-                    messages.map((message) => (
+                    visibleMessages.map((message) => (
                       <div
-                        className={message.is_read ? "message-row" : "message-row unread"}
+                        className={
+                          message.is_read || folder === "sent"
+                            ? "message-row"
+                            : "message-row unread"
+                        }
                         key={message.id}
                         onClick={() => openMessage(message)}
                       >
                         <div className="message-subject">{message.subject}</div>
 
                         <div className={`message-meta ${senderClass(message)}`}>
-                          From: {senderName(message)}
+                          {folder === "inbox"
+                            ? `From: ${senderName(message, profileNames)}`
+                            : `To: ${recipientName(message, profileNames)}`}
                         </div>
 
                         <div className="message-preview">{message.body}</div>
@@ -534,16 +810,74 @@ export default function InboxPage() {
               </div>
 
               <div className="panel">
-                <div className="panel-title">Message Details</div>
+                <div className="panel-title">{composeOpen ? "New Message" : "Message Details"}</div>
 
-                {!selected ? (
+                {composeOpen ? (
+                  <form
+                    className="compose-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void sendNewMessage();
+                    }}
+                  >
+                    <label>
+                      To (username)
+                      <input
+                        autoComplete="off"
+                        maxLength={100}
+                        required
+                        value={recipientUsername}
+                        onChange={(event) => setRecipientUsername(event.target.value)}
+                        placeholder="Enter the recipient's username"
+                      />
+                    </label>
+                    <label>
+                      Subject
+                      <input
+                        maxLength={120}
+                        required
+                        value={composeSubject}
+                        onChange={(event) => setComposeSubject(event.target.value)}
+                        placeholder="Message subject"
+                      />
+                    </label>
+                    <label>
+                      Message
+                      <textarea
+                        maxLength={5000}
+                        required
+                        value={composeBody}
+                        onChange={(event) => setComposeBody(event.target.value)}
+                        placeholder="Write your message..."
+                      />
+                    </label>
+                    <div className="compose-actions">
+                      <button className="reply-btn" disabled={sendingMessage} type="submit">
+                        {sendingMessage ? "Sending..." : "Send Message"}
+                      </button>
+                      <button
+                        className="reply-btn"
+                        type="button"
+                        onClick={() => {
+                          setComposeOpen(false);
+                          setNotice("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {notice && <div className="notice" role="status">{notice}</div>}
+                  </form>
+                ) : !selected ? (
                   <div className="empty">Select a message to read it.</div>
                 ) : (
                   <div className="reader">
                     <div className="reader-subject">{selected.subject}</div>
 
                     <div className={`reader-meta ${senderClass(selected)}`}>
-                      Sent By: {senderName(selected)}
+                      {folder === "inbox"
+                        ? `From: ${senderName(selected, profileNames)}`
+                        : `To: ${recipientName(selected, profileNames)}`}
                     </div>
 
                     <div className="reader-body">{selected.body}</div>
@@ -568,7 +902,7 @@ export default function InboxPage() {
                       </div>
                     )}
 
-                    {canReply(selected) && (
+                    {folder === "inbox" && canReply(selected) && (
                       <div className="reader-actions">
                         <button
                           className="reply-btn"
@@ -580,7 +914,7 @@ export default function InboxPage() {
                       </div>
                     )}
 
-                    {replyOpen && canReply(selected) && (
+                    {replyOpen && folder === "inbox" && canReply(selected) && (
                       <div className="reply-box">
                         <textarea
                           value={replyBody}

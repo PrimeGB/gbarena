@@ -8,7 +8,6 @@ import { supabase } from "../../lib/supabase";
 type PlayerResult = {
   id: string;
   username: string | null;
-  email?: string | null;
 };
 
 type TeamResult = {
@@ -71,7 +70,7 @@ function SearchPageInner() {
 
       const playerSearch = supabase
         .from("profiles")
-        .select("id, username, email")
+        .select("id, username")
         .ilike("username", `%${safeQuery}%`)
         .limit(20);
 

@@ -54,6 +54,7 @@ type RosterMember = {
   user_id: string;
   role: string | null;
   username: string;
+  joined_at: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -133,6 +134,15 @@ function shortDate(value: string | null) {
   if (Number.isNaN(date.getTime())) return value;
 
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function memberSince(value: string | null) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleDateString();
 }
 
 function ordinal(value: number | null | undefined) {
@@ -362,6 +372,7 @@ export default function TeamPage() {
           user_id: member.user_id,
           role: member.role || "member",
           username,
+          joined_at: member.created_at || null,
           gb_rank_points: Number(profile.gb_rank_points || 0),
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
@@ -1004,7 +1015,7 @@ export default function TeamPage() {
 
                             <td className="rank">{prettyText(normalizeRole(member.role))}</td>
                             <td>{ordinal(member.gb_place)}</td>
-                            <td>Today</td>
+                            <td>{memberSince(member.joined_at)}</td>
                             <td>
                               <span className={`eligible ${member.eligibility}`}></span>
                             </td>
@@ -1025,7 +1036,7 @@ export default function TeamPage() {
                           </td>
                           <td className="rank">Leader</td>
                           <td>Unranked</td>
-                          <td>Today</td>
+                          <td>—</td>
                           <td>
                             <span className="eligible green"></span>
                           </td>

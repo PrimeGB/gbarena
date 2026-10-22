@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 
-type TeamRow = {
+type PlayerRow = {
   id: string;
-  name: string | null;
-  tag: string | null;
-  platform: string | null;
+  username: string | null;
+  gb_wins: number | null;
+  gb_losses: number | null;
+  gb_rank_points: number | null;
+};
+
+type PlayerContext = {
   game: string | null;
   ladder: string | null;
-  wins: number | null;
-  losses: number | null;
-  streak: number | null;
-  xp: number | null;
-  rating_points: number | null;
 };
 
 function prettyText(value: string | null | undefined) {
@@ -33,37 +33,81 @@ function ordinal(value: number) {
   return `${value}th`;
 }
 
-export default function TopTeamsPage() {
-  const [teams, setTeams] = useState<TeamRow[]>([]);
+export default function TopPlayersPage() {
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [playerContexts, setPlayerContexts] = useState<Record<string, PlayerContext>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadTeams() {
+    async function loadPlayers() {
       setLoading(true);
       setError("");
 
       const { data, error: loadError } = await supabase
-        .from("teams")
-        .select("id,name,tag,platform,game,ladder,wins,losses,streak,xp,rating_points")
-        .order("rating_points", { ascending: false })
-        .order("wins", { ascending: false })
-        .order("losses", { ascending: true })
-        .order("created_at", { ascending: true })
+        .from("profiles")
+        .select("id,username,gb_wins,gb_losses,gb_rank_points")
+        .order("gb_rank_points", { ascending: false })
+        .order("gb_wins", { ascending: false })
+        .order("gb_losses", { ascending: true })
         .limit(100);
 
       if (loadError) {
         setError(loadError.message);
-        setTeams([]);
+        setPlayers([]);
         setLoading(false);
         return;
       }
 
-      setTeams((data || []) as TeamRow[]);
+      const loadedPlayers = (data || []) as PlayerRow[];
+      setPlayers(loadedPlayers);
+
+      const playerIds = loadedPlayers.map((player) => player.id);
+      if (playerIds.length > 0) {
+        const { data: memberships, error: membershipError } = await supabase
+          .from("team_members")
+          .select("user_id,team_id")
+          .in("user_id", playerIds);
+
+        if (membershipError) {
+          setError(membershipError.message);
+          setLoading(false);
+          return;
+        }
+
+        const teamIds = [...new Set((memberships || []).map((membership) => membership.team_id))];
+        if (teamIds.length > 0) {
+          const { data: teams, error: teamsError } = await supabase
+            .from("teams")
+            .select("id,game,ladder")
+            .in("id", teamIds);
+
+          if (teamsError) {
+            setError(teamsError.message);
+            setLoading(false);
+            return;
+          }
+
+          const teamsById = new Map((teams || []).map((team) => [team.id, team]));
+          const contexts: Record<string, PlayerContext> = {};
+          (memberships || []).forEach((membership) => {
+            const team = teamsById.get(membership.team_id);
+            if (!contexts[membership.user_id] && team) {
+              contexts[membership.user_id] = { game: team.game, ladder: team.ladder };
+            }
+          });
+          setPlayerContexts(contexts);
+        } else {
+          setPlayerContexts({});
+        }
+      } else {
+        setPlayerContexts({});
+      }
+
       setLoading(false);
     }
 
-    loadTeams();
+    loadPlayers();
   }, []);
 
   return (
@@ -88,9 +132,8 @@ export default function TopTeamsPage() {
         td{color:#cfe2f2;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;}
         th:nth-child(2),td:nth-child(2){text-align:left;}
         .place{color:#d7ad4a;font-weight:900;}
-        .team-link{color:#7fc7ff;font-weight:900;text-decoration:none;text-transform:uppercase;}
-        .team-link:hover{color:#d7ad4a;}
-        .meta{color:#8aa7c0;font-size:10px;text-transform:uppercase;}
+        .member-link{color:#7fc7ff;font-weight:900;text-decoration:none;text-transform:uppercase;}
+        .member-link:hover{color:#d7ad4a;}
         .win{color:#36e86b;font-weight:900;}
         .loss{color:#ff5555;font-weight:900;}
         .points{color:#fff;font-weight:900;}
@@ -102,40 +145,40 @@ export default function TopTeamsPage() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
             <div>
               <div className="title-main">GameBattles</div>
-              <div className="title-sub">Top Teams</div>
+              <div className="title-sub">Top Players</div>
             </div>
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/profile/teams">My Teams</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile/teams">My Teams</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
           </nav>
 
           <section className="panel">
-            <div className="panel-title">Overall Team Rankings</div>
+            <div className="panel-title">Overall Player Rankings</div>
 
             {loading ? (
-              <div className="loading">Loading top teams...</div>
+              <div className="loading">Loading top players...</div>
             ) : error ? (
               <div className="error">{error}</div>
-            ) : teams.length === 0 ? (
-              <div className="empty">No teams ranked yet.</div>
+            ) : players.length === 0 ? (
+              <div className="empty">No players ranked yet.</div>
             ) : (
               <table>
                 <thead>
                   <tr>
                     <th>Place</th>
-                    <th>Team</th>
+                    <th>Member</th>
                     <th>Game</th>
                     <th>Ladder</th>
                     <th>W</th>
@@ -145,21 +188,25 @@ export default function TopTeamsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teams.map((team, index) => (
-                    <tr key={team.id}>
+                  {players.map((player, index) => {
+                    const context = playerContexts[player.id];
+                    return (
+                    <tr key={player.id}>
                       <td className="place">{ordinal(index + 1)}</td>
                       <td>
-                        <a className="team-link" href={`/teams/${team.id}`}>{team.name || "Team"}</a>
-                        <div className="meta">{team.tag ? `[${team.tag}]` : ""} {prettyText(team.platform)}</div>
+                        <Link className="member-link" href={`/profile?userId=${encodeURIComponent(player.id)}`}>
+                          {player.username || "Player"}
+                        </Link>
                       </td>
-                      <td>{prettyText(team.game)}</td>
-                      <td>{prettyText(team.ladder)}</td>
-                      <td className="win">{team.wins || 0}</td>
-                      <td className="loss">{team.losses || 0}</td>
-                      <td>{team.streak || 0}</td>
-                      <td className="points">{team.rating_points ?? 100}</td>
+                      <td>{prettyText(context?.game)}</td>
+                      <td>{prettyText(context?.ladder)}</td>
+                      <td className="win">{player.gb_wins || 0}</td>
+                      <td className="loss">{player.gb_losses || 0}</td>
+                      <td>—</td>
+                      <td className="points">{player.gb_rank_points ?? 0}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             )}

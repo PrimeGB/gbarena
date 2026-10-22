@@ -91,7 +91,10 @@ export default function LoginPage() {
     setSuccess(true);
 
     setTimeout(() => {
-      router.push("/home");
+      const nextPath = new URLSearchParams(window.location.search).get("next");
+      const isSafeInternalPath =
+        nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\");
+      router.push(isSafeInternalPath ? nextPath : "/home");
     }, 1200);
   }
 
