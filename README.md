@@ -59,11 +59,13 @@ The staff portal uses a private, Owner-managed roster with individual work-area
 grants for match review, forum moderation, awards, and staff-roster updates. Only
 an Owner can assign or remove staff access; the roster permission can edit position
 and duty descriptions but cannot change permissions. The staff roster is available
-only to the Owner and staff members with an assigned work area.
+only to approved accounts, and staff members still need an assigned work area to
+use its tools.
 
 Before using the portal in a deployed environment, apply the staff portal Supabase
-migration and promote the initial Owner through the trusted Supabase SQL Editor
-using [the one-time Owner bootstrap script](./sql/bootstrap_staff_owner.sql).
+and staff-email allowlist Supabase migrations, then promote the initial Owner
+through the trusted Supabase SQL Editor using
+[the one-time Owner bootstrap script](./sql/bootstrap_staff_owner.sql).
 Do not add the Owner's account email or service-role credentials to source control,
 and do not enable self-service Owner claims.
 

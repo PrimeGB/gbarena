@@ -62,8 +62,9 @@ export default function StaffDashboardPage() {
   const [role, setRole] = useState("");
   const [permissions, setPermissions] = useState<PermissionKey[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
+  const [emailAllowed, setEmailAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadedUserId, setLoadedUserId] = useState("");
+  const [loadedUserIdentity, setLoadedUserIdentity] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
@@ -74,9 +75,38 @@ export default function StaffDashboardPage() {
 
   const isOwner = role === "owner";
   const canEditDirectory = isOwner || permissions.includes("staff_directory");
-  const hasPortalAccess = isOwner || permissions.length > 0;
+  const hasPortalAccess = emailAllowed;
 
-  const loadDashboard = useCallback(async (userId: string) => {
+  const loadDashboard = useCallback(async (userId: string, userEmail: string) => {
+    const userIdentity = `${userId}:${userEmail}`;
+    setLoading(true);
+    const { data: portalAccess, error: portalAccessError } = await supabase.rpc(
+      "staff_has_portal_access"
+    );
+
+    if (portalAccessError) {
+      setEmailAllowed(false);
+      setRole("");
+      setPermissions([]);
+      setStaff([]);
+      setError(`Staff access could not be checked: ${portalAccessError.message}`);
+      setLoadedUserIdentity(userIdentity);
+      setLoading(false);
+      return;
+    }
+
+    const isAllowed = portalAccess === true;
+    setEmailAllowed(isAllowed);
+    if (!isAllowed) {
+      setRole("");
+      setPermissions([]);
+      setStaff([]);
+      setError("");
+      setLoadedUserIdentity(userIdentity);
+      setLoading(false);
+      return;
+    }
+
     const [{ data: profile, error: profileError }, { data: grants, error: grantsError }] =
       await Promise.all([
         supabase.from("profiles").select("role").eq("id", userId).maybeSingle(),
@@ -96,7 +126,7 @@ export default function StaffDashboardPage() {
           profileError?.message || grantsError?.message
         }`
       );
-      setLoadedUserId(userId);
+      setLoadedUserIdentity(userIdentity);
       setLoading(false);
       return;
     }
@@ -109,7 +139,7 @@ export default function StaffDashboardPage() {
 
     if (profileRow?.role !== "owner" && userPermissions.length === 0) {
       setStaff([]);
-      setLoadedUserId(userId);
+      setLoadedUserIdentity(userIdentity);
       setLoading(false);
       return;
     }
@@ -119,23 +149,24 @@ export default function StaffDashboardPage() {
     if (directoryError) {
       setStaff([]);
       setError(`Staff roster could not be loaded: ${directoryError.message}`);
-      setLoadedUserId(userId);
+      setLoadedUserIdentity(userIdentity);
       setLoading(false);
       return;
     }
 
     setStaff((directory || []) as StaffDirectoryEntry[]);
-    setLoadedUserId(userId);
+    setLoadedUserIdentity(userIdentity);
     setLoading(false);
   }, []);
 
   const userId = user?.id;
+  const userEmail = user?.email || "";
   useEffect(() => {
     if (authLoading) return;
     if (!userId) return;
 
-    void Promise.resolve().then(() => loadDashboard(userId));
-  }, [authLoading, loadDashboard, userId]);
+    void Promise.resolve().then(() => loadDashboard(userId, userEmail));
+  }, [authLoading, loadDashboard, userEmail, userId]);
 
   async function assignStaffMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -170,7 +201,7 @@ export default function StaffDashboardPage() {
     setDuties("");
     setSelectedPermissions([]);
     setNotice("Staff position and work-area access saved.");
-    if (user) await loadDashboard(user.id);
+    if (user) await loadDashboard(user.id, user.email || "");
   }
 
   async function removeStaffMember(memberUsername: string) {
@@ -189,7 +220,7 @@ export default function StaffDashboardPage() {
     }
 
     setNotice(`Staff access removed for ${memberUsername}.`);
-    if (user) await loadDashboard(user.id);
+    if (user) await loadDashboard(user.id, user.email || "");
   }
 
   async function updateDirectoryEntry(
@@ -215,7 +246,7 @@ export default function StaffDashboardPage() {
     }
 
     setNotice(`Directory entry updated for ${memberUsername}.`);
-    if (user) await loadDashboard(user.id);
+    if (user) await loadDashboard(user.id, user.email || "");
   }
 
   function togglePermission(permission: PermissionKey) {
@@ -242,7 +273,9 @@ export default function StaffDashboardPage() {
         </nav>
 
         {authLoading ||
-        (user && (loading || loadedUserId !== user.id)) ? (
+        (user &&
+          (loading ||
+            loadedUserIdentity !== `${user.id}:${user.email || ""}`)) ? (
           <p style={styles.message}>Checking your staff access...</p>
         ) : !user ? (
           <div style={styles.message}>
@@ -255,8 +288,8 @@ export default function StaffDashboardPage() {
           <p style={styles.error} role="alert">{error}</p>
         ) : !hasPortalAccess ? (
           <p style={styles.message}>
-            This account has not been assigned staff access. Contact the site Owner
-            if you believe this is a mistake.
+            This account is not on the approved staff email list. Contact the site
+            Owner if you believe this is a mistake.
           </p>
         ) : (
           <>
@@ -265,10 +298,11 @@ export default function StaffDashboardPage() {
 
             <section className="staff-mobile-section" style={styles.section}>
               <h2 style={styles.sectionTitle}>Staff work areas</h2>
-              <div className="staff-mobile-grid" style={styles.cards}>
-                {workAreas
-                  .filter((area) => isOwner || permissions.includes(area.key))
-                  .map((area) => (
+              {workAreas.some((area) => isOwner || permissions.includes(area.key)) ? (
+                <div className="staff-mobile-grid" style={styles.cards}>
+                  {workAreas
+                    .filter((area) => isOwner || permissions.includes(area.key))
+                    .map((area) => (
                     <article
                       key={area.key}
                       className={area.key === "match_review" ? "staff-ticket-card" : undefined}
@@ -299,7 +333,13 @@ export default function StaffDashboardPage() {
                       )}
                     </article>
                   ))}
-              </div>
+                </div>
+              ) : (
+                <p style={styles.help}>
+                  This approved account has no staff work areas assigned yet.
+                  Contact the site Owner to request the duties you need.
+                </p>
+              )}
             </section>
 
             {isOwner && (
@@ -365,11 +405,12 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
-            <section className="staff-mobile-section" style={styles.section}>
-              <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
-              {staff.length === 0 ? (
-                <p style={styles.help}>No staff assignments have been created yet.</p>
-              ) : (
+            {(isOwner || permissions.length > 0) && (
+              <section className="staff-mobile-section" style={styles.section}>
+                <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
+                {staff.length === 0 ? (
+                  <p style={styles.help}>No staff assignments have been created yet.</p>
+                ) : (
                 <div className="staff-mobile-list" style={styles.staffList}>
                   {staff.map((member) => (
                     <article key={member.user_id} style={styles.staffCard}>
@@ -427,8 +468,9 @@ export default function StaffDashboardPage() {
                     </article>
                   ))}
                 </div>
-              )}
-            </section>
+                )}
+              </section>
+            )}
           </>
         )}
       </section>
