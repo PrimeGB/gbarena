@@ -424,7 +424,7 @@ export default function StaffDashboardPage() {
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
 
-            <section className="staff-mobile-section" style={styles.section}>
+            <section id="dashboard-overview" className="staff-mobile-section" style={styles.section}>
               <h2 style={styles.sectionTitle}>Dashboard / Overview</h2>
               <p style={styles.cardText}>
                 Rank: <strong>{rankNames[role] || "Staff"}</strong>
@@ -533,7 +533,7 @@ export default function StaffDashboardPage() {
             )}
 
             {overview && overview.recent_actions.length > 0 && (
-              <section className="staff-mobile-section" style={styles.section}>
+              <section id="staff-audit" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Recent staff actions</h2>
                 <div className="staff-mobile-list" style={styles.staffList}>
                   {overview.recent_actions.map((action, index) => (
@@ -557,7 +557,7 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
-            <section className="staff-mobile-section" style={styles.section}>
+            <section id="staff-work-areas" className="staff-mobile-section" style={styles.section}>
               <h2 style={styles.sectionTitle}>Staff work areas</h2>
               {workAreas.some((area) => isOwner || permissions.includes(area.key)) ? (
                 <div className="staff-mobile-grid" style={styles.cards}>
@@ -601,7 +601,7 @@ export default function StaffDashboardPage() {
             </section>
 
             {isOwner && (
-              <section className="staff-mobile-section" style={styles.section}>
+              <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
                   Founder — Prime is the only rank that can grant or remove staff

@@ -182,3 +182,323 @@ body:has(.staff-mobile-page) > .site-header {
     padding: 12px !important;
   }
 }
+
+.staff-portal-page {
+  padding: 28px clamp(14px, 3vw, 36px) !important;
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(36, 92, 132, 0.3), transparent 58%),
+    #050b12 !important;
+}
+
+.staff-portal-page .staff-mobile-shell {
+  display: flex;
+  width: min(100%, 1280px) !important;
+  flex-direction: column;
+  overflow: clip;
+  border: 1px solid #263b50 !important;
+  border-radius: 14px;
+  background: #0a121b !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36) !important;
+}
+
+.staff-portal-page .staff-mobile-header {
+  padding: 32px 36px 26px !important;
+  border-bottom: 1px solid #263b50 !important;
+  background:
+    radial-gradient(ellipse at 88% 0%, rgba(58, 115, 155, 0.2), transparent 44%),
+    linear-gradient(120deg, #101f2d, #0a121b 72%) !important;
+}
+
+.staff-portal-page .staff-mobile-header > p:last-child {
+  max-width: 720px;
+}
+
+.staff-portal-page .staff-mobile-header h1 {
+  font-size: clamp(26px, 3vw, 36px) !important;
+  line-height: 1.15;
+}
+
+.staff-portal-page .staff-mobile-nav {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start !important;
+  gap: 8px;
+  padding: 12px 30px !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid #263b50;
+  background: rgba(9, 18, 27, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.staff-portal-page .staff-mobile-nav a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #b7c8d8;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.staff-portal-page .staff-mobile-nav a:hover,
+.staff-portal-page .staff-mobile-nav a:focus-visible {
+  border-color: #354d63;
+  background: #142434;
+  color: #fff;
+}
+
+.staff-portal-page .staff-mobile-shell > #dashboard-overview {
+  order: 1;
+}
+
+.staff-portal-page .staff-mobile-shell > #staff-work-areas {
+  order: 2;
+}
+
+.staff-portal-page .staff-mobile-shell > #reports-inbox {
+  order: 3;
+}
+
+.staff-portal-page .staff-mobile-shell > #staff-audit {
+  order: 4;
+}
+
+.staff-portal-page .staff-mobile-shell > #staff-access {
+  order: 5;
+}
+
+.staff-portal-page .staff-mobile-shell > section:has(> h2#staff-directory) {
+  order: 6;
+}
+
+.staff-portal-page .staff-mobile-section {
+  margin: 14px 20px 0;
+  padding: 24px 28px !important;
+  border: 1px solid #22364a;
+  border-radius: 10px;
+  background: #0d1823;
+}
+
+.staff-portal-page .staff-mobile-section:last-child {
+  margin-bottom: 20px;
+}
+
+.staff-portal-page .staff-mobile-section > h2 {
+  margin-bottom: 18px !important;
+  padding-bottom: 12px !important;
+  border-bottom-color: #273b4f !important;
+  color: #e8c46a !important;
+  font-size: 13px !important;
+  letter-spacing: 0.09em !important;
+}
+
+.staff-portal-page #dashboard-overview > p {
+  margin: -7px 0 18px !important;
+  color: #9aafc1 !important;
+}
+
+.staff-portal-page .staff-mobile-grid {
+  gap: 12px !important;
+}
+
+.staff-portal-page #dashboard-overview .staff-mobile-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.staff-portal-page .staff-mobile-grid > article,
+.staff-portal-page .staff-mobile-card,
+.staff-portal-page .staff-mobile-list > article {
+  min-width: 0;
+  padding: 18px !important;
+  border: 1px solid #263c50 !important;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #122130, #0d1823) !important;
+  box-shadow: none !important;
+}
+
+.staff-portal-page #dashboard-overview .staff-mobile-grid > article {
+  min-height: 106px;
+  border-top: 2px solid #c79b3b !important;
+}
+
+.staff-portal-page .staff-mobile-grid > article p:first-child {
+  color: #9fb2c3 !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+}
+
+.staff-portal-page #dashboard-overview .staff-mobile-grid > article strong {
+  margin-top: 13px !important;
+  color: #f0c75c !important;
+  font-size: 30px !important;
+}
+
+.staff-portal-page #staff-work-areas .staff-mobile-grid > article {
+  display: flex;
+  min-height: 168px;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.staff-portal-page #staff-work-areas .staff-mobile-grid > article:hover {
+  transform: translateY(-2px);
+  border-color: #46627a !important;
+}
+
+.staff-portal-page #staff-work-areas .staff-mobile-grid h3 {
+  margin: 2px 0 0;
+  font-size: 15px !important;
+}
+
+.staff-portal-page #staff-work-areas .staff-mobile-grid a {
+  margin-top: auto !important;
+  padding-top: 16px;
+  color: #e8c46a !important;
+  font-size: 13px !important;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.staff-portal-page #staff-work-areas .staff-mobile-grid a:hover {
+  color: #ffe39a !important;
+  text-decoration: underline;
+}
+
+.staff-portal-page .staff-mobile-section .staff-mobile-list {
+  gap: 10px !important;
+  padding: 0 !important;
+}
+
+.staff-portal-page .staff-mobile-section .staff-mobile-card-header {
+  align-items: center !important;
+}
+
+.staff-portal-page .staff-mobile-section form {
+  gap: 14px !important;
+  margin-top: 18px;
+}
+
+.staff-portal-page .staff-mobile-section label {
+  gap: 7px !important;
+  color: #b7c8d8 !important;
+  font-size: 12px !important;
+  font-weight: 700;
+}
+
+.staff-portal-page .staff-mobile-section input,
+.staff-portal-page .staff-mobile-section select,
+.staff-portal-page .staff-mobile-section textarea {
+  min-height: 42px;
+  border: 1px solid #30475c !important;
+  border-radius: 5px;
+  background: #08111a !important;
+  color: #e4edf5 !important;
+}
+
+.staff-portal-page .staff-mobile-section textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.staff-portal-page .staff-mobile-section input:focus,
+.staff-portal-page .staff-mobile-section select:focus,
+.staff-portal-page .staff-mobile-section textarea:focus {
+  outline: 2px solid #c79b3b;
+  outline-offset: 1px;
+}
+
+.staff-portal-page .staff-mobile-section button {
+  min-height: 40px;
+  border-radius: 5px;
+  font-weight: 800;
+}
+
+.staff-portal-page .staff-mobile-section .staff-ticket-card {
+  border-color: #765c2c !important;
+  background: linear-gradient(145deg, #1a2732, #101a24 72%) !important;
+  box-shadow: inset 3px 0 #d8a43a !important;
+}
+
+.staff-portal-page .staff-mobile-section .staff-ticket-link {
+  margin-top: auto !important;
+  padding: 10px 13px !important;
+  border: 1px solid #82672e;
+  border-radius: 5px;
+  background: #3c3017;
+  color: #ffe39a !important;
+}
+
+.staff-portal-page [role="alert"],
+.staff-portal-page [role="status"] {
+  border-radius: 7px;
+}
+
+@media (max-width: 900px) {
+  .staff-portal-page #dashboard-overview .staff-mobile-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .staff-portal-page {
+    padding: 10px !important;
+  }
+
+  .staff-portal-page .staff-mobile-shell {
+    border-radius: 10px;
+  }
+
+  .staff-portal-page .staff-mobile-header {
+    padding: 22px 18px 18px !important;
+  }
+
+  .staff-portal-page .staff-mobile-nav {
+    gap: 4px;
+    padding: 8px 12px !important;
+  }
+
+  .staff-portal-page .staff-mobile-nav a {
+    min-height: 36px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .staff-portal-page .staff-mobile-section {
+    margin: 10px 10px 0;
+    padding: 18px 16px !important;
+  }
+
+  .staff-portal-page #dashboard-overview .staff-mobile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .staff-portal-page #staff-work-areas .staff-mobile-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .staff-portal-page #staff-work-areas .staff-mobile-grid > article {
+    min-height: 140px;
+  }
+
+  .staff-portal-page .staff-mobile-grid > article,
+  .staff-portal-page .staff-mobile-card,
+  .staff-portal-page .staff-mobile-list > article {
+    padding: 14px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-portal-page .staff-mobile-nav a,
+  .staff-portal-page #staff-work-areas .staff-mobile-grid > article {
+    transition: none;
+  }
+}
