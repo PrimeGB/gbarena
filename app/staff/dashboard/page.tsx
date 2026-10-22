@@ -372,9 +372,10 @@ export default function StaffDashboardPage() {
           <p style={styles.eyebrow}>GAMEBATTLES STAFF</p>
           <div style={styles.titleRow}>
             <div>
-              <h1 style={styles.title}>Administration Command Center</h1>
+              <h1 style={styles.title}>Staff Command Center</h1>
               <p style={styles.subheading}>
-                Competitive operations · disputes · player safety · awards
+                Authorized staff workspace. Tools and actions are limited by rank
+                and recorded for accountability.
               </p>
             </div>
             {role && (
@@ -383,10 +384,6 @@ export default function StaffDashboardPage() {
               </span>
             )}
           </div>
-          <p style={styles.subheading}>
-            Authorized staff workspace. Tools and actions are limited by rank and
-            recorded for accountability.
-          </p>
         </header>
         <nav className="staff-mobile-nav" style={styles.nav}>
           <Link href="/home">Back to GameBattles</Link>
@@ -423,27 +420,6 @@ export default function StaffDashboardPage() {
           <>
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
-
-            <section id="dashboard-overview" className="staff-mobile-section" style={styles.section}>
-              <h2 style={styles.sectionTitle}>Dashboard / Overview</h2>
-              <p style={styles.cardText}>
-                Rank: <strong>{rankNames[role] || "Staff"}</strong>
-              </p>
-              <div className="staff-mobile-grid" style={styles.cards}>
-                {[
-                  ["Open disputes", overview?.open_disputes],
-                  ["New reports", overview?.new_reports],
-                  ["Priority cases", overview?.priority_cases],
-                  ["Pending awards", overview?.pending_awards],
-                  ["Assigned to me", overview?.my_cases],
-                ].map(([label, value]) => (
-                  <article key={String(label)} style={styles.card}>
-                    <p style={styles.metricLabel}>{label}</p>
-                    <strong style={styles.metricValue}>{value ?? "—"}</strong>
-                  </article>
-                ))}
-              </div>
-            </section>
 
             {permissions.includes("staff_reports") && (
               <section id="reports-inbox" className="staff-mobile-section" style={styles.section}>

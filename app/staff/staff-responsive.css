@@ -254,28 +254,24 @@ body:has(.staff-mobile-page) > .site-header {
   color: #fff;
 }
 
-.staff-portal-page .staff-mobile-shell > #dashboard-overview {
+.staff-portal-page .staff-mobile-shell > #staff-work-areas {
   order: 1;
 }
 
-.staff-portal-page .staff-mobile-shell > #staff-work-areas {
+.staff-portal-page .staff-mobile-shell > #reports-inbox {
   order: 2;
 }
 
-.staff-portal-page .staff-mobile-shell > #reports-inbox {
+.staff-portal-page .staff-mobile-shell > #staff-audit {
   order: 3;
 }
 
-.staff-portal-page .staff-mobile-shell > #staff-audit {
+.staff-portal-page .staff-mobile-shell > #staff-access {
   order: 4;
 }
 
-.staff-portal-page .staff-mobile-shell > #staff-access {
-  order: 5;
-}
-
 .staff-portal-page .staff-mobile-shell > section:has(> h2#staff-directory) {
-  order: 6;
+  order: 5;
 }
 
 .staff-portal-page .staff-mobile-section {
@@ -299,17 +295,8 @@ body:has(.staff-mobile-page) > .site-header {
   letter-spacing: 0.09em !important;
 }
 
-.staff-portal-page #dashboard-overview > p {
-  margin: -7px 0 18px !important;
-  color: #9aafc1 !important;
-}
-
 .staff-portal-page .staff-mobile-grid {
   gap: 12px !important;
-}
-
-.staff-portal-page #dashboard-overview .staff-mobile-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
 }
 
 .staff-portal-page .staff-mobile-grid > article,
@@ -323,22 +310,11 @@ body:has(.staff-mobile-page) > .site-header {
   box-shadow: none !important;
 }
 
-.staff-portal-page #dashboard-overview .staff-mobile-grid > article {
-  min-height: 106px;
-  border-top: 2px solid #c79b3b !important;
-}
-
 .staff-portal-page .staff-mobile-grid > article p:first-child {
   color: #9fb2c3 !important;
   font-size: 11px !important;
   font-weight: 700;
   letter-spacing: 0.045em;
-}
-
-.staff-portal-page #dashboard-overview .staff-mobile-grid > article strong {
-  margin-top: 13px !important;
-  color: #f0c75c !important;
-  font-size: 30px !important;
 }
 
 .staff-portal-page #staff-work-areas .staff-mobile-grid > article {
@@ -443,9 +419,6 @@ body:has(.staff-mobile-page) > .site-header {
 }
 
 @media (max-width: 900px) {
-  .staff-portal-page #dashboard-overview .staff-mobile-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
 }
 
 @media (max-width: 600px) {
@@ -475,10 +448,6 @@ body:has(.staff-mobile-page) > .site-header {
   .staff-portal-page .staff-mobile-section {
     margin: 10px 10px 0;
     padding: 18px 16px !important;
-  }
-
-  .staff-portal-page #dashboard-overview .staff-mobile-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   .staff-portal-page #staff-work-areas .staff-mobile-grid {
