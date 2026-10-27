@@ -185,7 +185,7 @@ export default function Home() {
           z-index:90;
         }
 
-        .hotspot:hover,
+        .hotspot.nav-zone:hover,
         .drop-wrap:hover{
           background:linear-gradient(to bottom,#1c4b72,#0b2e4c);
           box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);

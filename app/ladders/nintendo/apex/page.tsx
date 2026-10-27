@@ -9,28 +9,28 @@ const apexTitles = [
     title: "Apex Legends Battle Royale",
     slug: "battle-royale",
     image:
-      "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg",
+      "/games/apex-1.jpg",
     ladders: ["Duos", "Trios"],
   },
   {
     title: "Apex Legends Ranked",
     slug: "ranked",
     image:
-      "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-2.jpg.adapt.crop191x100.1200w.jpg",
+      "/games/apex-2.jpg",
     ladders: ["Duos", "Trios"],
   },
   {
     title: "Apex Legends Mixtape",
     slug: "mixtape",
     image:
-      "https://media.contentapi.ea.com/content/dam/apex-legends/common/apex-section-bg-blue-xl.jpg.adapt.crop191x100.1200w.jpg",
+      "/games/apex-3.jpg",
     ladders: ["Team Deathmatch", "Control", "Gun Run"],
   },
   {
     title: "Apex Legends Wildcard",
     slug: "wildcard",
     image:
-      "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-1.jpg.adapt.crop191x100.1200w.jpg",
+      "/games/apex-4.jpg",
     ladders: ["Trios", "Squads"],
   },
 ];

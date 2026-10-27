@@ -420,9 +420,9 @@ export default function CallOfDutyLaddersPage() {
           </nav>
 
           <section className="title-bar">
-            <h1>{platformName} Call of Duty Ladders</h1>
+            <h1>{platformName} Old School Ladders</h1>
             <p>
-              Choose a Call of Duty title below. Each title has Singles, Duos,
+              Choose a classic Call of Duty title below. Each title has Singles, Duos,
               and Team ladders with its own teams, matches, rules, and standings.
             </p>
           </section>
@@ -435,7 +435,7 @@ export default function CallOfDutyLaddersPage() {
 
                   <a
                     className="game-image"
-                    href={`/ladders/${platform}/call-of-duty/${game.slug}`}
+                    href={`/ladders/${platform}/old-school/${game.slug}`}
                   >
                     <img src={game.image} alt={game.title} />
                   </a>
@@ -445,9 +445,9 @@ export default function CallOfDutyLaddersPage() {
                       {game.ladders.map((ladder) => {
                         const currentLadderSlug = ladderSlug(ladder);
 
-                        const teamHubUrl = `/team-hub?platform=${platform}&category=call-of-duty&game=${game.slug}&ladder=${currentLadderSlug}`;
+                        const teamHubUrl = `/team-hub?platform=${platform}&                        category=old-school&game=${game.slug}&ladder=${currentLadderSlug}`;
 
-                        const rankingsUrl = `/ladders/${platform}/call-of-duty/${game.slug}/${currentLadderSlug}/rankings`;
+                                                const rankingsUrl = `/ladders/${platform}/old-school/${game.slug}/${currentLadderSlug}/rankings`;
 
                         return (
                           <div

@@ -16,21 +16,21 @@ const siegeTitles = [
     title: "Rainbow Six Siege Standard",
     slug: "standard",
     image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/359550/ss_09b0a21f8f8c74913ef75466c1c1eaa4a52cbe38.1920x1080.jpg",
+      "/games/r6-1.jpg",
     ladders: ["Team"],
   },
   {
     title: "Rainbow Six Siege Quick Match",
     slug: "quick-match",
     image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/359550/ss_f0a4f92dc5b42a3842bb2e2f29e0ca7d63ccf7b7.1920x1080.jpg",
+      "/games/r6-2.jpg",
     ladders: ["Team"],
   },
   {
     title: "Rainbow Six Siege Competitive",
     slug: "competitive",
     image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/359550/ss_9ffef5c1d82277d91c10f7326dd4c5c00466176e.1920x1080.jpg",
+      "/games/r6-3.jpg",
     ladders: ["Team", "Academy Team"],
   },
 ];

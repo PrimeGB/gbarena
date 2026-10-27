@@ -5,28 +5,28 @@ const fortniteTitles = [
     title: "Fortnite Battle Royale",
     slug: "battle-royale",
     image:
-      "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg",
+      "/games/fn-3.jpg",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Zero Build",
     slug: "zero-build",
     image:
-      "https://cdn2.unrealengine.com/fortnite-zero-build-1920x1080-1920x1080-5a7f4b140f38.jpg",
+      "/games/fn-4.jpg",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Ranked",
     slug: "ranked",
     image:
-      "https://cdn2.unrealengine.com/fortnite-ranked-1920x1080-1920x1080-5b7d93485d8e.jpg",
+      "/games/fn-1.jpg",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Reload",
     slug: "reload",
     image:
-      "https://cdn2.unrealengine.com/fortnite-reload-1920x1080-1920x1080-4f1a4e8f12b4.jpg",
+      "/games/fn-2.jpg",
     ladders: ["Duos", "Squads"],
   },
 ];
