@@ -60,6 +60,7 @@ export default function RootLayout({
               <Link href="/home" style={{color:'#cfeefe',textDecoration:'none'}}>Home</Link>
               <Link href="/forums" style={{color:'#cfeefe',textDecoration:'none'}}>Forums</Link>
               <Link href="/teams/top" style={{color:'#cfeefe',textDecoration:'none'}}>Teams</Link>
+              <a href="https://discord.gg/PXXuwv5P3e" target="_blank" rel="noopener noreferrer" style={{color:'#fff',background:'#5865f2',borderRadius:4,padding:'2px 10px',fontWeight:700,textDecoration:'none'}}>Discord</a>
             </nav>
           </div>
         </header>
