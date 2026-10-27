@@ -3,6 +3,8 @@
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import { gamingCategoryLabel, gamingGameLabel, gamingGames } from "../../../lib/gamingAccounts";
+import { ladderPlatformLabel } from "../../../lib/ladderCatalog";
 
 function cleanName(value: string | null) {
   if (!value) return "Team";
@@ -43,9 +45,13 @@ function CreateTeamContent() {
   const gameSlug = searchParams.get("game") || "modern-warfare-4";
   const ladderSlug = searchParams.get("ladder") || "team";
 
-  const gameName = gameNames[gameSlug] || cleanName(gameSlug);
+  const gameName =
+    gameNames[gameSlug] ||
+    (gamingGames.some((g) => g.category === categorySlug && g.value === gameSlug)
+      ? `${gamingCategoryLabel(categorySlug)}: ${gamingGameLabel(categorySlug, gameSlug)}`
+      : cleanName(gameSlug));
   const ladderName = cleanName(ladderSlug);
-  const platformName = cleanName(platformSlug);
+  const platformName = ladderPlatformLabel(platformSlug) || cleanName(platformSlug);
 
   const [teamName, setTeamName] = useState("");
   const [teamTag, setTeamTag] = useState("");

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useUser } from "@/lib/useUser";
 import { supabase } from "@/lib/supabase";
+import AwardArt, { AWARD_CSS, awardAccent } from "../../awards/AwardArt";
 
 type CatalogAward = {
   id: number;
@@ -381,7 +382,15 @@ export default function StaffAwardsPage() {
               />
               <div style={styles.catalog}>
                 {filteredCatalog.map((award) => (
-                  <article key={award.id} style={styles.card}>
+                  <article
+                    key={award.id}
+                    className="award-card"
+                    style={{ ...styles.card, ["--accent" as string]: awardAccent(award.name, award.award_group) }}
+                  >
+                    <style>{AWARD_CSS}</style>
+                    <div className="award-stage">
+                      <AwardArt name={award.name} group={award.award_group} />
+                    </div>
                     <strong>{award.name}</strong>
                     <p style={styles.group}>{award.award_group}{award.exclusive ? " · Founder only" : ""}</p>
                     <p>{award.purpose}</p>

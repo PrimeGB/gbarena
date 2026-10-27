@@ -4,7 +4,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
-import { GamingAccount } from "../../../lib/gamingAccounts";
+import { GamingAccount, gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
+import { getGameRules } from "../../../lib/matchRules";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -26,8 +27,12 @@ function prettyText(value: string | null) {
     .join(" ");
 }
 
-function getGameImage(game: string | null) {
-  if (game === "mw2") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
+function getGameImage(game: string | null, category?: string) {
+  if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
+  if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
+  if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
+  if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
+  if (game === "mw2")  return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
   if (game === "modern-warfare-ii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg";
   if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
   if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
@@ -46,11 +51,11 @@ function getLadderName(ladder: string | null) {
   return "Team Ladder";
 }
 
-function getPlayerOptions(ladder: string | null, isRedSec: boolean) {
+function getPlayerOptions(ladder: string | null, isRedSec: boolean, teamSizes?: string[]) {
   if (isRedSec) return ["2v2", "3v3", "4v4"];
   if (ladder === "singles") return ["1v1"];
   if (ladder === "duos") return ["2v2"];
-  return ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
+  return teamSizes?.length ? teamSizes : ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
 }
 
 function getRequiredRosterSize(ladder: string | null, players: string) {
@@ -118,19 +123,39 @@ function CreateMatchContent() {
   const ladder = searchParams.get("ladder") || "team";
 
   const isRedSec = game === "redsec" || ladder === "redsec";
+  const gameRules = useMemo(() => getGameRules(category, game), [category, game]);
 
   const platformName = prettyText(platform);
-  const gameName = isRedSec ? "RedSec" : prettyText(game);
+  const gameName = isRedSec
+    ? "RedSec"
+    : gameRules
+      ? `${gamingCategoryLabel(category)}: ${gamingGameLabel(category, game)}`
+      : prettyText(game);
   const ladderName = getLadderName(ladder);
-  const gameImage = getGameImage(game);
+  const gameImage = getGameImage(game, category);
   const viewTeamUrl = teamId ? `/teams/${teamId}` : "/profile/teams";
 
   const playerOptions = useMemo(
-    () => getPlayerOptions(ladder, isRedSec),
-    [ladder, isRedSec]
+    () => getPlayerOptions(ladder, isRedSec, gameRules?.teamSizes),
+    [ladder, isRedSec, gameRules]
   );
 
-  const [gameMode, setGameMode] = useState(isRedSec ? "RedSec" : "Search and Destroy");
+  const [gameMode, setGameMode] = useState(
+    isRedSec ? "RedSec" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
+  );
+  const currentMode = gameRules
+    ? gameRules.modes.find((mode) => mode.value === gameMode) || gameRules.modes[0]
+    : null;
+  const [ruleValues, setRuleValues] = useState<Record<string, string>>({});
+  const activeRuleValues = useMemo(() => {
+    const values: Record<string, string> = {};
+    currentMode?.fields.forEach((item) => {
+      values[item.slot] = ruleValues[item.slot] && item.options.includes(ruleValues[item.slot])
+        ? ruleValues[item.slot]
+        : item.default;
+    });
+    return values;
+  }, [currentMode, ruleValues]);
   const [rulesType, setRulesType] = useState<RulesType>("GB Variant");
   const [crossplay, setCrossplay] = useState<CrossPlayType>("Off");
   const [players, setPlayers] = useState(playerOptions[0]);
@@ -272,7 +297,13 @@ function CreateMatchContent() {
     }
   }, [isRedSec]);
 
-  const bestOfOptions = isRedSec ? ["Best of 1", "Best of 2"] : ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
+  const bestOfOptions = isRedSec
+    ? ["Best of 1", "Best of 2"]
+    : gameRules?.bestOf || ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
+
+  useEffect(() => {
+    setBestOf((current) => (bestOfOptions.includes(current) ? current : bestOfOptions[0]));
+  }, [bestOfOptions]);
   const rosterLimit = getRequiredRosterSize(ladder, players);
 
   useEffect(() => {
@@ -282,7 +313,11 @@ function CreateMatchContent() {
 
   const presetText = isRedSec
     ? "RedSec settings are controlled by the GameBattles RedSec ruleset."
-    : rulesType === "Custom"
+    : gameRules
+      ? `${gameRules.presetName} · Players ${players} · Cross Play ${crossplay} · ${currentMode?.fields
+          .map((item) => `${item.label} ${activeRuleValues[item.slot]}`)
+          .join(" · ")}`
+      : rulesType === "Custom"
       ? `Custom · Players ${players} · Cross Play ${crossplay} · Perks ${perks} · Launchers ${launchers} · Killstreaks ${killstreaks}`
       : `${rulesType} locked preset · Players ${players} · Cross Play ${crossplay} · Preset settings cannot be edited`;
 
@@ -367,6 +402,10 @@ function CreateMatchContent() {
       return;
     }
 
+    const cod = !gameRules;
+    const slot = (name: string, codValue: string) =>
+      cod ? codValue : activeRuleValues[name] ?? null;
+
     const { error } = await supabase.from("match_posts").insert({
       team_id: teamId,
       platform,
@@ -377,25 +416,25 @@ function CreateMatchContent() {
       players,
       match_time: scheduledIso,
       best_of: bestOf,
-      preset: rulesType,
+      preset: gameRules ? gameRules.presetName : rulesType,
       crossplay,
-      perks,
-      launchers,
-      killstreaks,
-      field_upgrades: fieldUpgrades,
-      hardcore,
-      friendly_fire: friendlyFire,
-      radar,
-      spectating,
-      third_person: thirdPerson,
-      round_length: roundLength,
-      score_limit: scoreLimit,
-      health,
-      respawn_delay: respawnDelay,
-      bomb_timer: bombTimer,
-      plant_time: plantTime,
-      defuse_time: defuseTime,
-      attachments,
+      perks: slot("perks", perks),
+      launchers: slot("launchers", launchers),
+      killstreaks: slot("killstreaks", killstreaks),
+      field_upgrades: slot("field_upgrades", fieldUpgrades),
+      hardcore: slot("hardcore", hardcore),
+      friendly_fire: slot("friendly_fire", friendlyFire),
+      radar: slot("radar", radar),
+      spectating: slot("spectating", spectating),
+      third_person: slot("third_person", thirdPerson),
+      round_length: slot("round_length", roundLength),
+      score_limit: slot("score_limit", scoreLimit),
+      health: slot("health", health),
+      respawn_delay: slot("respawn_delay", respawnDelay),
+      bomb_timer: slot("bomb_timer", bombTimer),
+      plant_time: slot("plant_time", plantTime),
+      defuse_time: slot("defuse_time", defuseTime),
+      attachments: slot("attachments", attachments),
       status: "open",
       posting_roster: selectedRosterPlayers,
     });
@@ -624,6 +663,16 @@ function CreateMatchContent() {
 
                         {isRedSec ? (
                           <div className="locked-player-box">RedSec</div>
+                        ) : gameRules ? (
+                          <select
+                            className="mode-select"
+                            value={currentMode?.value}
+                            onChange={(e) => setGameMode(e.target.value)}
+                          >
+                            {gameRules.modes.map((mode) => (
+                              <option key={mode.value}>{mode.value}</option>
+                            ))}
+                          </select>
                         ) : (
                           <select
                             className="mode-select"
@@ -696,6 +745,11 @@ function CreateMatchContent() {
                               GameBattles RedSec rules must be followed for this match.
                             </div>
                           </div>
+                        ) : gameRules ? (
+                          <div>
+                            <div className="locked-player-box">{gameRules.presetName}</div>
+                            <div className="small-note">{gameRules.notes[0]}</div>
+                          </div>
                         ) : (
                           <div>
                             <select
@@ -743,6 +797,33 @@ function CreateMatchContent() {
                                 Edit Settings
                               </button>
                             </div>
+                          </div>
+                        ) : gameRules && currentMode ? (
+                          <div className="settings-summary">
+                            <div className="settings-title">{currentMode.value} Settings</div>
+                            <div className="settings-copy">
+                              Defaults follow the competitive standard for this mode. Adjust any value both teams agree on.
+                            </div>
+                            {currentMode.fields.map((item) => (
+                              <div key={item.slot} style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
+                                <span style={{ minWidth: 140 }}>{item.label}</span>
+                                {item.options.length === 1 ? (
+                                  <strong>{item.options[0]}</strong>
+                                ) : (
+                                  <select
+                                    className="small-select"
+                                    value={activeRuleValues[item.slot]}
+                                    onChange={(e) =>
+                                      setRuleValues((current) => ({ ...current, [item.slot]: e.target.value }))
+                                    }
+                                  >
+                                    {item.options.map((option) => (
+                                      <option key={option}>{option}</option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <div className="settings-summary">
@@ -924,6 +1005,21 @@ function CreateMatchContent() {
                           >
                             Read Full RedSec Rules
                           </button>
+                        </div>
+                      ) : gameRules && currentMode ? (
+                        <div className="rules-box">
+                          <strong>{currentMode.value.toUpperCase()} MATCH RULES</strong>
+                          <br />
+                          <br />
+                          • Created for the <strong>{ladderName}</strong> · {gameName} · {platformName}.
+                          <br />
+                          • {bestOf} · {players} · Cross Play {crossplay}.
+                          {currentMode.rules.map((line) => (
+                            <span key={line}>
+                              <br />• {line}
+                            </span>
+                          ))}
+                          <br />• Results must be reported after the match; screenshots may be needed for disputes.
                         </div>
                       ) : (
                         <div className="rules-box">

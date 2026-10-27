@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 
@@ -13,10 +14,17 @@ type MatchRow = {
   accepting_team_id?: string | null;
   platform?: string | null;
   game?: string | null;
+  game_mode?: string | null;
+  players?: string | null;
+  preset?: string | null;
   ladder?: string | null;
   match_time?: string | null;
   best_of?: string | null;
   status?: string | null;
+  started_at?: string | null;
+  accepted_at?: string | null;
+  created_at?: string | null;
+  reporting_status?: string | null;
   posting_team_score?: number | null;
   accepting_team_score?: number | null;
   posting_team_reported_score?: string | null;
@@ -61,10 +69,25 @@ function bestOfNumber(value: string | null | undefined) {
   return Number(found[0]) || 3;
 }
 
+function formatMatchTime(value: string | null | undefined) {
+  if (!value) return "TBD";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
 function DisputeTicketPageContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("matchId") || "";
-  const { user } = useUser() as any;
+  const { user } = useUser() as { user: User | null };
 
   const [match, setMatch] = useState<MatchRow | null>(null);
   const [postingTeam, setPostingTeam] = useState<TeamRow | null>(null);
@@ -76,8 +99,11 @@ function DisputeTicketPageContent() {
   const [reason, setReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
   const [description, setDescription] = useState("");
+  const [proofLinks, setProofLinks] = useState("");
+  const [evidenceFiles, setEvidenceFiles] = useState<(File | null)[]>([]);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const bestOf = bestOfNumber(match?.best_of);
 
@@ -119,13 +145,48 @@ function DisputeTicketPageContent() {
 
   const acceptingReport = match?.accepting_team_reported_score || "Pending";
 
+  // Mirrors dispute_ticket_window_ends_at() in the database
+  const windowStart = match?.started_at || match?.accepted_at || match?.created_at;
+  const windowEndsAt = windowStart
+    ? new Date(new Date(windowStart).getTime() + 2 * 60 * 60 * 1000)
+    : null;
+  const windowClosed = !!windowEndsAt && Date.now() >= windowEndsAt.getTime();
+  const windowEndText = windowEndsAt ? formatMatchTime(windowEndsAt.toISOString()) : "";
+
   useEffect(() => {
     async function loadTicketInfo() {
       setLoading(true);
       setPageError("");
+      setSubmitted(false);
+      setMessage("");
 
       if (!matchId) {
         setPageError("Missing match ID. Open this page from a disputed match.");
+        setLoading(false);
+        return;
+      }
+
+      if (matchId === "preview" && process.env.NODE_ENV === "development") {
+        setMatch({
+          id: "preview",
+          posting_team_id: "t1",
+          accepting_team_id: "t2",
+          platform: "xbox",
+          game: "black-ops-6",
+          game_mode: "search-and-destroy",
+          players: "4v4",
+          preset: "GameBattles Standard",
+          ladder: "teams",
+          match_time: new Date(Date.now() - 3600 * 1000).toISOString(),
+          best_of: "Best of 3",
+          status: "disputed",
+          reporting_status: "disputed",
+          posting_team_reported_score: "Nova Elite 2 - Ghost Ops 1",
+          accepting_team_reported_score: "Ghost Ops 2 - Nova Elite 0",
+        });
+        setPostingTeam({ id: "t1", name: "Nova Elite", tag: "NOVA" });
+        setAcceptingTeam({ id: "t2", name: "Ghost Ops", tag: "GHST" });
+        setViewerTeamId("t1");
         setLoading(false);
         return;
       }
@@ -145,16 +206,31 @@ function DisputeTicketPageContent() {
       const loadedMatch = matchData as MatchRow;
       setMatch(loadedMatch);
 
+      if (
+        String(loadedMatch.status || "").toLowerCase() !== "disputed" ||
+        String(loadedMatch.reporting_status || "").toLowerCase() !== "disputed"
+      ) {
+        setPageError("This match is not currently open for dispute tickets.");
+        setLoading(false);
+        return;
+      }
+
       const teamIds = [
         loadedMatch.posting_team_id,
         loadedMatch.accepting_team_id,
       ].filter(Boolean) as string[];
 
       if (teamIds.length > 0) {
-        const { data: teamsData } = await supabase
+        const { data: teamsData, error: teamsError } = await supabase
           .from("teams")
           .select("id,name,tag")
           .in("id", teamIds);
+
+        if (teamsError) {
+          setPageError("Match teams could not be loaded: " + teamsError.message);
+          setLoading(false);
+          return;
+        }
 
         const teams = (teamsData || []) as TeamRow[];
 
@@ -168,14 +244,47 @@ function DisputeTicketPageContent() {
       }
 
       if (user?.id && teamIds.length > 0) {
-        const { data: memberRows } = await supabase
+        const { data: memberRows, error: memberError } = await supabase
           .from("team_members")
           .select("team_id")
           .eq("user_id", user.id)
           .in("team_id", teamIds);
 
+        if (memberError) {
+          setPageError("Your match team could not be verified: " + memberError.message);
+          setLoading(false);
+          return;
+        }
+
         const foundTeamId = (memberRows || [])[0]?.team_id || "";
+        if (!foundTeamId) {
+          setPageError("Your account is not on either team in this match.");
+          setLoading(false);
+          return;
+        }
+
         setViewerTeamId(foundTeamId);
+        const { data: alreadySubmitted, error: submissionError } = await supabase.rpc(
+          "has_submitted_dispute_ticket",
+          { match_uuid: matchId, team_uuid: foundTeamId }
+        );
+
+        if (submissionError) {
+          setPageError("Your team's ticket status could not be checked: " + submissionError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (alreadySubmitted) {
+          setSubmitted(true);
+          setMessage(
+            windowClosed
+              ? "Your team has submitted its story and proof. The filing window has closed, so staff can now review the case."
+              : "Your team has submitted its story and proof. The case goes to staff as soon as the opposing team submits its ticket, or when the filing window ends."
+          );
+        }
+      } else {
+        setPageError("Sign in with an account on one of the match teams to submit a ticket.");
       }
 
       setLoading(false);
@@ -213,11 +322,77 @@ function DisputeTicketPageContent() {
       return;
     }
 
+    const selectedEvidence = evidenceFiles.filter(
+      (file): file is File => file !== null
+    );
+
+    if (selectedEvidence.length === 0) {
+      setMessage("Attach at least one screenshot or video as proof.");
+      return;
+    }
+
+    if (
+      selectedEvidence.some(
+        (file) =>
+          file.size > 50 * 1024 * 1024 ||
+          (!file.type.startsWith("image/") && !file.type.startsWith("video/"))
+      )
+    ) {
+      setMessage(
+        "Each evidence file must be an image or video no larger than 50 MB."
+      );
+      return;
+    }
+
     setSubmitting(true);
 
-    const finalReason = reason === "Other" ? otherReason.trim() : reason;
+    if (match.id === "preview" && process.env.NODE_ENV === "development") {
+      setSubmitting(false);
+      setSubmitted(true);
+      setMessage("Preview only: nothing was saved. In a real match this ticket goes to the staff review inbox.");
+      return;
+    }
 
-    const { data, error } = await supabase
+    const finalReason = reason === "Other" ? otherReason.trim() : reason;
+    const finalDescription = proofLinks.trim()
+      ? `${description.trim()}\n\nProof links:\n${proofLinks.trim()}`
+      : description.trim();
+    const uploadedPaths: string[] = [];
+
+    async function cleanUpEvidence() {
+      if (uploadedPaths.length === 0) return "";
+      const { error: cleanupError } = await supabase.storage
+        .from("dispute-evidence")
+        .remove(uploadedPaths);
+      return cleanupError?.message || "";
+    }
+
+    for (const [index, file] of selectedEvidence.entries()) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${match.id}/${viewerTeamId}/${Date.now()}-${index}-${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("dispute-evidence")
+        .upload(path, file, {
+          cacheControl: "3600",
+          contentType: file.type || undefined,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        const cleanupError = await cleanUpEvidence();
+        setSubmitting(false);
+        setMessage(
+          `Evidence upload failed: ${uploadError.message}${
+            cleanupError ? ` Cleanup also failed: ${cleanupError}` : ""
+          }`
+        );
+        return;
+      }
+
+      uploadedPaths.push(path);
+    }
+
+    const { error } = await supabase
       .from("dispute_tickets")
       .insert({
         match_id: match.id,
@@ -227,31 +402,40 @@ function DisputeTicketPageContent() {
         platform: match.platform || null,
         ladder: match.ladder || null,
         dispute_reason: finalReason,
-        dispute_description: description.trim(),
+        dispute_description: finalDescription,
+        evidence_paths: uploadedPaths,
         status: "open",
         created_by: user?.id || null,
-      })
-      .select("id")
-      .single();
+      });
 
     setSubmitting(false);
 
     if (error) {
+      const cleanupError = await cleanUpEvidence();
       if (error.message.toLowerCase().includes("duplicate")) {
-        setMessage("Your team has already submitted a dispute ticket for this match.");
+        setSubmitted(true);
+        setMessage(
+          `Your team has already submitted a dispute ticket for this match.${
+            cleanupError ? ` Evidence cleanup failed: ${cleanupError}` : ""
+          }`
+        );
         return;
       }
 
-      setMessage("Ticket could not be submitted: " + error.message);
+      setMessage(
+        `Ticket could not be submitted: ${error.message}${
+          cleanupError ? ` Evidence cleanup also failed: ${cleanupError}` : ""
+        }`
+      );
       return;
     }
 
-    if (data?.id) {
-      window.location.href = `/support/dispute-ticket/${data.id}`;
-      return;
-    }
-
-    setMessage("Success. Your dispute case has been submitted.");
+    setSubmitted(true);
+    setMessage(
+      windowClosed
+        ? "Ticket submitted. The filing window has closed, so staff can now review the case."
+        : "Ticket submitted. Staff will see the case as soon as the opposing team submits its ticket, or when the filing window ends."
+    );
   }
 
   return (
@@ -619,13 +803,44 @@ function DisputeTicketPageContent() {
                       </div>
 
                       <div className="case-line">
+                        <span className="label">Game:</span>
+                        <span className="value">{prettyText(match?.game)}</span>
+                      </div>
+
+                      {match?.game_mode && (
+                        <div className="case-line">
+                          <span className="label">Game Mode:</span>
+                          <span className="value">{prettyText(match.game_mode)}</span>
+                        </div>
+                      )}
+
+                      <div className="case-line">
+                        <span className="label">Platform:</span>
+                        <span className="value">{prettyText(match?.platform)}</span>
+                      </div>
+
+                      {match?.players && (
+                        <div className="case-line">
+                          <span className="label">Players:</span>
+                          <span className="value">{match.players}</span>
+                        </div>
+                      )}
+
+                      <div className="case-line">
                         <span className="label">Best Of:</span>
                         <span className="value">{match?.best_of || "Best of 3"}</span>
                       </div>
 
+                      {match?.preset && (
+                        <div className="case-line">
+                          <span className="label">Gameplay:</span>
+                          <span className="value">{match.preset}</span>
+                        </div>
+                      )}
+
                       <div className="case-line">
-                        <span className="label">Time:</span>
-                        <span className="value">{match?.match_time || "TBD"}</span>
+                        <span className="label">Date &amp; Time:</span>
+                        <span className="value">{formatMatchTime(match?.match_time)}</span>
                       </div>
                     </div>
 
@@ -643,6 +858,17 @@ function DisputeTicketPageContent() {
                       <div className="case-line">
                         <span className="label">Filing Team:</span>
                         <span className="value">{viewerTeam?.name || "Not Verified"}</span>
+                      </div>
+
+                      <div className="case-line">
+                        <span className="label">Filing Deadline:</span>
+                        <span className="value">
+                          {windowEndText
+                            ? windowClosed
+                              ? `Closed (${windowEndText})`
+                              : windowEndText
+                            : "2 hours after the dispute opens"}
+                        </span>
                       </div>
 
                       <div className="case-line">
@@ -669,14 +895,14 @@ function DisputeTicketPageContent() {
                           "Other",
                         ].map((item) => (
                           <label className={reason === item ? "reason-option active" : "reason-option"} key={item}>
-                            <input type="radio" name="reason" checked={reason === item} onChange={() => setReason(item)} />
+                            <input type="radio" name="reason" checked={reason === item} disabled={submitting || submitted} onChange={() => setReason(item)} />
                             {item}
                           </label>
                         ))}
                       </div>
 
                       {reason === "Other" && (
-                        <input className="other-input" placeholder="Enter dispute reason..." value={otherReason} onChange={(e) => setOtherReason(e.target.value)} />
+                        <input className="other-input" placeholder="Enter dispute reason..." value={otherReason} disabled={submitting || submitted} onChange={(e) => setOtherReason(e.target.value)} />
                       )}
                     </div>
                   </div>
@@ -691,7 +917,24 @@ function DisputeTicketPageContent() {
                               <div className="evidence-title">Evidence Slot #{slot}</div>
                               <div className="evidence-copy">Screenshot or video proof.</div>
                             </div>
-                            <input className="evidence-file" type="file" accept="image/*,video/*" />
+                            <input
+                              className="evidence-file"
+                              type="file"
+                              accept="image/*,video/*"
+                              disabled={submitting || submitted}
+                              onChange={(event) =>
+                                setEvidenceFiles((current) => {
+                                  const next = [...current];
+                                  next[slot - 1] = event.target.files?.[0] || null;
+                                  return next;
+                                })
+                              }
+                            />
+                            {evidenceFiles[slot - 1] && (
+                              <div className="evidence-copy">
+                                Selected: {evidenceFiles[slot - 1]?.name}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -702,6 +945,12 @@ function DisputeTicketPageContent() {
                     <div className="section-title">Explain What Happened</div>
                     <div className="section-body">
                       <div className="guide">
+                        <strong>Filing window:</strong> both teams have 2 hours from match time
+                        to file. Staff only see a case once both teams have filed, or once the
+                        window has ended.
+                      </div>
+
+                      <div className="guide">
                         <strong>Include:</strong> what happened, why the reported score is wrong,
                         any rule violations, and what each piece of evidence shows.
                       </div>
@@ -710,7 +959,16 @@ function DisputeTicketPageContent() {
                         className="textarea"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        disabled={submitting || submitted}
                         placeholder="Explain the dispute clearly..."
+                      />
+
+                      <input
+                        className="other-input"
+                        placeholder="Proof links (optional) - YouTube, clips, screenshots"
+                        value={proofLinks}
+                        disabled={submitting || submitted}
+                        onChange={(e) => setProofLinks(e.target.value)}
                       />
                     </div>
                   </div>
@@ -727,12 +985,16 @@ function DisputeTicketPageContent() {
                     </div>
                   </div>
 
-                  <button className="submit-btn" type="submit" disabled={submitting}>
+                  <button
+                    className="submit-btn"
+                    type="submit"
+                    disabled={submitting || submitted}
+                  >
                     {submitting ? "Submitting Case..." : "Submit Dispute Case"}
                   </button>
 
                   {message && (
-                    <div className={message.startsWith("Success") ? "message good" : "message"}>
+                    <div className={submitted ? "message good" : "message"}>
                       {message}
                     </div>
                   )}

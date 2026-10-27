@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
+import SiteNav from "../../../components/SiteNav";
+import TeamTabs from "../../../components/TeamTabs";
 
 type TeamProfile = {
   id: string;
@@ -149,6 +151,13 @@ export default function EditTeamProfilePage() {
 
   return (
     <main className="page">
+      <div className="nav-shell">
+        <SiteNav />
+        <div className="tabs-shell">
+          <TeamTabs teamId={teamId} active="edit-profile" canEditProfile canEditRoster />
+        </div>
+      </div>
+
       <section className="panel">
         <header>
           <Link href={`/teams/${teamId}`}>Back to team profile</Link>
@@ -242,6 +251,13 @@ export default function EditTeamProfilePage() {
           background: radial-gradient(circle at top, #173d5f, #02060a 65%);
           color: #eaf6ff;
           font-family: Tahoma, Verdana, Arial, sans-serif;
+        }
+        .nav-shell {
+          max-width: 760px;
+          margin: 0 auto 14px;
+        }
+        .tabs-shell {
+          padding: 0 4px;
         }
         .panel {
           max-width: 760px;

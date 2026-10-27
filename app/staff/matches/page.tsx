@@ -24,6 +24,16 @@ type MatchReviewEntry = {
   accepting_team_score: number | null;
   posting_team_reported_score: string | null;
   accepting_team_reported_score: string | null;
+  ticket_submissions: DisputeSubmission[];
+};
+
+type DisputeSubmission = {
+  team_id: string;
+  team_name: string | null;
+  dispute_reason: string;
+  dispute_description: string;
+  evidence_paths: string[];
+  evidence_files?: { path: string; url: string | null }[];
 };
 
 type ReviewDecision = {
@@ -103,7 +113,44 @@ export default function StaffMatchReviewPage() {
       return;
     }
 
-    const entries = (data || []) as MatchReviewEntry[];
+    const evidenceIssues: string[] = [];
+    const entries = await Promise.all(
+      ((data || []) as MatchReviewEntry[]).map(async (entry) => {
+        const submissions = await Promise.all(
+          (entry.ticket_submissions || []).map(async (submission) => {
+            const paths = Array.isArray(submission.evidence_paths)
+              ? submission.evidence_paths
+              : [];
+            if (paths.length === 0) {
+              evidenceIssues.push(
+                `${submission.team_name || "A team"} submitted no evidence files.`
+              );
+              return { ...submission, evidence_files: [] };
+            }
+
+            const { data: signedFiles, error: evidenceError } = await supabase.storage
+              .from("dispute-evidence")
+              .createSignedUrls(paths, 60 * 60);
+
+            if (evidenceError) {
+              evidenceIssues.push(
+                `Evidence for ${submission.team_name || "a team"} could not be loaded: ${evidenceError.message}`
+              );
+            }
+
+            return {
+              ...submission,
+              evidence_files: paths.map((path, index) => ({
+                path,
+                url: signedFiles?.[index]?.signedUrl || null,
+              })),
+            };
+          })
+        );
+
+        return { ...entry, ticket_submissions: submissions };
+      })
+    );
     setQueue(entries);
     setHistory((decisionRows || []) as ReviewDecision[]);
     setDecisions((current) => {
@@ -124,7 +171,7 @@ export default function StaffMatchReviewPage() {
       return next;
     });
     setHasPermission(true);
-    setError("");
+    setError(evidenceIssues.join(" "));
     setLoadedUserId(userId);
     setLoading(false);
   }, []);
@@ -295,6 +342,39 @@ export default function StaffMatchReviewPage() {
                   {ticket.dispute_reason || "Dispute reason not supplied"}
                 </h3>
                 <p style={styles.description}>{ticket.dispute_description}</p>
+                <section aria-label="Team dispute submissions">
+                  <h3 style={styles.reasonTitle}>Both team statements and proof</h3>
+                  {(ticket.ticket_submissions || []).map((submission) => (
+                    <div key={submission.team_id} style={styles.submission}>
+                      <h4 style={styles.submissionTitle}>
+                        {submission.team_name || "Team"}:{" "}
+                        {submission.dispute_reason || "Dispute reason not supplied"}
+                      </h4>
+                      <p style={styles.description}>
+                        {submission.dispute_description || "No statement supplied."}
+                      </p>
+                      <div style={styles.evidenceList}>
+                        {(submission.evidence_files || []).map((file, index) =>
+                          file.url ? (
+                            <a
+                              key={file.path}
+                              href={file.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={styles.matchLink}
+                            >
+                              View {submission.team_name || "team"} evidence {index + 1}
+                            </a>
+                          ) : (
+                            <span key={file.path} style={styles.evidenceUnavailable}>
+                              Evidence {index + 1} could not be opened
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </section>
                 <Link
                   href={`/matches/${encodeURIComponent(ticket.match_id)}`}
                   style={styles.matchLink}
@@ -455,6 +535,10 @@ const styles: Record<string, React.CSSProperties> = {
   reasonTitle: { margin: "14px 0 6px", color: "#f2c14e", fontSize: 14 },
   teamNames: { margin: "0 0 10px", color: "#fff", fontWeight: 700 },
   description: { margin: 0, color: "#c1d0dc", lineHeight: 1.55, whiteSpace: "pre-wrap" },
+  submission: { marginTop: 12, padding: 12, border: "1px solid #315f88", background: "#07111b" },
+  submissionTitle: { margin: "0 0 8px", color: "#f2c14e", fontSize: 13 },
+  evidenceList: { display: "flex", flexWrap: "wrap", gap: 12, marginTop: 10 },
+  evidenceUnavailable: { color: "#ffb0b0", fontSize: 12 },
   decisionForm: { display: "grid", gap: 12, marginTop: 18, paddingTop: 16, borderTop: "1px solid #244b70" },
   scoreInputs: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 },
   label: { display: "grid", gap: 6, color: "#cfe2f2", fontSize: 13 },

@@ -5,6 +5,7 @@ export type GamingAccount = {
   category: string;
   game: string;
   account_id: string;
+  locked_until?: string | null;
 };
 
 export const gamingPlatforms = [

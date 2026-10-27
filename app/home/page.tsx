@@ -914,9 +914,13 @@ export default function Home() {
             <a className="drop-click" href="/ladders/nintendo"></a>
             <span className="nav-label">NINTENDO</span>
             <div className="dropdown">
+              <a href="/ladders/nintendo/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
               <a href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
               <a href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
+              <a href="/ladders/nintendo/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
               <a href="/ladders/nintendo/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
+              <a href="/ladders/nintendo/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
+              <a href="/ladders/nintendo/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
 
@@ -930,6 +934,7 @@ export default function Home() {
               <a href="/ladders/pc/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
               <a href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
               <a href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
+              <a href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
 
@@ -955,6 +960,10 @@ export default function Home() {
               <a className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></a>
               <a className="side-link" href="/players/top">Top Players <span className="arrow">›</span></a>
               <a className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></a>
+
+              <div className="section-title">Awards &amp; Achievements</div>
+
+              <a className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></a>
 
               <div className="section-title">About GameBattles</div>
 
@@ -1028,6 +1037,7 @@ export default function Home() {
                 <Link href="/latest-news">Latest news</Link>
                 <Link href="/players/top">Top players</Link>
                 <Link href="/suggestions">Suggestions</Link>
+                <Link href="/awards">Awards &amp; achievements</Link>
               </div>
             </div>
             <div className="mobile-home-section">

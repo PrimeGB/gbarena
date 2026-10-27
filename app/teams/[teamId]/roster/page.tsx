@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
+import SiteNav from "../../../components/SiteNav";
+import TeamTabs from "../../../components/TeamTabs";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -28,8 +30,10 @@ type RosterMember = {
   gb_wins: number;
   gb_losses: number;
   gb_place: number | null;
-  eligibility: "green" | "yellow" | "red";
+  eligibility: Eligibility;
 };
+
+type Eligibility = "green" | "yellow" | "purple" | "red";
 
 type SearchResult = {
   id: string;
@@ -159,18 +163,33 @@ function isMissingTableError(error: any) {
   return error?.code === "42P01" || msg.includes("does not exist") || msg.includes("relation") && msg.includes("does not exist");
 }
 
-function eligibilityStatus(member: any): "green" | "yellow" | "red" {
+function eligibilityStatus(member: any, hasGamingId: boolean): Eligibility {
+  const status = String(member?.status || member?.invite_status || "").toLowerCase();
+
   if (
     member?.can_play === false ||
-    ["ineligible", "banned", "suspended"].includes(
-      String(member?.status || member?.invite_status || "").toLowerCase()
-    )
+    ["ineligible", "banned", "suspended"].includes(status)
   ) {
     return "red";
   }
 
+  if (["pending", "invited", "awaiting"].includes(status)) {
+    return "yellow";
+  }
+
+  if (!hasGamingId) {
+    return "purple";
+  }
+
   return "green";
 }
+
+const ELIGIBILITY_LABEL: Record<Eligibility, string> = {
+  green: "Eligible to play in matches",
+  yellow: "Awaiting eligibility",
+  purple: "Ineligible - no gaming ID linked for this game",
+  red: "Ineligible - other",
+};
 
 export default function EditRosterPage() {
   const params = useParams();
@@ -189,8 +208,10 @@ export default function EditRosterPage() {
   const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [savingUserId, setSavingUserId] = useState<string | null>(null);
-  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [editIds, setEditIds] = useState<Set<string>>(new Set());
+  const [removeIds, setRemoveIds] = useState<Set<string>>(new Set());
+  const [pendingRoles, setPendingRoles] = useState<Record<string, TeamRole>>({});
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -199,6 +220,7 @@ export default function EditRosterPage() {
     viewerRole === "leader" || viewerRole === "co-leader";
 
   const isLeader = viewerRole === "leader";
+  const isSinglesLadder = String(team?.ladder || "").toLowerCase() === "singles";
 
   const rosterIds = useMemo(
     () => new Set(roster.map((member) => member.user_id)),
@@ -345,7 +367,10 @@ export default function EditRosterPage() {
         gb_wins: Number(profile.gb_wins || 0),
         gb_losses: Number(profile.gb_losses || 0),
         gb_place: rankMap[String(member.user_id)] || null,
-        eligibility: eligibilityStatus(member),
+        eligibility: eligibilityStatus(
+          member,
+          Boolean(gamingIdMap[String(member.user_id)])
+        ),
       } as RosterMember;
     });
 
@@ -503,101 +528,120 @@ export default function EditRosterPage() {
     setInvitingUserId(null);
   };
 
-  const handleRoleChange = async (
-    member: RosterMember,
-    newRole: TeamRole
+  const toggleSet = (
+    setter: React.Dispatch<React.SetStateAction<Set<string>>>,
+    userId: string,
+    on: boolean
   ) => {
+    setter((current) => {
+      const next = new Set(current);
+      if (on) next.add(userId);
+      else next.delete(userId);
+      return next;
+    });
+  };
+
+  const handleEditToggle = (member: RosterMember, on: boolean) => {
+    toggleSet(setEditIds, member.user_id, on);
+
+    if (!on) {
+      setPendingRoles((current) => {
+        const next = { ...current };
+        delete next[member.user_id];
+        return next;
+      });
+    }
+  };
+
+  const handleRemoveToggle = (member: RosterMember, on: boolean) => {
+    toggleSet(setRemoveIds, member.user_id, on);
+
+    if (on) {
+      toggleSet(setEditIds, member.user_id, false);
+      setPendingRoles((current) => {
+        const next = { ...current };
+        delete next[member.user_id];
+        return next;
+      });
+    }
+  };
+
+  const updateRoster = async () => {
     if (!team) return;
 
     setMessage("");
     setError("");
 
-    if (member.user_id === team.owner_id) {
-      setError("The team leader cannot have their role changed.");
+    const roleChanges = roster.filter(
+      (member) =>
+        pendingRoles[member.user_id] &&
+        pendingRoles[member.user_id] !== member.role &&
+        !removeIds.has(member.user_id)
+    );
+    const removals = roster.filter((member) => removeIds.has(member.user_id));
+
+    if (roleChanges.length === 0 && removals.length === 0) {
+      setError("No changes to save. Tick Edit to change a role or Remove to drop a player.");
       return;
+    }
+
+    for (const member of [...roleChanges, ...removals]) {
+      if (member.user_id === team.owner_id) {
+        setError("The team leader cannot be changed or removed.");
+        return;
+      }
+
+      if (!isLeader && member.role === "co-leader") {
+        setError("Only the team leader can manage Co-Leaders.");
+        return;
+      }
     }
 
     if (
-      !isLeader &&
-      (member.role === "co-leader" || newRole === "co-leader")
-    ) {
-      setError("Only the team leader can manage Co-Leaders.");
-      return;
-    }
-
-    if (newRole === "leader") {
-      setError("The team leader cannot be changed here.");
-      return;
-    }
-
-    setSavingUserId(member.user_id);
-
-    const { error: updateError } = await supabase
-      .from("team_members")
-      .update({ role: newRole })
-      .eq("team_id", team.id)
-      .eq("user_id", member.user_id);
-
-    if (updateError) {
-      setError(updateError.message);
-      setSavingUserId(null);
-      return;
-    }
-
-    setRoster((current) =>
-      current.map((item) =>
-        item.user_id === member.user_id
-          ? { ...item, role: newRole }
-          : item
+      removals.length > 0 &&
+      !window.confirm(
+        `Remove ${removals.map((member) => member.username).join(", ")} from ${team.name || "this team"}?`
       )
-    );
-
-    setMessage(`${member.username}'s role was updated.`);
-    setSavingUserId(null);
-  };
-
-  const handleRemove = async (member: RosterMember) => {
-    if (!team) return;
-
-    setMessage("");
-    setError("");
-
-    if (member.user_id === team.owner_id) {
-      setError("The team leader cannot be removed.");
+    ) {
       return;
     }
 
-    if (!isLeader && member.role === "co-leader") {
-      setError("Only the team leader can remove a Co-Leader.");
-      return;
+    setUpdating(true);
+
+    const failures: string[] = [];
+
+    for (const member of roleChanges) {
+      const { error: updateError } = await supabase
+        .from("team_members")
+        .update({ role: pendingRoles[member.user_id] })
+        .eq("team_id", team.id)
+        .eq("user_id", member.user_id);
+
+      if (updateError) failures.push(`${member.username}: ${updateError.message}`);
     }
 
-    const confirmed = window.confirm(
-      `Remove ${member.username} from ${team.name || "this team"}?`
-    );
+    for (const member of removals) {
+      const { error: deleteError } = await supabase
+        .from("team_members")
+        .delete()
+        .eq("team_id", team.id)
+        .eq("user_id", member.user_id);
 
-    if (!confirmed) return;
-
-    setRemovingUserId(member.user_id);
-
-    const { error: deleteError } = await supabase
-      .from("team_members")
-      .delete()
-      .eq("team_id", team.id)
-      .eq("user_id", member.user_id);
-
-    if (deleteError) {
-      setError(deleteError.message);
-      setRemovingUserId(null);
-      return;
+      if (deleteError) failures.push(`${member.username}: ${deleteError.message}`);
     }
 
-    setRoster((current) =>
-      current.filter((item) => item.user_id !== member.user_id)
-    );
+    setEditIds(new Set());
+    setRemoveIds(new Set());
+    setPendingRoles({});
+    await loadRoster();
 
-    setMessage(`${member.username} was removed from the roster.`);
-    setRemovingUserId(null);
+    if (failures.length > 0) {
+      setError(`Some changes could not be saved. ${failures.join(" | ")}`);
+    } else {
+      setMessage("Roster updated.");
+    }
+
+    setUpdating(false);
   };
 
   if (loading) {
@@ -778,21 +822,37 @@ export default function EditRosterPage() {
           </div>
         </div>
 
-        <div className="sub-nav">
-          <button onClick={() => router.push(`/teams/${teamId}`)}>
-            TEAM HOME
-          </button>
+        <SiteNav ladderHref={`/ladders/${team.platform || "xbox"}`} />
 
-          <span>|</span>
-
-          <span className="active">EDIT ROSTER</span>
+        <div className="tabs-pad">
+          <TeamTabs
+            teamId={teamId}
+            active="edit-roster"
+            canEditProfile={isLeader}
+            canEditRoster={canEditRoster}
+          />
         </div>
 
         {message && <div className="message success">{message}</div>}
         {error && <div className="message error">{error}</div>}
 
         <div className="content">
-          <section className="panel">
+          {isSinglesLadder && (
+            <section className="panel invite-panel">
+              <div className="panel-heading">
+                <span>INVITE A PLAYER</span>
+              </div>
+              <div className="invite-area">
+                <div className="no-results">
+                  Singles ladder teams are a single player, so there is no roster to invite
+                  players to. Invites are available on team ladders.
+                </div>
+              </div>
+            </section>
+          )}
+
+          {!isSinglesLadder && (
+          <section className="panel invite-panel">
             <div className="panel-heading">
               <span>INVITE A PLAYER</span>
             </div>
@@ -888,10 +948,11 @@ export default function EditRosterPage() {
                 )}
             </div>
           </section>
+          )}
 
-          <section className="panel">
-            <div className="panel-heading">
-              <span>CURRENT ROSTER</span>
+          <section className="panel roster-panel">
+            <div className="panel-heading dark-bar">
+              <span>CURRENT TEAM ROSTER</span>
 
               <span className="roster-count">
                 {roster.length} PLAYER
@@ -899,22 +960,16 @@ export default function EditRosterPage() {
               </span>
             </div>
 
-            <div className="roster-note">
-              Select a role to update a player's position on the
-              team. Team leaders are protected.
-            </div>
-
             <div className="roster-table-wrap">
-              <table className="roster-table">
+              <table className="roster-table gb-table">
                 <thead>
                   <tr>
-                    <th>PLAYER</th>
-                    <th>GAMERTAG</th>
-                    <th>ROLE</th>
-                    <th>GB RANK</th>
-                    <th>RECORD</th>
-                    <th>STATUS</th>
-                    <th />
+                    <th>Eligible</th>
+                    <th>Username</th>
+                    <th>{prettyText(team.platform)} ID</th>
+                    <th>Role</th>
+                    <th className="center">Edit</th>
+                    <th className="center">Remove</th>
                   </tr>
                 </thead>
 
@@ -925,11 +980,26 @@ export default function EditRosterPage() {
                       String(team.owner_id);
 
                     const canManage =
-                      isLeader ||
-                      (!isOwner && member.role !== "co-leader");
+                      !isOwner &&
+                      (isLeader || member.role !== "co-leader");
+
+                    const editing = editIds.has(member.user_id);
+                    const removing = removeIds.has(member.user_id);
+                    const selectedRole =
+                      pendingRoles[member.user_id] || member.role;
 
                     return (
-                      <tr key={member.user_id}>
+                      <tr
+                        key={member.user_id}
+                        className={removing ? "marked-remove" : ""}
+                      >
+                        <td>
+                          <span
+                            className={`orb ${member.eligibility}`}
+                            title={ELIGIBILITY_LABEL[member.eligibility]}
+                          />
+                        </td>
+
                         <td>
                           <a
                             className="player-link"
@@ -937,107 +1007,62 @@ export default function EditRosterPage() {
                           >
                             {member.username}
                           </a>
-
-                          {isOwner && (
-                            <span className="leader-mark">
-                              LEADER
-                            </span>
-                          )}
                         </td>
 
                         <td className="gamertag">
-                          {member.gaming_id || "Gaming ID not linked"}
+                          {member.gaming_id || (
+                            <span className="no-id">Gaming ID not linked</span>
+                          )}
                         </td>
 
                         <td>
-                          {isOwner ? (
-                            <span className="leader-role">
-                              Leader
-                            </span>
-                          ) : (
+                          {editing ? (
                             <select
-                              value={member.role}
-                              disabled={
-                                !canManage ||
-                                savingUserId === member.user_id
-                              }
+                              value={selectedRole}
                               onChange={(event) =>
-                                handleRoleChange(
-                                  member,
-                                  normalizeRole(
+                                setPendingRoles((current) => ({
+                                  ...current,
+                                  [member.user_id]: normalizeRole(
                                     event.target.value
-                                  )
-                                )
+                                  ),
+                                }))
                               }
                             >
-                              <option value="member">
-                                Member
-                              </option>
-
-                              <option value="captain">
-                                Captain
-                              </option>
-
-                              {isLeader && (
-                                <option value="co-leader">
-                                  Co-Leader
-                                </option>
+                              <option value="member">Member</option>
+                              <option value="captain">Captain</option>
+                              {member.role === "co-leader" && (
+                                <option value="co-leader">Co-Leader</option>
                               )}
                             </select>
-                          )}
-                        </td>
-
-                        <td>
-                          <span className="rank">
-                            {member.gb_place
-                              ? `#${member.gb_place}`
-                              : "Unranked"}
-                          </span>
-
-                          <span className="points">
-                            {member.gb_rank_points} pts
-                          </span>
-                        </td>
-
-                        <td className="record">
-                          {member.gb_wins}-{member.gb_losses}
-                        </td>
-
-                        <td>
-                          <span className="status">
-                            <span
-                              className={`dot ${member.eligibility}`}
-                            />
-
-                            {member.eligibility === "green"
-                              ? "Eligible"
-                              : member.eligibility === "yellow"
-                                ? "Pending"
-                                : "Ineligible"}
-                          </span>
-                        </td>
-
-                        <td className="action-cell">
-                          {!isOwner && canManage ? (
-                            <button
-                              className="remove-button"
-                              disabled={
-                                removingUserId ===
-                                member.user_id
-                              }
-                              onClick={() =>
-                                handleRemove(member)
-                              }
-                            >
-                              {removingUserId === member.user_id
-                                ? "..."
-                                : "REMOVE"}
-                            </button>
                           ) : (
-                            <span className="protected">
-                              PROTECTED
+                            <span className="role-text">
+                              {roleLabel(member.role)}
                             </span>
                           )}
+                        </td>
+
+                        <td className="center">
+                          <input
+                            type="checkbox"
+                            checked={editing}
+                            disabled={!canManage || removing}
+                            onChange={(event) =>
+                              handleEditToggle(member, event.target.checked)
+                            }
+                            aria-label={`Edit ${member.username}`}
+                          />
+                        </td>
+
+                        <td className="center">
+                          <input
+                            type="checkbox"
+                            checked={removing}
+                            disabled={!canManage}
+                            onChange={(event) =>
+                              handleRemoveToggle(member, event.target.checked)
+                            }
+                            aria-label={`Remove ${member.username}`}
+                          />
                         </td>
                       </tr>
                     );
@@ -1045,13 +1070,62 @@ export default function EditRosterPage() {
 
                   {roster.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="empty">
+                      <td colSpan={6} className="empty">
                         No players are currently on this roster.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="update-row">
+              <button
+                className="update-button"
+                disabled={updating}
+                onClick={updateRoster}
+              >
+                {updating ? "Updating..." : "Update Roster"}
+              </button>
+            </div>
+          </section>
+
+          <section className="panel legend-panel">
+            <div className="panel-heading dark-bar">
+              <span>LEGEND</span>
+            </div>
+
+            <div className="legend-grid">
+              <div className="legend-col">
+                <div className="legend-item">
+                  <span className="orb green" />
+                  Eligible to play in matches
+                </div>
+                <div className="legend-item">
+                  <span className="orb yellow" />
+                  Awaiting eligibility (pending invite)
+                </div>
+                <div className="legend-item">
+                  <span className="orb purple" />
+                  Ineligible - no gaming ID linked for this game
+                </div>
+                <div className="legend-item">
+                  <span className="orb red" />
+                  Ineligible - other
+                </div>
+              </div>
+
+              <div className="legend-col">
+                <div className="legend-role">
+                  <strong>Leader</strong> - Can perform all team management functions
+                </div>
+                <div className="legend-role">
+                  <strong>Captain</strong> - Can setup/report matches
+                </div>
+                <div className="legend-role">
+                  <strong>Member</strong> - No management capabilities
+                </div>
+              </div>
             </div>
           </section>
         </div>
@@ -1174,7 +1248,153 @@ export default function EditRosterPage() {
         }
 
         .content {
+          display: flex;
+          flex-direction: column;
           padding: 13px;
+        }
+
+        .tabs-pad {
+          padding: 0 13px;
+        }
+
+        .roster-panel {
+          order: 1;
+        }
+
+        .legend-panel {
+          order: 2;
+        }
+
+        .invite-panel {
+          order: 3;
+        }
+
+        .dark-bar {
+          background: #000;
+          border-bottom: 1px solid #222;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .gb-table {
+          min-width: 0;
+        }
+
+        .gb-table th {
+          color: #fff;
+          font-size: 11px;
+          text-align: left;
+        }
+
+        .gb-table th.center,
+        .gb-table td.center {
+          text-align: center;
+        }
+
+        .gb-table td {
+          padding: 10px 9px;
+          font-size: 12px;
+          vertical-align: middle;
+        }
+
+        .gb-table tr.marked-remove td {
+          opacity: 0.5;
+          text-decoration: line-through;
+        }
+
+        .gb-table input[type="checkbox"] {
+          width: 15px;
+          height: 15px;
+          cursor: pointer;
+        }
+
+        .gb-table input[type="checkbox"]:disabled {
+          cursor: not-allowed;
+          opacity: 0.35;
+        }
+
+        .role-text {
+          color: #e6eef8;
+          font-weight: 700;
+        }
+
+        .no-id {
+          color: #c8924a;
+        }
+
+        .orb {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          vertical-align: middle;
+          box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.35),
+            inset 0 2px 3px rgba(255, 255, 255, 0.45);
+        }
+
+        .orb.green {
+          background: #3ac96a;
+        }
+
+        .orb.yellow {
+          background: #f0a53c;
+        }
+
+        .orb.purple {
+          background: #a553d8;
+        }
+
+        .orb.red {
+          background: #e0504f;
+        }
+
+        .update-row {
+          display: flex;
+          justify-content: flex-end;
+          padding: 16px 12px;
+        }
+
+        .update-button {
+          padding: 6px 16px;
+          border: 1px solid #3d8fd8;
+          background: #2a74b8;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .update-button:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+
+        .legend-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 18px;
+          padding: 14px 16px;
+        }
+
+        .legend-item,
+        .legend-role {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          color: #cfdbea;
+          font-size: 12px;
+        }
+
+        .legend-role strong {
+          color: #fff;
+        }
+
+        @media (max-width: 700px) {
+          .legend-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         .panel {

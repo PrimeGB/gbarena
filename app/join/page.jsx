@@ -554,6 +554,12 @@ export default function JoinPage() {
         if (duplicateUsername) {
           setUsernameStatus("taken");
           setError("That username is already taken. Please choose another one.");
+        } else if (
+          /already exists|already registered|database error saving new user/i.test(signupError.message)
+        ) {
+          setError(
+            "An account with this email already exists (email aliases like name+1@ or dotted Gmail addresses count as the same email). Please log in instead."
+          );
         } else {
           setError(signupError.message);
         }

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import SiteNav from "../../components/SiteNav";
+import TeamTabs from "../../components/TeamTabs";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -59,7 +61,7 @@ type RosterMember = {
   gb_wins: number;
   gb_losses: number;
   gb_place: number | null;
-  eligibility: "green" | "yellow" | "red";
+  eligibility: "green" | "yellow" | "purple" | "red";
 };
 
 type TeamAward = {
@@ -215,14 +217,18 @@ function gameCover(game: string | null | undefined) {
   return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
 }
 
-function eligibilityStatus(member: any): "green" | "yellow" | "red" {
+function eligibilityStatus(member: any, hasGamingId: boolean): "green" | "yellow" | "purple" | "red" {
   const status = String(member?.status || member?.invite_status || "").toLowerCase();
 
   if (member?.can_play === false || status === "ineligible" || status === "banned" || status === "suspended") {
     return "red";
   }
 
-  return "green";
+  if (["pending", "invited", "awaiting"].includes(status)) {
+    return "yellow";
+  }
+
+  return hasGamingId ? "green" : "purple";
 }
 
 export default function TeamPage() {
@@ -384,6 +390,22 @@ export default function TeamPage() {
         });
       }
 
+      const linkedAccountIds = new Set<string>();
+
+      if (memberUserIds.length > 0) {
+        const { data: accountRows } = await supabase
+          .from("gaming_accounts")
+          .select("user_id,account_id")
+          .in("user_id", memberUserIds)
+          .eq("platform", teamData?.platform || "xbox")
+          .eq("category", teamData?.category || "call-of-duty")
+          .eq("game", teamData?.game || "modern-warfare-4");
+
+        (accountRows || []).forEach((account: any) => {
+          if (account.account_id) linkedAccountIds.add(String(account.user_id));
+        });
+      }
+
       const loadedRoster = (memberRows || []).map((member: any) => {
         const profile = profileMap[member.user_id] || {};
         const username = profile.username || "Player";
@@ -397,7 +419,7 @@ export default function TeamPage() {
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
           gb_place: rankMap[member.user_id] || null,
-          eligibility: eligibilityStatus(member),
+          eligibility: eligibilityStatus(member, linkedAccountIds.has(String(member.user_id))),
         } as RosterMember;
       });
 
@@ -551,7 +573,7 @@ export default function TeamPage() {
           color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;
         }
 
-        .avatar-row{height:66px;background:#050b12;border-bottom:1px solid #244b70;position:relative;}
+        .avatar-row{height:90px;background:#050b12;border-bottom:1px solid #244b70;position:relative;}
 
         .team-avatar{
           position:absolute;left:24px;top:8px;width:74px;height:74px;border:1px solid #315f88;
@@ -562,17 +584,7 @@ export default function TeamPage() {
 
         .team-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 
-        .nav{
-          height:36px;background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;display:flex;align-items:center;
-          justify-content:center;gap:28px;
-        }
-
-        .nav a{
-          color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;text-decoration:none;
-        }
-
-        .nav a:hover{color:#d7ad4a;}
+        .tabs-pad{padding:0 18px;}
 
         .content{
           padding:8px 18px 18px 18px;display:grid;grid-template-columns:1fr 185px;gap:14px;
@@ -777,6 +789,7 @@ export default function TeamPage() {
 
         .eligible.green{background:#36e86b;}
         .eligible.yellow{background:#ffd35a;}
+        .eligible.purple{background:#b25fe6;}
         .eligible.red{background:#ff5555;}
 
         .eligibility-head{display:flex;align-items:center;justify-content:center;gap:8px;}
@@ -848,6 +861,8 @@ export default function TeamPage() {
             </div>
           </header>
 
+          <SiteNav ladderHref={`/ladders/${team?.platform || "xbox"}`} />
+
           <div className="avatar-row">
             <div className="team-avatar">
               {team?.avatar_url ? (
@@ -859,13 +874,14 @@ export default function TeamPage() {
             </div>
           </div>
 
-          <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/profile/teams">My Teams</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href={ladderUrl}>View Ladder</a>
-          </nav>
+          <div className="tabs-pad">
+            <TeamTabs
+              teamId={teamId}
+              active="team"
+              canEditProfile={canEditTeamProfile}
+              canEditRoster={canEditRoster}
+            />
+          </div>
 
           {loading ? (
             <div className="loading-text">Loading Team...</div>
@@ -979,7 +995,7 @@ export default function TeamPage() {
                 </div>
 
                 <div className="mini-grid">
-                  <div className="panel">
+                  <div className="panel" id="matches">
                     <div className="panel-title">Upcoming & Recent Matches</div>
 
                     {visibleMatches.length === 0 ? (
@@ -1011,7 +1027,7 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                <div className="panel">
+                <div className="panel" id="roster">
                   <div className="panel-title">Roster</div>
 
                   <table className="roster-table">
@@ -1027,7 +1043,7 @@ export default function TeamPage() {
                             <span className="eligibility-help">
                               <button className="help-button" type="button">?</button>
                               <span className="help-popup">
-                                Green means good to play. Yellow means waiting to accept team invite. Red means cannot play.
+                                Green means eligible to play. Yellow means awaiting eligibility. Purple means no gaming ID linked. Red means ineligible.
                               </span>
                             </span>
                           </span>
@@ -1079,7 +1095,7 @@ export default function TeamPage() {
                           <td>Unranked</td>
                           <td>—</td>
                           <td>
-                            <span className="eligible green"></span>
+                            <span className="eligible purple"></span>
                           </td>
                         </tr>
                       )}
@@ -1132,6 +1148,11 @@ export default function TeamPage() {
                     Ladder Rules:{" "}
                     <a className="rules-link" href={rulesUrl}>
                       View
+                    </a>
+                    <br />
+                    Rankings:{" "}
+                    <a className="rules-link" href={ladderUrl}>
+                      View Ladder
                     </a>
                   </div>
                 </div>

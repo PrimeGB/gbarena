@@ -1,0 +1,346 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { supabase } from "../../../../../../../lib/supabase";
+import {
+  ladderCategoryLabel,
+  ladderGameLabel,
+  ladderPlatformLabel,
+  isValidLadder,
+} from "../../../../../../../lib/ladderCatalog";
+
+type TeamRow = {
+  id: string;
+  name: string | null;
+  tag: string | null;
+  logo_url: string | null;
+  wins: number | null;
+  losses: number | null;
+  rating_points: number | null;
+};
+
+type RosterIdentity = {
+  userId: string;
+  username: string;
+  accountId: string;
+};
+
+const ladderTitles: Record<string, string> = {
+  redsec: "RedSec",
+  singles: "Singles",
+  duos: "Duos",
+  team: "Team",
+};
+
+function winPercentage(wins: number, losses: number) {
+  const total = wins + losses;
+  return total ? `${Math.round((wins / total) * 100)}%` : "—";
+}
+
+export default function LadderRankingsPage() {
+  const { platform, category, game, ladder } = useParams<{
+    platform: string;
+    category: string;
+    game: string;
+    ladder: string;
+  }>();
+  const [teams, setTeams] = useState<TeamRow[]>([]);
+  const [rostersByTeam, setRostersByTeam] = useState<Record<string, RosterIdentity[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const platformName = ladderPlatformLabel(platform);
+  const categoryName = ladderCategoryLabel(category);
+  const gameName = ladderGameLabel(category, game);
+  const ladderName = isValidLadder(category, game, ladder) ? ladderTitles[ladder] : null;
+
+  const rankedTeams = useMemo(
+    () =>
+      [...teams].sort((a, b) => {
+        const ratingDifference =
+          Number(b.rating_points || 100) - Number(a.rating_points || 100);
+        if (ratingDifference) return ratingDifference;
+        const winDifference = Number(b.wins || 0) - Number(a.wins || 0);
+        if (winDifference) return winDifference;
+        return Number(a.losses || 0) - Number(b.losses || 0);
+      }),
+    [teams]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRankings() {
+      setLoading(true);
+      setError("");
+
+      if (!platformName || !gameName || !ladderName) {
+        setError("This ladder is not available.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: queryError } = await supabase
+        .from("teams")
+        .select("id,name,tag,logo_url,wins,losses,rating_points")
+        .eq("platform", platform)
+        .eq("category", category)
+        .eq("game", game)
+        .eq("ladder", ladder)
+        .or("wins.gt.0,losses.gt.0")
+        .order("rating_points", { ascending: false })
+        .order("wins", { ascending: false })
+        .order("losses", { ascending: true });
+
+      if (cancelled) return;
+      if (queryError) {
+        setError(queryError.message);
+      } else {
+        const loadedTeams = (data || []) as TeamRow[];
+        setTeams(loadedTeams);
+
+        if (loadedTeams.length) {
+          const { data: members, error: memberError } = await supabase
+            .from("team_members")
+            .select("team_id,user_id")
+            .in("team_id", loadedTeams.map((team) => team.id));
+
+          if (cancelled) return;
+          if (memberError) {
+            setError("Team gaming IDs could not be loaded: " + memberError.message);
+          } else {
+            const memberIds = (members || []).map((member) => member.user_id);
+            if (memberIds.length) {
+              const [{ data: profiles, error: profileError }, { data: accounts, error: accountError }] =
+                await Promise.all([
+                  supabase.from("profiles").select("id,username").in("id", memberIds),
+                  supabase
+                    .from("gaming_accounts")
+                    .select("user_id,account_id")
+                    .in("user_id", memberIds)
+                    .eq("platform", platform)
+                    .eq("category", category)
+                    .eq("game", game),
+                ]);
+
+              if (cancelled) return;
+              if (profileError || accountError) {
+                setError(
+                  "Team gaming IDs could not be loaded: " +
+                    (profileError?.message || accountError?.message),
+                );
+              } else {
+                const usernameById = new Map(
+                  (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
+                );
+                const accountByUserId = new Map(
+                  (accounts || []).map((account) => [account.user_id, account.account_id]),
+                );
+                const rosterMap: Record<string, RosterIdentity[]> = {};
+
+                (members || []).forEach((member) => {
+                  const accountId = accountByUserId.get(member.user_id);
+                  if (!accountId) return;
+                  rosterMap[member.team_id] ||= [];
+                  rosterMap[member.team_id].push({
+                    userId: member.user_id,
+                    username: usernameById.get(member.user_id) || "Player",
+                    accountId,
+                  });
+                });
+                setRostersByTeam(rosterMap);
+              }
+            } else {
+              setRostersByTeam({});
+            }
+          }
+        } else {
+          setRostersByTeam({});
+        }
+      }
+      setLoading(false);
+    }
+
+    loadRankings();
+    return () => {
+      cancelled = true;
+    };
+  }, [platform, category, game, ladder, platformName, gameName, ladderName]);
+
+  if (!platformName || !gameName || !ladderName) {
+    return (
+      <main className="page">
+        <section className="panel">
+          <h1>Ladder not found</h1>
+          <Link href={`/ladders/${platform}/${category}`}>
+            Back to {categoryName || "ladders"}
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="page">
+      <section className="panel">
+        <Link className="back-link" href={`/ladders/${platform}/${category}/${game}`}>
+          Back to {gameName} ladders
+        </Link>
+        <header>
+          <p>{platformName} {categoryName} Ladder Rankings</p>
+          <h1>{gameName} {ladderName}</h1>
+          <Link
+            className="create-link"
+            href={`/team-hub?platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}
+          >
+            View/Create Team
+          </Link>
+        </header>
+        {loading ? (
+          <p className="state">Loading standings…</p>
+        ) : error ? (
+          <p className="state error">{error}</p>
+        ) : rankedTeams.length === 0 ? (
+          <p className="state">No ranked teams yet.</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Team</th>
+                  <th>Rating</th>
+                  <th>Wins</th>
+                  <th>Losses</th>
+                  <th>Win %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankedTeams.map((team, index) => (
+                  <tr key={team.id}>
+                    <td>{index + 1}</td>
+                    <td>
+                      <Link href={`/teams/${team.id}`}>
+                        {team.tag ? `[${team.tag}] ` : ""}
+                        {team.name || "Unnamed Team"}
+                      </Link>
+                      <div className="roster-identities">
+                        {(rostersByTeam[team.id] || []).map((member) => (
+                          <span key={member.userId}>
+                            {member.username}: {member.accountId}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td>{team.rating_points ?? 100}</td>
+                    <td>{team.wins ?? 0}</td>
+                    <td>{team.losses ?? 0}</td>
+                    <td>
+                      {winPercentage(team.wins || 0, team.losses || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      <style jsx>{`
+        .page {
+          min-height: 100vh;
+          padding: 24px 14px;
+          background: radial-gradient(circle at top, #173d5f, #02060a 65%);
+          color: #eaf6ff;
+          font-family: Tahoma, Verdana, Arial, sans-serif;
+        }
+        .panel {
+          max-width: 980px;
+          margin: 0 auto;
+          border: 1px solid #2d6f9f;
+          background: #071522;
+          box-shadow: 0 0 34px #000c;
+        }
+        .back-link {
+          display: inline-block;
+          margin: 18px;
+          color: #9bd8ff;
+          font-size: 12px;
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .back-link:hover,
+        td a:hover {
+          color: #f2c14e;
+        }
+        .roster-identities {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 2px 10px;
+          margin-top: 4px;
+          color: #b8dfff;
+          font-size: 10px;
+          line-height: 15px;
+        }
+        header {
+          padding: 8px 20px 18px;
+          border-bottom: 1px solid #2d6f9f;
+          background: linear-gradient(#153a57, #071522);
+        }
+        header p {
+          margin: 0 0 6px;
+          color: #b8dfff;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        h1 {
+          margin: 0 0 14px;
+          color: #f2c14e;
+          font-size: 26px;
+          text-transform: uppercase;
+        }
+        .create-link {
+          color: #9bd8ff;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .state {
+          padding: 30px 20px;
+          color: #cfe2f2;
+          text-align: center;
+        }
+        .error {
+          color: #ff8585;
+        }
+        .table-wrap {
+          overflow-x: auto;
+          padding: 16px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          min-width: 620px;
+          font-size: 13px;
+        }
+        th,
+        td {
+          padding: 12px 10px;
+          border-bottom: 1px solid #214b68;
+          text-align: left;
+        }
+        th {
+          color: #061622;
+          background: #7db6d8;
+          text-transform: uppercase;
+        }
+        td a {
+          color: #9bd8ff;
+          font-weight: 700;
+          text-decoration: none;
+        }
+      `}</style>
+    </main>
+  );
+}

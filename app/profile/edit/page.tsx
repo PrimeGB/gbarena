@@ -196,7 +196,7 @@ function EditProfileContent() {
     async function loadGamingAccounts() {
       const { data, error } = await supabase
         .from("gaming_accounts")
-        .select("id,user_id,platform,category,game,account_id")
+        .select("id,user_id,platform,category,game,account_id,locked_until")
         .eq("user_id", userId)
         .order("platform")
         .order("game");
@@ -234,7 +234,7 @@ function EditProfileContent() {
         },
         { onConflict: "user_id,platform,category,game" },
       )
-      .select("id,user_id,platform,category,game,account_id")
+      .select("id,user_id,platform,category,game,account_id,locked_until")
       .single();
 
     if (error) {
@@ -1132,6 +1132,9 @@ function EditProfileContent() {
                         {savingGamingAccount ? "Saving..." : "Save Gaming Account"}
                       </button>
                     </div>
+                    <div className="field-note">
+                      Once saved, a gaming ID is locked to your account for 30 days and cannot be changed, removed, or used on another account.
+                    </div>
                     {gamingAccountError && <div className="error-text">{gamingAccountError}</div>}
                     {gamingAccounts.length > 0 ? (
                       <div className="manage-grid">
@@ -1140,10 +1143,16 @@ function EditProfileContent() {
                             <div>
                               <strong>{gamingPlatformLabel(account.platform)}</strong>
                               <div className="field-note">{account.category} / {account.game}: {account.account_id}</div>
+                              {account.locked_until && new Date(account.locked_until) > new Date() && (
+                                <div className="field-note">
+                                  🔒 Locked until {new Date(account.locked_until).toLocaleDateString()}
+                                </div>
+                              )}
                             </div>
                             <button
                               className="edit-button"
                               type="button"
+                              disabled={!!account.locked_until && new Date(account.locked_until) > new Date()}
                               onClick={() => void removeGamingAccount(account)}
                             >
                               Remove

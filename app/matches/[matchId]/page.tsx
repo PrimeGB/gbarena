@@ -1,9 +1,12 @@
-"use client";
+﻿"use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
+import { getGameRules } from "../../../lib/matchRules";
+import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 
 type MatchRow = {
   id: string;
@@ -172,6 +175,21 @@ function staffMatchId(id: string) {
   return `${partOne}${partTwo}${partThree}`.slice(0, 8);
 }
 
+function formatMatchTime(value: string | null | undefined) {
+  if (!value) return "TBD";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
 function getBestOfNumber(bestOf: string | null | undefined) {
   const found = String(bestOf || "").match(/\d+/);
   if (!found) return 3;
@@ -228,9 +246,11 @@ export default function MatchDetailsPage() {
   const [match, setMatch] = useState<MatchRow | null>(null);
   const [postingTeam, setPostingTeam] = useState<TeamRow | null>(null);
   const [acceptingTeam, setAcceptingTeam] = useState<TeamRow | null>(null);
+  const [teamRanks, setTeamRanks] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
   const [userTeamId, setUserTeamId] = useState("");
@@ -250,7 +270,42 @@ export default function MatchDetailsPage() {
       setUserTeamId("");
       setCanManageMatch(false);
 
-      // Fetch match and exclude cancelled or invalid statuses
+      if (process.env.NODE_ENV === "development" && matchId === "preview") {
+        const soon = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+        setMatch({
+          id: "preview",
+          posting_team_id: "t1",
+          accepting_team_id: "t2",
+          platform: "xbox",
+          game: "black-ops-6",
+          game_mode: "search-and-destroy",
+          ladder: "teams",
+          players: "4v4",
+          match_time: soon,
+          best_of: "Best of 3",
+          preset: "GameBattles Standard",
+          crossplay: "Off",
+          perks: "Standard",
+          killstreaks: "Off",
+          hardcore: "No",
+          friendly_fire: "Off",
+          round_length: "2:00",
+          score_limit: "6",
+          bomb_timer: "45s",
+          status: "upcoming",
+          reporting_status: "none",
+          accepted_at: new Date().toISOString(),
+        });
+        setPostingTeam({ id: "t1", name: "Nova Elite", tag: "NOVA", logo_url: null, avatar_url: null, wins: 57, losses: 12, streak: "8W", xp: 5180 });
+        setAcceptingTeam({ id: "t2", name: "Ghost Ops", tag: "GHST", logo_url: null, avatar_url: null, wins: 54, losses: 15, streak: "5W", xp: 5035 });
+        setParticipants(
+          ["Viper", "Hex", "Rook", "Blaze"].map((u, i) => ({ id: `a${i}`, team_id: "t1", team_name_at_match: "Nova Elite", username_at_match: u, account_id_at_match: `${u}#10${i}` }))
+            .concat(["Ghost", "Raven", "Echo", "Drift"].map((u, i) => ({ id: `b${i}`, team_id: "t2", team_name_at_match: "Ghost Ops", username_at_match: u, account_id_at_match: `${u}#20${i}` })))
+        );
+        setTeamRanks({ t1: 2, t2: 3 });
+        setLoading(false);
+        return;
+      }
       const { data: matchData, error: matchError } = await supabase
         .from("matches")
         .select("*")
@@ -306,6 +361,26 @@ export default function MatchDetailsPage() {
         }
 
         teams = (teamsData || []) as TeamRow[];
+
+        // Same ordering the team page uses to calculate a team's ladder place
+        const { data: rankedTeams } = await supabase
+          .from("teams")
+          .select("id")
+          .eq("platform", officialMatch.platform || "")
+          .eq("category", officialMatch.category || "")
+          .eq("game", officialMatch.game || "")
+          .eq("ladder", officialMatch.ladder || "")
+          .or("wins.gt.0,losses.gt.0")
+          .order("rating_points", { ascending: false })
+          .order("wins", { ascending: false })
+          .order("losses", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        const ranks: Record<string, number> = {};
+        (rankedTeams || []).forEach((row: { id: string }, index: number) => {
+          ranks[String(row.id)] = index + 1;
+        });
+        setTeamRanks(ranks);
 
         setPostingTeam(
           teams.find((team) => team.id === officialMatch.posting_team_id) ||
@@ -390,11 +465,33 @@ export default function MatchDetailsPage() {
   }, [match]);
 
   const bestOfNumber = getBestOfNumber(match?.best_of);
-  const matchSettings = match
+  const modeText = String(match?.game_mode || "").toLowerCase();
+  const isBombMode = /search|demolition|bomb|defus|s-?n-?d/.test(modeText);
+  const isSolo = match?.ladder === "singles";
+  const gameRuleSet = match ? getGameRules(match.category || "", match.game || "") : null;
+  const modeDef = gameRuleSet?.modes.find((mode) => mode.value === match?.game_mode) || null;
+  const gameTitle = match
+    ? gameRuleSet
+      ? `${gamingCategoryLabel(match.category || "")}: ${gamingGameLabel(match.category || "", match.game || "")}`
+      : prettyText(match.game)
+    : "";
+  const allSettings = match && modeDef
     ? [
-        { label: "Rules", value: match.preset },
-        { label: "Best Of", value: match.best_of },
-        { label: "Cross Play", value: match.crossplay },
+        { label: "Cross Play", value: match.crossplay, featured: true },
+        ...modeDef.fields.map((item, index) => ({
+          label: item.label,
+          value: (match as Record<string, any>)[item.slot] as string | null | undefined,
+          ...(index < 3 ? { featured: true } : {}),
+        })),
+      ].filter((setting) => !!setting.value?.trim() && setting.value !== "TBD")
+    : match
+    ? [
+        { label: "Cross Play", value: match.crossplay, featured: true },
+        { label: "Score Limit", value: match.score_limit, featured: true },
+        { label: "Round Length", value: match.round_length, featured: true },
+        { label: "Bomb Timer", value: match.bomb_timer, featured: true, bomb: true },
+        { label: "Plant Time", value: match.plant_time, bomb: true },
+        { label: "Defuse Time", value: match.defuse_time, bomb: true },
         { label: "Perks", value: match.perks },
         { label: "Launchers", value: match.launchers },
         { label: "Killstreaks", value: match.killstreaks },
@@ -404,15 +501,74 @@ export default function MatchDetailsPage() {
         { label: "Radar", value: match.radar },
         { label: "Spectating", value: match.spectating },
         { label: "Third Person", value: match.third_person },
-        { label: "Round Length", value: match.round_length },
-        { label: "Score Limit", value: match.score_limit },
         { label: "Health", value: match.health },
         { label: "Respawn Delay", value: match.respawn_delay },
-        { label: "Bomb Timer", value: match.bomb_timer },
-        { label: "Plant Time", value: match.plant_time },
-        { label: "Defuse Time", value: match.defuse_time },
         { label: "Attachments", value: match.attachments },
-      ].filter((setting) => !!setting.value?.trim() && setting.value !== "TBD")
+      ].filter(
+        (setting) =>
+          !!setting.value?.trim() &&
+          setting.value !== "TBD" &&
+          (!("bomb" in setting) || isBombMode)
+      )
+    : [];
+  const featuredSettings = allSettings.filter((setting) => "featured" in setting);
+  const matchSettings = allSettings.filter((setting) => !("featured" in setting));
+  const detailRows = match
+    ? [
+        { label: "Match ID", value: staffMatchId(match.id) },
+        { label: "Date & Time", value: formatMatchTime(match.match_time) },
+        { label: "Status", value: "", status: true },
+        { label: "Game", value: gameTitle },
+        { label: "Platform", value: prettyText(match.platform) },
+        { label: "Match Type", value: ladderName(match.ladder) },
+        { label: isSolo ? "Format" : "Players", value: match.players?.trim() || "" },
+        { label: "Games (Best of...)", value: String(bestOfNumber) },
+        { label: "Game Mode", value: match.game_mode ? prettyText(match.game_mode) : "" },
+        { label: "Gameplay", value: match.preset?.trim() || "" },
+        ...featuredSettings.map((setting) => ({ label: setting.label, value: setting.value || "" })),
+      ].filter((row) => ("status" in row && row.status) || row.value)
+    : [];
+  const requiredWins = bestOfNumber === 7 ? 4 : bestOfNumber === 5 ? 3 : 2;
+  const ladderRules = match
+    ? [
+        {
+          title: `${ladderName(match.ladder)} Format`,
+          items: [
+            match.ladder === "singles"
+              ? "This is a solo match. Only the one player on each side may compete."
+              : match.ladder === "duos"
+              ? "This is a duos match. Each side must play with its locked duo roster."
+              : "Teams may play with 3, 4, 5 or 6 players. Players are not locked to a set team size.",
+            "Only players listed in the Match Roster may play.",
+            `Every player must use the account shown in the roster${match.platform ? ` on ${prettyText(match.platform)}` : ""}.`,
+            match.crossplay && match.crossplay.toLowerCase() !== "off"
+              ? `Cross-play is ${match.crossplay} for this match.`
+              : "Cross-play is not allowed for this match.",
+          ],
+        },
+        {
+          title: "Series Rules",
+          items: [
+            `Best of ${bestOfNumber}: the first team to win ${requiredWins} games wins the match.`,
+            match.game_mode
+              ? `Each game is played on ${prettyText(match.game_mode)}.`
+              : "Game mode is agreed in the match lobby.",
+            isBombMode
+              ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
+              : "A game ends when the score limit or time limit in the settings below is reached.",
+            ...(modeDef ? modeDef.rules : []),
+            "Teams must be ready to play at the scheduled time.",
+          ],
+        },
+        {
+          title: "Reporting Results",
+          items: [
+            "After the scheduled time, a team leader, co-leader or captain reports the series score.",
+            "The opposing team confirms the score, or disputes it.",
+            "Both teams have 2 hours from match time to submit a ticket with an explanation and proof. Staff only see the case once both teams have submitted, or once the 2 hours have ended.",
+          ],
+        },
+      ]
     : [];
   const matchTimePassed = matchTimeHasPassed(match?.match_time);
   const rawStatus = String(match?.status || "upcoming").toLowerCase();
@@ -511,103 +667,6 @@ export default function MatchDetailsPage() {
     return (data || [])
       .map((member: any) => member.user_id)
       .filter(Boolean) as string[];
-  }
-
-  async function updateTeamRecord(teamId: string, didWin: boolean) {
-    const { data: teamData } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("id", teamId)
-      .maybeSingle();
-
-    if (!teamData) return;
-
-    const currentWins = Number(teamData.wins || 0);
-    const currentLosses = Number(teamData.losses || 0);
-    const currentXp = Number(teamData.xp || 0);
-    const currentRating = Number(teamData.rating_points || 0);
-
-    const updateData: any = {
-      wins: didWin ? currentWins + 1 : currentWins,
-      losses: didWin ? currentLosses : currentLosses + 1,
-      streak: didWin ? Number(teamData.streak || 0) + 1 : -1,
-      xp: didWin ? currentXp + 25 : currentXp + 5,
-    };
-
-    if ("rating_points" in teamData) {
-      updateData.rating_points = didWin
-        ? currentRating + 25
-        : Math.max(0, currentRating - 10);
-    }
-
-    await supabase.from("teams").update(updateData).eq("id", teamId);
-  }
-
-  async function updatePlayerRecords(userIds: string[], didWin: boolean) {
-    for (const userId of userIds) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (!profileData) continue;
-
-      const updateData: any = {};
-
-      if ("wins" in profileData) updateData.wins = Number(profileData.wins || 0) + (didWin ? 1 : 0);
-      if ("losses" in profileData) updateData.losses = Number(profileData.losses || 0) + (didWin ? 0 : 1);
-      if ("xp" in profileData) updateData.xp = Number(profileData.xp || 0) + (didWin ? 25 : 5);
-      if ("rank_points" in profileData) updateData.rank_points = Number(profileData.rank_points || 0) + (didWin ? 25 : -10);
-      if ("rating_points" in profileData) updateData.rating_points = Math.max(0, Number(profileData.rating_points || 0) + (didWin ? 25 : -10));
-      if ("streak" in profileData) updateData.streak = didWin ? "W1" : "L1";
-
-      if (Object.keys(updateData).length > 0) {
-        await supabase.from("profiles").update(updateData).eq("id", userId);
-      }
-    }
-  }
-
-  async function finalizeMatchResultAutomatically(updatedMatch: MatchRow) {
-    const winningTeamId = updatedMatch.reported_winner_team_id || updatedMatch.winning_team_id;
-    const losingTeamId = updatedMatch.reported_loser_team_id || updatedMatch.losing_team_id;
-
-    if (!winningTeamId || !losingTeamId) {
-      return "Winner and loser could not be found.";
-    }
-
-    const winningUsers = await getTeamMemberUserIds(winningTeamId);
-    const losingUsers = await getTeamMemberUserIds(losingTeamId);
-
-    await updateTeamRecord(winningTeamId, true);
-    await updateTeamRecord(losingTeamId, false);
-    await updatePlayerRecords(winningUsers, true);
-    await updatePlayerRecords(losingUsers, false);
-
-    const { error } = await supabase
-      .from("matches")
-      .update({
-        winning_team_id: winningTeamId,
-        losing_team_id: losingTeamId,
-        status: "completed",
-        reporting_status: "completed",
-        score_confirmed_at: new Date().toISOString(),
-        score_verified: true,
-        score_verified_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(),
-        finalized: true,
-        finalized_at: new Date().toISOString(),
-        finalized_by: currentUser?.id || null,
-        rankings_applied: true,
-        result_processed: true,
-        ranking_change_applied_at: new Date().toISOString(),
-        winning_user_ids: winningUsers,
-        losing_user_ids: losingUsers,
-      })
-      .eq("id", updatedMatch.id);
-
-    if (error) return error.message;
-    return "";
   }
 
   async function handlePostComment() {
@@ -1238,6 +1297,11 @@ export default function MatchDetailsPage() {
           flex-wrap:wrap;
         }
 
+        .dispute-ticket-link{
+          color:#ff9b42;
+          font-weight:900;
+        }
+
         .dispute-btn{
           height:36px;
           padding:0 22px;
@@ -1333,6 +1397,85 @@ export default function MatchDetailsPage() {
           cursor:not-allowed;
         }
 
+        .dark-title{color:#fff;background:linear-gradient(to bottom,#3a3a3a,#111);}
+
+        .detail-layout{
+          display:grid;
+          grid-template-columns:1fr 280px;
+          gap:24px;
+          padding:18px;
+          align-items:start;
+        }
+        .detail-row{
+          display:grid;
+          grid-template-columns:170px 1fr;
+          gap:12px;
+          align-items:center;
+          min-height:30px;
+          border-bottom:1px solid rgba(255,255,255,.05);
+          font-size:14px;
+        }
+        .detail-label{color:#888;text-align:right;}
+        .detail-value{color:#fff;font-weight:900;}
+        .detail-row .status-pill{justify-self:start;}
+        .detail-actions{display:grid;gap:12px;}
+        .blue-btn{
+          display:block;
+          padding:14px 12px;
+          text-align:center;
+          text-decoration:none;
+          background:#0a78e0;
+          color:#fff;
+          font-size:14px;
+          font-weight:900;
+          border-radius:3px;
+        }
+        .blue-btn:hover{background:#2a8cf0;}
+        .toggle-settings{
+          display:block;
+          width:calc(100% - 36px);
+          margin:0 18px 18px;
+          padding:10px;
+          background:#0b0b0b;
+          border:1px solid #0a78e0;
+          color:#3d9bff;
+          font-size:14px;
+          font-weight:900;
+          border-radius:3px;
+          cursor:pointer;
+        }
+        .toggle-settings:hover{background:#0d1a2a;}
+
+        .roster-title{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          color:#999;
+          font-size:14px;
+          margin-bottom:12px;
+        }
+        .roster-title::after{content:"";flex:1;height:1px;background:#2a2a2a;}
+        .roster-player{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+        .roster-avatar{
+          width:38px;
+          height:38px;
+          border-radius:3px;
+          background:#555;
+          color:#fff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:12px;
+          font-weight:900;
+          flex-shrink:0;
+        }
+        .roster-name{color:#fff;font-weight:900;font-size:14px;display:flex;flex-direction:column;line-height:1.2;}
+        .roster-name small{color:#777;font-weight:400;font-size:11px;}
+
+        @media (max-width:700px){
+          .detail-layout{grid-template-columns:1fr;}
+        }
+
         .modal-backdrop{
           position:fixed;
           inset:0;
@@ -1343,29 +1486,30 @@ export default function MatchDetailsPage() {
           z-index:9999;
           padding:20px;
         }
-
-        .settings-modal{
-          width:620px;
+        .rules-modal{
+          width:720px;
           max-width:95vw;
+          max-height:88vh;
+          display:flex;
+          flex-direction:column;
           border:1px solid #383838;
           background:#0b0b0b;
           box-shadow:0 0 35px rgba(0,0,0,.9);
         }
-
         .modal-title{
-          height:38px;
+          min-height:40px;
           background:linear-gradient(to bottom,#1c1c1c,#080808);
           border-bottom:1px solid #242424;
           display:flex;
           align-items:center;
           justify-content:space-between;
+          gap:10px;
           padding:0 12px;
           color:#d66f16;
           font-size:13px;
           font-weight:900;
           text-transform:uppercase;
         }
-
         .modal-close{
           width:24px;
           height:24px;
@@ -1375,6 +1519,14 @@ export default function MatchDetailsPage() {
           cursor:pointer;
           font-weight:900;
         }
+        .rules-body{padding:16px 18px;overflow-y:auto;}
+        .rules-intro{color:#ddd;font-size:14px;margin-bottom:14px;}
+        .rules-section{margin-bottom:16px;}
+        .rules-section h3{color:#ff9b4c;font-size:13px;text-transform:uppercase;margin-bottom:8px;}
+        .rules-section ul{padding-left:20px;list-style:disc;color:#bbb;font-size:13px;line-height:1.7;}
+        .rules-note{color:#888;font-size:12px;margin-bottom:8px;}
+        .rules-note a{color:#3d9bff;}
+        .rules-settings{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;}
 
         .modal-body{
           padding:14px;
@@ -1496,7 +1648,7 @@ export default function MatchDetailsPage() {
                           <span className="loss-number">{postingTeam?.losses || 0}</span>
                         </span>
                         <br />
-                        GB Rank: <span className="orange">#--</span>
+                        Team Rank: <span className="orange">{teamRanks[postingTeam?.id || ""] ? `#${teamRanks[postingTeam?.id || ""]}` : "Unranked"}</span>
                       </div>
                     </div>
                   </div>
@@ -1524,7 +1676,7 @@ export default function MatchDetailsPage() {
                           <span className="loss-number">{acceptingTeam?.losses || 0}</span>
                         </span>
                         <br />
-                        GB Rank: <span className="orange">#--</span>
+                        Team Rank: <span className="orange">{teamRanks[acceptingTeam?.id || ""] ? `#${teamRanks[acceptingTeam?.id || ""]}` : "Unranked"}</span>
                       </div>
                     </div>
 
@@ -1552,22 +1704,22 @@ export default function MatchDetailsPage() {
               </section>
 
               <section className="match-info">
-                <div className="section-title">Match Roster</div>
                 <div className="participants-grid">
                   {[match.posting_team_id, match.accepting_team_id].map((teamId, index) => {
                     const sideParticipants = participants.filter((participant) => participant.team_id === teamId);
-                    const teamName = sideParticipants[0]?.team_name_at_match || (
-                      index === 0
-                        ? postingTeam?.name || "Posting Team"
-                        : acceptingTeam?.name || "Accepting Team"
-                    );
 
                     return (
                       <div className="participants-team" key={teamId || index}>
-                        <div className="participant-line"><strong>{teamName}</strong></div>
+                        <div className="roster-title"><span>Match Roster</span></div>
                         {sideParticipants.length ? sideParticipants.map((participant) => (
-                          <div className="participant-line" key={participant.id}>
-                            {participant.username_at_match} — {participant.account_id_at_match}
+                          <div className="roster-player" key={participant.id}>
+                            <span className="roster-avatar">
+                              {participant.username_at_match.slice(0, 2).toUpperCase()}
+                            </span>
+                            <span className="roster-name">
+                              {participant.username_at_match}
+                              <small>{participant.account_id_at_match}</small>
+                            </span>
                           </div>
                         )) : (
                           <div className="participant-line">No participant history is available for this match.</div>
@@ -1579,61 +1731,56 @@ export default function MatchDetailsPage() {
               </section>
 
               <section className="match-info">
-                <div className="section-title">Match Info</div>
+                <div className="section-title dark-title">Match Details</div>
 
-                <div className="info-grid">
-                  <div>
-                    <div className="info-line">
-                      <span className="info-label">Mode:</span>
-                      <span className="info-value">{clean(match.game_mode)}</span>
-                    </div>
-
-                    <div className="info-line">
-                      <span className="info-label">Players:</span>
-                      <span className="info-value">{clean(match.players)}</span>
-                    </div>
-
-                    <div className="info-line">
-                      <span className="info-label">Scheduled:</span>
-                      <span className="info-value">{clean(match.match_time)}</span>
-                    </div>
-
-                    <div className="info-line">
-                      <span className="info-label">Match ID:</span>
-                      <span className="short-id">{staffMatchId(match.id)}</span>
-                    </div>
+                <div className="detail-layout">
+                  <div className="detail-rows">
+                    {detailRows.map((row) => (
+                      <div className="detail-row" key={row.label}>
+                        <span className="detail-label">{row.label}:</span>
+                        {"status" in row && row.status ? (
+                          <span className={`status-pill ${statusClass(displayStatus)}`}>
+                            {prettyStatus(displayStatus)}
+                          </span>
+                        ) : (
+                          <span className="detail-value">{row.value}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
 
-                  <div>
-                    <div className="info-line">
-                      <span className="info-label">Best Of:</span>
-                      <span className="info-value">{clean(match.best_of)}</span>
-                    </div>
-
-                    <div className="info-line">
-                      <span className="info-label">Rules:</span>
-                      <span className="info-value">{clean(match.preset, "GB Variant")}</span>
-                    </div>
-
-                    <div className="info-line">
-                      <span className="info-label">Status:</span>
-                      <span className={`status-pill ${statusClass(displayStatus)}`}>
-                        {prettyStatus(displayStatus)}
-                      </span>
-                    </div>
-
-                    <div className="info-line settings-line">
-                      <span className="info-label">Settings:</span>
-                      <button
-                        className="details-btn"
-                        type="button"
-                        onClick={() => setSettingsOpen(true)}
-                      >
-                        Details
-                      </button>
-                    </div>
+                  <div className="detail-actions">
+                    <button className="blue-btn" type="button" onClick={() => setRulesOpen(true)}>
+                      Match Rules
+                    </button>
+                    <Link
+                      className="blue-btn"
+                      href={`/support/dispute-ticket?matchId=${encodeURIComponent(match.id)}`}
+                    >
+                      Submit a ticket for this match
+                    </Link>
                   </div>
                 </div>
+
+                {matchSettings.length > 0 && (
+                  <button
+                    className="toggle-settings"
+                    type="button"
+                    onClick={() => setSettingsOpen((open) => !open)}
+                  >
+                    {settingsOpen ? "Hide All Settings" : "Show All Settings"}
+                  </button>
+                )}
+
+                {settingsOpen && matchSettings.length > 0 && (
+                  <div className="modal-body">
+                    {matchSettings.map((setting) => (
+                      <div className="setting-line" key={setting.label}>
+                        {setting.label}: <span>{setting.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               <section className="score-section">
@@ -1713,7 +1860,22 @@ export default function MatchDetailsPage() {
 
                   {reportingStatus === "disputed" && (
                     <div className="score-note">
-                      Match is disputed. Staff must resolve this result.
+                      Match is disputed. Both teams have 2 hours from match time to submit a
+                      ticket with their story and proof. Staff only see the case once both teams
+                      submit, or once the 2 hours have ended.
+                      {userIsMatchTeam && (
+                        <>
+                          {" "}
+                          <Link
+                            className="dispute-ticket-link"
+                            href={`/support/dispute-ticket?matchId=${encodeURIComponent(
+                              match.id
+                            )}`}
+                          >
+                            Submit your team&apos;s dispute ticket
+                          </Link>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -1798,26 +1960,53 @@ export default function MatchDetailsPage() {
         </div>
       </main>
 
-      {settingsOpen && match && (
-        <div className="modal-backdrop">
-          <div className="settings-modal">
+      {rulesOpen && match && (
+        <div className="modal-backdrop" onClick={() => setRulesOpen(false)}>
+          <div className="rules-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-title">
-              {prettyText(match.game)} Match Settings
-              <button
-                className="modal-close"
-                type="button"
-                onClick={() => setSettingsOpen(false)}
-              >
+              <span>
+                {prettyText(match.game)} Â· {ladderName(match.ladder)} Rules
+              </span>
+              <button className="modal-close" type="button" onClick={() => setRulesOpen(false)}>
                 X
               </button>
             </div>
-
-            <div className="modal-body">
-              {matchSettings.map((setting) => (
-                <div className="setting-line" key={setting.label}>
-                  {setting.label}: <span>{setting.value}</span>
+            <div className="rules-body">
+              <p className="rules-intro">
+                Rules for this match: {prettyText(match.game)}
+                {match.game_mode ? ` Â· ${prettyText(match.game_mode)}` : ""} on {prettyText(match.platform)}.
+              </p>
+              {ladderRules.map((section) => (
+                <div className="rules-section" key={section.title}>
+                  <h3>{section.title}</h3>
+                  <ul>
+                    {section.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
               ))}
+              {allSettings.length > 0 && (
+                <div className="rules-section">
+                  <h3>Required Match Settings</h3>
+                  <p className="rules-note">Both teams must play with exactly these settings.</p>
+                  <div className="rules-settings">
+                    {[{ label: "Gameplay", value: match.preset }, ...allSettings]
+                      .filter((setting) => !!setting.value?.trim())
+                      .map((setting) => (
+                        <div className="setting-line" key={setting.label}>
+                          {setting.label}: <span>{setting.value}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+              <div className="rules-section">
+                <p className="rules-note">
+                  General conduct, cheating and account rules also apply. See the{" "}
+                  <Link href="/rules">full site rules</Link>.
+                </p>
+              </div>
             </div>
           </div>
         </div>

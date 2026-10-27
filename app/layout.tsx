@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import DevelopmentNotice from "./components/DevelopmentNotice";
+import HomeButton from "./components/HomeButton";
 import "./globals.css";
 import "./staff/staff-responsive.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           </div>
         </header>
         {children}
+        <HomeButton />
         <DevelopmentNotice />
       </body>
     </html>

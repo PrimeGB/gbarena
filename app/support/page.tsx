@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function SupportPage() {
   return (
     <>
@@ -331,9 +333,9 @@ export default function SupportPage() {
                   contact messages to avoid the dispute system.
                 </p>
 
-                <a className="button red" href="/support/dispute-ticket">
-  Submit Dispute Ticket
-</a>
+                <Link className="button red" href="/matches/finder">
+                  Open a Match to Submit a Dispute Ticket
+                </Link>
               </div>
             </section>
 

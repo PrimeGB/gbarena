@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -67,8 +68,12 @@ function prettyText(value: string | null) {
     .join(" ");
 }
 
-function getGameImage(game: string | null) {
-  if (game === "mw2") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
+function getGameImage(game: string | null, category?: string) {
+  if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
+  if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
+  if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
+  if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
+  if (game === "mw2")  return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
   if (game === "modern-warfare-ii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg";
   if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
   if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
@@ -170,8 +175,10 @@ function MatchFinderContent() {
   const viewerTeamId = searchParams.get("teamId") || "";
 
   const platformName = prettyText(platform);
-  const gameName = prettyText(game);
-  const gameImage = getGameImage(game);
+  const gameName = ["rocket-league", "rainbow-six", "apex", "fortnite"].includes(category)
+    ? `${gamingCategoryLabel(category)}: ${gamingGameLabel(category, game)}`
+    : prettyText(game);
+  const gameImage = getGameImage(game, category);
   const ladderName = getLadderName(ladder);
   const rosterText = getRosterText(ladder);
   const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;

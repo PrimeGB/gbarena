@@ -1,26 +1,21 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
-import { useUser } from "@/lib/useUser";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
 
 type PublicAward = {
   name: string;
   award_group: string;
   purpose: string;
+  auto?: boolean;
 };
 
 export default function AwardsPage() {
-  const { user, loading: authLoading } = useUser();
   const [catalog, setCatalog] = useState<PublicAward[]>([]);
-  const [awardName, setAwardName] = useState("");
-  const [reason, setReason] = useState("");
-  const [evidence, setEvidence] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -38,103 +33,22 @@ export default function AwardsPage() {
     };
   }, []);
 
-  async function submitRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) {
-      setError("Sign in before requesting an award.");
-      return;
-    }
-    setError("");
-    setNotice("");
-    setSubmitting(true);
-    const { data, error: requestError } = await supabase.rpc("staff_submit_award_request", {
-      award_name: awardName,
-      request_reason: reason.trim(),
-      request_evidence: evidence.trim(),
-    });
-    setSubmitting(false);
-    if (requestError) {
-      setError(`Your award request could not be submitted: ${requestError.message}`);
-      return;
-    }
-    setNotice(`Request #${data} submitted for staff review.`);
-    setReason("");
-    setEvidence("");
-  }
-
   return (
     <main style={styles.page}>
+      <style>{AWARD_CSS}</style>
       <section style={styles.shell}>
         <nav style={styles.nav}>
-          <Link href="/support">Support</Link>
-          <Link href="/profile">Profile</Link>
           <Link href="/home">Home</Link>
         </nav>
         <header style={styles.header}>
           <p style={styles.eyebrow}>GAMEBATTLES AWARDS</p>
-          <h1 style={styles.title}>Awards &amp; Trophies</h1>
+          <h1 style={styles.title}>Awards &amp; Achievements</h1>
           <p style={styles.subheading}>
-            Browse the awards catalog and request consideration for an award. Staff
-            review every request; submitting one does not guarantee it will be granted.
+            Browse every award and trophy you can work toward on GameBattles.
           </p>
         </header>
-        {notice && <p role="status" style={styles.notice}>{notice}</p>}
         {error && <p role="alert" style={styles.error}>{error}</p>}
         <section style={styles.content}>
-          <form onSubmit={submitRequest} style={styles.form}>
-            <h2 style={styles.sectionTitle}>Request an award</h2>
-            {authLoading ? (
-              <p style={styles.text}>Checking sign-in...</p>
-            ) : !user ? (
-              <p style={styles.text}>
-                <Link href="/login?next=%2Fawards">Sign in</Link> to submit a request.
-              </p>
-            ) : (
-              <>
-                <label style={styles.label}>
-                  Award
-                  <select
-                    value={awardName}
-                    onChange={(event) => setAwardName(event.target.value)}
-                    required
-                    style={styles.input}
-                  >
-                    <option value="">Select an award</option>
-                    {catalog.map((award) => (
-                      <option key={award.name} value={award.name}>
-                        {award.name} · {award.award_group}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label style={styles.label}>
-                  Why should this award be granted to you? (10–1000 characters)
-                  <textarea
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    minLength={10}
-                    maxLength={1000}
-                    required
-                    rows={4}
-                    style={styles.input}
-                  />
-                </label>
-                <label style={styles.label}>
-                  Evidence links or details (optional)
-                  <textarea
-                    value={evidence}
-                    onChange={(event) => setEvidence(event.target.value)}
-                    maxLength={3000}
-                    rows={3}
-                    style={styles.input}
-                  />
-                </label>
-                <button disabled={submitting || catalog.length === 0} style={styles.button}>
-                  {submitting ? "Submitting..." : "Submit for staff review"}
-                </button>
-              </>
-            )}
-          </form>
           <section>
             <h2 style={styles.sectionTitle}>Award catalog</h2>
             {loading ? (
@@ -142,10 +56,18 @@ export default function AwardsPage() {
             ) : (
               <div style={styles.catalog}>
                 {catalog.map((award) => (
-                  <article key={award.name} style={styles.card}>
-                    <strong>{award.name}</strong>
+                  <article
+                    key={award.name}
+                    className="award-card"
+                    style={{ ...styles.card, ["--accent" as string]: awardAccent(award.name, award.award_group) }}
+                  >
+                    <div className="award-stage">
+                      <AwardArt name={award.name} group={award.award_group} />
+                    </div>
+                    <strong style={styles.cardName}>{award.name}</strong>
                     <p style={styles.group}>{award.award_group}</p>
-                    <p>{award.purpose}</p>
+                    <p style={styles.purpose}>{award.purpose}</p>
+                    {award.auto && <p style={{ margin: "8px 0 0", color: "#38f2a7", fontSize: 10, fontWeight: 900, letterSpacing: 0.6 }}>⚡ EARNED AUTOMATICALLY</p>}
                   </article>
                 ))}
               </div>
@@ -216,8 +138,10 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
     gap: 10,
   },
-  card: { padding: 12, border: "1px solid #244b70", background: "#050b12", lineHeight: 1.55 },
-  group: { color: "#f2c14e", fontWeight: 800 },
+  card: { padding: 12, border: "1px solid #244b70", background: "#050b12", lineHeight: 1.55, textAlign: "center" },
+  cardName: { color: "#fff", fontSize: 14 },
+  group: { margin: "4px 0 6px", color: "#f2c14e", fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase" },
+  purpose: { margin: 0, color: "#a9c3db", fontSize: 12 },
   text: { color: "#a9c3db", fontSize: 13 },
   notice: { margin: 16, padding: 12, border: "1px solid #2c7a59", color: "#c8f2d8" },
   error: { margin: 16, padding: 12, border: "1px solid #a83e3e", color: "#ffd5d5" },
