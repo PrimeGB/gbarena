@@ -27,7 +27,7 @@ export default function GeneralInfoPage() {
       <div className="top-strip">
         <a href="/">Home</a>
         <a href="/about">About Us</a>
-        <a href="/test">History</a>
+        <a href="/history">History</a>
         <a href="/rules">Rules</a>
         <a href="/support">Support</a>
       </div>
