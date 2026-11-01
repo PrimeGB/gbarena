@@ -91,6 +91,7 @@ function getGameImage(game: string | null, category?: string) {
 function getLadderName(ladder: string | null) {
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
   return "Team Ladder";
 }
 

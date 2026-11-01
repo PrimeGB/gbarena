@@ -1454,8 +1454,8 @@ function ProfilePageContent() {
           font-weight:bold;
           overflow:hidden;
         }
-        .pf-avatar .pf-avatar-bg{ position:absolute; inset:-12px; width:calc(100% + 24px); height:calc(100% + 24px); object-fit:cover; filter:blur(14px) brightness(.55) saturate(1.4); }
-        .pf-avatar img.pf-avatar-img{ position:relative; width:100%; height:100%; object-fit:contain; padding:6px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+        .pf-avatar .pf-avatar-bg{ display:none; }
+        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
         .pf-identity{ flex:1; min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; }
         .pf-name{
           font-size:34px;

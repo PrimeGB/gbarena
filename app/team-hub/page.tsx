@@ -61,6 +61,7 @@ function getLadderName(ladder: string | null) {
   if (ladder === "redsec") return "RedSec Ladder";
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
   if (ladder === "team") return "Team Ladder";
   return "Team Ladder";
 }
@@ -68,12 +69,14 @@ function getLadderName(ladder: string | null) {
 function getRosterLimit(ladder: string | null) {
   if (ladder === "singles") return 1;
   if (ladder === "duos") return 2;
+  if (ladder === "rapid-royal-duos") return 3;
   return 8;
 }
 
 function getExtraRosterSlots(ladder: string | null) {
   if (ladder === "singles") return 0;
   if (ladder === "duos") return 1;
+  if (ladder === "rapid-royal-duos") return 2;
   return 7;
 }
 

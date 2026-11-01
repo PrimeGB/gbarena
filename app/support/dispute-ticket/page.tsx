@@ -55,6 +55,7 @@ function prettyText(value: string | null | undefined) {
 function ladderName(value: string | null | undefined) {
   if (value === "singles") return "Solos Ladder";
   if (value === "duos") return "Duos Ladder";
+  if (value === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
   return "Team Ladder";
 }
 

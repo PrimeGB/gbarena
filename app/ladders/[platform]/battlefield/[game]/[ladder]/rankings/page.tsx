@@ -55,7 +55,9 @@ export default function BattlefieldRankingsPage() {
   const ladderName =
     ladder === "redsec"
       ? "RedSec"
-      : ladder === "singles"
+      : ladder === "rapid-royal-duos"
+        ? "Rapid Royal Duos"
+        : ladder === "singles"
         ? "Singles"
         : ladder === "duos"
           ? "Duos"
@@ -87,7 +89,8 @@ export default function BattlefieldRankingsPage() {
         !platformNames[platform] ||
         !battlefieldTitles[game] ||
         !ladderName ||
-        (ladder === "redsec" && game !== "battlefield-6")
+        ((ladder === "redsec" || ladder === "rapid-royal-duos") &&
+          game !== "battlefield-6")
       ) {
         setError("This Battlefield ladder is not available.");
         setLoading(false);

@@ -124,6 +124,7 @@ type PermissionRow = {
 export default function StaffDashboardPage() {
   const { user, loading: authLoading } = useUser();
   const [role, setRole] = useState("");
+  const [view, setView] = useState<"home" | "reports" | "audit" | "access" | "roster">("home");
   const [permissions, setPermissions] = useState<PermissionKey[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -142,6 +143,18 @@ export default function StaffDashboardPage() {
 
   const isOwner = role === "owner";
   const canEditDirectory = isOwner || permissions.includes("staff_directory");
+
+  type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: typeof view };
+  const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
+  const tiles: Tile[] = [
+    can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
+    can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
+    can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
+    can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Create tournaments, set prizes and rules, and manage events.", cta: "Open work area", href: "/staff/tournaments" },
+    isOwner && { key: "access", title: "Assign staff access", description: "Promote or remove staff ranks. Every change is recorded.", cta: "Open work area", view: "access" },
+    can("staff_directory") && { key: "staff_directory", title: "Trusted staff roster", description: "Review staff positions, duties, and rank assignments.", cta: "Manage directory details", view: "roster" },
+    !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
+  ].filter(Boolean) as Tile[];
   const hasPortalAccess = emailAllowed;
 
   const loadDashboard = useCallback(async (userId: string, userEmail: string) => {
@@ -389,11 +402,15 @@ export default function StaffDashboardPage() {
           <Link href="/home">Back to GameBattles</Link>
           {user && hasPortalAccess && (
             <>
-              {permissions.includes("staff_reports") && <a href="#reports-inbox">Reports</a>}
+              {permissions.includes("staff_reports") && (
+                <a href="#reports-inbox" onClick={(e) => { e.preventDefault(); setView("reports"); }}>Reports</a>
+              )}
               {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
               {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
-              {(isOwner || permissions.includes("staff_directory")) && <a href="#staff-directory">Staff roster</a>}
+              {(isOwner || permissions.includes("staff_directory")) && (
+                <a href="#staff-directory" onClick={(e) => { e.preventDefault(); setView("roster"); }}>Staff roster</a>
+              )}
             </>
           )}
         </nav>
@@ -422,7 +439,13 @@ export default function StaffDashboardPage() {
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
 
-            {permissions.includes("staff_reports") && (
+            {view !== "home" && (
+              <button type="button" onClick={() => setView("home")} style={styles.backButton}>
+                &larr; Back to work areas
+              </button>
+            )}
+
+            {view === "reports" && permissions.includes("staff_reports") && (
               <section id="reports-inbox" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Reports and enforcement inbox</h2>
                 {cases.length === 0 ? (
@@ -509,7 +532,7 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
-            {overview && overview.recent_actions.length > 0 && (
+            {view === "audit" && overview && overview.recent_actions.length > 0 && (
               <section id="staff-audit" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Recent staff actions</h2>
                 <div className="staff-mobile-list" style={styles.staffList}>
@@ -534,40 +557,44 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
+            {view === "home" && (
             <section id="staff-work-areas" className="staff-mobile-section" style={styles.section}>
               <h2 style={styles.sectionTitle}>Staff work areas</h2>
-              {workAreas.some((area) => isOwner || permissions.includes(area.key)) ? (
+              {tiles.length > 0 ? (
                 <div className="staff-mobile-grid" style={styles.cards}>
-                  {workAreas
-                    .filter((area) => isOwner || permissions.includes(area.key))
-                    .map((area) => (
-                    <article
-                      key={area.key}
-                      className={area.key === "match_review" ? "staff-ticket-card" : undefined}
-                      style={styles.card}
-                    >
-                      {area.key === "match_review" && (
-                        <p className="staff-ticket-kicker">TICKET QUEUE</p>
-                      )}
-                      <h3 style={styles.cardTitle}>{area.title}</h3>
-                      <p style={styles.cardText}>{area.description}</p>
-                      {area.href ? (
-                        <Link
-                          href={area.href}
-                          className={area.key === "match_review" ? "staff-ticket-link" : undefined}
-                          style={styles.cardLink}
-                        >
-                          {area.key === "match_review" ? "Open ticket queue" : "Open work area"}
-                        </Link>
-                      ) : area.key === "staff_directory" ? (
-                        <a href="#staff-directory" style={styles.cardLink}>
-                          Manage directory details
-                        </a>
-                      ) : (
-                        <p style={styles.help}>This rank has access to this staff area.</p>
-                      )}
-                    </article>
-                  ))}
+                  {tiles.map((tile) => {
+                    const linkClass = tile.key === "match_review" ? "staff-ticket-link" : undefined;
+                    return (
+                      <article
+                        key={tile.key}
+                        className={tile.key === "match_review" ? "staff-ticket-card" : undefined}
+                        style={styles.card}
+                      >
+                        {tile.key === "match_review" && (
+                          <p className="staff-ticket-kicker">TICKET QUEUE</p>
+                        )}
+                        <h3 style={styles.cardTitle}>{tile.title}</h3>
+                        <p style={styles.cardText}>{tile.description}</p>
+                        {tile.href ? (
+                          <Link href={tile.href} className={linkClass} style={styles.cardLink}>
+                            {tile.cta}
+                          </Link>
+                        ) : (
+                          <a
+                            href="#"
+                            className={linkClass}
+                            style={styles.cardLink}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setView(tile.view!);
+                            }}
+                          >
+                            {tile.cta}
+                          </a>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               ) : (
                 <p style={styles.help}>
@@ -576,8 +603,8 @@ export default function StaffDashboardPage() {
                 </p>
               )}
             </section>
-
-            {isOwner && (
+            )}
+            {view === "access" && isOwner && (
               <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
@@ -627,7 +654,7 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
-            {(isOwner || permissions.length > 0) && (
+            {view === "roster" && (isOwner || permissions.length > 0) && (
               <section className="staff-mobile-section" style={styles.section}>
                 <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
                 {staff.length === 0 ? (
@@ -777,6 +804,16 @@ const styles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
   },
   cards: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 },
+  backButton: {
+    margin: "0 0 14px",
+    padding: "8px 14px",
+    border: "1px solid #315f88",
+    background: "#0d1e2d",
+    color: "#f2c14e",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
   card: {
     padding: 16,
     border: "1px solid #244b70",

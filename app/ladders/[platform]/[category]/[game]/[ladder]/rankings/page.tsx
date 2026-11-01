@@ -29,6 +29,7 @@ type RosterIdentity = {
 
 const ladderTitles: Record<string, string> = {
   redsec: "RedSec",
+  "rapid-royal-duos": "Rapid Royal Duos",
   singles: "Singles",
   duos: "Duos",
   team: "Team",

@@ -240,9 +240,9 @@ export default function Home() {
 
         .search-box{
           position:absolute;
-          left:79.45%;
+          left:80.3%;
           top:25.42%;
-          width:17.65%;
+          width:16.8%;
           height:3.45%;
           z-index:95;
           display:flex;

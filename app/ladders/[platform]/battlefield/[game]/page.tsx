@@ -26,12 +26,13 @@ export default function BattlefieldGamePage() {
   const { platform, game } = useParams<{ platform: string; game: string }>();
   const platformName = platformNames[platform];
   const gameName = battlefieldTitles[game];
-  const ladders = [
-    ...(game === "battlefield-6"
-      ? [{ slug: "redsec", title: "RedSec" }]
-      : []),
-    ...standardLadders,
-  ];
+  const ladders =
+    game === "battlefield-6"
+      ? [
+          { slug: "rapid-royal-duos", title: "Rapid Royal Duos" },
+          { slug: "redsec", title: "RedSec" },
+        ]
+      : standardLadders;
 
   if (!platformName || !gameName) {
     return (

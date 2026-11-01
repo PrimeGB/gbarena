@@ -49,11 +49,13 @@ function getGameImage(game: string | null, category?: string) {
 function getLadderName(ladder: string | null) {
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
   return "Team Ladder";
 }
 
 function getPlayerOptions(ladder: string | null, isRedSec: boolean, teamSizes?: string[]) {
   if (isRedSec) return ["2v2", "3v3", "4v4"];
+  if (ladder === "rapid-royal-duos") return ["2v2"];
   if (ladder === "singles") return ["1v1"];
   if (ladder === "duos") return ["2v2"];
   return teamSizes?.length ? teamSizes : ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
@@ -124,6 +126,8 @@ function CreateMatchContent() {
   const ladder = searchParams.get("ladder") || "team";
 
   const isRedSec = game === "redsec" || ladder === "redsec";
+  const isRapidRoyal = ladder === "rapid-royal-duos";
+  const killRaceName = isRapidRoyal ? "Rapid Royal Duos" : "RedSec";
   const gameRules = useMemo(() => getGameRules(category, game), [category, game]);
 
   const platformName = prettyText(platform);
@@ -142,7 +146,7 @@ function CreateMatchContent() {
   );
 
   const [gameMode, setGameMode] = useState(
-    isRedSec ? "RedSec" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
+    isRedSec ? "RedSec" : isRapidRoyal ? "Rapid Royal Duos" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
   );
   const currentMode = gameRules
     ? gameRules.modes.find((mode) => mode.value === gameMode) || gameRules.modes[0]
@@ -168,7 +172,7 @@ function CreateMatchContent() {
     toLocalDateTimeValue(getNextQuarterHour(new Date()))
   );
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const [bestOf, setBestOf] = useState(isRedSec ? "Best of 1" : "Best of 3");
+  const [bestOf, setBestOf] = useState(isRedSec || isRapidRoyal ? "Best of 1" : "Best of 3");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewPresetOpen, setViewPresetOpen] = useState<RulesType | null>(null);
   const [redSecRulesOpen, setRedSecRulesOpen] = useState(false);
@@ -291,14 +295,16 @@ function CreateMatchContent() {
   }, [teamId, platform, category, game]);
 
   useEffect(() => {
-    if (isRedSec) {
-      setGameMode("RedSec");
+    if (isRedSec || isRapidRoyal) {
+      setGameMode(killRaceName);
       setRulesType("GB Variant");
       setBestOf((current) => (current === "Best of 1" || current === "Best of 2" ? current : "Best of 1"));
     }
-  }, [isRedSec]);
+  }, [isRedSec, isRapidRoyal, killRaceName]);
 
-  const bestOfOptions = isRedSec
+  const bestOfOptions = isRapidRoyal
+    ? ["Best of 1", "Best of 3"]
+    : isRedSec
     ? ["Best of 1", "Best of 2"]
     : gameRules?.bestOf || ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
 
@@ -312,8 +318,8 @@ function CreateMatchContent() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const presetText = isRedSec
-    ? "RedSec settings are controlled by the GameBattles RedSec ruleset."
+  const presetText = isRedSec || isRapidRoyal
+    ? `${killRaceName} settings are controlled by the GameBattles ${killRaceName} ruleset.`
     : gameRules
       ? `${gameRules.presetName} · Players ${players} · Cross Play ${crossplay} · ${currentMode?.fields
           .map((item) => `${item.label} ${activeRuleValues[item.slot]}`)
@@ -640,7 +646,7 @@ function CreateMatchContent() {
                     <div>Platform: {platformName}</div>
                     <div>Game: {gameName}</div>
                     <div>Ladder: {ladderName}</div>
-                    <div>Rules: {isRedSec ? "RedSec Rules" : rulesType}</div>
+                    <div>Rules: {isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</div>
                     <div>Cross Play: {crossplay}</div>
                     <div>Players: {players}</div>
                     <div>Team ID: {teamId ? "Loaded" : "Missing"}</div>
@@ -662,8 +668,8 @@ function CreateMatchContent() {
                       <div className="row">
                         <label>Game Mode</label>
 
-                        {isRedSec ? (
-                          <div className="locked-player-box">RedSec</div>
+                        {isRedSec || isRapidRoyal ? (
+                          <div className="locked-player-box">{killRaceName}</div>
                         ) : gameRules ? (
                           <select
                             className="mode-select"
@@ -696,7 +702,11 @@ function CreateMatchContent() {
                       <div className="row">
                         <label>Maps</label>
 
-                        {isRedSec ? (
+                        {isRapidRoyal ? (
+                          <div className="rules-box">
+                            <strong>Rapid Royal</strong> (selected in-game by the host)
+                          </div>
+                        ) : isRedSec ? (
                           <div className="rules-box">
                             <strong>Lyndon Oil Works</strong>
                           </div>
@@ -732,18 +742,18 @@ function CreateMatchContent() {
                       <div className="row">
                         <label>Rules</label>
 
-                        {isRedSec ? (
+                        {isRedSec || isRapidRoyal ? (
                           <div>
                             <button
                               className="rules-link"
                               type="button"
                               onClick={() => setRedSecRulesOpen(true)}
                             >
-                              Read RedSec Rules
+                              Read {killRaceName} Rules
                             </button>
 
                             <div className="small-note">
-                              GameBattles RedSec rules must be followed for this match.
+                              GameBattles {killRaceName} rules must be followed for this match.
                             </div>
                           </div>
                         ) : gameRules ? (
@@ -773,12 +783,12 @@ function CreateMatchContent() {
                       <div className="row">
                         <label>Settings</label>
 
-                        {isRedSec ? (
+                        {isRedSec || isRapidRoyal ? (
                           <div className="settings-summary disabled-settings">
                             <div className="settings-title">Match Settings</div>
                             <div className="settings-copy">
-                              RedSec settings are controlled by the GameBattles RedSec ruleset.
-                              These settings cannot be changed when posting a RedSec match.
+                              {killRaceName} settings are controlled by the GameBattles {killRaceName} ruleset.
+                              These settings cannot be changed when posting a {killRaceName} match.
                             </div>
 
                             <div className="settings-buttons">
@@ -975,7 +985,31 @@ function CreateMatchContent() {
                     <div className="form-title">Rules Reminder</div>
 
                     <div className="form-body">
-                      {isRedSec ? (
+                      {isRapidRoyal ? (
+                        <div className="rules-box">
+                          <strong>RAPID ROYAL DUOS — KILL RACE RULES</strong>
+                          <br />
+                          <br />
+                          • Teams may roster up to 3 players; 2 play each round.
+                          <br />
+                          • {bestOf} · {players} · Cross Play {crossplay}.
+                          <br />
+                          • One team loads in with an enemy player who eliminates themselves and spectates; then the other team goes.
+                          <br />
+                          • The duo with the most kills before dying or winning takes the round.
+                          <br />
+                          • Screenshots or proof are required for disputes.
+                          <br />
+                          <br />
+                          <button
+                            className="rules-link"
+                            type="button"
+                            onClick={() => setRedSecRulesOpen(true)}
+                          >
+                            Read Full Rules
+                          </button>
+                        </div>
+                      ) : isRedSec ? (
                         <div className="rules-box">
                           <strong>REDSEC MATCH RULES</strong>
                           <br />
@@ -1107,7 +1141,7 @@ function CreateMatchContent() {
         <div className="modal-backdrop">
           <div className="settings-modal">
             <div className="modal-title">
-              REDSEC — KILL RACE RULES
+              {isRapidRoyal ? "RAPID ROYAL DUOS" : "REDSEC"} — KILL RACE RULES
               <button
                 className="modal-close"
                 type="button"
@@ -1118,6 +1152,23 @@ function CreateMatchContent() {
             </div>
 
             <div className="modal-body">
+              {isRapidRoyal ? (
+                <div className="redsec-rules">
+                  <h2>RAPID ROYAL DUOS — KILL RACE RULES</h2>
+                  <h3>Teams</h3>
+                  <p>Teams may roster up to 3 players. Two players compete in each round.</p>
+                  <h3>Best of 1</h3>
+                  <p>
+                    One team loads in with an enemy player. The enemy player eliminates
+                    themselves and spectates. The team plays until they die or win. Then the
+                    opposite team does the same.
+                  </p>
+                  <h3>Winning</h3>
+                  <p>The duo with the most kills before dying or winning takes the match.</p>
+                  <h3>Proof</h3>
+                  <p>Both teams must submit scoreboard screenshots or video for disputes.</p>
+                </div>
+              ) : (
               <div className="redsec-rules">
                 <h2>REDSEC — KILL RACE RULES</h2>
 
@@ -1259,6 +1310,7 @@ function CreateMatchContent() {
                   changed</strong> when necessary.
                 </p>
               </div>
+              )}
 
               <div className="modal-actions">
                 <button

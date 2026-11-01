@@ -8,7 +8,7 @@ const battlefieldTitles = [
     slug: "battlefield-6",
     image:
       "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: [] as string[],
   },
   {
     title: "Battlefield 2042",
@@ -310,6 +310,26 @@ export default function PcBattlefieldPage() {
 
                   <div className="card-body">
                     <div className="ladder-list">
+                      {game.slug === "battlefield-6" && (
+                        <div className="ladder-item" key={`${game.title}-rapid-royal-duos`}>
+                          <div className="ladder-name">Rapid Royal Duos</div>
+
+                          <Link
+                            className="ladder-link"
+                            href={`/team-hub?platform=pc&category=battlefield&game=${game.slug}&ladder=rapid-royal-duos`}
+                          >
+                            View/Create Team
+                          </Link>
+
+                          <Link
+                            className="ladder-link"
+                            href={`/ladders/pc/battlefield/${game.slug}/rapid-royal-duos/rankings`}
+                          >
+                            Current Ladder Rankings
+                          </Link>
+                        </div>
+                      )}
+
                       {game.slug === "battlefield-6" && (
                         <div className="ladder-item" key={`${game.title}-redsec`}>
                           <div className="ladder-name">RedSec</div>
