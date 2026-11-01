@@ -6,6 +6,7 @@ import SiteNav from "../components/SiteNav";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
+import { EliteEmblem, ELITE_LIMIT, getEliteBand } from "./EliteEmblem";
 import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
 import { supabase } from "../../lib/supabase";
 import {
@@ -467,6 +468,11 @@ function ProfilePageContent() {
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   }
   const rankTier = getRankTier(gbRankPoints);
+  const elitePosition =
+    rankTier.index === 9 && Number.isFinite(rankNumber) && rankNumber >= 1 && rankNumber <= ELITE_LIMIT
+      ? rankNumber
+      : null;
+  const eliteBand = elitePosition ? getEliteBand(elitePosition) : null;
   const totalGames = gbWins + gbLosses;
   const winPct = totalGames > 0 ? Math.round((gbWins / totalGames) * 100) : 0;
   const linkedPlatforms = [
@@ -1844,8 +1850,19 @@ function ProfilePageContent() {
             <div className="profile-grid">
               <aside className="left-column">
                 <div className="box pf-rank-box">
-                  <RankEmblem tierIndex={rankTier.index} />
-                  <div className="pf-tier-name" style={{ color: rankTier.light }}>{rankTier.name}</div>
+                  {elitePosition && eliteBand ? (
+                    <>
+                      <EliteEmblem position={elitePosition} />
+                      <div className="pf-tier-name" style={{ color: eliteBand.light }}>
+                        Top {ELITE_LIMIT} - {eliteBand.name}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <RankEmblem tierIndex={rankTier.index} />
+                      <div className="pf-tier-name" style={{ color: rankTier.light }}>{rankTier.name}</div>
+                    </>
+                  )}
                   <div className="pf-rank-label">GB RANK</div>
                   {rankParts && (
                     <div className="pf-rank-value">
