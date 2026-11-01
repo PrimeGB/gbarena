@@ -1754,12 +1754,12 @@ function ProfilePageContent() {
                       <strong>{(profile.profile_views || 0).toLocaleString()}</strong>
                     </div>
                     <div>
-                      <span>Credits</span>
-                      <strong>{(profile.credits || 0).toLocaleString()}</strong>
-                    </div>
-                    <div>
                       <span>Role</span>
                       <strong>{playerRole}</strong>
+                    </div>
+                    <div>
+                      <span>Credits</span>
+                      <strong>{(profile.credits || 0).toLocaleString()}</strong>
                     </div>
                   </div>
                 </div>

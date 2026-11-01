@@ -16,6 +16,8 @@ type Tournament = {
   max_teams: number | null;
   is_free: boolean;
   entry_fee: number | null;
+  entry_fee_credits: number;
+  prize_credits: number;
   prize: string | null;
   rules: string | null;
   status: string;
@@ -199,7 +201,8 @@ export default function TournamentsPage() {
           ) : (
             <div className="t-list">
               {tournaments.map((t) => {
-                const free = t.is_free || !t.entry_fee;
+                const credits = t.entry_fee_credits || 0;
+                const free = credits > 0 || t.is_free || !t.entry_fee;
                 const open = openId === t.id;
                 const regs = registrations.filter((r) => r.tournament_id === t.id);
                 const eligible = teams.filter(
@@ -220,9 +223,11 @@ export default function TournamentsPage() {
                           <span className="t-badge live">Live</span>
                         )}
                         <span className={`t-badge ${free ? "free" : "paid"}`}>
-                          {free
-                            ? "Free Entry"
-                            : `Entry $${Number(t.entry_fee).toFixed(2)}`}
+                          {credits > 0
+                            ? `Entry ${credits.toLocaleString()} credits`
+                            : free
+                              ? "Free Entry"
+                              : `Entry $${Number(t.entry_fee).toFixed(2)}`}
                         </span>
                       </div>
                     </div>
@@ -252,7 +257,11 @@ export default function TournamentsPage() {
                       </div>
                       <div className="t-cell">
                         <span>Prizes</span>
-                        <b>{t.prize || "TBA"}</b>
+                        <b>
+                          {[t.prize_credits > 0 ? `${t.prize_credits.toLocaleString()} credits` : "", t.prize || ""]
+                            .filter(Boolean)
+                            .join(" - ") || "TBA"}
+                        </b>
                       </div>
                       <div className="t-cell">
                         <span>Check-In</span>
@@ -266,7 +275,7 @@ export default function TournamentsPage() {
                       </div>
                       <div className="t-cell">
                         <span>Cost</span>
-                        <b>{free ? "Free" : `$${Number(t.entry_fee).toFixed(2)}`}</b>
+                        <b>{credits > 0 ? `${credits.toLocaleString()} credits` : free ? "Free" : `$${Number(t.entry_fee).toFixed(2)}`}</b>
                       </div>
                     </div>
 

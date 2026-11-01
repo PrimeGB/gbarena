@@ -15,6 +15,8 @@ type Tournament = {
   status: string;
   is_free: boolean;
   entry_fee: number | null;
+  entry_fee_credits: number;
+  prize_credits: number;
 };
 
 const emptyForm = {
@@ -26,8 +28,8 @@ const emptyForm = {
   starts_at: "",
   check_in_minutes: "30",
   max_teams: "",
-  is_free: true,
-  entry_fee: "",
+  entry_fee_credits: "0",
+  prize_credits: "0",
   prize: "",
   rules: "",
 };
@@ -41,6 +43,11 @@ export default function StaffTournamentsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [payFor, setPayFor] = useState<string | null>(null);
+  const [payTeams, setPayTeams] = useState<{ id: string; name: string }[]>([]);
+  const [payTeam, setPayTeam] = useState("");
+  const [payPlace, setPayPlace] = useState("1");
+  const [payAmount, setPayAmount] = useState("");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -55,7 +62,7 @@ export default function StaffTournamentsPage() {
     setAllowed(true);
     const { data } = await supabase
       .from("tournaments")
-      .select("id,title,platform,game,starts_at,status,is_free,entry_fee")
+      .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits")
       .order("starts_at", { ascending: true });
     setTournaments((data as Tournament[]) || []);
     setChecking(false);
@@ -82,11 +89,8 @@ export default function StaffTournamentsPage() {
       setError("A title and a start date/time are required.");
       return;
     }
-    const fee = form.is_free ? 0 : Number(form.entry_fee);
-    if (!form.is_free && (!Number.isFinite(fee) || fee <= 0)) {
-      setError("Enter an entry fee greater than 0, or mark the tournament free.");
-      return;
-    }
+    const fee = Math.max(0, Math.trunc(Number(form.entry_fee_credits) || 0));
+    const prizeCredits = Math.max(0, Math.trunc(Number(form.prize_credits) || 0));
     setSaving(true);
     const { error: insertError } = await supabase.from("tournaments").insert({
       title: form.title.trim(),
@@ -97,8 +101,10 @@ export default function StaffTournamentsPage() {
       starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : null,
       check_in_minutes: Number(form.check_in_minutes) || 30,
       max_teams: form.max_teams ? Number(form.max_teams) : null,
-      is_free: form.is_free,
-      entry_fee: fee,
+      is_free: true,
+      entry_fee: 0,
+      entry_fee_credits: fee,
+      prize_credits: prizeCredits,
       prize: form.prize.trim() || null,
       rules: form.rules.trim() || null,
       created_by: user?.id,
@@ -121,6 +127,48 @@ export default function StaffTournamentsPage() {
       .eq("id", id);
     if (updateError) setError(updateError.message);
     load();
+  }
+
+  async function openPay(t: Tournament) {
+    setError("");
+    if (payFor === t.id) {
+      setPayFor(null);
+      return;
+    }
+    const { data: regs } = await supabase
+      .from("tournament_registrations")
+      .select("team_id")
+      .eq("tournament_id", t.id);
+    const ids = (regs || []).map((r: { team_id: string }) => r.team_id);
+    const { data: teams } = ids.length
+      ? await supabase.from("teams").select("id,name").in("id", ids)
+      : { data: [] as { id: string; name: string }[] };
+    setPayTeams((teams as { id: string; name: string }[]) || []);
+    setPayTeam("");
+    setPayPlace("1");
+    setPayAmount("");
+    setPayFor(t.id);
+  }
+
+  async function payPrize(t: Tournament) {
+    setError("");
+    setNotice("");
+    if (!payTeam) {
+      setError("Select the winning team.");
+      return;
+    }
+    const { data, error: rpcError } = await supabase.rpc("staff_award_tournament_prize", {
+      p_tournament_id: t.id,
+      p_team_id: payTeam,
+      p_placement: Number(payPlace) || 1,
+      p_total_credits: payAmount ? Number(payAmount) : null,
+    });
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    setNotice(`Paid ${Number(data).toLocaleString()} credits to the team.`);
+    setPayFor(null);
   }
 
   async function remove(id: string) {
@@ -221,21 +269,16 @@ export default function StaffTournamentsPage() {
                   <input type="number" min={2} value={form.max_teams} onChange={(e) => set("max_teams", e.target.value)} />
                 </label>
                 <label>
-                  Entry
-                  <select value={form.is_free ? "free" : "paid"} onChange={(e) => set("is_free", e.target.value === "free")}>
-                    <option value="free">Free</option>
-                    <option value="paid">Paid</option>
-                  </select>
+                  Entry fee (credits, 0 = free)
+                  <input type="number" min={0} step="1" value={form.entry_fee_credits} onChange={(e) => set("entry_fee_credits", e.target.value)} />
                 </label>
-                {!form.is_free && (
-                  <label>
-                    Entry fee (USD)
-                    <input type="number" min={0} step="0.01" value={form.entry_fee} onChange={(e) => set("entry_fee", e.target.value)} />
-                  </label>
-                )}
+                <label>
+                  Prize (credits, paid to winning team)
+                  <input type="number" min={0} step="1" value={form.prize_credits} onChange={(e) => set("prize_credits", e.target.value)} />
+                </label>
                 <label className="wide">
-                  Prizes
-                  <input value={form.prize} onChange={(e) => set("prize", e.target.value)} placeholder="e.g. 1st: $100, 2nd: $50" />
+                  Prizes (display text)
+                  <input value={form.prize} onChange={(e) => set("prize", e.target.value)} placeholder="e.g. 1st: 500 credits" />
                 </label>
                 <label className="wide">
                   Rules
@@ -260,10 +303,14 @@ export default function StaffTournamentsPage() {
                       <b>{t.title}</b>
                       <small>
                         {t.starts_at ? new Date(t.starts_at).toLocaleString() : "Date TBD"} - {t.status} -{" "}
-                        {t.is_free ? "Free" : `$${Number(t.entry_fee).toFixed(2)}`}
+                        {t.entry_fee_credits > 0 ? `${t.entry_fee_credits} credit entry` : "Free"}
+                        {t.prize_credits > 0 ? ` - ${t.prize_credits} credit prize` : ""}
                       </small>
                     </div>
                     <div className="st-actions">
+                      <button className="st-btn" onClick={() => openPay(t)}>
+                        Pay Prize
+                      </button>
                       {t.status !== "live" && (
                         <button className="st-btn" onClick={() => setStatus(t.id, "live")}>
                           Go Live
@@ -283,6 +330,19 @@ export default function StaffTournamentsPage() {
                         Delete
                       </button>
                     </div>
+                    {payFor === t.id && (
+                      <div className="st-body" style={{ width: "100%", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                        <select value={payTeam} onChange={(e) => setPayTeam(e.target.value)}>
+                          <option value="">Select winning team</option>
+                          {payTeams.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                        <input type="number" min={1} style={{ width: 80 }} value={payPlace} onChange={(e) => setPayPlace(e.target.value)} title="Placement" />
+                        <input type="number" min={1} style={{ width: 120 }} value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder={`Credits (${t.prize_credits})`} />
+                        <button className="st-btn" onClick={() => payPrize(t)}>Pay out</button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
