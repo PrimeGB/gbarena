@@ -428,7 +428,6 @@ function ProfilePageContent() {
   const playerRole = profile?.role
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
     : "Member";
-  const playerBio = profile?.player_bio || "";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
   const xboxGT = profile?.gt_xbox || profile?.xbox_gt || "";
@@ -1467,8 +1466,10 @@ function ProfilePageContent() {
           overflow-wrap:anywhere;
         }
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
+        .pf-facts > div{ text-align:center; }
         .pf-facts span{ display:block; font-size:11px; color:#8fa9c2; font-weight:bold; margin-bottom:2px; }
-        .pf-facts strong{ font-size:15px; color:#fff; }
+        .pf-facts strong{ display:block; font-size:15px; color:#fff; }
+        .pf-facts .pf-since{ font-size:11px; font-weight:normal; color:#b7cfe3; line-height:18px; }
         .pf-banner-actions{ display:flex; flex-direction:column; gap:8px; width:170px; flex:none; }
         .pf-btn{
           display:block;
@@ -1481,6 +1482,8 @@ function ProfilePageContent() {
           border-radius:2px;
         }
         .pf-btn:hover{ background:#3b91f0; }
+        .pf-inbox-btn{ position:relative; }
+        .pf-inbox-btn .mail-dot{ right:8px; top:50%; transform:translateY(-50%); }
         .pf-banner-strip{
           display:flex;
           justify-content:flex-end;
@@ -1728,7 +1731,7 @@ function ProfilePageContent() {
                   <div className="pf-facts">
                     <div>
                       <span>Member Since</span>
-                      <strong>{formatMemberSince(joinedDate)}</strong>
+                      <strong className="pf-since">{formatMemberSince(joinedDate)}</strong>
                     </div>
                     <div>
                       <span>Status</span>
@@ -1766,6 +1769,10 @@ function ProfilePageContent() {
                     <>
                       <a className="pf-btn" href="/profile/edit">Edit Profile</a>
                       <a className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</a>
+                      <a className="pf-btn pf-inbox-btn" href="/profile/inbox">
+                        Inbox
+                        {unreadInboxCount > 0 && <span className="mail-dot"></span>}
+                      </a>
                     </>
                   ) : (
                     <a className="pf-btn" href={`/profile/friends?userId=${viewedUserId}`}>View Friends</a>
@@ -1794,10 +1801,6 @@ function ProfilePageContent() {
                 Gaming Accounts
               </a>
             )}
-            <a className="tab inbox-tab" href="/profile/inbox">
-              Inbox
-              {unreadInboxCount > 0 && <span className="mail-dot"></span>}
-            </a>
           </div>
 
           {!profile ? (
@@ -1859,7 +1862,6 @@ function ProfilePageContent() {
                         <a className="quick-link" href="/profile/teams">My Teams</a>
                         <a className="quick-link" href="/profile/friends">My Friends</a>
                         <a className="quick-link" href="/profile/awards">My Awards</a>
-                        <a className="quick-link" href="/profile/friends/invite">Invite Friends</a>
                         <a className="quick-link" href="#">Account Settings</a>
                       </>
                     ) : (
@@ -2027,13 +2029,6 @@ function ProfilePageContent() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="pf-section">
-                  <div className="pf-section-title"><span>About {playerName}</span></div>
-                  <p className="pf-bio">
-                    {playerBio || "This player has not written an intro yet."}
-                  </p>
                 </div>
               </main>
             </div>

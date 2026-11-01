@@ -198,18 +198,18 @@ export default function Home() {
           border-right:1px solid rgba(74,145,205,.55);
         }
 
-        .home{ left:.85%; width:9.1%; }
-        .playstation{ left:10.05%; width:13.45%; }
-        .xbox{ left:23.55%; width:9.85%; }
-        .nintendo{ left:33.45%; width:12.2%; }
-        .pc{ left:45.7%; width:7.05%; }
-        .members{ left:52.8%; width:10.15%; }
-        .forums{ left:63%; width:9.25%; }
+        .playstation{ left:.85%; width:10.5%; }
+        .xbox{ left:11.35%; width:8.5%; }
+        .nintendo{ left:19.85%; width:10%; }
+        .pc{ left:29.85%; width:6.5%; }
+        .mobile{ left:36.35%; width:8.5%; }
+        .tournaments{ left:44.85%; width:10.5%; }
+        .members{ left:55.35%; width:9.5%; }
+        .forums{ left:64.85%; width:8.5%; }
         .staff-zone{
-          left:72.35%;
-          width:7.2%;
+          left:73.35%;
+          width:6.2%;
         }
-
         .nav-label{
           position:absolute;
           inset:0;
@@ -372,6 +372,18 @@ export default function Home() {
 
         .battlefield-icon{
           background:radial-gradient(circle at 30% 25%,#d8f7b0 0,#6da735 45%,#25330e 100%);
+        }
+
+        .coc-icon{
+          background:radial-gradient(circle at 30% 25%,#ffe08a 0,#e08a1e 45%,#4a2a08 100%);
+        }
+
+        .cr-icon{
+          background:radial-gradient(circle at 30% 25%,#9fd0ff 0,#2c6fd6 45%,#10285c 100%);
+        }
+
+        .uno-icon{
+          background:radial-gradient(circle at 30% 25%,#ff9a9a 0,#d81e1e 45%,#4a0808 100%);
         }
 
         .lower-layout{
@@ -878,10 +890,6 @@ export default function Home() {
           <a className="hotspot general" href="/general-info"></a>
           <a className="hotspot getting" href="/getting-started"></a>
 
-          <a className="hotspot nav-zone home" href="/home">
-            <span className="nav-label">HOME</span>
-          </a>
-
           <div className="drop-wrap nav-zone playstation">
             <a className="drop-click" href="/ladders/playstation"></a>
             <span className="nav-label">PLAYSTATION</span>
@@ -931,6 +939,21 @@ export default function Home() {
               <a href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
             </div>
           </div>
+
+          <div className="drop-wrap nav-zone mobile">
+            <a className="drop-click" href="/ladders/mobile"></a>
+            <span className="nav-label">MOBILE</span>
+            <div className="dropdown">
+              <a href="/ladders/mobile/clash-of-clans"><span className="game-icon coc-icon">CoC</span>Clash of Clans</a>
+              <a href="/ladders/mobile/clash-royale"><span className="game-icon cr-icon">CR</span>Clash Royale</a>
+              <a href="/ladders/mobile/cod-mobile"><span className="game-icon cod-icon">CODM</span>Call of Duty: Mobile</a>
+              <a href="/ladders/mobile/uno"><span className="game-icon uno-icon">UNO</span>UNO</a>
+            </div>
+          </div>
+
+          <a className="hotspot nav-zone tournaments" href="/tournaments">
+            <span className="nav-label">TOURNAMENTS</span>
+          </a>
 
           <a className="hotspot nav-zone members" href="/members">
             <span className="nav-label">MEMBERS</span>
@@ -1022,6 +1045,7 @@ export default function Home() {
                 <Link href="/ladders/xbox">Xbox ladders</Link>
                 <Link href="/ladders/nintendo">Nintendo ladders</Link>
                 <Link href="/ladders/pc">PC ladders</Link>
+                <Link href="/ladders/mobile">Mobile ladders</Link>
                 <Link href="/matches/finder">Find a match</Link>
                 <Link href="/teams/top">Top teams</Link>
               </div>

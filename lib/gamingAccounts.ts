@@ -13,6 +13,7 @@ export const gamingPlatforms = [
   { value: "playstation", label: "PlayStation Online ID" },
   { value: "nintendo", label: "Nintendo Switch ID" },
   { value: "pc", label: "PC / In-game ID" },
+  { value: "mobile", label: "Mobile / In-game ID" },
   { value: "ea", label: "EA Account ID" },
 ] as const;
 
@@ -52,6 +53,13 @@ export const gamingGames = [
   { category: "old-school", value: "bo1-2010", label: "Black Ops" },
   { category: "old-school", value: "mw3-2011", label: "Modern Warfare 3" },
   { category: "old-school", value: "bo2-2012", label: "Black Ops II" },
+  { category: "clash-of-clans", value: "friendly-war", label: "Friendly Challenge" },
+  { category: "clash-royale", value: "1v1", label: "1v1 Friendly Battle" },
+  { category: "clash-royale", value: "2v2", label: "2v2 Friendly Battle" },
+  { category: "cod-mobile", value: "multiplayer", label: "Multiplayer" },
+  { category: "cod-mobile", value: "battle-royale", label: "Battle Royale" },
+  { category: "uno", value: "classic", label: "Classic" },
+  { category: "uno", value: "2v2", label: "2v2 Team Play" },
 ] as const;
 
 export const gamingCategories = [
@@ -62,6 +70,10 @@ export const gamingCategories = [
   { value: "rocket-league", label: "Rocket League" },
   { value: "rainbow-six", label: "Rainbow Six Siege" },
   { value: "old-school", label: "Old School" },
+  { value: "clash-of-clans", label: "Clash of Clans" },
+  { value: "clash-royale", label: "Clash Royale" },
+  { value: "cod-mobile", label: "Call of Duty: Mobile" },
+  { value: "uno", label: "UNO" },
 ] as const;
 
 export function gamingPlatformLabel(platform: string) {

@@ -392,6 +392,7 @@ export default function StaffDashboardPage() {
               {permissions.includes("staff_reports") && <a href="#reports-inbox">Reports</a>}
               {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
+              {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
               {(isOwner || permissions.includes("staff_directory")) && <a href="#staff-directory">Staff roster</a>}
             </>
           )}

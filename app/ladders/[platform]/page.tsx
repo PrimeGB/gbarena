@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
+  categoriesForPlatform,
+  categoryImage,
   ladderCategoryLabel,
   ladderPlatformLabel,
 } from "../../../lib/ladderCatalog";
-import { gamingCategories } from "../../../lib/gamingAccounts";
 
 export default function LadderPlatformPage() {
   const { platform } = useParams<{ platform: string }>();
@@ -29,12 +30,16 @@ export default function LadderPlatformPage() {
         </Link>
         <h1>{platformName} Ladders</h1>
         <div className="grid">
-          {gamingCategories.map((category) => (
+          {categoriesForPlatform(platform).map((category) => (
             <Link
               className="card"
               key={category.value}
               href={`/ladders/${platform}/${category.value}`}
             >
+              {categoryImage(category.value) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={categoryImage(category.value)!} alt="" />
+              )}
               {ladderCategoryLabel(category.value)}
             </Link>
           ))}
@@ -64,6 +69,9 @@ export default function LadderPlatformPage() {
           margin-top: 18px;
         }
         .card {
+          display: flex;
+          align-items: center;
+          gap: 14px;
           padding: 22px 16px;
           background: #0b2238;
           border: 1px solid #1e4568;
@@ -72,6 +80,12 @@ export default function LadderPlatformPage() {
           font-size: 18px;
           font-weight: 700;
           text-decoration: none;
+        }
+        .card img {
+          width: 56px;
+          height: 56px;
+          border-radius: 12px;
+          object-fit: cover;
         }
       `}</style>
     </main>

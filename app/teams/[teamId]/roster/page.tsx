@@ -26,6 +26,7 @@ type RosterMember = {
   username: string;
   display_gt: string;
   gaming_id: string | null;
+  profile_gt: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -90,13 +91,29 @@ function roleLabel(role: TeamRole) {
   return "Member";
 }
 
+function profileLinkedGt(profile: any, platform: string | null) {
+  const p = String(platform || "").toLowerCase();
+  const value =
+    p === "xbox"
+      ? profile?.gt_xbox || profile?.xbox_gt
+      : p === "playstation"
+        ? profile?.gt_playstation || profile?.psn_gt
+        : p === "nintendo"
+          ? profile?.gt_nintendo || profile?.nintendo_gt
+          : p === "pc"
+            ? profile?.gt_pc || profile?.pc_gt
+            : null;
+  return value ? String(value) : null;
+}
+
 function profileGamertag(profile: any, platform: string | null) {
   const p = String(platform || "").toLowerCase();
 
   const candidates =
     p === "xbox"
-      ? [
+          ? [
           profile?.xbox_gamertag,
+          profile?.gt_xbox,
           profile?.xbox_gt,
           profile?.xbox,
           profile?.gamertag,
@@ -363,6 +380,7 @@ export default function EditRosterPage() {
           teamData.platform
         ),
         gaming_id: gamingIdMap[String(member.user_id)] || null,
+        profile_gt: profileLinkedGt(profile, teamData.platform),
         gb_rank_points: Number(profile.gb_rank_points || 0),
         gb_wins: Number(profile.gb_wins || 0),
         gb_losses: Number(profile.gb_losses || 0),
@@ -1010,7 +1028,16 @@ export default function EditRosterPage() {
                         </td>
 
                         <td className="gamertag">
-                          {member.gaming_id || (
+                          {member.gaming_id ? (
+                            member.gaming_id
+                          ) : member.profile_gt ? (
+                            <>
+                              {member.profile_gt}
+                              <span className="no-id" title="Linked on their profile, but not saved for this specific game. Matches need it saved for this game.">
+                                {" "}(not saved for this game)
+                              </span>
+                            </>
+                          ) : (
                             <span className="no-id">Gaming ID not linked</span>
                           )}
                         </td>

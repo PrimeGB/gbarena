@@ -2,10 +2,6 @@
   width: 100%;
 }
 
-body:has(.staff-mobile-page) > .site-header {
-  display: none;
-}
-
 .staff-portal-page .staff-mobile-header {
   padding: 18px 24px 16px !important;
   border-bottom: 0 !important;

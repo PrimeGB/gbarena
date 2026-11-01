@@ -64,15 +64,6 @@ type RosterMember = {
   eligibility: "green" | "yellow" | "purple" | "red";
 };
 
-type TeamAward = {
-  id: number;
-  name: string;
-  award_group: string;
-  reason: string;
-  granted_at: string;
-  granted_by: string | null;
-};
-
 function prettyText(value: string | null | undefined) {
   if (!value) return "";
   if (value === "mw2") return "Modern Warfare 2";
@@ -247,7 +238,6 @@ export default function TeamPage() {
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
-  const [teamAwards, setTeamAwards] = useState<TeamAward[]>([]);
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -326,16 +316,6 @@ export default function TeamPage() {
 
       if (teamData) {
         setTeam(teamData as TeamData);
-        const { data: awardRows, error: awardsError } = await supabase.rpc(
-          "staff_team_award_history",
-          { target_team_id: teamData.id }
-        );
-        if (awardsError) {
-          console.error("Team award history could not be loaded:", awardsError);
-          setTeamAwards([]);
-        } else {
-          setTeamAwards((awardRows || []) as TeamAward[]);
-        }
       }
 
       const { data: rankedTeams } = await supabase
@@ -577,7 +557,7 @@ export default function TeamPage() {
 
         .team-avatar{
           position:absolute;left:24px;top:8px;width:74px;height:74px;border:1px solid #315f88;
-          border-radius:4px;background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
+          border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
           font-size:20px;font-weight:900;text-transform:uppercase;z-index:5;
           overflow:hidden;
         }
@@ -599,8 +579,8 @@ export default function TeamPage() {
         }
 
         .team-logo-box{
-          width:340px;min-height:280px;height:280px;margin-left:-6px;border:1px solid #315f88;
-          background:#000;display:flex;align-items:center;justify-content:center;color:#8aa7c0;
+          width:340px;min-height:280px;height:280px;margin-left:-6px;border:1px solid #315f88;border-radius:24px;overflow:hidden;
+          background:radial-gradient(circle at 50% 40%,#10263b,#000 80%);display:flex;align-items:center;justify-content:center;color:#8aa7c0;
           font-size:13px;font-weight:bold;text-transform:uppercase;
         }
 
@@ -971,27 +951,6 @@ export default function TeamPage() {
                       </tr>
                     </tbody>
                   </table>
-                </div>
-
-                <div className="panel">
-                  <div className="panel-title">Team Awards &amp; Trophies</div>
-                  {teamAwards.length === 0 ? (
-                    <div className="empty-text">No official team awards yet.</div>
-                  ) : (
-                    <div className="match-list-wrap">
-                      {teamAwards.map((award) => (
-                        <div className="match-list-row" key={award.id}>
-                          <div className="match-list-opponent">
-                            <strong>{award.name}</strong>
-                            <div>{award.award_group} · {award.reason}</div>
-                          </div>
-                          <div className="match-list-date">
-                            {new Date(award.granted_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="mini-grid">

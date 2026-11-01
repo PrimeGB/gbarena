@@ -69,6 +69,7 @@ function prettyText(value: string | null) {
 }
 
 function getGameImage(game: string | null, category?: string) {
+  if (category === "clash-of-clans" || category === "clash-royale" || category === "cod-mobile" || category === "uno") return `/games/${category}.jpg`;
   if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
   if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
   if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";

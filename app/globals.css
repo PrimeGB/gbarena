@@ -43,31 +43,6 @@ iframe {
     font-size: 15px;
   }
 
-  .site-header {
-    padding: 8px 12px !important;
-  }
-
-  .site-header-inner {
-    flex-wrap: wrap;
-    gap: 8px;
-    width: 100% !important;
-    align-items: flex-start !important;
-    flex-direction: column;
-  }
-
-  .site-nav {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 8px 12px !important;
-  }
-
-  .site-nav a {
-    min-height: 36px;
-    display: inline-flex;
-    align-items: center;
-  }
-
   .wrapper,
   .container,
   .page,

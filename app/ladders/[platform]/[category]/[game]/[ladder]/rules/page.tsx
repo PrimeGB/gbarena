@@ -1,3 +1,5 @@
+import { getGameRules } from "../../../../../../../lib/matchRules";
+
 type LadderRulesPageProps = {
   params: Promise<{
     platform: string;
@@ -32,6 +34,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   const gameName = prettyText(game);
   const categoryName = prettyText(category);
   const currentLadderName = ladderName(ladder);
+  const mobileRuleSet = platform === "mobile" ? getGameRules(category, game) : null;
 
   return (
     <main className="page">
@@ -172,6 +175,30 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           </section>
         )}
 
+        {mobileRuleSet && (
+          <section className="rule-section">
+            <h2>{gameName} Match Rules</h2>
+            {mobileRuleSet.modes.map((mode) => (
+              <div key={mode.value}>
+                <h3>{mode.value}</h3>
+                <ul>
+                  {mode.fields.map((item) => (
+                    <li key={item.label}>
+                      <strong>{item.label}:</strong> {item.options[0]}
+                    </li>
+                  ))}
+                  {mode.rules.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {mobileRuleSet.notes.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+          </section>
+        )}
+
         <p className="community-link">
           For general conduct and platform-wide rules, see the{" "}
           <a href="/rules">Community &amp; Match Rules</a>.
@@ -190,6 +217,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
         h1{margin:0;color:#fff;font-size:26px;text-transform:uppercase;}
         .rule-section{margin-top:24px;padding:18px;background:#050b12;border:1px solid #244b70;}
         h2{margin:0 0 12px;color:#d7ad4a;font-size:15px;text-transform:uppercase;}
+        .rule-section h3{margin:14px 0 6px;color:#fff;font-size:13px;text-transform:uppercase;}
         p,li{font-size:13px;line-height:1.7;}
         ul{margin:0;padding-left:22px;}
         li{margin:5px 0;}

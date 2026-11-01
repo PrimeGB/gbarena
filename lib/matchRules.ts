@@ -8,7 +8,9 @@
 // (5:00 matches, unlimited sudden-death overtime, default mutators, standard arenas);
 // Battlefield 6 modes per EA/Wikipedia (Conquest, Breakthrough, Rush, Domination, King of the
 // Hill, Team Deathmatch, Escalation). Apex and Fortnite lobby formats follow each game's
-// public playlists and common custom-lobby scrim formats.
+// public playlists and common custom-lobby scrim formats. Mobile games follow each game's
+// official friendly-battle / private-room formats (Supercell friendly battles, CODM esports
+// settings, official UNO rules).
 
 export type RuleSlot =
   | "score_limit"
@@ -301,6 +303,142 @@ const rules: Record<string, GameRuleSet> = {
     presetName: "GameBattles Standard",
     notes: ["Host team provides the party or custom code when needed."],
   },
+  "clash-of-clans": {
+    modes: [
+      {
+        value: "Friendly Challenge",
+        fields: [
+          field("score_limit", "Winner", ["Most Stars, Then Destruction %", "Destruction % Only"]),
+          field("round_length", "Attack Time", ["3 Minutes (Standard)"]),
+          field("spectating", "Base Layout", ["Each Player's War Base", "Agreed Shared Base"]),
+        ],
+        rules: [
+          "Friendly Challenges cost no troops or resources. Each player attacks the other's base once per game.",
+          "Both players use the same Town Hall level. Max-level troops, spells and heroes only if both agree.",
+          "Winner is decided by the most stars; destruction % breaks a star tie. A full tie is a draw and is replayed.",
+          "Record or screenshot each attack result screen as proof.",
+        ],
+      },
+    ],
+    teamSizes: ["1v1"],
+    bestOf: ["Best of 1", "Best of 3"],
+    presetName: "GameBattles Standard",
+    notes: ["Challenge your opponent from Clan Chat or the in-game Friendly Challenge menu."],
+  },
+  "clash-royale": {
+    modes: [
+      {
+        value: "Friendly Battle",
+        fields: [
+          field("round_length", "Match Length", ["3 Minutes + 2 Minute Overtime"]),
+          field("score_limit", "Card Levels", ["Tournament Standard (Level 11)", "Normal Levels"]),
+          field("perks", "Deck Rule", ["Any Deck", "No Duplicate Champions"]),
+        ],
+        rules: [
+          "Friendly Battle created from the Social tab or Clan Chat. Both players are on the same server.",
+          "3:00 match with double elixir in the final minute. A tied match goes to a 2:00 sudden-death overtime.",
+          "Most crowns wins. If still tied after overtime, the lowest-health tower is lost and the match can end in a draw.",
+          "Tournament Standard levels every card to the same level, which keeps the match fair.",
+          "Draws are replayed. Screenshot the post-battle screen as proof.",
+        ],
+      },
+    ],
+    teamSizes: ["1v1", "2v2"],
+    bestOf: ["Best of 1", "Best of 3", "Best of 5"],
+    presetName: "GameBattles Standard",
+    notes: ["Friendly battles do not affect trophies or chests, so playing is free."],
+  },
+  "cod-mobile": {
+    modes: [
+      {
+        value: "Hardpoint",
+        fields: [
+          field("score_limit", "Score Limit", ["250 Points"]),
+          field("round_length", "Time Limit", ["10 Minutes"]),
+          field("killstreaks", "Scorestreaks", ["Off", "UAV + Counter UAV Only"]),
+          field("friendly_fire", "Friendly Fire", ["Off"]),
+        ],
+        rules: [
+          "Private custom room. The host team creates the room and sets the password.",
+          "Standard competitive map pool only. No operator skills.",
+          "LMGs, shotguns, launchers and field upgrades are banned unless both teams agree.",
+        ],
+      },
+      {
+        value: "Search & Destroy",
+        fields: [
+          field("score_limit", "Rounds To Win", ["6 Rounds"]),
+          field("round_length", "Round Time", ["1 Minute 30 Seconds"]),
+          field("plant_time", "Plant Time", ["5 Seconds"]),
+          field("defuse_time", "Defuse Time", ["7.5 Seconds"]),
+          field("friendly_fire", "Friendly Fire", ["On"]),
+        ],
+        rules: [
+          "One life per round. Teams switch sides every round.",
+          "Standard competitive map pool only. No operator skills or scorestreaks.",
+        ],
+      },
+      {
+        value: "Team Deathmatch",
+        fields: [
+          field("score_limit", "Score Limit", ["75 Kills", "50 Kills"]),
+          field("round_length", "Time Limit", ["10 Minutes"]),
+          field("killstreaks", "Scorestreaks", ["Off"]),
+        ],
+        rules: ["Standard competitive map pool only. Highest kills at the limit wins."],
+      },
+      {
+        value: "Battle Royale",
+        fields: [
+          field("score_limit", "Scoring", ["Placement + Eliminations", "Eliminations Only"]),
+          field("round_length", "Games Per Match", ["1 Game", "2 Games", "3 Games"]),
+          field("perks", "Mode", ["Solo", "Duo", "Squad"]),
+        ],
+        rules: [
+          "Both teams queue into the same match; start the queue within 3 seconds of each other.",
+          "Placement points plus 1 point per elimination. A full results-screen screenshot is required for disputes.",
+        ],
+      },
+    ],
+    teamSizes: ["5v5", "4v4", "3v3"],
+    bestOf: ["Best of 1", "Best of 3", "Best of 5"],
+    presetName: "GameBattles Standard",
+    notes: ["Rooted or jailbroken devices and cheat tools are not allowed."],
+  },
+  uno: {
+    modes: [
+      {
+        value: "Classic",
+        fields: [
+          field("score_limit", "Play To", ["500 Points", "Single Round"]),
+          field("round_length", "Starting Hand", ["7 Cards"]),
+          field("perks", "House Rules", ["Official Rules Only", "Stacking Draw Cards"]),
+        ],
+        rules: [
+          "Each player starts with 7 cards. First to empty their hand wins the round.",
+          "Winner scores the cards left in opponents' hands: number cards face value, Skip / Reverse / Draw Two 20, Wild and Wild Draw Four 50.",
+          "A player with one card left must call UNO. If caught first, they draw 2 cards.",
+          "First to 500 points wins the game. Screenshot the final score screen as proof.",
+        ],
+      },
+      {
+        value: "2v2 Team Play",
+        fields: [
+          field("score_limit", "Play To", ["500 Points", "Single Round"]),
+          field("round_length", "Starting Hand", ["7 Cards"]),
+        ],
+        rules: [
+          "Partners sit opposite each other. A team scores when either partner empties their hand.",
+          "Partners may not share card information outside the game's built-in chat.",
+          "Same scoring and UNO call rules as Classic. First team to 500 wins.",
+        ],
+      },
+    ],
+    teamSizes: ["1v1", "2v2"],
+    bestOf: ["Best of 1", "Best of 3"],
+    presetName: "Official UNO Rules",
+    notes: ["Use a private room. All players must be in the same lobby."],
+  },
 };
 
 export function getGameRules(category: string, game: string): GameRuleSet | null {
@@ -336,6 +474,21 @@ export function getGameRules(category: string, game: string): GameRuleSet | null
 
   if (category === "battlefield" && game === "battlefield-2042") {
     return { ...set, modes: set.modes.filter((m) => m.value !== "King of the Hill") };
+  }
+
+  if (category === "cod-mobile") {
+    return game === "battle-royale"
+      ? { ...set, modes: set.modes.filter((m) => m.value === "Battle Royale"), teamSizes: ["3v3", "4v4"] }
+      : { ...set, modes: set.modes.filter((m) => m.value !== "Battle Royale") };
+  }
+
+  if (category === "uno") {
+    const wanted = game === "2v2" ? "2v2 Team Play" : "Classic";
+    return { ...set, modes: set.modes.filter((m) => m.value === wanted) };
+  }
+
+  if (category === "clash-royale") {
+    return { ...set, teamSizes: game === "2v2" ? ["2v2"] : ["1v1"] };
   }
 
   return set;
