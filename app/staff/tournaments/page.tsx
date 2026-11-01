@@ -11,7 +11,7 @@ type Tournament = {
   title: string;
   platform: string | null;
   game: string | null;
-  starts_at: string;
+  starts_at: string | null;
   status: string;
   is_free: boolean;
   entry_fee: number | null;
@@ -78,7 +78,7 @@ export default function StaffTournamentsPage() {
     e.preventDefault();
     setError("");
     setNotice("");
-    if (!form.title.trim() || !form.starts_at) {
+    if (!form.title.trim()) {
       setError("A title and a start date/time are required.");
       return;
     }
@@ -94,7 +94,7 @@ export default function StaffTournamentsPage() {
       game: form.game.trim() || null,
       format: form.format.trim() || null,
       team_size: form.team_size.trim() || null,
-      starts_at: new Date(form.starts_at).toISOString(),
+      starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : null,
       check_in_minutes: Number(form.check_in_minutes) || 30,
       max_teams: form.max_teams ? Number(form.max_teams) : null,
       is_free: form.is_free,
@@ -259,7 +259,7 @@ export default function StaffTournamentsPage() {
                     <div>
                       <b>{t.title}</b>
                       <small>
-                        {new Date(t.starts_at).toLocaleString()} - {t.status} -{" "}
+                        {t.starts_at ? new Date(t.starts_at).toLocaleString() : "Date TBD"} - {t.status} -{" "}
                         {t.is_free ? "Free" : `$${Number(t.entry_fee).toFixed(2)}`}
                       </small>
                     </div>

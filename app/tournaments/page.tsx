@@ -11,7 +11,7 @@ type Tournament = {
   game: string | null;
   format: string | null;
   team_size: string | null;
-  starts_at: string;
+  starts_at: string | null;
   check_in_minutes: number | null;
   max_teams: number | null;
   is_free: boolean;
@@ -24,7 +24,8 @@ type Tournament = {
 type OwnedTeam = { id: string; name: string; platform: string | null };
 type Registration = { tournament_id: string; team_id: string };
 
-function formatDate(value: string) {
+function formatDate(value: string | null) {
+  if (!value) return "TBD";
   return new Date(value).toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -33,7 +34,8 @@ function formatDate(value: string) {
   });
 }
 
-function formatTime(value: string) {
+function formatTime(value: string | null) {
+  if (!value) return "TBD";
   return new Date(value).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
