@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
 import { useUser } from "../../lib/useUser";
-import { RankEmblem, getRankTier } from "./RankEmblem";
+import { getRankTier } from "./RankEmblem";
+import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
 import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
 import { supabase } from "../../lib/supabase";
 import {
