@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import GetCreditsBox from "../components/GetCreditsBox";
 
 type Tournament = {
   id: string;
@@ -128,7 +129,22 @@ export default function TournamentsPage() {
         .t-nav{display:flex;gap:14px;flex-wrap:wrap;background:#0a1622;border:1px solid #3b7fc2;padding:9px 12px;margin-bottom:10px;}
         .t-nav a{color:#e3f1ff;font-size:11px;font-weight:bold;text-transform:uppercase;text-decoration:none;}
         .t-nav a:hover{color:#f2c14e;}
-        .t-hero{background:linear-gradient(135deg,#0b2036,#06101a);border:1px solid #3b7fc2;padding:22px 20px;margin-bottom:10px;}
+        .t-hero{background:linear-gradient(135deg,#0b2036,#06101a);border:1px solid #3b7fc2;padding:22px 20px;margin-bottom:10px;display:flex;gap:18px;align-items:flex-start;justify-content:space-between;}
+        .t-hero-text{flex:1;min-width:0;}
+        .gc-box{width:300px;flex-shrink:0;background:#07111b;border:1px solid #f2c14e;padding:12px;font-size:12px;color:#c8d8e8;}
+        .gc-head{color:#f2c14e;font-weight:bold;text-transform:uppercase;font-size:12px;margin-bottom:6px;}
+        .gc-box p{margin:0 0 8px;max-width:none;font-size:12px;}
+        .gc-btn{background:#f2c14e;color:#111;border:0;font-weight:bold;padding:8px 14px;cursor:pointer;text-transform:uppercase;font-size:11px;}
+        .gc-packs{display:grid;gap:4px;margin-bottom:8px;}
+        .gc-pack{display:flex;align-items:center;gap:8px;border:1px solid #16324a;padding:6px 8px;cursor:pointer;}
+        .gc-pack.on{border-color:#f2c14e;background:#10263a;}
+        .gc-pack span{margin-left:auto;color:#7affc8;font-weight:bold;}
+        .gc-terms{display:flex;gap:6px;font-size:10px;line-height:1.4;margin-bottom:8px;}
+        .gc-terms a{color:#f2c14e;}
+        .gc-err{color:#ff8a8a;margin-top:6px;}
+        .gc-ok{color:#7affc8;margin-top:6px;}
+        .gc-note{color:#9fb9cf;font-style:italic;}
+        .gc-secure{margin-top:8px;font-size:10px;color:#7f9ab3;}
         .t-hero h1{font-size:28px;font-style:italic;font-weight:900;color:#eaf5ff;text-transform:uppercase;letter-spacing:.5px;}
         .t-hero p{margin-top:8px;font-size:12px;line-height:1.5;color:#9fb9cf;max-width:720px;}
         .t-panel{background:#0a1622;border:1px solid #3b7fc2;}
@@ -165,6 +181,8 @@ export default function TournamentsPage() {
         @media(max-width:768px){
           .t-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
           .t-how{grid-template-columns:minmax(0,1fr);}
+          .t-hero{flex-direction:column;}
+          .gc-box{width:100%;}
           .t-hero h1{font-size:22px;}
         }
       `}</style>
@@ -179,12 +197,15 @@ export default function TournamentsPage() {
         </nav>
 
         <div className="t-hero">
-          <h1>Tournaments</h1>
-          <p>
-            Every GameBattles tournament starts here. Browse what&apos;s coming
-            up, check the date, time, rules and prizes, and see whether it&apos;s
-            free to enter.
-          </p>
+          <div className="t-hero-text">
+            <h1>Tournaments</h1>
+            <p>
+              Every GameBattles tournament starts here. Browse what&apos;s coming
+              up, check the date, time, rules and prizes, and see whether it&apos;s
+              free to enter.
+            </p>
+          </div>
+          <GetCreditsBox />
         </div>
 
         <div className="t-panel">
