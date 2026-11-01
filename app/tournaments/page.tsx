@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
 import GetCreditsBox from "../components/GetCreditsBox";
+import TournamentDisclaimerBox from "../components/TournamentDisclaimerBox";
 
 type Tournament = {
   id: string;
@@ -131,6 +132,18 @@ export default function TournamentsPage() {
         .t-nav a:hover{color:#f2c14e;}
         .t-hero{background:linear-gradient(135deg,#0b2036,#06101a);border:1px solid #3b7fc2;padding:22px 20px;margin-bottom:10px;display:flex;gap:18px;align-items:flex-start;justify-content:space-between;}
         .t-hero-text{flex:1;min-width:0;}
+        .t-hero-side{display:flex;gap:10px;align-items:flex-start;flex-shrink:0;}
+        .td-box{width:300px;flex-shrink:0;background:#07111b;border:1px solid #3b7fc2;padding:12px;font-size:12px;color:#c8d8e8;}
+        .td-head{color:#7ec3ff;font-weight:bold;text-transform:uppercase;font-size:12px;margin-bottom:6px;}
+        .td-box p{margin:0 0 8px;max-width:none;font-size:12px;}
+        .td-btn{background:#3b7fc2;color:#fff;border:0;font-weight:bold;padding:8px 14px;cursor:pointer;text-transform:uppercase;font-size:11px;}
+        .td-body{margin-top:10px;max-height:360px;overflow-y:auto;padding-right:4px;}
+        .td-sec{margin-bottom:10px;}
+        .td-sec-title{color:#eaf5ff;font-weight:bold;font-size:11px;text-transform:uppercase;margin-bottom:4px;}
+        .td-sec ul{margin:0;padding-left:16px;}
+        .td-sec li{font-size:11px;line-height:1.45;margin-bottom:3px;color:#9fb9cf;}
+        .td-link{color:#f2c14e;font-size:11px;}
+        .td-note{margin-top:8px;font-size:10px;color:#7f9ab3;font-style:italic;}
         .gc-box{width:300px;flex-shrink:0;background:#07111b;border:1px solid #f2c14e;padding:12px;font-size:12px;color:#c8d8e8;}
         .gc-head{color:#f2c14e;font-weight:bold;text-transform:uppercase;font-size:12px;margin-bottom:6px;}
         .gc-box p{margin:0 0 8px;max-width:none;font-size:12px;}
@@ -182,7 +195,8 @@ export default function TournamentsPage() {
           .t-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
           .t-how{grid-template-columns:minmax(0,1fr);}
           .t-hero{flex-direction:column;}
-          .gc-box{width:100%;}
+          .gc-box,.td-box{width:100%;}
+          .t-hero-side{flex-direction:column;width:100%;}
           .t-hero h1{font-size:22px;}
         }
       `}</style>
@@ -205,7 +219,10 @@ export default function TournamentsPage() {
               free to enter.
             </p>
           </div>
-          <GetCreditsBox />
+          <div className="t-hero-side">
+            <GetCreditsBox />
+            <TournamentDisclaimerBox />
+          </div>
         </div>
 
         <div className="t-panel">
