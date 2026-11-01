@@ -1559,8 +1559,14 @@ function ProfilePageContent() {
         .pf-award.locked .pf-award-art{ align-items:center; }
         .pf-award-name{ font-size:11px; color:#b9cde0; overflow-wrap:anywhere; margin-top:4px; line-height:1.2; }
         .pf-award.locked .pf-award-name{ color:#5f7e9c; }
-        @keyframes pfFloat{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
-        @media (prefers-reduced-motion:reduce){ .pf-award-art .award-art,.pf-award-art .award-sprite{ animation:none } }
+        @keyframes pfFloat{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-6px) } }
+        .pf-spark{ position:absolute; width:9px; height:9px; background:#fff; opacity:0; pointer-events:none; clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%); animation:pfTwinkle 2.8s ease-in-out infinite; }
+        .pf-spark.s1{ left:18%; top:14%; }
+        .pf-spark.s2{ right:16%; top:30%; animation-delay:.9s; width:7px; height:7px; }
+        .pf-spark.s3{ left:28%; bottom:22%; animation-delay:1.8s; width:6px; height:6px; }
+        .pf-award-art .award-art ~ .pf-spark{ display:none; }
+        @keyframes pfTwinkle{ 0%,100%{ opacity:0; transform:scale(.4) } 50%{ opacity:.95; transform:scale(1) } }
+        @media (prefers-reduced-motion:reduce){ .pf-award-art .award-art,.pf-award-art .award-sprite{ animation:none } .pf-spark{ animation:none; opacity:.6 } }
         .pf-friend-row{ display:flex; flex-wrap:wrap; gap:14px; }
         .pf-friend{ width:72px; text-align:center; font-size:11px; color:#d7eaff; }
         .pf-friend-avatar{
@@ -1949,15 +1955,20 @@ function ProfilePageContent() {
                 <div className="pf-section">
                   <div className="pf-section-title"><span>Top Awards</span></div>
                   <div className="pf-award-row">
-                    {topAwards.map((award) => (
+                    {topAwards.map((award, awardIndex) => (
                       <div
                         className={`pf-award ${award.label === "★" ? "earned" : "locked"}`}
-                        key={award.id}
+                        key={`${award.id}-${awardIndex}`}
                         title={`${award.name} — ${award.description}`}
                       >
                         <div className="pf-award-art">
                           {award.label === "★" ? (
-                            <AwardArt name={award.name} group={award.group} height={92} />
+                            <>
+                              <AwardArt name={award.name} group={award.group} height={92} />
+                              <span className="pf-spark s1" aria-hidden="true" />
+                              <span className="pf-spark s2" aria-hidden="true" />
+                              <span className="pf-spark s3" aria-hidden="true" />
+                            </>
                           ) : (
                             <svg className="pf-award-ghost" viewBox="0 0 60 80" aria-hidden="true">
                               <path d="M30 4 L54 14 V40 C54 58 42 70 30 76 C18 70 6 58 6 40 V14 Z" fill="none" stroke="#4a7aa8" strokeWidth="2" strokeDasharray="4 4" />

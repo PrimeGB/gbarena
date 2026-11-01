@@ -1,4 +1,5 @@
 import AuthNav from "./components/AuthNav";
+import HeroSlides from "./components/HeroSlides";
 import Link from "next/link";
 
 export default function Home() {
@@ -306,7 +307,7 @@ export default function Home() {
           width:235px;
           background:#07111b;
           border:1px solid #2f78af;
-          box-shadow:0 0 14px rgba(0,110,200,.45);
+          box-shadow:0 6px 14px rgba(0,0,0,.6);
           z-index:120;
         }
 
@@ -334,57 +335,27 @@ export default function Home() {
         .game-icon{
           width:24px;
           height:24px;
-          border:1px solid rgba(255,255,255,.22);
-          border-radius:5px;
+          border-radius:3px;
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:9px;
-          font-weight:900;
+          font-size:8px;
+          font-weight:700;
+          letter-spacing:.2px;
           color:#fff;
           flex-shrink:0;
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,.35),
-            inset 0 -8px 12px rgba(0,0,0,.35),
-            0 0 8px rgba(0,0,0,.7);
-          text-shadow:0 1px 2px #000;
+          opacity:.92;
         }
 
-        .cod-icon{
-          background:radial-gradient(circle at 30% 25%,#ffe89a 0,#b7831e 45%,#33210a 100%);
-        }
-
-        .fortnite-icon{
-          background:radial-gradient(circle at 30% 25%,#9fe8ff 0,#2d8dff 45%,#132057 100%);
-        }
-
-        .apex-icon{
-          background:radial-gradient(circle at 30% 25%,#ffb0a0 0,#d13224 45%,#3a0b08 100%);
-        }
-
-        .rainbow-icon{
-          background:radial-gradient(circle at 30% 25%,#e7e7e7 0,#636b76 45%,#11151a 100%);
-        }
-
-        .rocket-icon{
-          background:radial-gradient(circle at 30% 25%,#9df4ff 0,#1468d8 45%,#091e47 100%);
-        }
-
-        .battlefield-icon{
-          background:radial-gradient(circle at 30% 25%,#d8f7b0 0,#6da735 45%,#25330e 100%);
-        }
-
-        .coc-icon{
-          background:radial-gradient(circle at 30% 25%,#ffe08a 0,#e08a1e 45%,#4a2a08 100%);
-        }
-
-        .cr-icon{
-          background:radial-gradient(circle at 30% 25%,#9fd0ff 0,#2c6fd6 45%,#10285c 100%);
-        }
-
-        .uno-icon{
-          background:radial-gradient(circle at 30% 25%,#ff9a9a 0,#d81e1e 45%,#4a0808 100%);
-        }
+        .cod-icon{ background:#7a6a3a; }
+        .fortnite-icon{ background:#3a5f94; }
+        .apex-icon{ background:#8a3a34; }
+        .rainbow-icon{ background:#4d5560; }
+        .rocket-icon{ background:#2f5f9a; }
+        .battlefield-icon{ background:#4f6a3a; }
+        .coc-icon{ background:#9a7030; }
+        .cr-icon{ background:#37649c; }
+        .uno-icon{ background:#9a3434; }
 
         .lower-layout{
           position:absolute;
@@ -1014,17 +985,7 @@ export default function Home() {
             </aside>
 
             <section className="hero-expanded">
-              <div className="slide slide-one"></div>
-              <div className="slide slide-two"></div>
-              <div className="slide slide-three"></div>
-              <div className="slide slide-four"></div>
-              <div className="slide slide-five"></div>
-              <div className="slide slide-six"></div>
-              <div className="slide slide-seven"></div>
-              <div className="slide slide-eight"></div>
-              <div className="slide slide-nine"></div>
-              <div className="slide slide-ten"></div>
-              <div className="slide slide-eleven"></div>
+              <HeroSlides />
 
               <div className="hero-title">
                 <div className="hero-main">GAMEBATTLES</div>
