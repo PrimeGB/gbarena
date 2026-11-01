@@ -14,16 +14,61 @@ export const CURATED_SLIDES: string[] = [
   "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/976730/header.jpg",
 ];
 
-// Steam app ids that are always featured, e.g. Fable.
+// Steam app ids that are always featured. Screenshots are pulled live for each.
 export const PINNED_STEAM_APPS: number[] = [2769570];
+
+// Games whose screenshots join the rotation: Battlefield 6, Call of Duty, Gears, Rainbow Six Siege.
+export const SHOWCASE_STEAM_APPS: { id: number; shots: number }[] = [
+  { id: 2807960, shots: 6 },
+  { id: 4435490, shots: 3 },
+  { id: 3595270, shots: 3 },
+  { id: 1938090, shots: 2 },
+  { id: 2523720, shots: 3 },
+  { id: 1097840, shots: 2 },
+  { id: 3010850, shots: 3 },
+  { id: 359550, shots: 4 },
+];
 
 type SteamItem = { id: number; large_capsule_image?: string };
 type SteamFeatured = Record<string, { items?: SteamItem[] } | undefined>;
+type SteamDetails = Record<string, { data?: { screenshots?: { path_full?: string }[] } } | undefined>;
+
+async function getShowcaseShots(): Promise<string[][]> {
+  return Promise.all(
+    SHOWCASE_STEAM_APPS.map(async ({ id, shots }) => {
+      try {
+        const res = await fetch(`https://store.steampowered.com/api/appdetails?appids=${id}&cc=us&l=en`, {
+          next: { revalidate: 21600 },
+          signal: AbortSignal.timeout(4000),
+        });
+        if (!res.ok) return [];
+        const data = (await res.json()) as SteamDetails;
+        return (data[String(id)]?.data?.screenshots ?? [])
+          .slice(0, shots)
+          .map((shot) => shot.path_full)
+          .filter((url): url is string => Boolean(url));
+      } catch {
+        return [];
+      }
+    })
+  );
+}
+
+// Round-robin so games alternate instead of appearing in blocks.
+function interleave(groups: string[][]): string[] {
+  const out: string[] = [];
+  const longest = Math.max(0, ...groups.map((group) => group.length));
+  for (let i = 0; i < longest; i++) {
+    for (const group of groups) if (group[i]) out.push(group[i]);
+  }
+  return out;
+}
 
 export async function getHeroSlides(): Promise<string[]> {
   const pinned = PINNED_STEAM_APPS.map(
     (id) => `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${id}/header.jpg`
   );
+  const showcase = interleave(await getShowcaseShots());
   let live: string[] = [];
 
   try {
@@ -46,5 +91,5 @@ export async function getHeroSlides(): Promise<string[]> {
     // Fall back to the curated list when Steam is unreachable.
   }
 
-  return Array.from(new Set([...pinned, ...live, ...CURATED_SLIDES]));
+  return Array.from(new Set([...pinned, ...CURATED_SLIDES, ...showcase, ...live]));
 }
