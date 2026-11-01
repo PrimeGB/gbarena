@@ -14,6 +14,15 @@ export async function POST(request: Request) {
   const pkg = findCreditPackage(body?.packageKey);
   if (!pkg) return NextResponse.json({ error: "Unknown package." }, { status: 400 });
 
+  const { data: blocked } = await adminClient()
+    .from("credit_purchase_blocks")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (blocked) {
+    return NextResponse.json({ error: "Credit purchases are disabled on this account. Contact Support." }, { status: 403 });
+  }
+
   // Price and credit amount always come from the server, never from the browser.
   const order = await paypalRequest("/v2/checkout/orders", {
     intent: "CAPTURE",
