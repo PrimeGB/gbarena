@@ -24,8 +24,20 @@ export default function GetCreditsBox() {
   const [error, setError] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const holder = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const payingRef = useRef(false);
   const agreedRef = useRef(false);
   const selectedRef = useRef(selected);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e: MouseEvent) {
+      if (payingRef.current) return;
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
 
   useEffect(() => {
     agreedRef.current = agreed;
@@ -46,6 +58,21 @@ export default function GetCreditsBox() {
     document.body.appendChild(s);
   }, [open]);
 
+  async function finishPayment(orderId: string) {
+    const { data } = await supabase.auth.getSession();
+    const res = await fetch("/api/paypal/capture-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
+      body: JSON.stringify({ orderId }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setError(json.error || "Payment could not be completed.");
+      return;
+    }
+    setMessage(`Payment complete. Your balance is now ${Number(json.balance).toLocaleString()} credits.`);
+  }
+
   useEffect(() => {
     if (!open || !sdkReady || !window.paypal || !holder.current) return;
     const el = holder.current;
@@ -61,6 +88,7 @@ export default function GetCreditsBox() {
         return actions.resolve();
       },
       createOrder: async () => {
+        payingRef.current = true;
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
         if (!token) throw new Error("Sign in to buy credits.");
@@ -74,20 +102,19 @@ export default function GetCreditsBox() {
         return json.id;
       },
       onApprove: async (approval: { orderID: string }) => {
-        const { data } = await supabase.auth.getSession();
-        const res = await fetch("/api/paypal/capture-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
-          body: JSON.stringify({ orderId: approval.orderID }),
-        });
-        const json = await res.json();
-        if (!res.ok) {
-          setError(json.error || "Payment could not be completed.");
-          return;
+        try {
+          await finishPayment(approval.orderID);
+        } finally {
+          payingRef.current = false;
         }
-        setMessage(`Payment complete. Your balance is now ${Number(json.balance).toLocaleString()} credits.`);
       },
-      onError: (err: Error) => setError(err?.message || "Payment failed."),
+      onCancel: () => {
+        payingRef.current = false;
+      },
+      onError: (err: Error) => {
+        payingRef.current = false;
+        setError(err?.message || "Payment failed.");
+      },
     });
     buttons.render(el);
     return () => {
@@ -100,7 +127,7 @@ export default function GetCreditsBox() {
   }, [open, sdkReady]);
 
   return (
-    <div className="gc-box">
+    <div className="gc-box" ref={boxRef}>
       <div className="gc-head">Get Credits</div>
       {!open ? (
         <>
