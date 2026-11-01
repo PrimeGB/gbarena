@@ -30,7 +30,7 @@ type Profile = {
   gb_rank_points?: number | null;
   favorite_system?: string | null;
   favorite_game?: string | null;
-  location?: string | null;
+  credits?: number | null;
   role?: string | null;
   player_bio?: string | null;
   avatar_url?: string | null;
@@ -196,7 +196,7 @@ function ProfilePageContent() {
 
     supabase
       .from("profiles")
-      .select("id, username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, location, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at, profile_views")
+      .select("id, username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, credits, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at, profile_views")
       .eq("id", viewedUserId)
       .single()
       .then(async ({ data }) => {
@@ -396,7 +396,7 @@ function ProfilePageContent() {
       gb_rank_points: 0,
       favorite_system: "PlayStation",
       favorite_game: null,
-      location: null,
+      credits: 0,
       player_bio: null,
       avatar_url: null,
       logo_url: null,
@@ -426,7 +426,6 @@ function ProfilePageContent() {
   const gbLosses = profile?.gb_losses || 0;
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
-  const playerLocation = profile?.location || "Not Set";
   const playerRole = profile?.role
     ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
     : "Member";
@@ -1755,8 +1754,8 @@ function ProfilePageContent() {
                       <strong>{(profile.profile_views || 0).toLocaleString()}</strong>
                     </div>
                     <div>
-                      <span>Location</span>
-                      <strong>{playerLocation}</strong>
+                      <span>Credits</span>
+                      <strong>{(profile.credits || 0).toLocaleString()}</strong>
                     </div>
                     <div>
                       <span>Role</span>

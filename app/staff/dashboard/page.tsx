@@ -151,6 +151,7 @@ export default function StaffDashboardPage() {
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
     can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
     can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Create tournaments, set prizes and rules, and manage events.", cta: "Open work area", href: "/staff/tournaments" },
+    can("staff_access") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
     isOwner && { key: "access", title: "Assign staff access", description: "Promote or remove staff ranks. Every change is recorded.", cta: "Open work area", view: "access" },
     can("staff_directory") && { key: "staff_directory", title: "Trusted staff roster", description: "Review staff positions, duties, and rank assignments.", cta: "Manage directory details", view: "roster" },
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
