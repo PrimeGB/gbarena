@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import { getGameRules } from "../../../lib/matchRules";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
+import { MatchJoinGuide, isBattlefield } from "../../components/MatchJoinGuide";
 
 type MatchRow = {
   id: string;
@@ -1762,6 +1763,8 @@ export default function MatchDetailsPage() {
                     </Link>
                   </div>
                 </div>
+
+                <MatchJoinGuide battlefield={isBattlefield(match.category, match.game)} compact />
 
                 {matchSettings.length > 0 && (
                   <button

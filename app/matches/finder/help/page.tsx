@@ -1,4 +1,5 @@
 import InfoPage from "../../../components/InfoPage";
+import { MatchJoinGuide } from "../../../components/MatchJoinGuide";
 
 export const metadata = { title: "How Match Finder Works - GameBattles" };
 
@@ -26,7 +27,9 @@ export default function MatchFinderHelpPage() {
         <li>Both teams report the result after the match.</li>
         <li>Keep screenshots or video in case a dispute is needed.</li>
       </ul>
-      <h2>4. Disputes</h2>
+      <h2>4. Getting into the match</h2>
+      <MatchJoinGuide battlefield />
+      <h2>5. Disputes</h2>
       <p>
         If the reports do not match, open a <a href="/support/dispute-ticket">dispute ticket</a> and
         staff will review the proof.
