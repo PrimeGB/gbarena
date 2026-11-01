@@ -18,6 +18,7 @@ type Tournament = {
   entry_fee: number | null;
   entry_fee_credits: number;
   prize_credits: number;
+  prize_per_player?: boolean;
   prize: string | null;
   rules: string | null;
   status: string;
@@ -258,7 +259,7 @@ export default function TournamentsPage() {
                       <div className="t-cell">
                         <span>Prizes</span>
                         <b>
-                          {[t.prize_credits > 0 ? `${t.prize_credits.toLocaleString()} credits` : "", t.prize || ""]
+                          {[t.prize_credits > 0 ? `${t.prize_credits.toLocaleString()} credits${t.prize_per_player ? " each" : ""}` : "", t.prize || ""]
                             .filter(Boolean)
                             .join(" - ") || "TBA"}
                         </b>
