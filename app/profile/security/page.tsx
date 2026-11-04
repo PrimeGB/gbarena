@@ -62,14 +62,6 @@ export default function SecurityPage() {
     refresh();
   }
 
-  async function linkDiscord() {
-    const { error } = await supabase.auth.linkIdentity({
-      provider: "discord",
-      options: { redirectTo: `${window.location.origin}/profile/security` },
-    });
-    if (error) setMessage("Discord linking isn't available yet. " + error.message);
-  }
-
   async function signOutOthers() {
     const { error } = await supabase.auth.signOut({ scope: "others" });
     setMessage(error ? error.message : "Signed out of all other devices.");
@@ -147,11 +139,6 @@ export default function SecurityPage() {
           ) : (
             <button type="button" style={btn} onClick={startEnroll}>Set up two-factor</button>
           )}
-        </div>
-
-        <div style={box}>
-          <h3 style={{ color: "#7fc0ff", marginBottom: 8 }}>Discord</h3>
-          <button type="button" style={btn} onClick={linkDiscord}>Link Discord account</button>
         </div>
 
         <div style={box}>
