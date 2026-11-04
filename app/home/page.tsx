@@ -382,9 +382,9 @@ export default function Home() {
 
         .lower-layout{
           position:absolute;
-          left:1.05%;
+          left:0.85%;
           top:31.15%;
-          width:97.9%;
+          width:98.3%;
           height:63.35%;
           z-index:45;
           display:grid;
@@ -646,9 +646,9 @@ export default function Home() {
 
         .footer-cover{
           position:absolute;
-          left:1.05%;
+          left:0.85%;
           bottom:.7%;
-          width:97.9%;
+          width:98.3%;
           height:4.45%;
           z-index:45;
           background:linear-gradient(to bottom,#063456,#041421);
