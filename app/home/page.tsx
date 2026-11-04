@@ -71,9 +71,9 @@ export default function Home() {
 
         .logo-emblem{
           position:absolute;
-          left:8.5%;
+          left:8%;
           top:14.7%;
-          width:10.7%;
+          width:10.2%;
           aspect-ratio:1/1;
           transform:translate(-50%,-50%);
           z-index:34;
@@ -85,14 +85,18 @@ export default function Home() {
         .controller-spin-ring{
           position:absolute;
           left:8%;
-          top:8%;
-          width:84%;
-          height:84%;
+          top:14.7%;
+          width:8.8%;
+          aspect-ratio:1/1;
+          margin-left:-4.4%;
+          transform-origin:center;
+          translate:0 -50%;
           border-radius:50%;
-          border:3px solid rgba(90,170,230,.22);
-          border-top-color:rgba(255,255,255,.78);
-          border-right-color:rgba(95,190,255,.58);
-          z-index:1;
+          border:2px solid transparent;
+          border-top-color:rgba(255,255,255,.9);
+          border-right-color:rgba(150,210,255,.5);
+          pointer-events:none;
+          z-index:35;
           animation:controllerRingSpin 10s linear infinite;
           box-shadow:
             inset 0 0 10px rgba(0,0,0,.65),
@@ -794,11 +798,7 @@ export default function Home() {
           <div className="dark-blue-blend"></div>
 
           <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
-          <div className="controller-overlay">
-            <div className="controller-spin-ring"></div>
-
-            
-          </div>
+          <div className="controller-spin-ring"></div>
 
           <div className="real-top-bar">
             <div className="auth-holder">
