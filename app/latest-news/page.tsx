@@ -248,6 +248,20 @@ export default function LatestNewsPage() {
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
+                    <span className="tag">Profile Update</span>
+                    Cleaner Player Profiles
+                  </div>
+                  <div className="news-date">November 4, 2026</div>
+                </div>
+                <div className="news-body">
+                  Removed the extra Friends shortcut from the top of other players&apos;
+                  profiles, keeping profile actions focused and easier to scan.
+                </div>
+              </div>
+
+              <div className="news-post">
+                <div className="news-head">
+                  <div className="news-title">
                     <span className="tag">Just Updated</span>
                     Game-specific Ladders & Tournaments
                   </div>

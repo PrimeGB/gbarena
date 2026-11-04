@@ -1812,20 +1812,14 @@ function ProfilePageContent() {
                   )}
                 </div>
 
-                {currentUser?.id && (
+                {currentUser?.id && isViewingOwnProfile && (
                 <div className="pf-banner-actions">
-                  {isViewingOwnProfile ? (
-                    <>
-                      <Link className="pf-btn" href="/profile/edit">Account / Profile</Link>
-                      <Link className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</Link>
-                      <Link className="pf-btn pf-inbox-btn" href="/profile/inbox">
-                        Inbox
-                        {unreadInboxCount > 0 && <span className="mail-dot"></span>}
-                      </Link>
-                    </>
-                  ) : (
-                    <a className="pf-btn" href={`/profile/friends?userId=${viewedUserId}`}>View Friends</a>
-                  )}
+                  <Link className="pf-btn" href="/profile/edit">Account / Profile</Link>
+                  <Link className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</Link>
+                  <Link className="pf-btn pf-inbox-btn" href="/profile/inbox">
+                    Inbox
+                    {unreadInboxCount > 0 && <span className="mail-dot"></span>}
+                  </Link>
                 </div>
                 )}
               </div>
