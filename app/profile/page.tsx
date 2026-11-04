@@ -1756,7 +1756,7 @@ function ProfilePageContent() {
             </a>
           </header>
 
-          <SiteNav />
+          <SiteNav showLadders={false} />
 
           {profile ? (
             <div className="pf-banner">

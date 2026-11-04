@@ -249,6 +249,20 @@ export default function LatestNewsPage() {
                 <div className="news-head">
                   <div className="news-title">
                     <span className="tag">Profile Update</span>
+                    Simplified Profile Navigation
+                  </div>
+                  <div className="news-date">November 4, 2026</div>
+                </div>
+                <div className="news-body">
+                  Removed the Ladders link from the navigation bar on player profiles
+                  to keep profile navigation focused.
+                </div>
+              </div>
+
+              <div className="news-post">
+                <div className="news-head">
+                  <div className="news-title">
+                    <span className="tag">Profile Update</span>
                     Cleaner Player Profiles
                   </div>
                   <div className="news-date">November 4, 2026</div>
