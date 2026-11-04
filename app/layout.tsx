@@ -22,7 +22,7 @@ const siteDescription =
   "Competitive gaming ladders for every game and platform. Build a team, play ranked matches, climb the standings, and earn awards.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gbarena.vercel.app"),
+  metadataBase: new URL("https://gamebattles.app"),
   title: {
     default: "GameBattles - Where Gaming Finds Its Edge",
     template: "%s | GameBattles",

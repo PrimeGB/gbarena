@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://gbarena.vercel.app";
+const BASE = "https://gamebattles.app";
 
 const PAGES = [
   "/home",

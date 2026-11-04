@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/staff", "/profile/inbox", "/profile/edit", "/login", "/support/dispute-ticket"],
     },
-    sitemap: "https://gbarena.vercel.app/sitemap.xml",
+    sitemap: "https://gamebattles.app/sitemap.xml",
   };
 }

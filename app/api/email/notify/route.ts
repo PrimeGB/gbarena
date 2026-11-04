@@ -1,104 +1,36 @@
-const SITE = "https://gbarena.vercel.app";
+const SITE = "https://gamebattles.app";
 
 const escape = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 type Template = { subject: string; heading: string; intro: string; button: string; href: string; accent: string };
 
-function buildTemplate(type: string, subject: string, body: string, relatedType: string, relatedId: string): Template {
-  const detail = subject.includes(":") ? subject.split(":").slice(1).join(":").trim() : "";
+function buildTemplate(type: string, subject: string, relatedType: string, relatedId: string): Template {
   const matchHref = relatedType === "match" && relatedId ? `${SITE}/matches/${relatedId}` : `${SITE}/messages`;
+  const make = (title: string, intro: string, button: string, href: string, accent: string): Template => ({
+    subject: title,
+    heading: title,
+    intro,
+    button,
+    href,
+    accent,
+  });
 
   if (type === "welcome") {
-    return {
-      subject: "Welcome to GameBattles!",
-      heading: "Welcome to GameBattles!",
-      intro: "Your account is ready. Link your gaming accounts, build or join a team, and start climbing the ladders.",
-      button: "Get Started",
-      href: `${SITE}/getting-started`,
-      accent: "#f2c14e",
-    };
+    return make("Welcome to GameBattles!", "Your account is ready. Build or join a team and start climbing the ladders.", "Get Started", `${SITE}/getting-started`, "#f2c14e");
   }
-  if (subject.startsWith("Match accepted")) {
-    return {
-      subject: `Your match was accepted: ${detail}`,
-      heading: "Congratulations, you got a match!",
-      intro: body,
-      button: "View Match",
-      href: matchHref,
-      accent: "#3fb950",
-    };
+  if (subject.startsWith("Match accepted")) return make("Match Accepted", "Congratulations, you got a match!", "View Match", matchHref, "#3fb950");
+  if (subject.startsWith("Confirm the score")) return make("Confirm the Score", "Your opponent reported a score. Confirm it or dispute it.", "Review Score", matchHref, "#f2c14e");
+  if (subject.startsWith("Score submitted")) return make("Match Reported", "Your score was submitted and is waiting on your opponent.", "View Match", matchHref, "#7fc0ff");
+  if (subject.startsWith("Score disputed")) return make("Match Disputed", "A score was disputed. Staff will review it.", "View Match", matchHref, "#ff4d4d");
+  if (subject.startsWith("Dispute resolved")) return make("Dispute Resolved", "Staff made a ruling on your dispute.", "View Result", matchHref, "#3fb950");
+  if (subject.startsWith("Match completed")) return make("Match Completed", "Your match is finished and the result is recorded.", "View Result", matchHref, "#7fc0ff");
+  if (subject.startsWith("Team invite")) return make("Team Invite", "You have been invited to join a team.", "View Invite", `${SITE}/messages`, "#f2c14e");
+  if (subject.startsWith("New message") || relatedType === "message" || relatedType === "") {
+    return make("New Message", "You have a new message on GameBattles.", "Open Messages", `${SITE}/messages`, "#7fc0ff");
   }
-  if (subject.startsWith("Confirm the score")) {
-    return {
-      subject: `Action needed: confirm the score for ${detail}`,
-      heading: "Confirm the score",
-      intro: body || "Your opponent reported a score. Confirm it or open a dispute.",
-      button: "Review Score",
-      href: matchHref,
-      accent: "#f2c14e",
-    };
-  }
-  if (subject.startsWith("Score submitted")) {
-    return {
-      subject: `Score submitted: ${detail}`,
-      heading: "Score submitted",
-      intro: body || "Your score was submitted and is waiting on your opponent to confirm.",
-      button: "View Match",
-      href: matchHref,
-      accent: "#7fc0ff",
-    };
-  }
-  if (subject.startsWith("Score disputed")) {
-    return {
-      subject: `Match disputed: ${detail}`,
-      heading: "Match disputed",
-      intro: body || "The reported score was disputed. Staff will review it. Add any proof you have on the match page.",
-      button: "View Dispute",
-      href: matchHref,
-      accent: "#ff4d4d",
-    };
-  }
-  if (subject.startsWith("Dispute resolved")) {
-    return {
-      subject: `Dispute resolved: ${detail}`,
-      heading: "Dispute resolved",
-      intro: body || "Staff reviewed your dispute and made a ruling.",
-      button: "View Result",
-      href: matchHref,
-      accent: "#3fb950",
-    };
-  }
-  if (subject.startsWith("Match completed")) {
-    return {
-      subject: `Match completed: ${detail}`,
-      heading: "Match completed",
-      intro: body || "Your match is finished and the result has been recorded.",
-      button: "View Result",
-      href: matchHref,
-      accent: "#7fc0ff",
-    };
-  }
-  if (subject.startsWith("Team invite")) {
-    return {
-      subject: `You were invited to join ${detail}`,
-      heading: "You have a team invite",
-      intro: body || "A team invited you to join their roster.",
-      button: "View Invite",
-      href: `${SITE}/messages`,
-      accent: "#f2c14e",
-    };
-  }
-  return {
-    subject,
-    heading: subject,
-    intro: body,
-    button: "Open GameBattles",
-    href: `${SITE}/messages`,
-    accent: "#7fc0ff",
-  };
+  return make("New Notification", "You have a new notification on GameBattles.", "Open GameBattles", `${SITE}/messages`, "#7fc0ff");
 }
-
 function render(t: Template) {
   return `<!doctype html><html><body style="margin:0;background:#05080c;font-family:Tahoma,Verdana,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#05080c;padding:24px 0;"><tr><td align="center">
@@ -129,7 +61,6 @@ export async function POST(request: Request) {
   const to = typeof payload?.to === "string" ? payload.to : "";
   const type = typeof payload?.type === "string" ? payload.type : "message";
   const subject = typeof payload?.subject === "string" ? payload.subject.slice(0, 200) : "";
-  const body = typeof payload?.body === "string" ? payload.body.slice(0, 5000) : "";
   const relatedType = typeof payload?.related_type === "string" ? payload.related_type : "";
   const relatedId = typeof payload?.related_id === "string" ? payload.related_id : "";
 
@@ -137,7 +68,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false }, { status: 400 });
   }
 
-  const template = buildTemplate(type, subject, body, relatedType, relatedId);
+  const template = buildTemplate(type, subject, relatedType, relatedId);
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
