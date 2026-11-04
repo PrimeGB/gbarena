@@ -1508,7 +1508,7 @@ function ProfilePageContent() {
         }
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
         .pf-facts > div{ text-align:center; }
-        .pf-facts span{ display:block; font-size:11px; line-height:14px; color:#8fa9c2; font-weight:bold; margin-bottom:4px; }
+        .pf-facts span{ display:block; font-size:11px; line-height:14px; color:#8fa9c2; font-weight:bold; margin-bottom:8px; }
         .pf-facts strong{ display:flex; align-items:flex-end; justify-content:center; font-size:15px; line-height:18px; height:20px; color:#fff; }
         .pf-facts .pf-since{ font-size:11px; font-weight:normal; color:#cfdbe8; line-height:16px; }
         .pf-banner-actions{ display:flex; flex-direction:column; gap:8px; width:170px; flex:none; }
@@ -1672,7 +1672,7 @@ function ProfilePageContent() {
         .pf-two-col{ gap:10px; }
         .pf-two-col .pf-section{ min-width:0; }
         .pf-bio{ margin:0; }
-        .pf-facts{ gap:16px; flex-wrap:nowrap; margin-bottom:-12px; }
+        .pf-facts{ gap:16px; flex-wrap:nowrap; margin-bottom:-8px; }
         .pf-facts > div{ white-space:nowrap; }
         .pf-banner-actions{ width:150px; }
         .pf-tags{ display:flex; flex-direction:column; gap:5px; width:230px; flex:none; align-self:stretch; justify-content:center; }
