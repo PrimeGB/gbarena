@@ -132,10 +132,10 @@ export default function TournamentsPage() {
         .t-nav{display:flex;gap:14px;flex-wrap:wrap;background:#0a1622;border:1px solid #3b7fc2;padding:9px 12px;margin-bottom:10px;}
         .t-nav a{color:#e3f1ff;font-size:11px;font-weight:bold;text-transform:uppercase;text-decoration:none;}
         .t-nav a:hover{color:#f2c14e;}
-        .t-hero{background:linear-gradient(135deg,#0b2036,#06101a);border:1px solid #3b7fc2;padding:22px 20px;margin-bottom:10px;display:flex;gap:18px;align-items:flex-start;justify-content:space-between;}
-        .t-hero-text{flex:1;min-width:0;}
-        .t-hero-side{display:flex;gap:10px;align-items:flex-start;flex-shrink:0;}
-        .td-box{width:300px;flex-shrink:0;background:#07111b;border:1px solid #3b7fc2;padding:12px;font-size:12px;color:#c8d8e8;}
+        .t-hero{background:linear-gradient(135deg,#0b2036,#06101a);border:1px solid #3b7fc2;padding:24px 22px;margin-bottom:12px;display:flex;flex-direction:column;gap:18px;}
+        .t-hero-text{min-width:0;}
+        .t-hero-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+        .td-box{width:auto;background:#07111b;border:1px solid #3b7fc2;padding:12px;font-size:12px;color:#c8d8e8;}
         .td-head{color:#7ec3ff;font-weight:bold;text-transform:uppercase;font-size:12px;margin-bottom:6px;}
         .td-box p{margin:0 0 8px;max-width:none;font-size:12px;}
         .td-btn{background:#3b7fc2;color:#fff;border:0;font-weight:bold;padding:8px 14px;cursor:pointer;text-transform:uppercase;font-size:11px;}
@@ -146,7 +146,7 @@ export default function TournamentsPage() {
         .td-sec li{font-size:11px;line-height:1.45;margin-bottom:3px;color:#9fb9cf;}
         .td-link{color:#f2c14e;font-size:11px;}
         .td-note{margin-top:8px;font-size:10px;color:#7f9ab3;font-style:italic;}
-        .gc-box{width:300px;flex-shrink:0;background:#07111b;border:1px solid #f2c14e;padding:12px;font-size:12px;color:#c8d8e8;}
+        .gc-box{width:auto;background:#07111b;border:1px solid #f2c14e;padding:12px;font-size:12px;color:#c8d8e8;}
         .gc-head{color:#f2c14e;font-weight:bold;text-transform:uppercase;font-size:12px;margin-bottom:6px;}
         .gc-box p{margin:0 0 8px;max-width:none;font-size:12px;}
         .gc-btn{background:#f2c14e;color:#111;border:0;font-weight:bold;padding:8px 14px;cursor:pointer;text-transform:uppercase;font-size:11px;}
@@ -166,26 +166,35 @@ export default function TournamentsPage() {
         .t-title{height:26px;background:#0f2a40;border-bottom:1px solid #3b7fc2;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:bold;color:#f2c14e;text-transform:uppercase;}
         .t-empty{padding:34px 16px;text-align:center;font-size:12px;color:#9fb9cf;line-height:1.6;}
         .t-empty strong{display:block;color:#f2c14e;font-size:14px;margin-bottom:6px;text-transform:uppercase;}
-        .t-list{padding:10px;display:grid;gap:10px;}
-        .t-card{background:#07111b;border:1px solid #16324a;}
-        .t-card.live{border-color:#c40000;}
-        .t-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#0f2a40;border-bottom:1px solid #3b7fc2;padding:9px 12px;}
-        .t-name{font-size:15px;font-weight:bold;color:#f2c14e;text-transform:uppercase;}
-        .t-badge{font-size:10px;font-weight:bold;padding:3px 8px;border:1px solid;text-transform:uppercase;}
+        .t-list{padding:12px;display:grid;gap:14px;}
+        .t-card{background:linear-gradient(#0b1a29,#07111b);border:1px solid #1f4566;border-radius:10px;overflow:hidden;}
+        .t-card.live{border-color:#c40000;box-shadow:0 0 18px rgba(196,0,0,.25);}
+        .t-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#0f2a40;border-bottom:1px solid #3b7fc2;padding:12px 16px;}
+        .t-name{font-size:16px;font-weight:900;color:#f2c14e;text-transform:uppercase;letter-spacing:.3px;}
+        .t-badge{font-size:10px;font-weight:bold;padding:3px 10px;border:1px solid;border-radius:999px;text-transform:uppercase;}
         .t-badge.free{background:#0d3a1f;border-color:#2fbf62;color:#7dffae;}
         .t-badge.paid{background:#3a2a05;border-color:#f2c14e;color:#ffd978;}
         .t-badge.live{background:#6a0000;border-color:#c40000;color:#fff;margin-right:6px;}
-        .t-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#16324a;}
-        .t-cell{background:#07111b;padding:10px 12px;}
-        .t-cell span{display:block;font-size:9px;color:#8fb0cc;text-transform:uppercase;margin-bottom:4px;}
-        .t-cell b{font-size:12px;color:#eaf5ff;}
-        .t-actions{padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;}
-        .t-btn{background:linear-gradient(#1d5f9c,#0f3a63);border:1px solid #4f93d6;color:#fff;font-size:11px;font-weight:bold;text-transform:uppercase;padding:7px 14px;cursor:pointer;}
-        .t-btn:hover{background:linear-gradient(#2a78c0,#154a7a);}
-        .t-btn.off{opacity:.55;cursor:not-allowed;}
+        .t-meta{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px 4px;}
+        .t-meta span{background:#0d2236;border:1px solid #1f4566;border-radius:999px;padding:6px 12px;font-size:12px;color:#d7e8f8;}
+        .t-stats{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:10px;padding:12px 16px;}
+        .t-stat{background:#0a1a2a;border:1px solid #16324a;border-radius:8px;padding:10px 12px;}
+        .t-stat span{display:block;font-size:10px;color:#8fb0cc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+        .t-stat b{font-size:14px;color:#eaf5ff;}
+        .t-stat.prize{border-color:#6b5217;background:linear-gradient(#1b1606,#100d04);}
+        .t-stat.prize b{color:#f2c14e;font-size:16px;}
+        .t-bar{height:5px;border-radius:999px;background:#16324a;margin-top:8px;overflow:hidden;}
+        .t-bar i{display:block;height:100%;background:linear-gradient(90deg,#2fbf62,#7dffae);}
+        .t-actions{padding:12px 16px 16px;display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center;border-top:1px solid #16324a;}
+        .t-actions-left,.t-actions-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+        .t-btn{background:linear-gradient(#f2c14e,#c9951f);border:1px solid #f2c14e;border-radius:999px;color:#111;font-size:11px;font-weight:800;text-transform:uppercase;padding:9px 18px;cursor:pointer;}
+        .t-btn:hover{filter:brightness(1.1);}
+        .t-btn.ghost{background:transparent;border-color:#4f93d6;color:#cfe6ff;}
+        .t-btn.ghost:hover{background:#10263a;}
+        .t-btn.off{opacity:.55;cursor:not-allowed;background:#1a2a3a;border-color:#2a4560;color:#9fb9cf;}
         a.t-btn{text-decoration:none;display:inline-block;}
-        .t-select{background:#07111b;border:1px solid #16324a;color:#eaf5ff;padding:6px;font-size:12px;}
-        .t-msg{margin:0 12px 10px;padding:7px 10px;font-size:12px;border:1px solid;}
+        .t-select{background:#07111b;border:1px solid #2a4560;border-radius:999px;color:#eaf5ff;padding:8px 12px;font-size:12px;}
+        .t-msg{margin:0 16px 12px;padding:8px 12px;font-size:12px;border:1px solid;border-radius:6px;}
         .t-msg.ok{background:#0d3a1f;border-color:#2fbf62;color:#7dffae;}
         .t-msg.err{background:#3a0a0a;border-color:#c40000;color:#ffb3b3;}
         .t-rules{border-top:1px solid #16324a;padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;color:#d7e2ee;}
@@ -194,11 +203,10 @@ export default function TournamentsPage() {
         .t-step{background:#07111b;border:1px solid #16324a;padding:12px;font-size:11px;line-height:1.5;color:#c8d8e8;}
         .t-step b{display:block;color:#f2c14e;text-transform:uppercase;margin-bottom:4px;font-size:11px;}
         @media(max-width:768px){
-          .t-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .t-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
           .t-how{grid-template-columns:minmax(0,1fr);}
-          .t-hero{flex-direction:column;}
-          .gc-box,.td-box{width:100%;}
-          .t-hero-side{flex-direction:column;width:100%;}
+          .t-hero-side{grid-template-columns:minmax(0,1fr);}
+          .t-actions{flex-direction:column;align-items:stretch;}
           .t-hero h1{font-size:22px;}
         }
       `}</style>
@@ -273,63 +281,55 @@ export default function TournamentsPage() {
                       </div>
                     </div>
 
-                    <div className="t-grid">
-                      <div className="t-cell">
-                        <span>Date</span>
-                        <b>{formatDate(t.starts_at)}</b>
-                      </div>
-                      <div className="t-cell">
-                        <span>Start Time</span>
-                        <b>{formatTime(t.starts_at)}</b>
-                      </div>
-                      <div className="t-cell">
-                        <span>Game / Platform</span>
-                        <b>
-                          {[t.game, t.platform].filter(Boolean).join(" - ") ||
-                            "TBA"}
-                        </b>
-                      </div>
-                      <div className="t-cell">
-                        <span>Format</span>
-                        <b>
-                          {[t.format, t.team_size].filter(Boolean).join(" - ") ||
-                            "TBA"}
-                        </b>
-                      </div>
-                      <div className="t-cell">
-                        <span>Prizes</span>
+                    <div className="t-meta">
+                      <span>📅 {t.starts_at ? `${formatDate(t.starts_at)} · ${formatTime(t.starts_at)}` : "Date & time TBA"}</span>
+                      <span>🎮 {[t.game, t.platform].filter(Boolean).join(" · ") || "Game TBA"}</span>
+                      <span>👥 {[t.format, t.team_size].filter(Boolean).join(" · ") || "Format TBA"}</span>
+                    </div>
+
+                    <div className="t-stats">
+                      <div className="t-stat prize">
+                        <span>Prize</span>
                         <b>
                           {[t.prize_credits > 0 ? `${t.prize_credits.toLocaleString()} credits${t.prize_per_player ? " each" : ""}` : "", t.prize || ""]
                             .filter(Boolean)
-                            .join(" - ") || "TBA"}
+                            .join(" + ") || "TBA"}
                         </b>
                       </div>
-                      <div className="t-cell">
-                        <span>Check-In</span>
-                        <b>{t.check_in_minutes ?? 30} min before start</b>
-                      </div>
-                      <div className="t-cell">
-                        <span>Max Teams</span>
+                      <div className="t-stat">
+                        <span>Teams</span>
                         <b>
-                          {regs.length} registered / {t.max_teams ?? "Unlimited"}
+                          {regs.length} / {t.max_teams ?? "∞"}
                         </b>
+                        {t.max_teams ? (
+                          <div className="t-bar">
+                            <i style={{ width: `${Math.min(100, (regs.length / t.max_teams) * 100)}%` }} />
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="t-cell">
-                        <span>Cost</span>
+                      <div className="t-stat">
+                        <span>Entry</span>
                         <b>{credits > 0 ? `${credits.toLocaleString()} credits` : free ? "Free" : `$${Number(t.entry_fee).toFixed(2)}`}</b>
+                      </div>
+                      <div className="t-stat">
+                        <span>Check-in</span>
+                        <b>{t.check_in_minutes ?? 30} min before</b>
                       </div>
                     </div>
 
                     <div className="t-actions">
-                      <button
-                        className="t-btn"
-                        onClick={() => setOpenId(open ? null : t.id)}
-                      >
-                        {open ? "Hide Rules" : "View Rules"}
-                      </button>
-                      <Link className="t-btn" href={`/tournaments/${t.id}`}>
-                        View Bracket
-                      </Link>
+                      <div className="t-actions-left">
+                        <button
+                          className="t-btn ghost"
+                          onClick={() => setOpenId(open ? null : t.id)}
+                        >
+                          {open ? "Hide Rules" : "View Rules"}
+                        </button>
+                        <Link className="t-btn ghost" href={`/tournaments/${t.id}`}>
+                          View Bracket
+                        </Link>
+                      </div>
+                      <div className="t-actions-right">
                       {t.status !== "upcoming" ? (
                         <button className="t-btn off" disabled>
                           Registration Closed
@@ -382,6 +382,7 @@ export default function TournamentsPage() {
                           </button>
                         </>
                       )}
+                      </div>
                     </div>
                     {message?.id === t.id && (
                       <div className={`t-msg ${message.ok ? "ok" : "err"}`}>
