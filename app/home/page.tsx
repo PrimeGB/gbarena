@@ -35,7 +35,7 @@ export default function Home() {
           overflow:hidden;
           background:
             linear-gradient(to bottom,rgba(6,20,35,.08),rgba(5,18,32,.14)),
-            url("/homepage.png");
+            url("/homepage-clean.png");
           background-size:100% 100%;
           background-position:center;
           background-repeat:no-repeat;
@@ -74,7 +74,7 @@ export default function Home() {
           inset:0;
           z-index:5;
           pointer-events:none;
-          clip-path:inset(8.6% 36.5% 78.9% 16.9%);
+          clip-path:inset(8.6% 36.5% 78.9% 14.8%);
         }
 
         .title-shift > div{
@@ -85,21 +85,8 @@ export default function Home() {
           right:-2%;
           background:
             linear-gradient(to bottom,rgba(6,20,35,.08),rgba(5,18,32,.14)),
-            url("/homepage.png");
+            url("/homepage-clean.png");
           background-size:100% 100%;
-        }
-
-        .logo-backdrop{
-          position:absolute;
-          left:8%;
-          top:14.7%;
-          width:14%;
-          aspect-ratio:1/1;
-          transform:translate(-50%,-50%);
-          z-index:33;
-          pointer-events:none;
-          border-radius:50%;
-          background:radial-gradient(circle,#06152b 0%,#06152b 62%,rgba(6,21,43,.85) 72%,rgba(6,21,43,0) 100%);
         }
 
         .logo-emblem{
@@ -769,7 +756,7 @@ export default function Home() {
           border:1px solid #24577b;
           background:
             linear-gradient(0deg,rgba(2,8,14,.96),rgba(2,8,14,.12)),
-            url("/homepage.png") center 35% / cover no-repeat;
+            url("/homepage-clean.png") center 35% / cover no-repeat;
         }
         .mobile-home-title{
           color:#fff;
@@ -836,7 +823,6 @@ export default function Home() {
           <div className="dark-blue-blend"></div>
 
           <div className="title-shift" aria-hidden="true"><div></div></div>
-          <div className="logo-backdrop" aria-hidden="true"></div>
           <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
           <div className="controller-spin-ring"></div>
           <img className="logo-emblem logo-emblem-text" src="/logo-emblem.png" alt="" aria-hidden="true" />
