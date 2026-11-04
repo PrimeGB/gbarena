@@ -78,10 +78,7 @@ export default function Home() {
           transform:translate(-50%,-50%);
           z-index:34;
           pointer-events:none;
-          filter:
-            drop-shadow(0 0 3px rgba(40,150,255,.9))
-            drop-shadow(0 0 9px rgba(0,120,230,.6))
-            drop-shadow(1px 2px 2px rgba(0,0,0,.8));
+          filter:drop-shadow(0 0 5px rgba(30,120,255,.55));
         }
 
         .controller-frame > svg{
@@ -91,37 +88,20 @@ export default function Home() {
           height:100%;
         }
 
-        .controller-spin-ring,
-        .controller-spin-ring-inner{
-          position:absolute;
-          border-radius:50%;
-        }
-
         .controller-spin-ring{
-          inset:0;
+          position:absolute;
+          inset:6.5%;
+          border-radius:50%;
           background:conic-gradient(from 0deg,
             rgba(255,255,255,0) 0deg,
-            rgba(255,255,255,0) 200deg,
-            rgba(255,255,255,.55) 300deg,
-            #ffffff 350deg,
+            rgba(255,255,255,0) 230deg,
+            rgba(190,230,255,.55) 320deg,
+            rgba(255,255,255,.95) 350deg,
             rgba(255,255,255,0) 360deg);
-          -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
-          mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
-          filter:drop-shadow(0 0 4px #fff);
-          animation:controllerRingSpin 4s linear infinite;
-        }
-
-        .controller-spin-ring-inner{
-          inset:8%;
-          background:conic-gradient(from 0deg,
-            rgba(160,225,255,0) 0deg,
-            rgba(160,225,255,0) 250deg,
-            rgba(160,225,255,.6) 320deg,
-            #e6f6ff 355deg,
-            rgba(160,225,255,0) 360deg);
-          -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-          mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-          animation:controllerRingSpin 6s linear infinite reverse;
+          -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px),#000 calc(100% - 1px),transparent 100%);
+          mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px),#000 calc(100% - 1px),transparent 100%);
+          filter:blur(.4px);
+          animation:controllerRingSpin 4.5s linear infinite;
         }
         @keyframes controllerRingSpin{
           0%{transform:rotate(0deg);}
@@ -819,26 +799,44 @@ export default function Home() {
           <div className="controller-frame" aria-hidden="true">
             <svg viewBox="0 0 200 200">
               <defs>
-                <linearGradient id="cfRim" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="50%" stopColor="#9fb4c8" />
-                  <stop offset="100%" stopColor="#e8f2fb" />
+                <linearGradient id="cfSilver" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#f4f8fc" />
+                  <stop offset="35%" stopColor="#8d9db0" />
+                  <stop offset="65%" stopColor="#dfe8f1" />
+                  <stop offset="100%" stopColor="#6c7b8c" />
                 </linearGradient>
-                <radialGradient id="cfFill" cx="50%" cy="45%" r="60%">
-                  <stop offset="0%" stopColor="#12365c" />
-                  <stop offset="100%" stopColor="#040d18" />
+                <linearGradient id="cfBlue" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#5fc0ff" />
+                  <stop offset="30%" stopColor="#1d78f0" />
+                  <stop offset="70%" stopColor="#0b45c4" />
+                  <stop offset="100%" stopColor="#2a8cff" />
+                </linearGradient>
+                <radialGradient id="cfFill" cx="50%" cy="40%" r="65%">
+                  <stop offset="0%" stopColor="#0f2848" />
+                  <stop offset="100%" stopColor="#030a14" />
                 </radialGradient>
+                <radialGradient id="cfFlare" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity=".95" />
+                  <stop offset="40%" stopColor="#7fc8ff" stopOpacity=".55" />
+                  <stop offset="100%" stopColor="#1d78f0" stopOpacity="0" />
+                </radialGradient>
+                <filter id="cfGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" />
+                </filter>
               </defs>
-              <circle cx="100" cy="100" r="78" fill="url(#cfFill)" />
-              <circle cx="100" cy="100" r="85" fill="none" stroke="#06162b" strokeWidth="24" />
-              <circle cx="100" cy="100" r="85" fill="none" stroke="#1b86ee" strokeWidth="20" strokeDasharray="62 7" strokeDashoffset="10" />
-              <circle cx="100" cy="100" r="91" fill="none" stroke="#8fd0ff" strokeWidth="2.5" strokeDasharray="62 7" strokeDashoffset="10" opacity=".9" />
-              <circle cx="100" cy="100" r="76" fill="none" stroke="#3aa9ff" strokeWidth="2.5" />
-              <circle cx="100" cy="100" r="97" fill="none" stroke="url(#cfRim)" strokeWidth="5" />
-              <circle cx="100" cy="100" r="73" fill="none" stroke="#000" strokeOpacity=".5" strokeWidth="3" />
+              <circle cx="100" cy="100" r="86" fill="none" stroke="#2f8dff" strokeWidth="14" opacity=".55" filter="url(#cfGlow)" />
+              <circle cx="100" cy="100" r="98" fill="none" stroke="url(#cfSilver)" strokeWidth="3" />
+              <circle cx="100" cy="100" r="95" fill="none" stroke="#02070f" strokeWidth="3" />
+              <circle cx="100" cy="100" r="86" fill="none" stroke="url(#cfBlue)" strokeWidth="13" />
+              <circle cx="100" cy="100" r="91" fill="none" stroke="#9ad4ff" strokeWidth="1.2" opacity=".75" />
+              <circle cx="100" cy="100" r="80.5" fill="none" stroke="#02070f" strokeWidth="2.5" />
+              <circle cx="100" cy="100" r="77" fill="none" stroke="#1f6fe0" strokeWidth="2.5" />
+              <circle cx="100" cy="100" r="74" fill="none" stroke="url(#cfSilver)" strokeWidth="2.5" />
+              <circle cx="100" cy="100" r="72" fill="url(#cfFill)" />
+              <circle cx="46" cy="38" r="22" fill="url(#cfFlare)" />
+              <circle cx="168" cy="52" r="12" fill="url(#cfFlare)" opacity=".7" />
             </svg>
             <div className="controller-spin-ring"></div>
-            <div className="controller-spin-ring-inner"></div>
           </div>
           <div className="controller-overlay">
 
@@ -890,19 +888,18 @@ export default function Home() {
                 opacity=".9"
               />
 
-              <path d="M70 87 H100 V102 H70Z" fill="#0a4f84" stroke="#052a47" strokeWidth="2" />
-              <path d="M79 78 H91 V111 H79Z" fill="#0a4f84" stroke="#052a47" strokeWidth="2" />
+              <path d="M70 87 H100 V102 H70Z" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
+              <path d="M79 78 H91 V111 H79Z" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
 
-              <circle cx="177" cy="82" r="9" fill="#0d7fd0" stroke="#052a47" strokeWidth="2" />
-              <circle cx="199" cy="94" r="9" fill="#0d7fd0" stroke="#052a47" strokeWidth="2" />
-              <circle cx="177" cy="106" r="9" fill="#0d7fd0" stroke="#052a47" strokeWidth="2" />
-              <circle cx="155" cy="94" r="9" fill="#0d7fd0" stroke="#052a47" strokeWidth="2" />
+              <circle cx="177" cy="82" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
+              <circle cx="199" cy="94" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
+              <circle cx="177" cy="106" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
+              <circle cx="155" cy="94" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
 
               <circle cx="115" cy="122" r="12" fill="url(#controllerStick)" stroke="#e8eef3" strokeWidth="2.5" />
               <circle cx="145" cy="122" r="12" fill="url(#controllerStick)" stroke="#e8eef3" strokeWidth="2.5" />
 
-              <rect x="119" y="82" width="9" height="5" rx="2" fill="#3a4b59" />
-              <rect x="132" y="82" width="9" height="5" rx="2" fill="#3a4b59" />
+              <text x="130" y="88" textAnchor="middle" fontSize="15" fontWeight="900" fontStyle="italic" fill="#1456d8" fontFamily="Arial, sans-serif">GB</text>
 
               <path
                 d="M82 54
