@@ -1672,7 +1672,7 @@ function ProfilePageContent() {
         .pf-two-col{ gap:10px; }
         .pf-two-col .pf-section{ min-width:0; }
         .pf-bio{ margin:0; }
-        .pf-facts{ gap:16px; flex-wrap:nowrap; }
+        .pf-facts{ gap:16px; flex-wrap:nowrap; margin-bottom:-12px; }
         .pf-facts > div{ white-space:nowrap; }
         .pf-banner-actions{ width:150px; }
         .pf-tags{ display:flex; flex-direction:column; gap:5px; width:230px; flex:none; align-self:stretch; justify-content:center; }
