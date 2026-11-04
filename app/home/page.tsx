@@ -40,6 +40,7 @@ export default function Home() {
           background-position:center;
           background-repeat:no-repeat;
           filter:brightness(1.13) contrast(1.05) saturate(1.08);
+          clip-path:inset(0 0.5% 0.9% 0.5%);
         }
 
         .dark-blue-blend{
@@ -686,6 +687,7 @@ export default function Home() {
           aspect-ratio:auto;
           overflow:visible;
           filter:none;
+          clip-path:none;
           background:#06111c;
           border:1px solid #176095;
         }
