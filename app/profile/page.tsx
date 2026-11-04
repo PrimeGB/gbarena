@@ -1509,8 +1509,8 @@ function ProfilePageContent() {
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
         .pf-facts > div{ text-align:center; }
         .pf-facts span{ display:block; font-size:11px; line-height:14px; color:#8fa9c2; font-weight:bold; margin-bottom:4px; }
-        .pf-facts strong{ display:block; font-size:15px; line-height:20px; height:20px; color:#fff; }
-        .pf-facts .pf-since{ font-size:11px; font-weight:normal; color:#cfdbe8; line-height:20px; position:relative; top:1px; }
+        .pf-facts strong{ display:flex; align-items:flex-end; justify-content:center; font-size:15px; line-height:18px; height:20px; color:#fff; }
+        .pf-facts .pf-since{ font-size:11px; font-weight:normal; color:#cfdbe8; line-height:16px; }
         .pf-banner-actions{ display:flex; flex-direction:column; gap:8px; width:170px; flex:none; }
         .pf-btn{
           display:block;
