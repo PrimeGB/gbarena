@@ -1508,9 +1508,9 @@ function ProfilePageContent() {
         }
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
         .pf-facts > div{ text-align:center; }
-        .pf-facts span{ display:block; font-size:11px; color:#8fa9c2; font-weight:bold; margin-bottom:2px; }
-        .pf-facts strong{ display:block; font-size:15px; color:#fff; }
-        .pf-facts .pf-since{ font-size:11px; font-weight:normal; color:#b7cfe3; line-height:18px; }
+        .pf-facts span{ display:block; font-size:11px; line-height:14px; color:#8fa9c2; font-weight:bold; margin-bottom:4px; }
+        .pf-facts strong{ display:block; font-size:15px; line-height:20px; height:20px; color:#fff; }
+        .pf-facts .pf-since{ font-size:15px; font-weight:bold; color:#cfdbe8; line-height:20px; }
         .pf-banner-actions{ display:flex; flex-direction:column; gap:8px; width:170px; flex:none; }
         .pf-btn{
           display:block;
