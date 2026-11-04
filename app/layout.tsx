@@ -4,6 +4,7 @@ import DevelopmentNotice from "./components/DevelopmentNotice";
 import HomeButton from "./components/HomeButton";
 import NotificationBell from "./components/NotificationBell";
 import RecoveryRedirect from "./components/RecoveryRedirect";
+import TopHomeBar from "./components/TopHomeBar";
 import "./globals.css";
 import "./staff/staff-responsive.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <TopHomeBar />
         {children}
         <RecoveryRedirect />
         <HomeButton />
