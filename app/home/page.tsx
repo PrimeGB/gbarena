@@ -69,37 +69,60 @@ export default function Home() {
             drop-shadow(0 0 9px rgba(0,140,235,.45));
         }
 
-        .controller-spin-ring{
+        .controller-frame{
           position:absolute;
-          left:6%;
-          top:6%;
-          width:88%;
-          height:88%;
+          left:8.5%;
+          top:14.7%;
+          width:10.5%;
+          aspect-ratio:1/1;
+          transform:translate(-50%,-50%);
+          z-index:34;
+          pointer-events:none;
+          filter:
+            drop-shadow(0 0 3px rgba(40,150,255,.9))
+            drop-shadow(0 0 9px rgba(0,120,230,.6))
+            drop-shadow(1px 2px 2px rgba(0,0,0,.8));
+        }
+
+        .controller-frame > svg{
+          position:absolute;
+          inset:0;
+          width:100%;
+          height:100%;
+        }
+
+        .controller-spin-ring,
+        .controller-spin-ring-inner{
+          position:absolute;
           border-radius:50%;
-          z-index:1;
+        }
+
+        .controller-spin-ring{
+          inset:0;
           background:conic-gradient(from 0deg,
             rgba(255,255,255,0) 0deg,
-            rgba(255,255,255,0) 150deg,
-            rgba(110,195,255,.45) 250deg,
-            rgba(255,255,255,.95) 335deg,
-            #ffffff 352deg,
+            rgba(255,255,255,0) 200deg,
+            rgba(255,255,255,.55) 300deg,
+            #ffffff 350deg,
             rgba(255,255,255,0) 360deg);
           -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
           mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));
-          filter:drop-shadow(0 0 4px rgba(255,255,255,.9));
-          animation:controllerRingSpin 5s linear infinite;
+          filter:drop-shadow(0 0 4px #fff);
+          animation:controllerRingSpin 4s linear infinite;
         }
 
-        .controller-spin-ring::before{
-          content:"";
-          position:absolute;
-          inset:0;
-          border-radius:50%;
-          border:2px solid rgba(110,180,235,.28);
-          -webkit-mask:none;
-          mask:none;
+        .controller-spin-ring-inner{
+          inset:8%;
+          background:conic-gradient(from 0deg,
+            rgba(160,225,255,0) 0deg,
+            rgba(160,225,255,0) 250deg,
+            rgba(160,225,255,.6) 320deg,
+            #e6f6ff 355deg,
+            rgba(160,225,255,0) 360deg);
+          -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
+          animation:controllerRingSpin 6s linear infinite reverse;
         }
-
         @keyframes controllerRingSpin{
           0%{transform:rotate(0deg);}
           100%{transform:rotate(360deg);}
@@ -793,8 +816,31 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
-          <div className="controller-overlay">
+          <div className="controller-frame" aria-hidden="true">
+            <svg viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="cfRim" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="50%" stopColor="#9fb4c8" />
+                  <stop offset="100%" stopColor="#e8f2fb" />
+                </linearGradient>
+                <radialGradient id="cfFill" cx="50%" cy="45%" r="60%">
+                  <stop offset="0%" stopColor="#12365c" />
+                  <stop offset="100%" stopColor="#040d18" />
+                </radialGradient>
+              </defs>
+              <circle cx="100" cy="100" r="78" fill="url(#cfFill)" />
+              <circle cx="100" cy="100" r="85" fill="none" stroke="#06162b" strokeWidth="24" />
+              <circle cx="100" cy="100" r="85" fill="none" stroke="#1b86ee" strokeWidth="20" strokeDasharray="62 7" strokeDashoffset="10" />
+              <circle cx="100" cy="100" r="91" fill="none" stroke="#8fd0ff" strokeWidth="2.5" strokeDasharray="62 7" strokeDashoffset="10" opacity=".9" />
+              <circle cx="100" cy="100" r="76" fill="none" stroke="#3aa9ff" strokeWidth="2.5" />
+              <circle cx="100" cy="100" r="97" fill="none" stroke="url(#cfRim)" strokeWidth="5" />
+              <circle cx="100" cy="100" r="73" fill="none" stroke="#000" strokeOpacity=".5" strokeWidth="3" />
+            </svg>
             <div className="controller-spin-ring"></div>
+            <div className="controller-spin-ring-inner"></div>
+          </div>
+          <div className="controller-overlay">
 
             <svg viewBox="0 0 260 180" aria-hidden="true">
               <defs>
