@@ -126,6 +126,14 @@ function ProfilePageContent() {
   const [currentProfileName, setCurrentProfileName] = useState("");
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
+  const [statsPublic, setStatsPublic] = useState(true);
+
+  useEffect(() => {
+    if (!viewedUserId) return;
+    supabase.from("profiles").select("stats_public").eq("id", viewedUserId).maybeSingle().then(({ data }) => {
+      setStatsPublic(data?.stats_public !== false);
+    });
+  }, [viewedUserId]);
   function favoriteSystemClass(system: string) {
     const cleanSystem = system.toLowerCase();
 
@@ -1913,6 +1921,7 @@ function ProfilePageContent() {
                         <Link className="quick-link" href="/profile/teams">My Teams</Link>
                         <Link className="quick-link" href="/profile/friends">My Friends</Link>
                         <Link className="quick-link" href="/profile/awards">My Awards</Link>
+                        <Link className="quick-link" href="/profile/stats">My Stats</Link>
                       </>
                     ) : (
                      <>
@@ -1985,6 +1994,12 @@ function ProfilePageContent() {
   <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>
     View Player Teams
   </a>
+
+  {statsPublic && (
+    <Link className="quick-link" href={`/profile/stats?userId=${viewedUserId}`}>
+      View Player Stats
+    </Link>
+  )}
 
   <a className="quick-link" href="/home">
     Back To Home

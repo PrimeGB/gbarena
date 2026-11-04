@@ -77,6 +77,7 @@ function EditProfileContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [settingsMessage, setSettingsMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [settingsBusy, setSettingsBusy] = useState(false);
+  const [statsPublic, setStatsPublic] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -168,10 +169,11 @@ function EditProfileContent() {
         // load linked second email (separate query so a missing column cannot break the page)
         const { data: emailRow } = await supabase
           .from("profiles")
-          .select("secondary_email")
+          .select("secondary_email,stats_public")
           .eq("id", currentUser.id)
           .maybeSingle();
         setSecondaryEmail(emailRow?.secondary_email || "");
+        setStatsPublic(emailRow?.stats_public !== false);
 
         // load accepted friends count
         const { data: requests } = await supabase
@@ -420,6 +422,19 @@ function EditProfileContent() {
     }
     setHasChanges(false);
     setFriendsMessage("Top friends saved.");
+  }
+
+  async function toggleStatsPublic(next: boolean) {
+    if (!currentUser) return;
+    setStatsPublic(next);
+    setSettingsMessage(null);
+    const { error } = await supabase.from("profiles").update({ stats_public: next }).eq("id", currentUser.id);
+    if (error) {
+      setStatsPublic(!next);
+      setSettingsMessage({ ok: false, text: "Could not update stats visibility. Please try again." });
+      return;
+    }
+    setSettingsMessage({ ok: true, text: next ? "Your stats are now public." : "Your stats are now private." });
   }
 
   async function linkSecondEmail() {
@@ -1611,6 +1626,19 @@ function EditProfileContent() {
                         <button className="save-button" type="button" disabled={settingsBusy} onClick={linkSecondEmail}>Link Email</button>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <div className="box">
+                  <div className="box-title">Privacy</div>
+                  <div className="box-body">
+                    <div className="form-row">
+                      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input type="checkbox" style={{ width: "auto" }} checked={statsPublic} onChange={(event) => toggleStatsPublic(event.target.checked)} />
+                        Let other players view my stats
+                      </label>
+                      <div className="field-note">When off, the View Player Stats link is hidden on your profile and your stats page is private.</div>
+                    </div>
                   </div>
                 </div>
 
