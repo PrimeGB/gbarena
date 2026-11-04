@@ -9,10 +9,41 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  async function handlePasswordReset() {
+    setLoading(true);
+    setError("");
+    setResetEmailSent(false);
+
+    try {
+      const email = resetEmail.trim().toLowerCase();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/login/reset-password`,
+        }
+      );
+
+      if (resetError) {
+        setError(resetError.message || "Unable to send a password reset email.");
+        return;
+      }
+
+      setResetEmailSent(true);
+    } catch (resetError) {
+      console.error("Password reset request failed:", resetError);
+      setError("Unable to send a password reset email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleLogin() {
     setLoading(true);
@@ -107,6 +138,57 @@ export default function LoginPage() {
           <div style={styles.success}>
             Login successful... redirecting to homepage
           </div>
+        ) : forgotPassword ? (
+          <form
+            autoComplete="off"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePasswordReset();
+            }}
+          >
+            <p style={styles.instructions}>
+              Enter the email address on your account and we will send you a
+              password reset link.
+            </p>
+
+            <input
+              type="email"
+              name="reset-email"
+              autoComplete="email"
+              placeholder="Email address"
+              value={resetEmail}
+              onChange={(e) => {
+                setResetEmail(e.target.value);
+                setResetEmailSent(false);
+              }}
+              style={styles.input}
+              required
+            />
+
+            <button type="submit" style={styles.button} disabled={loading}>
+              {loading ? "Sending..." : "Send Reset Link"}
+            </button>
+
+            {error && <p style={styles.error}>{error}</p>}
+            {resetEmailSent && (
+              <p style={styles.success}>
+                If an account exists for that email, a reset link has been
+                sent. Check your inbox and spam folder.
+              </p>
+            )}
+
+            <button
+              type="button"
+              style={styles.textButton}
+              onClick={() => {
+                setForgotPassword(false);
+                setError("");
+                setResetEmailSent(false);
+              }}
+            >
+              Back to sign in
+            </button>
+          </form>
         ) : (
           <form
             autoComplete="off"
@@ -141,11 +223,22 @@ export default function LoginPage() {
               style={styles.input}
             />
 
-            <button type="submit" style={styles.button}>
+            <button type="submit" style={styles.button} disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>
 
             {error && <p style={styles.error}>{error}</p>}
+            <button
+              type="button"
+              style={styles.textButton}
+              onClick={() => {
+                setForgotPassword(true);
+                setResetEmail(username.includes("@") ? username.trim() : "");
+                setError("");
+              }}
+            >
+              Forgot password?
+            </button>
           </form>
         )}
       </div>
@@ -180,6 +273,12 @@ const styles = {
     marginBottom: 10,
   },
 
+  instructions: {
+    color: "#d7e2ee",
+    lineHeight: 1.5,
+    marginBottom: 12,
+  },
+
   input: {
     width: "100%",
     padding: 10,
@@ -197,6 +296,17 @@ const styles = {
     color: "#fff",
     fontWeight: "bold",
     cursor: "pointer",
+  },
+
+  textButton: {
+    display: "block",
+    padding: 0,
+    marginTop: 14,
+    background: "transparent",
+    border: "none",
+    color: "#7fc0ff",
+    cursor: "pointer",
+    textDecoration: "underline",
   },
 
   error: {

@@ -7,8 +7,10 @@ export default function AccountSupportPage() {
     <InfoPage title="Account Help" eyebrow="Support" backHref="/support" backLabel="Back to Support Center">
       <h2>Login and password</h2>
       <p>
-        Use the login page to sign in. If you cannot sign in, use the password reset option and
-        check your email, including spam.
+        Use the login page to sign in. If you forget your password, choose
+        “Forgot password?” and check your email, including spam, for a reset
+        link. Your password hint is only a reminder; use the reset link to
+        choose a new password.
       </p>
       <h2>Gaming accounts</h2>
       <p>

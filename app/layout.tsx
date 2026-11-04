@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import DevelopmentNotice from "./components/DevelopmentNotice";
 import HomeButton from "./components/HomeButton";
+import RecoveryRedirect from "./components/RecoveryRedirect";
 import "./globals.css";
 import "./staff/staff-responsive.css";
 
@@ -53,6 +54,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <RecoveryRedirect />
         <HomeButton />
         <DevelopmentNotice />
       </body>

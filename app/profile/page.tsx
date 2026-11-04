@@ -1,6 +1,8 @@
 ﻿"use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
 import { useUser } from "../../lib/useUser";
@@ -78,6 +80,29 @@ type TopFriend = {
   username: string;
 };
 
+type TeamProfileRow = {
+  id: string;
+  name: string | null;
+  logo_url: string | null;
+  wins: number | null;
+  losses: number | null;
+};
+
+type TeamMemberRow = {
+  role: string | null;
+  teams: TeamProfileRow | TeamProfileRow[] | null;
+};
+
+type FriendRequestRow = {
+  requester_id: string;
+  recipient_id: string;
+};
+
+type FriendProfileRow = {
+  id: string;
+  username: string | null;
+};
+
 function ProfilePageContent() {
   const { user, loading } = useUser();
   const searchParams = useSearchParams();
@@ -142,26 +167,8 @@ function ProfilePageContent() {
     return "Member";
   }
 
-  function formatJoinedDate(value: string | null | undefined) {
-    if (!value) return "Not Set";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "Not Set";
-
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const year = date.getFullYear();
-
-    return `${month}/${day}-${year}`;
-  }
-
   useEffect(() => {
-    if (!currentUser?.id) {
-      setCurrentProfileName("");
-      setUnreadInboxCount(0);
-      return;
-    }
+    if (!currentUser?.id) return;
 
     supabase
       .from("profiles")
@@ -184,15 +191,7 @@ function ProfilePageContent() {
   }, [currentUser?.id]);
 
   useEffect(() => {
-    if (!viewedUserId) {
-      setProfile(null);
-      setGamingAccounts([]);
-      setTopTeams([]);
-      setTopFriends([]);
-      setEarnedAwards([]);
-      setGbRankDisplay("Unranked");
-      return;
-    }
+    if (!viewedUserId) return;
 
     supabase
       .from("profiles")
@@ -271,7 +270,7 @@ function ProfilePageContent() {
       .then(({ data }) => {
         const loadedTeams =
           data
-            ?.map((row: any) => {
+            ?.map((row: TeamMemberRow): TopTeam | null => {
               const team = Array.isArray(row.teams) ? row.teams[0] : row.teams;
 
               if (!team) return null;
@@ -280,13 +279,13 @@ function ProfilePageContent() {
                 id: team.id,
                 name: team.name || "Unnamed Team",
                 record: `${team.wins || 0} - ${team.losses || 0}`,
-                role: prettyRole((row as any).role),
+                role: prettyRole(row.role),
                 logo_url: team.logo_url || null,
               };
             })
-            .filter(Boolean) || [];
+            .filter((team): team is TopTeam => team !== null) || [];
 
-        setTopTeams(loadedTeams as TopTeam[]);
+        setTopTeams(loadedTeams);
       });
 
     supabase
@@ -295,10 +294,10 @@ function ProfilePageContent() {
       .eq("status", "accepted")
       .or(`requester_id.eq.${viewedUserId},recipient_id.eq.${viewedUserId}`)
       .then(async ({ data }) => {
-        const requests = data || [];
+        const requests: FriendRequestRow[] = data || [];
 
         const friendIds = requests
-          .map((request: any) =>
+          .map((request) =>
             request.requester_id === viewedUserId
               ? request.recipient_id
               : request.requester_id
@@ -317,12 +316,12 @@ function ProfilePageContent() {
           .in("id", friendIds);
 
         const loadedFriends =
-          friendProfiles?.map((friend: any) => ({
+          friendProfiles?.map((friend: FriendProfileRow) => ({
             id: friend.id,
             username: friend.username || "Unknown Player",
           })) || [];
 
-        setTopFriends(loadedFriends as TopFriend[]);
+        setTopFriends(loadedFriends);
       });
   }, [viewedUserId, isViewingOwnProfile, currentUser?.email, usernameInput]);
 
@@ -457,7 +456,6 @@ function ProfilePageContent() {
   const statusClass = isViewingOwnProfile ? "status-online" : "status-offline";
   const rankNumber = Number(gbRankDisplay);
   const rankParts = Number.isFinite(rankNumber) && rankNumber > 0 ? ordinalRank(rankNumber) : null;
-  const emptyTeamSlots = Math.max(0, 4 - topTeams.length);
   const joinedDate = profile?.created_at || (isViewingOwnProfile ? currentUser?.created_at : null) || null;
 
   function formatMemberSince(value: string | null | undefined) {
@@ -1461,7 +1459,7 @@ function ProfilePageContent() {
           overflow:hidden;
         }
         .pf-avatar .pf-avatar-bg{ display:none; }
-        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center; }
         .pf-identity{ flex:1; min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; }
         .pf-name{
           font-size:34px;
@@ -1595,10 +1593,10 @@ function ProfilePageContent() {
         }
         .pf-team-logo{
           width:54px; height:54px; background:radial-gradient(circle at 30% 25%,#1d4a74,#0a1521 80%); border:2px solid #3b86c4; border-radius:12px;
-          display:flex; align-items:center; justify-content:center;
+          position:relative; display:flex; align-items:center; justify-content:center;
           color:#f2c14e; font-weight:bold; font-size:18px; overflow:hidden;
         }
-        .pf-team-logo img{ width:100%; height:100%; object-fit:contain; padding:3px; }
+        .pf-team-logo img{ width:100%; height:100%; object-fit:cover; object-position:center; }
         .pf-team-name{ font-weight:bold; font-size:13px; overflow-wrap:anywhere; }
         .pf-team-meta{ text-align:right; font-size:12px; color:#b9cde0; }
         .pf-team-meta strong{ display:block; color:#fff; }
@@ -1669,8 +1667,8 @@ function ProfilePageContent() {
 
       <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}`}>
         <div className="top-strip">
-          <a href="/">Home</a>
-          <a href="/profile">My Profile</a>
+          <Link href="/">Home</Link>
+          <Link href="/profile">My Profile</Link>
         </div>
 
         <div className="wrapper">
@@ -1779,12 +1777,12 @@ function ProfilePageContent() {
                 <div className="pf-banner-actions">
                   {isViewingOwnProfile ? (
                     <>
-                      <a className="pf-btn" href="/profile/edit">Edit Profile</a>
-                      <a className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</a>
-                      <a className="pf-btn pf-inbox-btn" href="/profile/inbox">
+                      <Link className="pf-btn" href="/profile/edit">Edit Profile</Link>
+                      <Link className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</Link>
+                      <Link className="pf-btn pf-inbox-btn" href="/profile/inbox">
                         Inbox
                         {unreadInboxCount > 0 && <span className="mail-dot"></span>}
-                      </a>
+                      </Link>
                     </>
                   ) : (
                     <a className="pf-btn" href={`/profile/friends?userId=${viewedUserId}`}>View Friends</a>
@@ -1803,15 +1801,15 @@ function ProfilePageContent() {
           )}
 
           <div className="tabs">
-            <a className="tab active" href="/profile">Profile</a>
-            <a className="tab" href="/profile/teams">Teams</a>
-            <a className="tab" href="/profile/friends">Friends</a>
-            <a className="tab" href="/profile/awards">Awards</a>
+            <Link className="tab active" href="/profile">Profile</Link>
+            <Link className="tab" href="/profile/teams">Teams</Link>
+            <Link className="tab" href="/profile/friends">Friends</Link>
+            <Link className="tab" href="/profile/awards">Awards</Link>
             <a className="tab" href="/players">Find Players</a>
             {isViewingOwnProfile && (
-              <a className="tab" href="/profile/edit?focus=gaming-account">
+              <Link className="tab" href="/profile/edit?focus=gaming-account">
                 Gaming Accounts
-              </a>
+              </Link>
             )}
           </div>
 
@@ -1881,10 +1879,10 @@ function ProfilePageContent() {
                   <div className="box-body">
                     {isViewingOwnProfile ? (
                       <>
-                        <a className="quick-link" href="/profile/edit">Edit Profile</a>
-                        <a className="quick-link" href="/profile/teams">My Teams</a>
-                        <a className="quick-link" href="/profile/friends">My Friends</a>
-                        <a className="quick-link" href="/profile/awards">My Awards</a>
+                        <Link className="quick-link" href="/profile/edit">Edit Profile</Link>
+                        <Link className="quick-link" href="/profile/teams">My Teams</Link>
+                        <Link className="quick-link" href="/profile/friends">My Friends</Link>
+                        <Link className="quick-link" href="/profile/awards">My Awards</Link>
                         <a className="quick-link" href="#">Account Settings</a>
                       </>
                     ) : (
@@ -2019,7 +2017,15 @@ function ProfilePageContent() {
                     {topTeams.map((team) => (
                       <a className="pf-team" href={`/teams/${team.id}`} key={team.id}>
                         <div className="pf-team-logo">
-                          {team.logo_url ? <img src={team.logo_url} alt={team.name} /> : getTeamInitials(team.name)}
+                          {team.logo_url ? (
+                            <Image
+                              src={team.logo_url}
+                              alt={team.name}
+                              fill
+                              unoptimized
+                              sizes="54px"
+                            />
+                          ) : getTeamInitials(team.name)}
                         </div>
                         <div className="pf-team-name">{team.name}</div>
                         <div className="pf-team-meta">

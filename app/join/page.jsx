@@ -336,6 +336,7 @@ export default function JoinPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordHint, setPasswordHint] = useState("");
 
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
@@ -429,6 +430,7 @@ export default function JoinPage() {
       !cleanEmail ||
       !password ||
       !confirmPassword ||
+      !passwordHint.trim() ||
       !birthMonth ||
       !birthDay ||
       !birthYear ||
@@ -436,7 +438,7 @@ export default function JoinPage() {
       !cleanRegion
     ) {
       setError(
-        "Please fill out username, email, password, confirm password, date of birth, country, and region."
+        "Please fill out username, email, password, confirm password, password hint, date of birth, country, and region."
       );
       setLoading(false);
       return;
@@ -462,6 +464,12 @@ export default function JoinPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    if (passwordHint.trim().toLowerCase() === password.trim().toLowerCase()) {
+      setError("Your password hint cannot be your actual password.");
       setLoading(false);
       return;
     }
@@ -516,6 +524,7 @@ export default function JoinPage() {
           data: {
             username: cleanUsername,
             display_name: cleanUsername,
+            password_hint: passwordHint.trim(),
             date_of_birth: dateOfBirth,
             country: cleanCountry,
             location: cleanRegion,
@@ -819,6 +828,14 @@ export default function JoinPage() {
 
         .join-input::placeholder{
           color:#7891a8;
+        }
+
+        .hint-note{
+          color:#9bb4c9;
+          font-size:13px;
+          line-height:20px;
+          margin-top:-10px;
+          margin-bottom:18px;
         }
 
         .join-input:focus,
@@ -1164,6 +1181,23 @@ export default function JoinPage() {
                 />
               </div>
             </div>
+
+            <label className="join-label" htmlFor="password-hint">
+              Password Hint
+            </label>
+            <input
+              id="password-hint"
+              className="join-input"
+              type="text"
+              value={passwordHint}
+              onChange={(e) => setPasswordHint(e.target.value)}
+              placeholder="A reminder only you will understand"
+              autoComplete="off"
+              maxLength={100}
+            />
+            <p className="hint-note">
+              Choose a clue, not your actual password. Keep it private.
+            </p>
 
             <div className="form-row">
               <div>

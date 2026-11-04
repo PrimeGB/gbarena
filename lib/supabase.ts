@@ -26,3 +26,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   Create Supabase client
 */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/*
+  The client strips the recovery token from the URL while initializing, so remember
+  that this page load came from a password reset link before that happens.
+*/
+export const RECOVERY_FLAG = "gb_password_recovery";
+
+if (typeof window !== "undefined" && /[#&]type=recovery/.test(window.location.hash)) {
+  window.sessionStorage.setItem(RECOVERY_FLAG, "1");
+}
