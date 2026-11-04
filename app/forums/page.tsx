@@ -27,21 +27,9 @@ type ForumPost = {
   replies: number;
   views: number;
   createdAt: number;
-};
-
-type ForumPostRow = {
-  id: number;
-  subject: string;
-  message?: string;
-  system: string;
-  game: string;
-  ladder: string;
-  type: string;
-  category: ForumCategory;
-  author: string;
-  replies: number;
-  views: number;
-  created_at: string;
+  pinned: boolean;
+  locked: boolean;
+  hidden: boolean;
 };
 
 const forumSections: {
@@ -77,115 +65,44 @@ export default function ForumsPage() {
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<ForumCategory>("All");
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [lastPostTime, setLastPostTime] = useState<number>(0);
 
-  const [posts, setPosts] = useState<ForumPost[]>([
-    {
-      id: Date.now() - 1000 * 60 * 60,
-      subject: "Site updates and ladder testing",
-      system: "All",
-      game: "All",
-      ladder: "All",
-      type: "News",
-      category: "News & Updates",
-      author: "Staff",
-      replies: 12,
-      views: 244,
-      createdAt: Date.now() - 1000 * 60 * 10,
-    },
-    {
-      id: Date.now() - 1000 * 60 * 50,
-      subject: "LF Team for Fortnite Ladder",
-      system: "PlayStation",
-      game: "Fortnite",
-      ladder: "Team",
-      type: "LF Team",
-      category: "Teams",
-      author: "Prime",
-      replies: 4,
-      views: 88,
-      createdAt: Date.now() - 1000 * 60 * 7,
-    },
-    {
-      id: Date.now() - 1000 * 60 * 80,
-      subject: "LF Duos Partner - Need Active Player",
-      system: "Xbox",
-      game: "Call of Duty",
-      ladder: "Duos",
-      type: "LF Duos Partner",
-      category: "Teams",
-      author: "OldSchool",
-      replies: 2,
-      views: 51,
-      createdAt: Date.now() - 1000 * 60 * 22,
-    },
-    {
-      id: Date.now() - 1000 * 60 * 90,
-      subject: "Question about match proof",
-      system: "PC",
-      game: "Battlefield 6",
-      ladder: "Singles",
-      type: "Question",
-      category: "Questions",
-      author: "NewUser",
-      replies: 7,
-      views: 133,
-      createdAt: Date.now() - 1000 * 60 * 40,
-    },
-    {
-      id: Date.now() - 1000 * 60 * 100,
-      subject: "How will team rank work?",
-      system: "All",
-      game: "All",
-      ladder: "Team",
-      type: "General Post",
-      category: "General Info",
-      author: "LadderVet",
-      replies: 9,
-      views: 199,
-      createdAt: Date.now() - 1000 * 60 * 55,
-    },
-  ]);
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [search, setSearch] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  // load posts from Supabase on mount (fallback to localStorage)
+  function mapPost(p: any): ForumPost {
+    return {
+      id: p.id,
+      subject: p.subject,
+      message: p.message,
+      system: p.system,
+      game: p.game,
+      ladder: p.ladder,
+      type: p.type,
+      category: p.category,
+      author: p.author,
+      replies: p.replies || 0,
+      views: p.views || 0,
+      createdAt: new Date(p.created_at).getTime(),
+      pinned: !!p.pinned,
+      locked: !!p.locked,
+      hidden: !!p.hidden,
+    };
+  }
+
   useEffect(() => {
     let mounted = true;
     async function fetchPosts() {
-      try {
-        const { data, error } = await supabase
-          .from("forum_posts")
-          .select("*")
-          .order("created_at", { ascending: false });
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (mounted) setLoggedIn(!!sessionData.session);
 
-        if (!error && data && mounted) {
-          const mapped = data.map((p: any) => ({
-            id: p.id,
-            subject: p.subject,
-            message: p.message,
-            system: p.system,
-            game: p.game,
-            ladder: p.ladder,
-            type: p.type,
-            category: p.category,
-            author: p.author,
-            replies: p.replies || 0,
-            views: p.views || 0,
-            createdAt: new Date(p.created_at).getTime(),
-          }));
-          setPosts(mapped);
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
+      const { data, error } = await supabase
+        .from("forum_posts")
+        .select("*")
+        .eq("hidden", false)
+        .order("created_at", { ascending: false });
 
-      // fallback: localStorage
-      try {
-        const raw = localStorage.getItem("gb_forum_posts");
-        if (raw && mounted) setPosts(JSON.parse(raw));
-      } catch (e) {
-        // ignore
-      }
+      if (!error && data && mounted) setPosts(data.map(mapPost));
     }
 
     fetchPosts();
@@ -193,15 +110,6 @@ export default function ForumsPage() {
       mounted = false;
     };
   }, []);
-
-  // persist posts to localStorage whenever they change (still useful as cache)
-  useEffect(() => {
-    try {
-      localStorage.setItem("gb_forum_posts", JSON.stringify(posts));
-    } catch (e) {
-      // ignore
-    }
-  }, [posts]);
 
   const blockedTerms = [
     "cp",
@@ -249,15 +157,20 @@ export default function ForumsPage() {
     [posts, activeCategory]
   );
 
-  function handleCreatePost(e: React.FormEvent) {
+  const threadList = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q && activeCategory === "All") return [];
+    return posts
+      .filter((p) => (activeCategory === "All" || p.category === activeCategory))
+      .filter((p) => !q || `${p.subject} ${p.message || ""} ${p.author}`.toLowerCase().includes(q))
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt - a.createdAt);
+  }, [posts, search, activeCategory]);
+
+  async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
 
-    const now = Date.now();
-    const fiveMinutes = 1000 * 60 * 5;
-
-    if (lastPostTime && now - lastPostTime < fiveMinutes) {
-      const waitMinutes = Math.ceil((fiveMinutes - (now - lastPostTime)) / 60000);
-      setError(`Slow down. You must wait about ${waitMinutes} more minute(s) before posting again.`);
+    if (!loggedIn) {
+      setError("Please log in to post.");
       return;
     }
 
@@ -276,77 +189,33 @@ export default function ForumsPage() {
       return;
     }
 
-    const newPost: ForumPost = {
-      id: now,
-      subject: subject.trim(),
-      message: message.trim(),
-      system,
-      game,
-      ladder,
-      type,
-      category,
-      author: "You",
-      replies: 0,
-      views: 1,
-      createdAt: now,
-    };
+    const { data: inserted, error: insertError } = await supabase
+      .from("forum_posts")
+      .insert([
+        {
+          subject: subject.trim(),
+          message: message.trim(),
+          system,
+          game,
+          ladder,
+          type,
+          category,
+        },
+      ])
+      .select("*")
+      .single();
 
-    // optimistic update
-    setPosts([newPost, ...posts]);
-    setLastPostTime(now);
+    if (insertError || !inserted) {
+      setError(insertError?.message || "Could not create the post. Please try again.");
+      return;
+    }
+
+    setPosts((cur) => [mapPost(inserted), ...cur]);
     setSubject("");
     setMessage("");
     setError("");
     setActiveCategory(category);
     setShowCreatePost(false);
-
-    // persist to Supabase (best-effort)
-    (async () => {
-      try {
-        const { data: inserted, error } = (await supabase
-          .from("forum_posts")
-          .insert([
-            {
-              subject: newPost.subject,
-              message: newPost.message,
-              system: newPost.system,
-              game: newPost.game,
-              ladder: newPost.ladder,
-              type: newPost.type,
-              category: newPost.category,
-              author: newPost.author,
-              replies: 0,
-              views: 1,
-              created_at: new Date().toISOString(),
-            },
-          ])) as { data: ForumPostRow[] | null; error: any };
-
-        if (!error && inserted && inserted[0]) {
-          const insertedRow = inserted[0];
-
-          // replace optimistic item with DB-backed record id
-          setPosts((cur) => [
-            {
-              id: insertedRow.id,
-              subject: insertedRow.subject,
-              message: insertedRow.message,
-              system: insertedRow.system,
-              game: insertedRow.game,
-              ladder: insertedRow.ladder,
-              type: insertedRow.type,
-              category: insertedRow.category,
-              author: insertedRow.author,
-              replies: insertedRow.replies || 0,
-              views: insertedRow.views || 0,
-              createdAt: new Date(insertedRow.created_at).getTime(),
-            },
-            ...cur.filter((p) => p.createdAt !== newPost.createdAt),
-          ]);
-        }
-      } catch (e) {
-        console.error("Failed to insert forum post to Supabase:", e);
-      }
-    })();
   }
 
   return (
@@ -515,6 +384,36 @@ export default function ForumsPage() {
             </div>
             <Link className="forum-breadcrumb" href="/rules">Forum Rules</Link>
           </div>
+
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid #263b4d" }}>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search threads..."
+              aria-label="Search forum threads"
+              style={{ width: "100%", maxWidth: 360, padding: "7px 10px", background: "#07111b", border: "1px solid #263b4d", color: "#e6eefc", fontSize: 13 }}
+            />
+          </div>
+
+          {threadList.length > 0 || search.trim() ? (
+            <section className="forum-section">
+              <div className="forum-section-title">{search.trim() ? `Search results (${threadList.length})` : `${activeCategory} threads`}</div>
+              {threadList.length === 0 && <div className="empty-forums">No threads found.</div>}
+              {threadList.map((p) => (
+                <div key={p.id} style={{ padding: "10px 16px", borderTop: "1px solid #13293d", display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <Link href={`/forums/${p.id}`} style={{ color: "#7fc0ff", fontWeight: 700 }}>
+                      {p.pinned ? "📌 " : ""}{p.locked ? "🔒 " : ""}{p.subject}
+                    </Link>
+                    <div style={{ color: "#8193a1", fontSize: 11, marginTop: 3 }}>
+                      by {p.author} · {p.category} · {new Date(p.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div style={{ color: "#9aabba", fontSize: 11, whiteSpace: "nowrap" }}>{p.replies} replies · {p.views} views</div>
+                </div>
+              ))}
+            </section>
+          ) : null}
 
           <div className="forum-columns" aria-hidden="true">
             <span>Forum</span>
