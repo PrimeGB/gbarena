@@ -99,7 +99,7 @@ export default function FriendsPage() {
       .filter(Boolean) as ProfileRow[];
 
     setProfiles(profileMap);
-    setFriends(friendRows);
+    setFriends(Array.from(new Map(friendRows.map((row) => [row.id, row])).values()));
     setPending(pendingReceived);
     setPageLoading(false);
   }

@@ -182,11 +182,10 @@ function EditProfileContent() {
           .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`);
 
         const accepted = (requests || []).filter((r: any) => r.status === "accepted");
-        setFriendsCount(accepted.length || 0);
-
-        const friendIds = accepted.map((r: any) =>
+        const friendIds = Array.from(new Set(accepted.map((r: any) =>
           r.requester_id === currentUser.id ? r.recipient_id : r.requester_id,
-        ).filter(Boolean);
+        ).filter(Boolean))) as string[];
+        setFriendsCount(friendIds.length);
         if (friendIds.length > 0) {
           const { data: friendProfiles } = await supabase
             .from("profiles")
