@@ -327,6 +327,9 @@ export default function TournamentsPage() {
                       >
                         {open ? "Hide Rules" : "View Rules"}
                       </button>
+                      <Link className="t-btn" href={`/tournaments/${t.id}`}>
+                        View Bracket
+                      </Link>
                       {t.status !== "upcoming" ? (
                         <button className="t-btn off" disabled>
                           Registration Closed

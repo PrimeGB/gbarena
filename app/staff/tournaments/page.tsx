@@ -308,6 +308,9 @@ export default function StaffTournamentsPage() {
                       </small>
                     </div>
                     <div className="st-actions">
+                      <Link className="st-btn" href={`/tournaments/${t.id}`}>
+                        Bracket
+                      </Link>
                       <button className="st-btn" onClick={() => openPay(t)}>
                         Pay Prize
                       </button>
