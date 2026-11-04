@@ -78,6 +78,7 @@ type TopTeam = {
 type TopFriend = {
   id: string;
   username: string;
+  avatar_url: string | null;
 };
 
 type TeamProfileRow = {
@@ -93,6 +94,27 @@ type TeamMemberRow = {
   teams: TeamProfileRow | TeamProfileRow[] | null;
 };
 
+type PlayerStats = {
+  wins: number;
+  losses: number;
+  win_pct: number | null;
+  current_streak: number;
+  current_streak_type: "W" | "L" | null;
+  best_win_streak: number;
+  last_10: ("W" | "L")[];
+  by_game: { game: string | null; wins: number; losses: number }[];
+};
+
+type SeasonHistoryRow = {
+  season_id: string;
+  name: string;
+  wins: number;
+  losses: number;
+  place: number;
+  players: number;
+  current: boolean;
+};
+
 type FriendRequestRow = {
   requester_id: string;
   recipient_id: string;
@@ -101,6 +123,7 @@ type FriendRequestRow = {
 type FriendProfileRow = {
   id: string;
   username: string | null;
+  avatar_url: string | null;
 };
 
 function ProfilePageContent() {
@@ -124,6 +147,18 @@ function ProfilePageContent() {
   const [currentProfileName, setCurrentProfileName] = useState("");
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+  const [seasonHistory, setSeasonHistory] = useState<SeasonHistoryRow[]>([]);
+
+  useEffect(() => {
+    if (!viewedUserId) return;
+    supabase.rpc("gb_player_stats", { p_user: viewedUserId }).then(({ data, error: rpcError }) => {
+      setPlayerStats(rpcError ? null : (data as PlayerStats));
+    });
+    supabase.rpc("gb_player_season_history", { p_user: viewedUserId }).then(({ data, error: rpcError }) => {
+      setSeasonHistory(rpcError ? [] : ((data || []) as SeasonHistoryRow[]));
+    });
+  }, [viewedUserId]);
 
   function favoriteSystemClass(system: string) {
     const cleanSystem = system.toLowerCase();
@@ -302,24 +337,43 @@ function ProfilePageContent() {
               ? request.recipient_id
               : request.requester_id
           )
-          .filter(Boolean)
-          .slice(0, 4);
+          .filter(Boolean);
 
         if (friendIds.length === 0) {
           setTopFriends([]);
           return;
         }
 
+        const { data: friendPrefs } = await supabase
+          .from("profiles")
+          .select("display_friends")
+          .eq("id", viewedUserId)
+          .maybeSingle();
+        const chosen: string[] = Array.isArray(friendPrefs?.display_friends)
+          ? friendPrefs.display_friends.filter((id: string) => friendIds.includes(id))
+          : [];
+        const orderedIds = (
+          Array.isArray(friendPrefs?.display_friends) ? chosen : friendIds
+        ).slice(0, 4);
+
+        if (orderedIds.length === 0) {
+          setTopFriends([]);
+          return;
+        }
+
         const { data: friendProfiles } = await supabase
           .from("profiles")
-          .select("id, username")
-          .in("id", friendIds);
+          .select("id, username, avatar_url")
+          .in("id", orderedIds);
 
-        const loadedFriends =
-          friendProfiles?.map((friend: FriendProfileRow) => ({
+        const loadedFriends = orderedIds
+          .map((id) => friendProfiles?.find((friend: FriendProfileRow) => friend.id === id))
+          .filter((friend): friend is FriendProfileRow => !!friend)
+          .map((friend) => ({
             id: friend.id,
             username: friend.username || "Unknown Player",
-          })) || [];
+            avatar_url: friend.avatar_url || null,
+          }));
 
         setTopFriends(loadedFriends);
       });
@@ -425,9 +479,13 @@ function ProfilePageContent() {
   const gbLosses = profile?.gb_losses || 0;
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
-  const playerRole = profile?.role
-    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
-    : "Member";
+  const rawRole = (profile?.role || "").toLowerCase();
+  const playerRole =
+    rawRole === "owner" && (profile?.username || "").toLowerCase() !== "prime"
+      ? "Staff"
+      : rawRole
+        ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1)
+        : "Member";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
   const xboxGT = profile?.gt_xbox || profile?.xbox_gt || "";
@@ -437,19 +495,24 @@ function ProfilePageContent() {
   const eaGT =
     gamingAccounts.find((account) => account.platform === "ea")?.account_id || "";
   const displayAwards = Array.isArray(profile?.display_awards) ? profile?.display_awards || [] : [];
+  const chosenAwards: (AwardHistoryEntry | undefined)[] =
+    displayAwards.length > 0
+      ? displayAwards.slice(0, 6).map((entry) =>
+          earnedAwards.find((award) => String(award.id) === entry) ||
+          earnedAwards.find((award) => award.name === entry),
+        )
+      : earnedAwards.slice(0, 6);
   const topAwards: Award[] = Array.from({ length: 6 }).map((_, index) => {
-    const earnedAward = earnedAwards[index];
+    const earnedAward = chosenAwards[index];
     return {
       id: earnedAward?.id || index + 1,
-      name: earnedAward?.name || displayAwards[index] || "Award Slot",
+      name: earnedAward?.name || "Award Slot",
       group: earnedAward?.award_group || "",
       type: "shield",
       label: earnedAward ? "★" : "?",
       description: earnedAward
         ? `${earnedAward.award_group} Â· ${earnedAward.reason}`
-        : displayAwards[index]
-          ? "Displayed award."
-          : "Waiting to earn.",
+        : "Waiting to earn.",
     };
   });
   const statusText = isViewingOwnProfile ? "Online" : "Offline";
@@ -1487,6 +1550,18 @@ function ProfilePageContent() {
         }
         .pf-btn:hover{ background:#3b91f0; }
         .pf-inbox-btn{ position:relative; }
+        .pf-stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+        .pf-stat{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:10px; text-align:center; }
+        .pf-stat b{ display:block; font-size:20px; color:#ffe9a8; }
+        .pf-stat span{ font-size:11px; opacity:.75; text-transform:uppercase; }
+        .pf-form{ display:flex; gap:4px; margin-bottom:10px; }
+        .pf-form-pip{ width:22px; height:22px; border-radius:4px; display:inline-grid; place-items:center; font-size:11px; font-weight:800; color:#fff; }
+        .pf-form-pip.w{ background:#2e8b3d; }
+        .pf-form-pip.l{ background:#a33030; }
+        .pf-stat-table{ width:100%; border-collapse:collapse; font-size:13px; }
+        .pf-stat-table td{ padding:6px 8px; border-top:1px solid rgba(255,255,255,.1); }
+        .pf-stat-table td:not(:first-child){ text-align:right; }
+        @media (max-width:600px){ .pf-stat-grid{ grid-template-columns:repeat(2,1fr); } }
         .pf-inbox-btn .mail-dot{ right:8px; top:50%; transform:translateY(-50%); }
         .pf-banner-strip{
           display:flex;
@@ -1578,8 +1653,9 @@ function ProfilePageContent() {
           background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%); border:2px solid #3b86c4;
           box-shadow:0 2px 8px rgba(0,0,0,.45);
           display:flex; align-items:center; justify-content:center;
-          font-weight:bold; font-size:16px; color:#f2c14e;
+          font-weight:bold; font-size:16px; color:#f2c14e; overflow:hidden;
         }
+        .pf-friend-avatar img{ width:100%; height:100%; object-fit:cover; }
         .pf-friend span{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .pf-showall{
           display:block; margin-top:10px; text-align:center; padding:6px;
@@ -1777,7 +1853,7 @@ function ProfilePageContent() {
                 <div className="pf-banner-actions">
                   {isViewingOwnProfile ? (
                     <>
-                      <Link className="pf-btn" href="/profile/edit">Edit Profile</Link>
+                      <Link className="pf-btn" href="/profile/edit">Account / Profile</Link>
                       <Link className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</Link>
                       <Link className="pf-btn pf-inbox-btn" href="/profile/inbox">
                         Inbox
@@ -1879,11 +1955,10 @@ function ProfilePageContent() {
                   <div className="box-body">
                     {isViewingOwnProfile ? (
                       <>
-                        <Link className="quick-link" href="/profile/edit">Edit Profile</Link>
+                        <Link className="quick-link" href="/profile/edit">Account / Profile</Link>
                         <Link className="quick-link" href="/profile/teams">My Teams</Link>
                         <Link className="quick-link" href="/profile/friends">My Friends</Link>
                         <Link className="quick-link" href="/profile/awards">My Awards</Link>
-                        <a className="quick-link" href="#">Account Settings</a>
                       </>
                     ) : (
                      <>
@@ -1967,6 +2042,52 @@ function ProfilePageContent() {
               </aside>
 
               <main className="main-column">
+                {playerStats && playerStats.wins + playerStats.losses > 0 && (
+                  <div className="pf-section">
+                    <div className="pf-section-title"><span>Player Stats</span></div>
+                    <div className="pf-stat-grid">
+                      <div className="pf-stat"><b>{playerStats.wins}-{playerStats.losses}</b><span>Record</span></div>
+                      <div className="pf-stat"><b>{playerStats.win_pct ?? 0}%</b><span>Win Rate</span></div>
+                      <div className="pf-stat"><b>{playerStats.current_streak_type ? `${playerStats.current_streak_type}${playerStats.current_streak}` : "-"}</b><span>Streak</span></div>
+                      <div className="pf-stat"><b>{playerStats.best_win_streak}</b><span>Best Win Streak</span></div>
+                    </div>
+                    <div className="pf-form">
+                      {playerStats.last_10.map((result, index) => (
+                        <span key={index} className={`pf-form-pip ${result === "W" ? "w" : "l"}`}>{result}</span>
+                      ))}
+                    </div>
+                    {playerStats.by_game.length > 0 && (
+                      <table className="pf-stat-table">
+                        <tbody>
+                          {playerStats.by_game.map((row) => (
+                            <tr key={row.game || "unknown"}>
+                              <td>{row.game || "Unknown game"}</td>
+                              <td>{row.wins}-{row.losses}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                )}
+
+                {seasonHistory.length > 0 && (
+                  <div className="pf-section">
+                    <div className="pf-section-title"><span>Season History</span></div>
+                    <table className="pf-stat-table">
+                      <tbody>
+                        {seasonHistory.map((row) => (
+                          <tr key={row.season_id}>
+                            <td>{row.name}{row.current ? " (current)" : ""}</td>
+                            <td>{row.wins}-{row.losses}</td>
+                            <td>#{row.place} of {row.players}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
                 <div className="pf-section">
                   <div className="pf-section-title"><span>Top Awards</span></div>
                   <div className="pf-award-row">
@@ -2002,7 +2123,14 @@ function ProfilePageContent() {
                   <div className="pf-friend-row">
                     {topFriends.map((friend) => (
                       <a className="pf-friend" href={`/profile?userId=${friend.id}`} key={friend.id}>
-                        <div className="pf-friend-avatar">{friend.username.slice(0, 2).toUpperCase()}</div>
+                        <div className="pf-friend-avatar">
+                          {friend.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={friend.avatar_url} alt={friend.username} />
+                          ) : (
+                            friend.username.slice(0, 2).toUpperCase()
+                          )}
+                        </div>
                         <span>{friend.username}</span>
                       </a>
                     ))}

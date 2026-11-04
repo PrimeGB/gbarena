@@ -259,6 +259,9 @@ export default function MatchDetailsPage() {
   const [viewerCanManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeDetails, setDisputeDetails] = useState("");
   const [comments, setComments] = useState<MatchCommentRow[]>([]);
   const [participants, setParticipants] = useState<MatchParticipant[]>([]);
   const [commentText, setCommentText] = useState("");
@@ -559,14 +562,14 @@ export default function MatchDetailsPage() {
               ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
               : "A game ends when the score limit or time limit in the settings below is reached.",
             ...(modeDef ? modeDef.rules : []),
-            "Teams must be ready to play at the scheduled time.",
+            "Teams must be ready to play at the scheduled time. If the opponent has not shown up 15 minutes after the scheduled time, they forfeit and the present team can report the win.",
           ],
         },
         {
           title: "Reporting Results",
           items: [
             "After the scheduled time, a team leader, co-leader or captain reports the series score.",
-            "The opposing team confirms the score, or disputes it.",
+            "The opposing team confirms the score, or disputes it. If a result is disputed because of a no-show, choose \"No-show\" as the reason.",
             "Both teams have 2 hours from match time to submit a ticket with an explanation and proof. Staff only see the case once both teams have submitted, or once the 2 hours have ended.",
           ],
         },
@@ -880,8 +883,16 @@ export default function MatchDetailsPage() {
   async function handleDisputeScore() {
     if (!match || !canDisputeScore || actionLoading) return;
 
-    const reason = window.prompt("Enter the reason for this dispute:");
-    if (!reason || !reason.trim()) return;
+    const reason =
+      disputeReason === "No-show"
+        ? "No-show / forfeit (15 minute rule)." + (disputeDetails.trim() ? ` ${disputeDetails.trim()}` : "")
+        : disputeReason
+        ? `${disputeReason}${disputeDetails.trim() ? `: ${disputeDetails.trim()}` : ""}`
+        : "";
+    if (!reason) {
+      setActionMessage("Choose a dispute reason.");
+      return;
+    }
 
     setActionLoading(true);
     setActionMessage("");
@@ -1837,10 +1848,38 @@ export default function MatchDetailsPage() {
                         className="dispute-btn"
                         type="button"
                         disabled={actionLoading}
-                        onClick={handleDisputeScore}
+                        onClick={() => setDisputeOpen((open) => !open)}
                       >
                         Dispute Result
                       </button>
+                      {disputeOpen && (
+                        <div className="score-note">
+                          <select
+                            value={disputeReason}
+                            onChange={(e) => setDisputeReason(e.target.value)}
+                          >
+                            <option value="">Select a reason...</option>
+                            <option value="No-show">No-show</option>
+                            <option value="Wrong score">Wrong score</option>
+                            <option value="Cheating">Cheating</option>
+                            <option value="Other">Other</option>
+                          </select>{" "}
+                          <input
+                            type="text"
+                            value={disputeDetails}
+                            onChange={(e) => setDisputeDetails(e.target.value)}
+                            placeholder="Optional details"
+                          />{" "}
+                          <button
+                            className="dispute-btn"
+                            type="button"
+                            disabled={actionLoading || !disputeReason}
+                            onClick={handleDisputeScore}
+                          >
+                            Submit Dispute
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
 

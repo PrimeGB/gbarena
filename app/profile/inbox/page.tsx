@@ -726,7 +726,6 @@ export default function InboxPage() {
             <Link href="/profile/friends">Friends</Link>
             <Link href="/profile/matches">Matches</Link>
             <Link href="/profile/awards">Awards</Link>
-            <Link href="/profile/photos">Photos</Link>
             <Link className="active" href="/profile/inbox">Inbox</Link>
           </nav>
 

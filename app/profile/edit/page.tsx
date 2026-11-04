@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import AwardArt, { AWARD_CSS } from "../../awards/AwardArt";
 import {
   GamingAccount,
   gamingCategories,
@@ -14,35 +15,20 @@ import {
 
 type AppUser = { id: string; email?: string | null };
 
-type EditTab = "main" | "teams" | "awards" | "photos" | "friends" | "settings";
+type FriendOption = {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+};
 
-const realGames = [
-  "Call of Duty",
-  "Call of Duty 4: Modern Warfare",
-  "Call of Duty: Modern Warfare 2",
-  "Call of Duty: Black Ops",
-  "Call of Duty: Black Ops II",
-  "Call of Duty: Modern Warfare 3",
-  "Call of Duty: Warzone",
-  "Halo 2",
-  "Halo 3",
-  "Halo Reach",
-  "Halo Infinite",
-  "Gears of War",
-  "Gears of War 2",
-  "Gears of War 3",
-  "Rainbow Six Siege",
-  "Counter-Strike 2",
-  "Valorant",
-  "Fortnite",
-  "Apex Legends",
-  "Rocket League",
-  "Overwatch 2",
-  "Super Smash Bros. Ultimate",
-  "Madden NFL",
-  "NBA 2K",
-  "EA Sports FC",
-];
+type EarnedAward = {
+  id: number;
+  name: string;
+  award_group: string;
+  reason: string;
+};
+
+type EditTab = "main" | "awards" | "friends" | "settings";
 
 function EditProfileContent() {
   const searchParams = useSearchParams();
@@ -57,13 +43,10 @@ function EditProfileContent() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentStatus, setCurrentStatus] = useState("Dynamic");
-  const [favoriteGame, setFavoriteGame] = useState("");
-  const [favoriteSystem, setFavoriteSystem] = useState("PlayStation");
   const [profileGlow, setProfileGlow] = useState("On");
   const [location, setLocation] = useState("");
   const [initialLocation, setInitialLocation] = useState<string | null>(null);
   const [locationLocked, setLocationLocked] = useState(false);
-  const [playerIntro, setPlayerIntro] = useState("");
   const [gtXbox, setGtXbox] = useState("");
   const [gtPlaystation, setGtPlaystation] = useState("");
   const [gtNintendo, setGtNintendo] = useState("");
@@ -76,8 +59,22 @@ function EditProfileContent() {
   const [gamingAccountError, setGamingAccountError] = useState("");
   const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
+  const [earnedAwards, setEarnedAwards] = useState<EarnedAward[]>([]);
+  const [dragSource, setDragSource] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
+  const [friends, setFriends] = useState<FriendOption[]>([]);
+  const [displayFriends, setDisplayFriends] = useState<string[]>([]);
+  const [friendDrag, setFriendDrag] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
+  const [friendOver, setFriendOver] = useState<number | null>(null);
+  const [friendsMessage, setFriendsMessage] = useState("");
+  const [savingFriends, setSavingFriends] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [secondaryEmail, setSecondaryEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [settingsMessage, setSettingsMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [settingsBusy, setSettingsBusy] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -104,13 +101,6 @@ function EditProfileContent() {
     setGamingAccountId(existingAccount?.account_id || "");
   }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame]);
 
-  const favoriteGameIsValid = useMemo(() => {
-    if (!favoriteGame.trim()) return true;
-    return realGames.some(
-      (game) => game.toLowerCase() === favoriteGame.trim().toLowerCase()
-    );
-  }, [favoriteGame]);
-
   useEffect(() => {
     function warnBeforeLeave(event: BeforeUnloadEvent) {
       if (!hasChanges) return;
@@ -135,15 +125,21 @@ function EditProfileContent() {
         const { data: profileData } = await supabase
           .from("profiles")
           .select(
-            `favorite_game,favorite_system,player_bio,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
+            `username,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
           )
           .eq("id", currentUser.id)
           .maybeSingle();
 
+        let loadedAwards: EarnedAward[] = [];
+        if (profileData?.username) {
+          const { data: awardRows } = await supabase.rpc("staff_player_award_history", {
+            target_username: profileData.username,
+          });
+          loadedAwards = (awardRows || []) as EarnedAward[];
+          setEarnedAwards(loadedAwards);
+        }
+
         if (profileData) {
-          setFavoriteGame(profileData.favorite_game || "");
-          setFavoriteSystem(profileData.favorite_system || "PlayStation");
-          setPlayerIntro(profileData.player_bio || "");
           setProfileGlow(profileData.profile_glow || "On");
           setAvatarPreview(profileData.avatar_url || null);
           setLogoPreview(profileData.logo_url || null);
@@ -154,24 +150,26 @@ function EditProfileContent() {
           setGtPlaystation(profileData.gt_playstation || "");
           setGtNintendo(profileData.gt_nintendo || "");
           setGtPc(profileData.gt_pc || "");
-          setDisplayAwards(Array.isArray(profileData.display_awards) ? profileData.display_awards.slice(0,6) : []);
+          const saved = Array.isArray(profileData.display_awards) ? (profileData.display_awards as string[]) : [];
+          const resolved = saved
+            .map((entry) => loadedAwards.find((a) => String(a.id) === entry || a.name === entry))
+            .filter((a): a is EarnedAward => !!a)
+            .map((a) => String(a.id));
+          const unique = Array.from(new Set(resolved)).slice(0, 6);
+          setDisplayAwards(
+            unique.length > 0 || saved.length > 0
+              ? unique
+              : loadedAwards.slice(0, 6).map((a) => String(a.id)),
+          );
         }
 
-        // load teams for current user
-        const { data: membershipRows } = await supabase
-          .from("team_members")
-          .select("team_id, role")
-          .eq("user_id", currentUser.id);
-
-        const teamIds = (membershipRows || []).map((r: any) => r.team_id).filter(Boolean);
-        if (teamIds.length > 0) {
-          const { data: teamsData } = await supabase
-            .from("teams")
-            .select("id,name,tag,logo_url,wins,losses")
-            .in("id", teamIds);
-
-          setTeams((teamsData || []) as any[]);
-        }
+        // load linked second email (separate query so a missing column cannot break the page)
+        const { data: emailRow } = await supabase
+          .from("profiles")
+          .select("secondary_email")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+        setSecondaryEmail(emailRow?.secondary_email || "");
 
         // load accepted friends count
         const { data: requests } = await supabase
@@ -181,6 +179,31 @@ function EditProfileContent() {
 
         const accepted = (requests || []).filter((r: any) => r.status === "accepted");
         setFriendsCount(accepted.length || 0);
+
+        const friendIds = accepted.map((r: any) =>
+          r.requester_id === currentUser.id ? r.recipient_id : r.requester_id,
+        ).filter(Boolean);
+        if (friendIds.length > 0) {
+          const { data: friendProfiles } = await supabase
+            .from("profiles")
+            .select("id,username,avatar_url")
+            .in("id", friendIds);
+          const loadedFriends = (friendProfiles || []).map((f: any) => ({
+            id: String(f.id),
+            username: f.username || "Unknown Player",
+            avatar_url: f.avatar_url || null,
+          })) as FriendOption[];
+          setFriends(loadedFriends);
+
+          const { data: friendPrefs } = await supabase
+            .from("profiles")
+            .select("display_friends")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+          const savedFriends: string[] = Array.isArray(friendPrefs?.display_friends) ? friendPrefs.display_friends : [];
+          const valid = Array.from(new Set(savedFriends.filter((id) => loadedFriends.some((f) => f.id === id)))).slice(0, 4);
+          setDisplayFriends(valid.length > 0 || savedFriends.length > 0 ? valid : loadedFriends.slice(0, 4).map((f) => f.id));
+        }
       } catch (err) {
         // ignore load errors for now
       }
@@ -309,13 +332,149 @@ function EditProfileContent() {
     setActiveTab(tab);
   }
 
-  function handleSave() {
-    // trigger real save flow
-    if (!favoriteGameIsValid) {
-      setSavedMessage("Choose a real game before saving.");
+  function awardKey(award: EarnedAward) {
+    return String(award.id);
+  }
+
+  function placeAward(key: string, slotIndex: number, fromSlot: number | null) {
+    const next = [...displayAwards];
+    if (fromSlot !== null) {
+      const target = Math.min(slotIndex, next.length - 1);
+      [next[fromSlot], next[target]] = [next[target], next[fromSlot]];
+    } else {
+      const existing = next.indexOf(key);
+      if (existing !== -1) next.splice(existing, 1);
+      if (slotIndex >= next.length) next.push(key);
+      else next[slotIndex] = key;
+    }
+    setDisplayAwards(next.slice(0, 6));
+    markChanged();
+  }
+
+  function removeAwardAt(slotIndex: number) {
+    setDisplayAwards(displayAwards.filter((_, i) => i !== slotIndex));
+    markChanged();
+  }
+
+  function addAwardToFirstSlot(key: string) {
+    if (displayAwards.includes(key) || displayAwards.length >= 6) return;
+    setDisplayAwards([...displayAwards, key]);
+    markChanged();
+  }
+
+  function handleSlotDrop(slotIndex: number) {
+    if (dragSource) {
+      if (dragSource.from === "slot") {
+        const fromIndex = displayAwards.indexOf(dragSource.key);
+        if (fromIndex !== -1 && fromIndex !== slotIndex) placeAward(dragSource.key, slotIndex, fromIndex);
+      } else {
+        placeAward(dragSource.key, slotIndex, null);
+      }
+    }
+    setDragSource(null);
+    setDragOverSlot(null);
+  }
+
+  function changeFriends(next: string[]) {
+    setDisplayFriends(next.slice(0, 4));
+    setFriendsMessage("");
+    setHasChanges(true);
+  }
+
+  function dropFriend(slotIndex: number) {
+    if (friendDrag) {
+      const next = [...displayFriends];
+      if (friendDrag.from === "slot") {
+        const fromIndex = next.indexOf(friendDrag.key);
+        const target = Math.min(slotIndex, next.length - 1);
+        if (fromIndex !== -1 && fromIndex !== target) {
+          [next[fromIndex], next[target]] = [next[target], next[fromIndex]];
+        }
+      } else {
+        const existing = next.indexOf(friendDrag.key);
+        if (existing !== -1) next.splice(existing, 1);
+        if (slotIndex >= next.length) next.push(friendDrag.key);
+        else next[slotIndex] = friendDrag.key;
+      }
+      changeFriends(next);
+    }
+    setFriendDrag(null);
+    setFriendOver(null);
+  }
+
+  async function saveFriends() {
+    if (!currentUser) return;
+    setSavingFriends(true);
+    setFriendsMessage("");
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_friends: displayFriends })
+      .eq("id", currentUser.id);
+    setSavingFriends(false);
+    if (error) {
+      console.error("Top friends save error:", error);
+      setFriendsMessage("Could not save top friends. Please try again.");
       return;
     }
+    setHasChanges(false);
+    setFriendsMessage("Top friends saved.");
+  }
 
+  async function linkSecondEmail() {
+    const email = newEmail.trim().toLowerCase();
+    if (!currentUser || secondaryEmail) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setSettingsMessage({ ok: false, text: "Enter a valid email address." });
+      return;
+    }
+    if (email === (currentUser.email || "").toLowerCase()) {
+      setSettingsMessage({ ok: false, text: "That is already your primary email." });
+      return;
+    }
+    if (!window.confirm(`Link ${email} to your account? It cannot be changed or removed afterwards.`)) return;
+    setSettingsBusy(true);
+    setSettingsMessage(null);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ secondary_email: email })
+      .eq("id", currentUser.id)
+      .is("secondary_email", null);
+    setSettingsBusy(false);
+    if (error) {
+      setSettingsMessage({
+        ok: false,
+        text: error.code === "23505" ? "That email is already linked to another account." : "Could not link this email. Please try again.",
+      });
+      return;
+    }
+    setSecondaryEmail(email);
+    setNewEmail("");
+    setSettingsMessage({ ok: true, text: "Second email linked." });
+  }
+
+  async function changePassword() {
+    if (newPassword.length < 8) {
+      setSettingsMessage({ ok: false, text: "Password must be at least 8 characters." });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setSettingsMessage({ ok: false, text: "Passwords do not match." });
+      return;
+    }
+    setSettingsBusy(true);
+    setSettingsMessage(null);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSettingsBusy(false);
+    if (error) {
+      setSettingsMessage({ ok: false, text: error.message });
+      return;
+    }
+    setNewPassword("");
+    setConfirmPassword("");
+    setSettingsMessage({ ok: true, text: "Password updated." });
+  }
+
+  function handleSave() {
     saveProfile();
   }
 
@@ -357,10 +516,7 @@ function EditProfileContent() {
       }
 
       const updateData: any = {
-        favorite_game: favoriteGame || null,
-        favorite_system: favoriteSystem || null,
         profile_glow: profileGlow || null,
-        player_bio: playerIntro || null,
         gt_xbox: gtXbox || null,
         gt_playstation: gtPlaystation || null,
         gt_nintendo: gtNintendo || null,
@@ -389,10 +545,7 @@ function EditProfileContent() {
       // fallback: fake save to localStorage
       try {
         const fallback = {
-          favoriteGame,
-          favoriteSystem,
           profileGlow,
-          playerIntro,
           gtXbox,
           gtPlaystation,
           gtNintendo,
@@ -421,6 +574,7 @@ function EditProfileContent() {
 
   return (
     <>
+      <style>{AWARD_CSS}</style>
       <style>{`
         *{ margin:0; padding:0; box-sizing:border-box; }
 
@@ -858,6 +1012,117 @@ function EditProfileContent() {
           color:#a9c3db;
           font-size:11px;
         }
+
+        /* Modern layout overrides */
+        .wrapper{ width:min(1100px,100%); border-radius:0 0 10px 10px; }
+        .logo-box{ width:auto; max-width:100%; border-radius:8px; }
+        .title-bar{ height:auto; padding:14px 20px; border-radius:8px; }
+        .nav{
+          height:auto;
+          flex-wrap:wrap;
+          gap:6px;
+          padding:8px 12px;
+          border-radius:8px;
+        }
+        .nav a,.nav button{
+          margin:0;
+          padding:7px 14px;
+          border-radius:999px;
+          border:1px solid transparent;
+          background:rgba(255,255,255,.04);
+        }
+        .nav a:hover,.nav button:hover{ background:rgba(77,174,255,.15); }
+        .nav button.active{
+          background:rgba(242,193,78,.15);
+          border-color:#f2c14e;
+          color:#f2c14e;
+        }
+        .edit-grid{
+          grid-template-columns:300px minmax(0,1fr);
+          gap:16px;
+          margin-top:14px;
+          padding:0 8px;
+          align-items:start;
+        }
+        .edit-grid aside{ position:sticky; top:12px; }
+        .box{ border-radius:10px; overflow:hidden; margin-bottom:16px; }
+        .box-title{ height:38px; padding-left:16px; font-size:13px; letter-spacing:.5px; }
+        .box-body{ padding:16px; }
+        .editor-box{ height:170px; border-radius:8px; }
+        .edit-button{ height:38px; border-radius:8px; }
+        .profile-preview{ height:auto; border-radius:8px; padding:12px; }
+        .form-grid{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          column-gap:18px;
+          row-gap:4px;
+        }
+        .form-grid .form-row:has(textarea),
+        .form-grid .form-row:has(input + input),
+        .form-grid .save-row{ grid-column:1 / -1; }
+        .form-row{ margin-bottom:14px; }
+        .form-row input,.form-row select,.form-row textarea{
+          border-radius:8px;
+          padding:10px 12px;
+        }
+        .form-row input:focus,.form-row select:focus,.form-row textarea:focus{
+          outline:none;
+          border-color:#4daeff;
+          box-shadow:0 0 0 2px rgba(77,174,255,.25);
+        }
+        .form-row input + input{ margin-top:8px; }
+        .save-button{ border-radius:8px; height:40px; }
+        .notice{ border-radius:8px; }
+        .manage-card{ border-radius:8px; }
+        .footer{ margin-top:16px; }
+
+        .award-slots{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:14px; }
+        .award-slot{
+          position:relative; min-height:170px; padding:22px 6px 8px;
+          background:#050c14; border:2px dashed #244b70; border-radius:10px;
+          display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+          transition:border-color .15s, background .15s;
+        }
+        .award-slot.filled{ border-style:solid; border-color:#2f6f9f; cursor:grab; }
+        .award-slot.over{ border-color:#f2c14e; background:rgba(242,193,78,.08); }
+        .slot-number{
+          position:absolute; top:6px; left:8px; font-size:11px; font-weight:bold; color:#f2c14e;
+        }
+        .slot-empty{ color:#5f7e9c; font-size:11px; }
+        .slot-art{ display:flex; align-items:flex-end; justify-content:center; pointer-events:none; }
+        .slot-art .award-art,.slot-art .award-sprite{ width:auto; max-width:100%; }
+        .slot-name{ font-size:11px; color:#b9cde0; margin-top:6px; line-height:1.2; overflow-wrap:anywhere; }
+        .slot-remove{
+          position:absolute; top:4px; right:6px; width:20px; height:20px; line-height:18px;
+          border-radius:50%; border:1px solid #244b70; background:#0a1a2a; color:#d7eaff; cursor:pointer;
+        }
+        .slot-remove:hover{ color:#ff7777; border-color:#ff7777; }
+        .award-pool{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+        .pool-award{
+          position:relative; padding:10px 6px; background:#050c14; border:1px solid #244b70;
+          border-radius:10px; text-align:center; cursor:grab;
+        }
+        .pool-award:hover{ border-color:#f2c14e; }
+        .pool-award.used{ opacity:.55; }
+        .pool-badge{ font-size:10px; color:#00ff88; font-weight:bold; margin-top:4px; }
+        .friend-slots{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+        .friend-avatar{
+          width:64px; height:64px; border-radius:50%; overflow:hidden; margin:0 auto;
+          background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%); border:2px solid #3b86c4;
+          display:flex; align-items:center; justify-content:center;
+          font-weight:bold; font-size:18px; color:#f2c14e; pointer-events:none;
+        }
+        .friend-avatar img{ width:100%; height:100%; object-fit:cover; }
+
+        @media (max-width:860px){
+          .edit-grid{ grid-template-columns:1fr; }
+          .edit-grid aside{ position:static; }
+          .form-grid{ grid-template-columns:1fr; }
+          .award-slots{ grid-template-columns:repeat(3,1fr); }
+          .friend-slots{ grid-template-columns:repeat(2,1fr); }
+          .manage-grid{ grid-template-columns:repeat(2,1fr); }
+          .logo-text{ font-size:28px; }
+        }
       `}</style>
 
       <div className="page">
@@ -882,7 +1147,7 @@ function EditProfileContent() {
 
           <div className="title-bar">
             <div>
-              <div className="title-main">Edit Profile</div>
+              <div className="title-main">Account / Profile</div>
               <div className="title-sub">
                 Manage the important details that appear on your public player profile.
               </div>
@@ -893,14 +1158,13 @@ function EditProfileContent() {
             <a href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</a>
             <a href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Profile</a>
             <button className={activeTab === "main" ? "active" : ""} onClick={() => handleTabChange("main")}>Main Edit</button>
-            <button className={activeTab === "teams" ? "active" : ""} onClick={() => handleTabChange("teams")}>Teams</button>
             <button className={activeTab === "awards" ? "active" : ""} onClick={() => handleTabChange("awards")}>Awards</button>
-            <button className={activeTab === "photos" ? "active" : ""} onClick={() => handleTabChange("photos")}>Photos</button>
             <button className={activeTab === "friends" ? "active" : ""} onClick={() => handleTabChange("friends")}>Friends</button>
             <button className={activeTab === "settings" ? "active" : ""} onClick={() => handleTabChange("settings")}>Settings</button>
           </nav>
 
-          <div className="edit-grid">
+          <div className="edit-grid" style={activeTab === "main" ? undefined : { gridTemplateColumns: "minmax(0,1fr)" }}>
+            {activeTab === "main" && (
             <aside>
               <div className="box">
                 <div className="box-title">Logo Editor</div>
@@ -966,14 +1230,14 @@ function EditProfileContent() {
                 </div>
               </div>
             </aside>
-
+            )}
             <main>
               {activeTab === "main" && (
                 <>
                 <div className="box">
                   <div className="box-title">Main Profile Settings</div>
 
-                  <div className="box-body">
+                  <div className="box-body form-grid">
                     <div className="form-row">
                       <label>Current Status</label>
                       <select value={currentStatus} onChange={(event) => { setCurrentStatus(event.target.value); markChanged(); }}>
@@ -982,34 +1246,6 @@ function EditProfileContent() {
                       </select>
                       <div className="field-note">
                         Dynamic changes based on what you are doing on the site. Private displays private on your profile.
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <label>Favorite Game</label>
-                      <input
-                        value={favoriteGame}
-                        onChange={(event) => { setFavoriteGame(event.target.value); markChanged(); }}
-                        placeholder="Type the exact game name"
-                      />
-                      <div className="field-note">
-                        This will only save if it matches a real game from the site game list.
-                      </div>
-                      {!favoriteGameIsValid && (
-                        <div className="error-text">That game is not in the approved game list yet.</div>
-                      )}
-                    </div>
-
-                    <div className="form-row">
-                      <label>Favorite System</label>
-                      <select value={favoriteSystem} onChange={(event) => { setFavoriteSystem(event.target.value); markChanged(); }}>
-                        <option>PlayStation</option>
-                        <option>Xbox</option>
-                        <option>Nintendo</option>
-                        <option>PC</option>
-                      </select>
-                      <div className="field-note">
-                        Your favorite system can affect your profile glow color.
                       </div>
                     </div>
 
@@ -1035,15 +1271,6 @@ function EditProfileContent() {
                     </div>
 
                     <div className="form-row">
-                      <label>Player Bio</label>
-                      <textarea
-                        value={playerIntro}
-                        onChange={(event) => { setPlayerIntro(event.target.value); markChanged(); }}
-                        placeholder="Write a short intro about your gaming style, favorite games, competitive history, and what kind of matches you are looking for."
-                      />
-                    </div>
-
-                    <div className="form-row">
                       <label>Gamertags</label>
                       <input value={gtXbox} onChange={(e) => { setGtXbox(e.target.value); markChanged(); }} placeholder="Xbox GT" style={{marginBottom:8}} />
                       <input value={gtPlaystation} onChange={(e) => { setGtPlaystation(e.target.value); markChanged(); }} placeholder="PlayStation ID" style={{marginBottom:8}} />
@@ -1058,7 +1285,7 @@ function EditProfileContent() {
                       </button>
 
                       {savedMessage && (
-                        <div className={favoriteGameIsValid ? "saved-message" : "warning-message"}>
+                        <div className="saved-message">
                           {savedMessage}
                         </div>
                       )}
@@ -1168,114 +1395,244 @@ function EditProfileContent() {
                 </>
               )}
 
-              {activeTab === "teams" && (
+              {activeTab === "awards" && (
+                <>
                 <div className="box">
-                  <div className="box-title">Manage Displayed Teams</div>
+                  <div className="box-title">Top 6 Awards (shown on your profile)</div>
                   <div className="box-body">
                     <div className="notice">
-                      This page shows all teams you belong to. The 4 glowing slots are the teams that appear on your main profile.
+                      Drag awards from the list below into a slot, drag between slots to reorder, or drag a slot back to the list to remove it. Slot 1 is shown first on your profile.
                     </div>
-                    <div className="manage-grid">
-                      {teams && teams.length > 0 ? (
-                        teams.map((t) => (
-                          <div key={t.id} className="manage-card">
-                            <div>
-                              <div style={{fontWeight:900}}>{t.name}</div>
-                              <div style={{fontSize:12, marginTop:6}}>{t.tag}</div>
-                            </div>
+                    <div className="award-slots">
+                      {Array.from({ length: 6 }).map((_, idx) => {
+                        const key = displayAwards[idx];
+                        const award = earnedAwards.find((a) => awardKey(a) === key);
+                        return (
+                          <div
+                            key={idx}
+                            className={`award-slot ${award ? "filled" : ""} ${dragOverSlot === idx ? "over" : ""}`}
+                            draggable={!!award}
+                            onDragStart={() => award && setDragSource({ from: "slot", key })}
+                            onDragEnd={() => { setDragSource(null); setDragOverSlot(null); }}
+                            onDragOver={(event) => { event.preventDefault(); setDragOverSlot(idx); }}
+                            onDragLeave={() => setDragOverSlot(null)}
+                            onDrop={(event) => { event.preventDefault(); handleSlotDrop(idx); }}
+                          >
+                            <span className="slot-number">{idx + 1}</span>
+                            {award ? (
+                              <>
+                                <div className="slot-art">
+                                  <AwardArt name={award.name} group={award.award_group} height={92} />
+                                </div>
+                                <div className="slot-name">{award.name}</div>
+                                <button type="button" className="slot-remove" onClick={() => removeAwardAt(idx)} aria-label={`Remove ${award.name}`}>×</button>
+                              </>
+                            ) : (
+                              <div className="slot-empty">Drop award here</div>
+                            )}
                           </div>
-                        ))
-                      ) : (
-                        <>
-                          <div className="manage-card top">Top Team Slot 1</div>
-                          <div className="manage-card top">Top Team Slot 2</div>
-                          <div className="manage-card top">Top Team Slot 3</div>
-                          <div className="manage-card top">Top Team Slot 4</div>
-                        </>
+                        );
+                      })}
+                    </div>
+                    <div className="save-row">
+                      <button className="save-button" type="button" onClick={handleSave}>Save Awards</button>
+                      {savedMessage && <div className="saved-message">{savedMessage}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="box"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (dragSource?.from === "slot") removeAwardAt(displayAwards.indexOf(dragSource.key));
+                    setDragSource(null);
+                    setDragOverSlot(null);
+                  }}
+                >
+                  <div className="box-title">All My Awards ({earnedAwards.length})</div>
+                  <div className="box-body">
+                    {earnedAwards.length === 0 ? (
+                      <div className="help-text">You have not earned any awards yet.</div>
+                    ) : (
+                      <div className="award-pool">
+                        {earnedAwards.map((award) => {
+                          const key = awardKey(award);
+                          const used = displayAwards.includes(key);
+                          return (
+                            <div
+                              key={key}
+                              className={`pool-award ${used ? "used" : ""}`}
+                              draggable
+                              onDragStart={() => setDragSource({ from: "pool", key })}
+                              onDragEnd={() => { setDragSource(null); setDragOverSlot(null); }}
+                              onClick={() => addAwardToFirstSlot(key)}
+                              title={`${award.name} — ${award.reason}. Click or drag to add.`}
+                            >
+                              <div className="slot-art">
+                                <AwardArt name={award.name} group={award.award_group} height={72} />
+                              </div>
+                              <div className="slot-name">{award.name}</div>
+                              {used && <div className="pool-badge">On profile</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                </>
+              )}
+
+              {activeTab === "friends" && (
+                <>
+                <div className="box">
+                  <div className="box-title">Top 4 Friends</div>
+                  <div className="box-body">
+                    <div className="notice">
+                      Drag friends from the list below into a slot, drag between slots to reorder, or drag a slot back to the list to remove it. Slot 1 is shown first on your profile.
+                    </div>
+                    <div className="friend-slots">
+                      {Array.from({ length: 4 }).map((_, idx) => {
+                        const key = displayFriends[idx];
+                        const friend = friends.find((f) => f.id === key);
+                        return (
+                          <div
+                            key={idx}
+                            className={`award-slot ${friend ? "filled" : ""} ${friendOver === idx ? "over" : ""}`}
+                            draggable={!!friend}
+                            onDragStart={() => friend && setFriendDrag({ from: "slot", key })}
+                            onDragEnd={() => { setFriendDrag(null); setFriendOver(null); }}
+                            onDragOver={(event) => { event.preventDefault(); setFriendOver(idx); }}
+                            onDragLeave={() => setFriendOver(null)}
+                            onDrop={(event) => { event.preventDefault(); dropFriend(idx); }}
+                          >
+                            <span className="slot-number">{idx + 1}</span>
+                            {friend ? (
+                              <>
+                                <div className="friend-avatar">
+                                  {friend.avatar_url ? <img src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div className="slot-name">{friend.username}</div>
+                                <button type="button" className="slot-remove" onClick={() => changeFriends(displayFriends.filter((_, i) => i !== idx))} aria-label={`Remove ${friend.username}`}>×</button>
+                              </>
+                            ) : (
+                              <div className="slot-empty">Drop friend here</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="save-row">
+                      <button className="save-button" type="button" disabled={savingFriends} onClick={saveFriends}>
+                        {savingFriends ? "Saving..." : "Save Friends"}
+                      </button>
+                      {friendsMessage && (
+                        <div className={friendsMessage.startsWith("Could not") ? "warning-message" : "saved-message"}>{friendsMessage}</div>
                       )}
                     </div>
                   </div>
                 </div>
-              )}
 
-              {activeTab === "awards" && (
-                <div className="box">
-                  <div className="box-title">Manage Displayed Awards</div>
+                <div
+                  className="box"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (friendDrag?.from === "slot") changeFriends(displayFriends.filter((id) => id !== friendDrag.key));
+                    setFriendDrag(null);
+                    setFriendOver(null);
+                  }}
+                >
+                  <div className="box-title">All My Friends ({friendsCount})</div>
                   <div className="box-body">
-                    <div className="notice">
-                      View all awards you have earned. Choose which awards appear on your profile and arrange their order.
-                    </div>
-                    <div className="manage-grid">
-                      {Array.from({ length: 6 }).map((_, idx) => (
-                        <div key={idx} className={`manage-card ${displayAwards[idx] ? 'top' : ''}`}>
-                          {displayAwards[idx] || `Empty Slot ${idx + 1}`}
-                        </div>
-                      ))}
-                    </div>
+                    {friends.length === 0 ? (
+                      <div className="help-text">You have no friends yet.</div>
+                    ) : (
+                      <div className="award-pool">
+                        {friends.map((friend) => {
+                          const used = displayFriends.includes(friend.id);
+                          return (
+                            <div
+                              key={friend.id}
+                              className={`pool-award ${used ? "used" : ""}`}
+                              draggable
+                              onDragStart={() => setFriendDrag({ from: "pool", key: friend.id })}
+                              onDragEnd={() => { setFriendDrag(null); setFriendOver(null); }}
+                              onClick={() => {
+                                if (!used && displayFriends.length < 4) changeFriends([...displayFriends, friend.id]);
+                              }}
+                              title={`${friend.username}. Click or drag to add.`}
+                            >
+                              <div className="friend-avatar">
+                                {friend.avatar_url ? <img src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="slot-name">{friend.username}</div>
+                              {used && <div className="pool-badge">On profile</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-
-              {activeTab === "photos" && (
-                <div className="box">
-                  <div className="box-title">Manage Displayed Photos</div>
-                  <div className="box-body">
-                    <div className="notice">
-                      View your uploaded photos. Choose which photos appear on your profile and arrange their order.
-                    </div>
-
-                    <div className="manage-grid">
-                      <div className="manage-card top">Profile Photo 1</div>
-                      <div className="manage-card top">Profile Photo 2</div>
-                      <div className="manage-card top">Profile Photo 3</div>
-                      <div className="manage-card top">Profile Photo 4</div>
-                      <div className="manage-card">Uploaded Photo</div>
-                      <div className="manage-card">Uploaded Photo</div>
-                      <div className="manage-card">Uploaded Photo</div>
-                      <div className="manage-card">Uploaded Photo</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "friends" && (
-                <div className="box">
-                  <div className="box-title">Manage Displayed Friends</div>
-                  <div className="box-body">
-                    <div className="notice">
-                      View your friends list. You have <strong>{friendsCount}</strong> accepted friends. Choose which friends appear on your profile and arrange their order.
-                    </div>
-
-                    <div className="manage-grid">
-                      <div className="manage-card top">Top Friend 1</div>
-                      <div className="manage-card top">Top Friend 2</div>
-                      <div className="manage-card top">Top Friend 3</div>
-                      <div className="manage-card top">Top Friend 4</div>
-                      <div className="manage-card">Friend</div>
-                      <div className="manage-card">Friend</div>
-                      <div className="manage-card">Friend</div>
-                      <div className="manage-card">Friend</div>
-                    </div>
-                  </div>
-                </div>
+                </>
               )}
 
               {activeTab === "settings" && (
+                <>
                 <div className="box">
-                  <div className="box-title">Settings</div>
+                  <div className="box-title">Email</div>
                   <div className="box-body">
-                    <div className="notice">
-                      More personal account settings will be managed here later.
+                    <div className="form-row">
+                      <label>Primary Email</label>
+                      <input value={currentUser?.email || ""} readOnly />
+                      <div className="field-note">Your primary email is linked to this account and cannot be changed.</div>
                     </div>
+                    <div className="form-row">
+                      <label>Second Email</label>
+                      {secondaryEmail ? (
+                        <>
+                          <input value={secondaryEmail} readOnly />
+                          <div className="field-note">Linked. Accounts can have at most 2 emails, and linked emails cannot be changed or removed.</div>
+                        </>
+                      ) : (
+                        <>
+                          <input type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="Add one more email address" />
+                          <div className="field-note">You can link one extra email. Once linked it cannot be changed or removed.</div>
+                        </>
+                      )}
+                    </div>
+                    {!secondaryEmail && (
+                      <div className="save-row">
+                        <button className="save-button" type="button" disabled={settingsBusy} onClick={linkSecondEmail}>Link Email</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                    <div className="manage-grid">
-                      <div className="manage-card">Email Settings</div>
-                      <div className="manage-card">Password Settings</div>
-                      <div className="manage-card">Privacy Settings</div>
-                      <div className="manage-card">Notification Settings</div>
+                <div className="box">
+                  <div className="box-title">Password</div>
+                  <div className="box-body">
+                    <div className="form-row">
+                      <label>New Password</label>
+                      <input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="At least 8 characters" />
+                    </div>
+                    <div className="form-row">
+                      <label>Confirm New Password</label>
+                      <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter new password" />
+                    </div>
+                    <div className="save-row">
+                      <button className="save-button" type="button" disabled={settingsBusy} onClick={changePassword}>Update Password</button>
                     </div>
                   </div>
                 </div>
+
+                {settingsMessage && (
+                  <div className={settingsMessage.ok ? "saved-message" : "error-text"}>{settingsMessage.text}</div>
+                )}
+                </>
               )}
             </main>
           </div>

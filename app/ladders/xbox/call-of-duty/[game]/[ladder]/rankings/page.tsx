@@ -83,6 +83,16 @@ export default function LadderRankingsPage() {
   const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [seasonLabel, setSeasonLabel] = useState("Current");
+
+  useEffect(() => {
+    supabase.rpc("gb_current_season").then(({ data }) => {
+      const season = data as { name?: string; ends_at?: string } | null;
+      if (!season?.name) return;
+      const ends = season.ends_at ? new Date(season.ends_at).toLocaleDateString() : "";
+      setSeasonLabel(ends ? `${season.name} (ends ${ends})` : season.name);
+    });
+  }, []);
   const [error, setError] = useState("");
 
   const gameTitle = prettyText(game);
@@ -593,7 +603,7 @@ export default function LadderRankingsPage() {
                 <div>
                   <div className="hero-title">{ladderTitle}</div>
                   <div className="season">
-                    Season: <strong>Current</strong>
+                    Season: <strong>{seasonLabel}</strong>
                   </div>
                 </div>
               </div>

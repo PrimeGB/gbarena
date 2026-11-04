@@ -243,7 +243,6 @@ export default function ProfileMatchesPage() {
           <a className="tab" href="/profile">Profile</a>
           <a className="tab" href="/profile/teams">Teams</a>
           <a className="tab active" href="/profile/matches">Matches</a>
-          <a className="tab" href="/profile/photos">Photos</a>
           <a className="tab" href="/profile/friends">Friends</a>
         </div>
 
