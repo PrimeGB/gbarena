@@ -304,8 +304,8 @@ export default function Home() {
 
         .search-box:hover,
         .search-box:focus-within{
-          background:rgba(0,120,210,.13);
-          box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);
+          background:transparent;
+          box-shadow:none;
         }
 
         .drop-wrap{
