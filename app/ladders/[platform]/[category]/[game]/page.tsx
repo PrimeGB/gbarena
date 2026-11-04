@@ -32,38 +32,47 @@ export default function LadderGamePage() {
   return (
     <main className="page">
       <section className="panel">
-        <Link className="back-link" href={`/ladders/${platform}/${category}`}>
-          {platformName} {categoryName}
-        </Link>
-        <p className="eyebrow">{platformName} Ladders</p>
+        <div className="topline">
+          <Link className="back-link" href={`/ladders/${platform}/${category}`}>
+            ← {platformName} {categoryName}
+          </Link>
+          <span className="platform-pill">{platformName}</span>
+        </div>
+        <div className="context-links">
+          <Link href={`/tournaments?platform=${platform}&category=${category}&game=${game}`}>
+            {gameName} tournaments
+          </Link>
+        </div>
+        <p className="eyebrow">{categoryName} · {platformName} Ladders</p>
         <h1>{gameName}</h1>
-        <p className="intro">
-          Choose a ladder to view standings or create a team. These ladders are
-          available to every visitor; signing in does not change this list.
-        </p>
+        <p className="intro">Choose the {gameName} ladder you want to compete in.</p>
         <div className="ladder-list">
           {ladders.map((ladder) => (
             <article className="ladder" key={ladder.slug}>
-              <div>
+              <div className="ladder-info">
+                <span className="ladder-kicker">{gameName} · {platformName}</span>
                 <h2>{ladder.title}</h2>
-                <p>{gameName} {ladder.title} Ladder</p>
+                <p>{ladder.title} competition and standings</p>
               </div>
               <div className="actions">
                 <Link
+                  className="action-secondary"
                   href={`/team-hub?platform=${platform}&category=${category}&game=${game}&ladder=${ladder.slug}`}
                 >
-                  View/Create Team
+                  Find or create a team
                 </Link>
                 <Link
-                  href={`                  /ladders/${platform}/${category}/${game}/${ladder.slug}/rankings`}
+                  className="action-primary"
+                  href={`/ladders/${platform}/${category}/${game}/${ladder.slug}/rankings`}
                 >
-                  Current Ladder Rankings
+                  View rankings
                 </Link>
-                                  <Link
-                                    href={`/ladders/${platform}/${category}/${game}/${ladder.slug}/rules`}
-                                  >
-                                    Rules
-                                  </Link>
+                <Link
+                  className="action-rules"
+                  href={`/ladders/${platform}/${category}/${game}/${ladder.slug}/rules`}
+                >
+                  Rules
+                </Link>
               </div>
             </article>
           ))}
@@ -72,86 +81,148 @@ export default function LadderGamePage() {
       <style jsx>{`
         .page {
           min-height: 100vh;
-          padding: 32px 18px;
-          background: radial-gradient(circle at top, #173d5f, #02060a 65%);
-          color: #eaf6ff;
-          font-family: Tahoma, Verdana, Arial, sans-serif;
+          padding: 48px 20px;
+          background:
+            radial-gradient(ellipse at 50% 0%, rgba(35,104,161,.24), transparent 50%),
+            #050a11;
+          color: #eaf1f8;
+          font-family: var(--font-geist-sans), Arial, sans-serif;
         }
         .panel {
-          max-width: 900px;
+          max-width: 960px;
           margin: 0 auto;
-          padding: 24px;
-          border: 1px solid #2d6f9f;
-          background: #071522;
-          box-shadow: 0 0 34px #000c;
+          padding: 34px;
+          border: 1px solid rgba(130,168,205,.2);
+          border-radius: 16px;
+          background: rgba(9,17,28,.96);
+          box-shadow: 0 24px 70px rgba(0,0,0,.4);
         }
-        .back-link,
-        .actions a {
-          color: #9bd8ff;
-          font-weight: 700;
-          text-decoration: none;
-        }
-        .back-link:hover,
-        .actions a:hover {
-          color: #f2c14e;
-          text-decoration: underline;
-        }
-        .eyebrow {
-          margin-top: 26px;
-          color: #9bd8ff;
-          font-size: 12px;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-        h1 {
-          margin: 6px 0 10px;
-          color: #f2c14e;
-          font-size: 30px;
-          text-transform: uppercase;
-        }
-        .intro {
-          margin-bottom: 22px;
-          color: #cfe2f2;
-          line-height: 1.6;
-        }
-        .ladder-list {
-          display: grid;
-          gap: 12px;
-        }
-        .ladder {
+        .topline {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 18px;
-          padding: 16px;
-          border: 1px solid #244b70;
-          background: #050c14;
+          gap: 16px;
+        }
+        .context-links {
+          margin-top: 20px;
+        }
+        .context-links a {
+          display: inline-flex;
+          padding: 8px 12px;
+          border: 1px solid rgba(88,153,209,.28);
+          border-radius: 7px;
+          color: #b6d8f3;
+          font-size: 12px;
+          font-weight: 600;
+          text-decoration: none;
+        }
+        .context-links a:hover {
+          border-color: #438dca;
+          color: #fff;
+        }
+        .back-link {
+          color: #9eb9d2;
+          font-size: 13px;
+          text-decoration: none;
+        }
+        .back-link:hover { color: #fff; }
+        .platform-pill {
+          padding: 6px 10px;
+          border: 1px solid rgba(88,153,209,.28);
+          border-radius: 999px;
+          background: rgba(42,108,161,.12);
+          color: #a9d6f5;
+          font-size: 11px;
+          font-weight: 650;
+        }
+        .eyebrow {
+          margin: 34px 0 8px;
+          color: #82b8e4;
+          font-size: 12px;
+          font-weight: 650;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+        }
+        h1 {
+          margin: 0;
+          color: #f3f6fa;
+          font-size: clamp(28px,4vw,38px);
+          letter-spacing: -.04em;
+        }
+        .intro {
+          margin: 10px 0 26px;
+          color: #aab9c9;
+          font-size: 14px;
+          line-height: 1.65;
+        }
+        .ladder-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit,minmax(265px,1fr));
+          gap: 14px;
+        }
+        .ladder {
+          display: flex;
+          min-height: 218px;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 24px;
+          padding: 20px;
+          border: 1px solid #273c51;
+          border-radius: 12px;
+          background: linear-gradient(145deg,#101e2d,#09111b);
+          transition: border-color .15s ease, transform .15s ease;
+        }
+        .ladder:hover {
+          transform: translateY(-2px);
+          border-color: #3b76a6;
+        }
+        .ladder-kicker {
+          color: #8299af;
+          font-size: 10px;
+          font-weight: 650;
+          letter-spacing: .08em;
+          text-transform: uppercase;
         }
         h2 {
-          margin: 0 0 5px;
-          color: #fff;
-          font-size: 18px;
+          margin: 9px 0 5px;
+          color: #f2f6fa;
+          font-size: 21px;
+          letter-spacing: -.02em;
         }
         .ladder p {
           margin: 0;
-          color: #a9c3db;
+          color: #96a9bc;
           font-size: 12px;
         }
         .actions {
           display: flex;
           flex-wrap: wrap;
-          gap: 16px;
-          justify-content: flex-end;
+          align-items: center;
+          gap: 10px;
           font-size: 12px;
         }
-        @media (max-width: 650px) {
-          .ladder {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-          .actions {
-            justify-content: flex-start;
-          }
+        .actions a {
+          color: #acd0ec;
+          font-weight: 600;
+          text-decoration: none;
+        }
+        .actions a:hover { color: #fff; }
+        .action-primary,
+        .action-secondary {
+          padding: 9px 11px;
+          border: 1px solid #2d5272;
+          border-radius: 7px;
+        }
+        .action-primary {
+          border-color: #3376aa;
+          background: #17517f;
+          color: #fff !important;
+        }
+        .action-primary:hover { background: #20699e; }
+        .action-rules { padding: 6px 2px; }
+        @media (max-width: 600px) {
+          .page { padding: 22px 12px; }
+          .panel { padding: 22px 18px; }
         }
       `}</style>
     </main>

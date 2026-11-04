@@ -248,73 +248,35 @@ export default function LatestNewsPage() {
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
-                    <span className="tag">Update</span>
-                    Forum System Being Built
+                    <span className="tag">Just Updated</span>
+                    Game-specific Ladders & Tournaments
                   </div>
-                  <div className="news-date">Newest</div>
+                  <div className="news-date">November 4, 2026</div>
                 </div>
                 <div className="news-body">
-                  Forum sections are being organized for News and Updates, Teams,
-                  General Info, Top Clips, and community discussion. Posts should stay
-                  sorted with newest posts first, while active posts with lots of replies
-                  stay near the top.
+                  Choose a game to see its relevant ladders and tournaments. Team pages
+                  now link to competition pages for that team&apos;s game and platform, while
+                  the <Link href="/ladders">ladders catalog</Link> and{" "}
+                  <Link href="/tournaments">tournament hub</Link> let you browse across
+                  GameBattles. When a game has no active tournaments, its page still
+                  explains the status and links to all tournaments.
                 </div>
               </div>
 
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
-                    <span className="tag">Coming Soon</span>
-                    New Ladders
+                    <span className="tag">Account Update</span>
+                    Email Confirmation & Account Privacy
                   </div>
-                  <div className="news-date">Planned</div>
+                  <div className="news-date">November 4, 2026</div>
                 </div>
                 <div className="news-body">
-                  New competitive ladders are planned for PlayStation, Xbox, Nintendo,
-                  and PC. Each ladder will eventually support team rankings, match
-                  records, wins, losses, and rank points.
-                </div>
-              </div>
-
-              <div className="news-post">
-                <div className="news-head">
-                  <div className="news-title">
-                    <span className="tag">Tournament</span>
-                    Tournament Hub
-                  </div>
-                  <div className="news-date">Upcoming</div>
-                </div>
-                <div className="news-body">
-                  A tournament area is planned so players can see upcoming events,
-                  weekly cups, open brackets, featured games, and tournament rule updates.
-                </div>
-              </div>
-
-              <div className="news-post">
-                <div className="news-head">
-                  <div className="news-title">
-                    <span className="tag">Suggestion</span>
-                    Top Clips Section Approved
-                  </div>
-                  <div className="news-date">Accepted</div>
-                </div>
-                <div className="news-body">
-                  The Top Clips section is being added. Players will be able to submit
-                  clips for review. Approved clips can be featured for everyone to see.
-                </div>
-              </div>
-
-              <div className="news-post">
-                <div className="news-head">
-                  <div className="news-title">
-                    <span className="tag">Safety</span>
-                    Posting Cooldown
-                  </div>
-                  <div className="news-date">Planned</div>
-                </div>
-                <div className="news-body">
-                  A five minute cooldown between posts is planned to stop spam and keep
-                  the forums clean. This will help protect the old-school community feel.
+                  New accounts must confirm their email before the welcome message is
+                  sent. Email addresses are tied to accounts, and duplicate email
+                  addresses and usernames are blocked. Phone contact is optional; SMS
+                  verification is not currently available. Account information is used
+                  to provide GameBattles services and is not intended for unrelated use.
                 </div>
               </div>
 
@@ -322,14 +284,29 @@ export default function LatestNewsPage() {
                 <div className="news-head">
                   <div className="news-title">
                     <span className="tag">Community</span>
-                    What Players Should Watch For
+                    GameBattles Forums
                   </div>
-                  <div className="news-date">Info</div>
+                  <div className="news-date">Now Open</div>
                 </div>
                 <div className="news-body">
-                  Players should watch this page for site updates, ladder launches,
-                  tournament dates, accepted suggestions, rule changes, featured clips,
-                  staff notes, and major community announcements.
+                  Visit the <Link href="/forums">forums</Link> for site news, team
+                  recruiting, general discussion, questions, suggestions, and community
+                  clips. Keep an eye on the News & Updates section for announcements.
+                </div>
+              </div>
+
+              <div className="news-post">
+                <div className="news-head">
+                  <div className="news-title">
+                    <span className="tag">In Progress</span>
+                    Owner Email Alerts for Feedback
+                  </div>
+                  <div className="news-date">Ongoing</div>
+                </div>
+                <div className="news-body">
+                  Suggestion and bug submissions are being connected to email alerts
+                  for the site owner, including the submitted title and details. New
+                  improvements will be posted here as they become available.
                 </div>
               </div>
             </div>
@@ -340,22 +317,22 @@ export default function LatestNewsPage() {
 
             <div className="mini-note">
               <b>Newest updates</b><br />
-              Site changes and new features will be posted here first.
+              Game-specific ladders and tournament pages are now available.
             </div>
 
             <div className="mini-note">
-              <b>Suggestions we liked</b><br />
-              Good player ideas can be listed here before being added.
+              <b>Account setup</b><br />
+              Confirm your email to activate your new account.
             </div>
 
             <div className="mini-note">
-              <b>Upcoming ladders</b><br />
-              New games, platforms, and ladders can be announced here.
+              <b>Browse ladders</b><br />
+              <Link href="/ladders">Explore available games and platforms.</Link>
             </div>
 
             <div className="mini-note">
               <b>Tournaments</b><br />
-              Future cups, brackets, and special events can be shown here.
+              <Link href="/tournaments">See events across all games.</Link>
             </div>
           </aside>
         </div>

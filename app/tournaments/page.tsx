@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import { gamingGameLabel } from "../../lib/gamingAccounts";
 import GetCreditsBox from "../components/GetCreditsBox";
 import TournamentDisclaimerBox from "../components/TournamentDisclaimerBox";
 
@@ -28,8 +30,46 @@ type Tournament = {
   status: string;
 };
 
-type OwnedTeam = { id: string; name: string; platform: string | null };
+type OwnedTeam = {
+  id: string;
+  name: string;
+  platform: string | null;
+  category: string | null;
+  game: string | null;
+};
 type Registration = { tournament_id: string; team_id: string };
+type TournamentScope = {
+  platform: string;
+  category: string;
+  game: string;
+};
+
+function normalizeValue(value: string | null | undefined) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function matchesPlatform(value: string | null | undefined, platform: string) {
+  if (!value) return true;
+  const actual = normalizeValue(value);
+  const expected = normalizeValue(platform);
+  if (actual === expected) return true;
+  if (expected === "nintendo" && actual.includes("switch")) return true;
+  return actual.startsWith(expected) || expected.startsWith(actual);
+}
+
+function matchesGame(value: string | null | undefined, category: string, game: string) {
+  if (!value) return false;
+  const actual = normalizeValue(value);
+  const canonical = normalizeValue(gamingGameLabel(category, game) || game);
+  const slug = normalizeValue(game);
+  const aliases = game === "modern-warfare-4" ? ["mw4", "codmw4"] : [];
+  return (
+    actual === canonical ||
+    actual === slug ||
+    actual.endsWith(canonical) ||
+    aliases.includes(actual)
+  );
+}
 
 function formatDate(value: string | null) {
   if (!value) return "TBD";
@@ -51,6 +91,18 @@ function formatTime(value: string | null) {
 }
 
 export default function TournamentsPage() {
+  return (
+    <Suspense fallback={<div className="t-empty">Loading tournaments...</div>}>
+      <TournamentListing />
+    </Suspense>
+  );
+}
+
+function TournamentListing() {
+  const searchParams = useSearchParams();
+  const platformParam = searchParams.get("platform") || "";
+  const categoryParam = searchParams.get("category") || "";
+  const gameParam = searchParams.get("game") || "";
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -60,6 +112,13 @@ export default function TournamentsPage() {
   const [pickedTeam, setPickedTeam] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const scope: TournamentScope | null =
+    platformParam && categoryParam && gameParam
+      ? { platform: platformParam, category: categoryParam, game: gameParam }
+      : null;
+  const gameLabel = scope
+    ? gamingGameLabel(scope.category, scope.game) || scope.game
+    : "";
 
   async function loadRegistrations() {
     const { data } = await supabase
@@ -69,17 +128,23 @@ export default function TournamentsPage() {
   }
 
   useEffect(() => {
-    loadRegistrations();
+    let active = true;
+    supabase
+      .from("tournament_registrations")
+      .select("tournament_id, team_id")
+      .then(({ data }) => {
+        if (active) setRegistrations((data as Registration[]) || []);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      setTeams([]);
-      return;
-    }
+    if (!user) return;
     supabase
       .from("teams")
-      .select("id, name, platform")
+      .select("id, name, platform, category, game")
       .eq("owner_id", user.id)
       .then(({ data }) => setTeams((data as OwnedTeam[]) || []));
   }, [user]);
@@ -111,19 +176,33 @@ export default function TournamentsPage() {
   useEffect(() => {
     let active = true;
     (async () => {
+      setLoading(true);
+      const currentScope = platformParam && categoryParam && gameParam
+        ? { platform: platformParam, category: categoryParam, game: gameParam }
+        : null;
+
       const { data } = await supabase
         .from("tournaments")
         .select("*")
         .in("status", ["upcoming", "live"])
         .order("starts_at", { ascending: true });
       if (!active) return;
-      setTournaments((data as Tournament[]) || []);
+      const availableTournaments = (data as Tournament[]) || [];
+      setTournaments(
+        currentScope
+          ? availableTournaments.filter(
+              (tournament) =>
+                matchesPlatform(tournament.platform, currentScope.platform) &&
+                matchesGame(tournament.game, currentScope.category, currentScope.game)
+            )
+          : availableTournaments
+      );
       setLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, []);
+  }, [platformParam, categoryParam, gameParam]);
 
   return (
     <>
@@ -166,6 +245,8 @@ export default function TournamentsPage() {
         .t-title{height:26px;background:#0f2a40;border-bottom:1px solid #3b7fc2;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:bold;color:#f2c14e;text-transform:uppercase;}
         .t-empty{padding:34px 16px;text-align:center;font-size:12px;color:#9fb9cf;line-height:1.6;}
         .t-empty strong{display:block;color:#f2c14e;font-size:14px;margin-bottom:6px;text-transform:uppercase;}
+        .t-empty .t-all-link{display:block;width:max-content;max-width:100%;margin:16px auto 0;padding:9px 14px;border:1px solid #4f93d6;border-radius:999px;color:#cfe6ff;font-size:11px;font-weight:bold;text-decoration:none;}
+        .t-empty .t-all-link:hover{background:#10263a;color:#fff;}
         .t-list{padding:12px;display:grid;gap:14px;}
         .t-card{background:linear-gradient(#0b1a29,#07111b);border:1px solid #1f4566;border-radius:10px;overflow:hidden;}
         .t-card.live{border-color:#c40000;box-shadow:0 0 18px rgba(196,0,0,.25);}
@@ -214,6 +295,14 @@ export default function TournamentsPage() {
       <div className="t-page">
         <nav className="t-nav">
           <Link href="/home">Home</Link>
+          {scope && (
+            <>
+              <Link href={`/ladders/${scope.platform}/${scope.category}/${scope.game}`}>
+                {gameLabel} Ladders
+              </Link>
+              <Link href="/tournaments">All Tournaments</Link>
+            </>
+          )}
           <Link href="/forums">Forums</Link>
           <Link href="/members">Members</Link>
           <Link href="/rules">Rules</Link>
@@ -222,11 +311,11 @@ export default function TournamentsPage() {
 
         <div className="t-hero">
           <div className="t-hero-text">
-            <h1>Tournaments</h1>
+            <h1>{scope ? `${gameLabel} Tournaments` : "Tournaments"}</h1>
             <p>
-              Every GameBattles tournament starts here. Browse what&apos;s coming
-              up, check the date, time, rules and prizes, and see whether it&apos;s
-              free to enter.
+              {scope
+                ? `Upcoming and live events for ${gameLabel} on ${scope.platform}. View event details, rules and prizes, or register your eligible team.`
+                : "Every GameBattles tournament starts here. Browse what's coming up, check the date, time, rules and prizes, and see whether it's free to enter."}
             </p>
           </div>
           <div className="t-hero-side">
@@ -236,16 +325,25 @@ export default function TournamentsPage() {
         </div>
 
         <div className="t-panel">
-          <div className="t-title">Upcoming Tournaments</div>
+          <div className="t-title">
+            {scope ? `${scope.platform} · ${gameLabel} Events` : "Upcoming Tournaments"}
+          </div>
 
           {loading ? (
             <div className="t-empty">Loading tournaments...</div>
           ) : tournaments.length === 0 ? (
             <div className="t-empty">
-              <strong>0 Upcoming Tournaments</strong>
-              Nothing is scheduled right now. Check back soon - dates, times,
-              rules and prizes will be posted here as soon as a tournament is
-              announced.
+              <strong>
+                {scope ? `No active ${gameLabel} tournaments` : "0 Upcoming Tournaments"}
+              </strong>
+              {scope
+                ? `There are no upcoming or live ${gameLabel} tournaments for ${scope.platform} right now. This is the ${gameLabel} tournament hub; check back for future events.`
+                : "Nothing is scheduled right now. Check back soon - dates, times, rules and prizes will be posted here as soon as a tournament is announced."}
+              {scope && (
+                <Link className="t-all-link" href="/tournaments">
+                  Click here to see all tournaments
+                </Link>
+              )}
             </div>
           ) : (
             <div className="t-list">
@@ -254,9 +352,16 @@ export default function TournamentsPage() {
                 const free = credits > 0 || t.is_free || !t.entry_fee;
                 const open = openId === t.id;
                 const regs = registrations.filter((r) => r.tournament_id === t.id);
-                const eligible = teams.filter(
-                  (tm) => !t.platform || tm.platform === t.platform
-                );
+                const eligible = teams.filter((tm) => {
+                  const samePlatform = !t.platform || matchesPlatform(tm.platform, t.platform);
+                  const sameGame = !t.game || matchesGame(t.game, tm.category || "", tm.game || "");
+                  const sameScope = !scope || (
+                    tm.category === scope.category &&
+                    matchesPlatform(tm.platform, scope.platform) &&
+                    matchesGame(tm.game, scope.category, scope.game)
+                  );
+                  return samePlatform && sameGame && sameScope;
+                });
                 const myReg = regs.find((r) => teams.some((tm) => tm.id === r.team_id));
                 const full = t.max_teams != null && regs.length >= t.max_teams;
                 const picked = pickedTeam[t.id] || eligible[0]?.id || "";
@@ -325,7 +430,14 @@ export default function TournamentsPage() {
                         >
                           {open ? "Hide Rules" : "View Rules"}
                         </button>
-                        <Link className="t-btn ghost" href={`/tournaments/${t.id}`}>
+                        <Link
+                          className="t-btn ghost"
+                          href={
+                            scope
+                              ? `/tournaments/${t.id}?returnTo=${encodeURIComponent(`/tournaments?platform=${scope.platform}&category=${scope.category}&game=${scope.game}`)}`
+                              : `/tournaments/${t.id}`
+                          }
+                        >
                           View Bracket
                         </Link>
                       </div>

@@ -20,6 +20,9 @@ export default function SuggestionsPage() {
   const [selectedType, setSelectedType] = useState<PostType>("Suggestion");
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [posts, setPosts] = useState<CommunityPost[]>([
     {
@@ -53,26 +56,54 @@ export default function SuggestionsPage() {
 
   const filteredPosts = useMemo(() => posts, [posts]);
 
-  function submitPost() {
+  async function submitPost() {
     const cleanTitle = title.trim();
+    const cleanDetails = details.trim();
 
-    if (!cleanTitle) {
+    if (cleanTitle.length < 4 || cleanDetails.length < 10) {
+      setError("Enter a title of at least 4 characters and details of at least 10 characters.");
       return;
     }
 
-    const newPost: CommunityPost = {
-      id: Date.now(),
-      type: selectedType,
-      title: cleanTitle,
-      author: "You",
-      status: "Open",
-      likes: 0,
-      comments: 0,
-    };
+    setSubmitting(true);
+    setError("");
+    setSuccess("");
 
-    setPosts([newPost, ...posts]);
-    setTitle("");
-    setDetails("");
+    try {
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: selectedType,
+          title: cleanTitle,
+          details: cleanDetails,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || "Your submission could not be sent. Please try again.");
+        return;
+      }
+
+      const newPost: CommunityPost = {
+        id: Date.now(),
+        type: selectedType,
+        title: cleanTitle,
+        author: "You",
+        status: "Open",
+        likes: 0,
+        comments: 0,
+      };
+
+      setPosts([newPost, ...posts]);
+      setTitle("");
+      setDetails("");
+      setSuccess("Thanks! Your submission was sent to the GameBattles owner.");
+    } catch {
+      setError("Your submission could not be sent. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function likePost(id: number) {
@@ -266,6 +297,16 @@ export default function SuggestionsPage() {
         .warning-box strong{
           color:#ff7777;
           text-transform:uppercase;
+        }
+
+        .success-box{
+          border:1px solid #2c7a59;
+          background:linear-gradient(to bottom,#092519,#06150f);
+          color:#c8f2d8;
+          font-size:12px;
+          line-height:19px;
+          padding:12px;
+          margin-bottom:14px;
         }
 
         .type-row{
@@ -496,6 +537,9 @@ export default function SuggestionsPage() {
                   can lead to warnings or account consequences.
                 </div>
 
+                {error && <p role="alert" className="warning-box">{error}</p>}
+                {success && <p role="status" className="success-box">{success}</p>}
+
                 <div className="type-row">
                   <button
                     className={
@@ -527,6 +571,8 @@ export default function SuggestionsPage() {
                   className="input"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
+                  maxLength={160}
+                  required
                   placeholder="Short title..."
                 />
 
@@ -535,11 +581,13 @@ export default function SuggestionsPage() {
                   className="textarea"
                   value={details}
                   onChange={(event) => setDetails(event.target.value)}
+                  maxLength={5000}
+                  required
                   placeholder="Explain your idea or bug clearly..."
                 />
 
-                <button className="submit-btn" type="button" onClick={submitPost}>
-                  Submit {selectedType}
+                <button className="submit-btn" type="button" onClick={submitPost} disabled={submitting}>
+                  {submitting ? "Sending..." : `Submit ${selectedType}`}
                 </button>
               </div>
             </section>

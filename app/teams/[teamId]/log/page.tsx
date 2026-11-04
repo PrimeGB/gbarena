@@ -11,6 +11,8 @@ type TeamRow = {
   id: string;
   name: string | null;
   platform: string | null;
+  category: string | null;
+  game: string | null;
   owner_id: string | null;
 };
 
@@ -45,7 +47,7 @@ export default function TeamLogPage() {
     (async () => {
       const { data: teamData } = await supabase
         .from("teams")
-        .select("id,name,platform,owner_id")
+        .select("id,name,platform,category,game,owner_id")
         .eq("id", teamId)
         .maybeSingle();
 
@@ -115,7 +117,10 @@ export default function TeamLogPage() {
   return (
     <main className="log-page">
       <div className="log-wrap">
-        <SiteNav ladderHref={`/ladders/${team?.platform || "xbox"}`} />
+        <SiteNav
+          ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}`}
+          tournamentHref={`/tournaments?platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}`}
+        />
         <div className="log-pad">
           <TeamTabs teamId={teamId} active="log" canEditProfile={isLeader} canEditRoster={isLeader} />
 

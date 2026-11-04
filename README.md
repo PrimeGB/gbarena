@@ -48,6 +48,17 @@ Additional titles may be added based on community demand.
 ### Hosting
 - Vercel
 
+### Feedback email notifications
+To email the site owner when a suggestion or bug is submitted, configure these
+server-side environment variables in the deployment:
+
+- `SITE_OWNER_EMAIL` — the site owner's notification address
+- `RESEND_API_KEY` — a Resend API key
+- `EMAIL_FROM` — a sender address verified with Resend
+
+The submission endpoint reports an error instead of showing success when delivery
+is not configured or the email provider rejects the message.
+
 ### Version Control
 - GitHub
 

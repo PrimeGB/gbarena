@@ -1,12 +1,16 @@
 type SiteNavProps = {
   ladderHref?: string;
+  tournamentHref?: string;
 };
 
-export default function SiteNav({ ladderHref = "/ladders/xbox" }: SiteNavProps) {
+export default function SiteNav({
+  ladderHref = "/ladders",
+  tournamentHref = "/tournaments",
+}: SiteNavProps) {
   const links = [
     { label: "Home", href: "/home" },
     { label: "Ladders", href: ladderHref },
-    { label: "Tournaments", href: "/coming-soon" },
+    { label: "Tournaments", href: tournamentHref },
     { label: "Create a Team", href: "/teams/create" },
     { label: "Forums", href: "/forums" },
     { label: "Recruit", href: "/recruit" },

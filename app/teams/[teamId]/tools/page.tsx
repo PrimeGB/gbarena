@@ -51,7 +51,10 @@ export default function TeamToolsPage() {
   return (
     <main className="tools-page">
       <div className="tools-wrap">
-        <SiteNav ladderHref={`/ladders/${team?.platform || "xbox"}`} />
+        <SiteNav
+          ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}`}
+          tournamentHref={`/tournaments?platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}`}
+        />
         <div className="tools-pad">
           <TeamTabs teamId={teamId} active="tools" canEditProfile={isLeader} canEditRoster={isLeader} />
 

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
 type BracketMatch = {
@@ -33,7 +33,16 @@ function roundName(round: number, total: number) {
 }
 
 export default function TournamentBracketPage() {
+  return (
+    <Suspense fallback={<div className="br-empty">Loading tournament...</div>}>
+      <TournamentBracket />
+    </Suspense>
+  );
+}
+
+function TournamentBracket() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = String(params?.id || "");
   const [tournament, setTournament] = useState<TournamentInfo | null>(null);
   const [matches, setMatches] = useState<BracketMatch[]>([]);
@@ -41,6 +50,10 @@ export default function TournamentBracketPage() {
   const [isStaff, setIsStaff] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const requestedReturn = searchParams.get("returnTo");
+  const backHref = requestedReturn?.startsWith("/tournaments?")
+    ? requestedReturn
+    : "/tournaments";
 
   const load = useCallback(async () => {
     const [{ data: t }, { data: ms }] = await Promise.all([
@@ -134,7 +147,9 @@ export default function TournamentBracketPage() {
       `}</style>
       <div className="br-page">
         <div className="br-head">
-          <Link href="/tournaments">← All Tournaments</Link>
+          <Link href={backHref}>
+            {backHref === "/tournaments" ? "← All Tournaments" : "← Back to game tournaments"}
+          </Link>
           <h1>{tournament?.title || (loading ? "Loading..." : "Tournament not found")}</h1>
           {tournament && (
             <p>

@@ -1,8 +1,9 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -336,6 +337,8 @@ export default function JoinPage() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordHint, setPasswordHint] = useState("");
@@ -359,6 +362,7 @@ export default function JoinPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [confirmationRequired, setConfirmationRequired] = useState(false);
+  const [confirmationComplete, setConfirmationComplete] = useState(false);
   const [loading, setLoading] = useState(false);
   const [website, setWebsite] = useState("");
   const [openedAt] = useState(() => Date.now());
@@ -370,6 +374,106 @@ export default function JoinPage() {
   );
 
   const regionOptions = country ? regionsByCountry[country] || [] : [];
+
+  const ensureProfileAndWelcome = useCallback(async (user) => {
+    const metadata = user.user_metadata || {};
+    const { data: existingProfile, error: profileLookupError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileLookupError) throw profileLookupError;
+
+    if (!existingProfile) {
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: user.id,
+          username: metadata.username || metadata.display_name,
+          email: user.email,
+          date_of_birth: metadata.date_of_birth,
+          country: metadata.country,
+          location: metadata.location,
+          agreed_to_rules: metadata.agreed_to_rules === true,
+          agreed_to_rules_at: metadata.agreed_to_rules_at,
+          xbox_gt: null,
+          psn_gt: null,
+          nintendo_gt: null,
+          pc_gt: null,
+        },
+      ]);
+
+      if (profileError) throw profileError;
+    }
+
+    const { error: welcomeMessageError } = await supabase.rpc("send_system_message", {
+      target_user_id: user.id,
+      message_subject: "Welcome To GameBattles",
+      message_body:
+        "Welcome to GameBattles and thank you for joining our community.\n\nGameBattles is built around competitive gaming, teamwork, rivalries, ladders, tournaments, and bringing players together across multiple platforms and titles.\n\nGetting Started:\n• Complete your profile\n• Link your gaming accounts\n• Add friends\n• Create or join a team\n• Explore available ladders\n• Start competing and building your record\n\nCommunity Expectations:\nAll members are expected to treat other players with respect, compete fairly, and follow all site rules and ladder regulations.\n\nPlease remember that cheating, harassment, account abuse, match manipulation, or attempts to exploit the platform may result in warnings, suspensions, ladder restrictions, or permanent account removal.\n\nBy continuing to use GameBattles you agree to follow all posted rules, policies, and future updates made by staff.\n\nGood luck and welcome to the competition.\n\n— The GameBattles Staff Team",
+      message_type_value: "system",
+      related_type_value: "welcome",
+      related_id_value: null,
+    });
+
+    if (welcomeMessageError) {
+      console.error("Welcome message could not be sent:", welcomeMessageError);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("confirmed") !== "1") {
+      return;
+    }
+
+    let active = true;
+    let processingUserId = "";
+
+    async function finishConfirmedSignup(user) {
+      if (!active || !user?.email_confirmed_at || processingUserId === user.id) return;
+      processingUserId = user.id;
+      setLoading(true);
+      setError("");
+
+      try {
+        await ensureProfileAndWelcome(user);
+        if (active) {
+          setConfirmationRequired(false);
+          setConfirmationComplete(true);
+          setSuccess(true);
+        }
+      } catch (confirmationError) {
+        console.error("Could not finish confirmed signup:", confirmationError);
+        if (active) {
+          setError(
+            "Your email is confirmed, but account setup could not be completed. Please contact support."
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email_confirmed_at) {
+        window.setTimeout(() => finishConfirmedSignup(session.user), 0);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (sessionError) {
+        console.error("Could not load session after email confirmation:", sessionError);
+        setError("Email confirmation could not be completed. Please try the link again.");
+        return;
+      }
+      if (data.session?.user) finishConfirmedSignup(data.session.user);
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [ensureProfileAndWelcome]);
 
   useEffect(() => {
     const checkUsername = async () => {
@@ -436,6 +540,7 @@ export default function JoinPage() {
     if (
       !cleanUsername ||
       !cleanEmail ||
+      !confirmEmail.trim() ||
       !password ||
       !confirmPassword ||
       !passwordHint.trim() ||
@@ -446,7 +551,7 @@ export default function JoinPage() {
       !cleanRegion
     ) {
       setError(
-        "Please fill out username, email, password, confirm password, password hint, date of birth, country, and region."
+        "Please fill out username, email, confirm email, password, confirm password, password hint, date of birth, country, and region."
       );
       setLoading(false);
       return;
@@ -460,6 +565,12 @@ export default function JoinPage() {
 
     if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
       setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    if (cleanEmail !== confirmEmail.trim().toLowerCase()) {
+      setError("Email addresses do not match.");
       setLoading(false);
       return;
     }
@@ -482,11 +593,18 @@ export default function JoinPage() {
       return;
     }
 
-    const { data: existingUsername } = await supabase
+    const { data: existingUsername, error: usernameLookupError } = await supabase
       .from("profiles")
       .select("username")
       .ilike("username", cleanUsername)
       .maybeSingle();
+
+    if (usernameLookupError) {
+      console.error("Could not verify username availability:", usernameLookupError);
+      setError("Could not verify username availability. Please try again.");
+      setLoading(false);
+      return;
+    }
 
     if (existingUsername) {
       setError("That username is already taken.");
@@ -495,11 +613,18 @@ export default function JoinPage() {
       return;
     }
 
-    const { data: existingEmail } = await supabase
+    const { data: existingEmail, error: emailLookupError } = await supabase
       .from("profiles")
       .select("email")
       .ilike("email", cleanEmail)
       .maybeSingle();
+
+    if (emailLookupError) {
+      console.error("Could not verify email availability:", emailLookupError);
+      setError("Could not verify email availability. Please try again.");
+      setLoading(false);
+      return;
+    }
 
     if (existingEmail) {
       setError("That email is already in use.");
@@ -529,9 +654,11 @@ export default function JoinPage() {
         email: cleanEmail,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/join?confirmed=1`,
           data: {
             username: cleanUsername,
             display_name: cleanUsername,
+            phone_number: phoneNumber.trim() || null,
             password_hint: passwordHint.trim(),
             date_of_birth: dateOfBirth,
             country: cleanCountry,
@@ -575,7 +702,7 @@ export default function JoinPage() {
           /already exists|already registered|database error saving new user/i.test(signupError.message)
         ) {
           setError(
-            "An account with this email already exists (email aliases like name+1@ or dotted Gmail addresses count as the same email). Please log in instead."
+            "This email is already linked to an account, including email aliases. Emails cannot be changed or reused. Please log in or reset your password."
           );
         } else {
           setError(signupError.message);
@@ -596,7 +723,9 @@ export default function JoinPage() {
       }
 
       if (data.user.identities?.length === 0) {
-        setError("An account with this email already exists. Please log in instead.");
+        setError(
+          "This email is already linked to an account and cannot be reused. Please log in or reset your password."
+        );
         setShowAgreement(false);
         setLoading(false);
         return;
@@ -611,63 +740,17 @@ export default function JoinPage() {
         return;
       }
 
-      if (data.session) {
-        const { data: existingProfile, error: profileLookupError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", userId)
-          .maybeSingle();
-
-        if (profileLookupError) {
-          console.error("Could not check for an existing signup profile:", profileLookupError);
-        }
-
-        if (profileLookupError || !existingProfile) {
-          const { error: profileError } = await supabase.from("profiles").insert([
-            {
-              id: userId,
-              username: cleanUsername,
-              email: cleanEmail,
-              date_of_birth: dateOfBirth,
-              country: cleanCountry,
-              location: cleanRegion,
-              agreed_to_rules: true,
-              agreed_to_rules_at: new Date().toISOString(),
-              xbox_gt: null,
-              psn_gt: null,
-              nintendo_gt: null,
-              pc_gt: null,
-            },
-          ]);
-
-          if (profileError) {
-            console.error("Profile creation error after auth signup:", profileError);
-          }
-        }
-      }
-
-      if (data.session) {
-        const { error: welcomeMessageError } = await supabase.rpc("send_system_message", {
-          target_user_id: userId,
-          message_subject: "Welcome To GameBattles",
-          message_body:
-            "Welcome to GameBattles and thank you for joining our community.\n\nGameBattles is built around competitive gaming, teamwork, rivalries, ladders, tournaments, and bringing players together across multiple platforms and titles.\n\nGetting Started:\n• Complete your profile\n• Link your gaming accounts\n• Add friends\n• Create or join a team\n• Explore available ladders\n• Start competing and building your record\n\nCommunity Expectations:\nAll members are expected to treat other players with respect, compete fairly, and follow all site rules and ladder regulations.\n\nPlease remember that cheating, harassment, account abuse, match manipulation, or attempts to exploit the platform may result in warnings, suspensions, ladder restrictions, or permanent account removal.\n\nBy continuing to use GameBattles you agree to follow all posted rules, policies, and future updates made by staff.\n\nGood luck and welcome to the competition.\n\n— The GameBattles Staff Team",
-          message_type_value: "system",
-          related_type_value: "welcome",
-          related_id_value: null,
-        });
-
-        if (welcomeMessageError) {
-          console.error("Welcome message could not be sent:", welcomeMessageError);
-        }
+      const emailConfirmed = !!data.user.email_confirmed_at;
+      if (emailConfirmed) {
+        await ensureProfileAndWelcome(data.user);
       }
 
       setShowAgreement(false);
-      setConfirmationRequired(!data.session);
+      setConfirmationRequired(!emailConfirmed);
       setSuccess(true);
       setLoading(false);
 
-      if (data.session) {
+      if (data.session && emailConfirmed) {
         setTimeout(() => {
           router.push("/login");
         }, 1600);
@@ -1073,14 +1156,387 @@ export default function JoinPage() {
             flex-direction:column;
           }
         }
+
+        .join-page{
+          padding:48px 20px;
+          background:
+            radial-gradient(ellipse at 50% 0%, rgba(25,92,151,.24), transparent 52%),
+            #050a11;
+          color:#e7edf5;
+          font-family:var(--font-geist-sans),Arial,sans-serif;
+        }
+
+        .join-box{
+          width:min(900px,100%);
+          overflow:hidden;
+          border:1px solid rgba(130,168,205,.24);
+          border-radius:18px;
+          background:rgba(9,17,28,.97);
+          box-shadow:0 28px 90px rgba(0,0,0,.48),0 0 60px rgba(18,76,128,.14);
+        }
+
+        .join-header{
+          min-height:104px;
+          justify-content:flex-start;
+          padding:24px 44px;
+          border-bottom:1px solid rgba(130,168,205,.2);
+          background:linear-gradient(120deg,rgba(20,54,85,.82),rgba(9,17,28,.92));
+          text-align:left;
+        }
+
+        .logo-main{
+          font-size:34px;
+          font-style:normal;
+          line-height:1.1;
+          letter-spacing:-1.2px;
+          text-transform:none;
+          text-shadow:none;
+        }
+
+        .brand-lockup{
+          display:flex;
+          align-items:center;
+          gap:16px;
+        }
+
+        .brand-emblem{
+          width:62px;
+          height:62px;
+          flex:none;
+          border-radius:50%;
+          box-shadow:0 0 24px rgba(37,131,222,.2);
+        }
+
+        .logo-sub{
+          margin-top:7px;
+          color:#91a9c2;
+          font-size:11px;
+          letter-spacing:1.7px;
+        }
+
+        .join-title{
+          min-height:0;
+          display:block;
+          padding:30px 44px 0;
+          border:0;
+          background:transparent;
+          color:#f3f6fa;
+          font-size:27px;
+          font-weight:700;
+          letter-spacing:-.6px;
+          text-transform:none;
+          text-shadow:none;
+        }
+
+        .join-body{
+          padding:12px 44px 36px;
+        }
+
+        .join-note{
+          max-width:680px;
+          margin-bottom:26px;
+          color:#aebdcd;
+          font-size:15px;
+          line-height:1.7;
+        }
+
+        .join-community{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:18px;
+          margin:0 0 20px;
+          padding:16px 18px;
+          border:1px solid rgba(93,143,190,.2);
+          border-radius:10px;
+          background:rgba(21,42,62,.45);
+        }
+
+        .community-title{
+          margin-bottom:5px;
+          color:#e7edf5;
+          font-size:13px;
+          font-weight:650;
+        }
+
+        .community-copy{
+          color:#95a9be;
+          font-size:12px;
+          line-height:1.6;
+        }
+
+        .community-links{
+          display:flex;
+          flex:none;
+          align-items:center;
+          gap:14px;
+        }
+
+        .community-links a{
+          color:#a9c9e8;
+          font-size:12px;
+          font-weight:600;
+          white-space:nowrap;
+        }
+
+        .community-links a:hover{
+          color:#fff;
+        }
+
+        .privacy-note{
+          margin:0 0 22px;
+          padding:13px 15px;
+          border:1px solid rgba(82,160,123,.22);
+          border-radius:9px;
+          background:rgba(38,113,80,.08);
+          color:#a9cabb;
+          font-size:12px;
+          line-height:1.65;
+        }
+
+        .privacy-title{
+          display:block;
+          margin-bottom:3px;
+          color:#bde6cf;
+          font-size:12px;
+          font-weight:650;
+        }
+
+        .join-label{
+          margin-bottom:8px;
+          color:#d5dfeb;
+          font-size:13px;
+          font-weight:600;
+          letter-spacing:.1px;
+          text-transform:none;
+        }
+
+        .username-warning{
+          margin-top:4px;
+          color:#93a6ba;
+          font-size:12px;
+          font-weight:400;
+          line-height:1.5;
+        }
+
+        .join-input,
+        .join-select{
+          height:48px;
+          margin-bottom:17px;
+          padding:0 14px;
+          border:1px solid #29394c;
+          border-radius:9px;
+          background:#080f18;
+          color:#f3f6fa;
+          font-family:inherit;
+          font-size:14px;
+          transition:border-color .15s ease,box-shadow .15s ease;
+        }
+
+        .join-input:focus,
+        .join-select:focus{
+          border-color:#579ad7;
+          box-shadow:0 0 0 3px rgba(68,145,207,.15);
+        }
+
+        .join-input.good{
+          border-color:#3e9f7a;
+          box-shadow:none;
+        }
+
+        .join-input.bad{
+          border-color:#bd5960;
+          box-shadow:none;
+        }
+
+        .join-input::placeholder{
+          color:#6f8195;
+        }
+
+        .email-policy,
+        .hint-note{
+          margin:-5px 0 18px;
+          color:#92a4b8;
+          font-size:12px;
+          line-height:1.6;
+        }
+
+        .email-policy{
+          margin-top:-7px;
+          padding:11px 13px;
+          border:1px solid rgba(205,167,84,.2);
+          border-radius:8px;
+          background:rgba(205,167,84,.06);
+          color:#d0bd8f;
+        }
+
+        .phone-note{
+          margin-top:-8px;
+        }
+
+        .status{
+          margin-top:-9px;
+          margin-bottom:14px;
+          font-size:12px;
+          font-weight:500;
+        }
+
+        .available{color:#61c99b;}
+        .taken{color:#ff8585;}
+        .checking{color:#8cbbe5;}
+
+        .form-row{
+          gap:20px;
+        }
+
+        .dob-row{
+          gap:9px;
+        }
+
+        .join-button{
+          height:52px;
+          margin-top:8px;
+          border:1px solid #438dca;
+          border-radius:9px;
+          background:linear-gradient(135deg,#2679ba,#16558a);
+          box-shadow:0 8px 22px rgba(16,91,151,.2);
+          font-family:inherit;
+          font-size:14px;
+          letter-spacing:.2px;
+          text-transform:none;
+          text-shadow:none;
+          transition:filter .15s ease,transform .15s ease;
+        }
+
+        .join-button:hover{
+          background:linear-gradient(135deg,#318bd0,#1a639d);
+          filter:brightness(1.05);
+          transform:translateY(-1px);
+        }
+
+        .join-button:disabled{
+          transform:none;
+        }
+
+        .error,
+        .success{
+          padding:13px 15px;
+          border-radius:9px;
+          font-size:13px;
+          font-weight:500;
+        }
+
+        .error{
+          border:1px solid rgba(219,103,112,.3);
+          background:rgba(171,48,57,.12);
+          color:#ff9da3;
+        }
+
+        .success{
+          border:1px solid rgba(70,174,128,.3);
+          background:rgba(35,128,87,.12);
+          color:#8ce0b7;
+        }
+
+        .bottom-links{
+          margin-top:26px;
+          padding-top:20px;
+          border-color:rgba(130,168,205,.17);
+          font-size:13px;
+        }
+
+        .bottom-links a{
+          color:#91bde2;
+          font-weight:500;
+        }
+
+        .bottom-links a:hover{
+          color:#fff;
+        }
+
+        .agreement-overlay{
+          background:rgba(2,6,11,.82);
+          backdrop-filter:blur(8px);
+        }
+
+        .agreement-box{
+          overflow:hidden;
+          border:1px solid rgba(130,168,205,.28);
+          border-radius:16px;
+          background:#0b1521;
+          box-shadow:0 28px 90px rgba(0,0,0,.65);
+        }
+
+        .agreement-header{
+          padding:20px 24px;
+          border-color:rgba(130,168,205,.22);
+          background:#10243a;
+          color:#e7edf5;
+          font-size:17px;
+          text-transform:none;
+        }
+
+        .agreement-scroll h3{color:#e0bf76;}
+
+        .agreement-cancel,
+        .agreement-accept{
+          border-radius:8px;
+          font-family:inherit;
+          text-transform:none;
+        }
+
+        .agreement-cancel{
+          border-color:#34485d;
+          background:#0b1724;
+          color:#b9c9d9;
+        }
+
+        .agreement-accept{
+          border-color:#438dca;
+          background:linear-gradient(135deg,#2679ba,#16558a);
+          color:#fff;
+        }
+
+        @media(max-width:780px){
+          .join-page{padding:24px 14px;}
+          .join-header{padding:22px 24px;}
+          .logo-main{font-size:30px;}
+          .join-title{padding:25px 24px 0;font-size:24px;}
+          .join-body{padding:12px 24px 28px;}
+          .join-community{align-items:flex-start;flex-direction:column;}
+          .community-links{flex-wrap:wrap;}
+        }
+
+        @media(max-width:560px){
+          .join-page{padding:14px 10px;}
+          .join-box{border-radius:14px;}
+          .join-header{min-height:88px;padding:18px 20px;}
+          .brand-emblem{width:50px;height:50px;}
+          .brand-lockup{gap:12px;}
+          .logo-main{font-size:27px;}
+          .logo-sub{font-size:9px;letter-spacing:1.2px;}
+          .join-title{padding:22px 20px 0;font-size:22px;}
+          .join-body{padding:10px 20px 24px;}
+          .form-row{gap:0;}
+        }
       `}</style>
 
       <main className="join-page">
         <section className="join-box">
           <header className="join-header">
-            <div>
+            <div className="brand-lockup">
+              <Image
+                className="brand-emblem"
+                src="/logo-emblem.png"
+                alt="GameBattles emblem"
+                width={62}
+                height={62}
+                priority
+              />
+              <div>
               <div className="logo-main">GameBattles</div>
               <div className="logo-sub">Where Gaming Finds Its Edge</div>
+              </div>
             </div>
           </header>
 
@@ -1088,19 +1544,44 @@ export default function JoinPage() {
 
           <div className="join-body">
             <p className="join-note">
-              Create your player account, lock in your username, choose your
-              region, and get ready to build your profile, join teams, and
-              compete on ladders.
+              Set up your player account to build your profile, join teams, and
+              compete on ladders. Your username and email are permanent account
+              details, so make sure they’re right before continuing.
             </p>
 
-            <label className="join-label">
+            <section className="join-community" aria-label="GameBattles community">
+              <div>
+                <h2 className="community-title">Find your next competition</h2>
+                <p className="community-copy">
+                  Meet players, build a team, and compete across GameBattles ladders.
+                </p>
+              </div>
+              <nav className="community-links" aria-label="Community links">
+                <a href="https://discord.gg/nKZdS2BDS6" target="_blank" rel="noreferrer">
+                  Join our Discord
+                </a>
+                <Link href="/getting-started">How it works</Link>
+                <Link href="/rules">Community rules</Link>
+              </nav>
+            </section>
+
+            <aside className="privacy-note">
+              <span className="privacy-title">Your information stays private</span>
+              Your email and phone number are not shown on your public profile.
+              We use account information to operate and protect your GameBattles
+              account, and we do not sell personal information. Authorized staff
+              may access it when needed for support, moderation, or security.
+            </aside>
+
+            <label className="join-label" htmlFor="signup-username">
               Username{" "}
               <span className="username-warning">
-                - This name will be displayed throughout the site and cannot be changed later.
+                Displayed throughout GameBattles and cannot be changed later.
               </span>
             </label>
 
             <input
+              id="signup-username"
               className={`join-input ${
                 usernameStatus === "available"
                   ? "good"
@@ -1127,9 +1608,10 @@ export default function JoinPage() {
               <div className="status taken">Username is already taken.</div>
             )}
 
-            <label className="join-label">Email</label>
+            <label className="join-label" htmlFor="signup-email">Email address</label>
 
             <input
+              id="signup-email"
               className={`join-input ${
                 emailStatus === "available"
                   ? "good"
@@ -1141,7 +1623,7 @@ export default function JoinPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
-              autoComplete="off"
+              autoComplete="email"
             />
 
             {checkingEmail && (
@@ -1155,6 +1637,56 @@ export default function JoinPage() {
             {!checkingEmail && emailStatus === "taken" && (
               <div className="status taken">Email is already in use.</div>
             )}
+
+            <p className="email-policy">
+              Email addresses are locked to one account and cannot be changed
+              or reused. Enter an inbox you can access and confirm it below.
+            </p>
+
+            <label className="join-label" htmlFor="confirm-email">
+              Confirm email address
+            </label>
+            <input
+              id="confirm-email"
+              className={`join-input ${
+                confirmEmail.trim()
+                  ? email.trim().toLowerCase() === confirmEmail.trim().toLowerCase()
+                    ? "good"
+                    : "bad"
+                  : ""
+              }`}
+              type="email"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              placeholder="Re-enter email address"
+              autoComplete="email"
+              aria-invalid={
+                confirmEmail.trim().length > 0 &&
+                email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()
+              }
+            />
+            {confirmEmail.trim() &&
+              email.trim().toLowerCase() !== confirmEmail.trim().toLowerCase() && (
+                <div className="status taken">Email addresses do not match.</div>
+              )}
+
+            <label className="join-label" htmlFor="phone-number">
+              Phone number <span className="username-warning">(optional)</span>
+            </label>
+            <input
+              id="phone-number"
+              className="join-input"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Add a phone number"
+              autoComplete="tel"
+              maxLength={32}
+            />
+            <p className="hint-note phone-note">
+              Optional contact detail only. We do not currently send SMS or use
+              this number for verification.
+            </p>
 
             <div className="form-row">
               <div>
@@ -1322,9 +1854,11 @@ export default function JoinPage() {
 
             {success && (
               <div className="success">
-                {confirmationRequired
-                  ? `Account created. Check ${email.trim()} for a confirmation email before logging in.`
-                  : "Account created successfully. Email confirmation is not enabled, so you can log in now. Redirecting to login..."}
+                {confirmationComplete
+                  ? `Email confirmed. Your account is ready, and a GameBattles welcome email is on its way to ${email.trim() || "your inbox"}.`
+                  : confirmationRequired
+                    ? `Check ${email.trim()} for a confirmation link. Click it to activate your account; your welcome email will be sent after confirmation. This email is permanently linked to your account.`
+                    : "Account created successfully. Your email is permanently linked to this account. Redirecting to login..."}
               </div>
             )}
 
