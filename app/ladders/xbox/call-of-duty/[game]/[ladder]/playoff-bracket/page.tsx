@@ -1,3 +1,4 @@
+import Link from "next/link";
 import InfoPage from "../../../../../../components/InfoPage";
 
 export const metadata = { title: "Playoff Bracket - GameBattles" };
@@ -21,7 +22,7 @@ export default async function PlayoffBracketPage({
         season ends and the top teams are seeded.
       </p>
       <p>
-        Want to compete for prizes now? Check the <a href="/tournaments">Tournaments</a> page.
+        Want to compete for prizes now? Check the <Link href="/tournaments">Tournaments</Link> page.
       </p>
     </InfoPage>
   );

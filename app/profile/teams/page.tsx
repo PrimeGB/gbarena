@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
@@ -178,7 +180,7 @@ export default function ProfileTeamsPage() {
           <div className="team-logo">
             {team.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={team.logo_url} alt={team.name || "Team logo"} />
+              <img loading="lazy" decoding="async" src={team.logo_url} alt={team.name || "Team logo"} />
             ) : (
               label
             )}
@@ -259,25 +261,25 @@ export default function ProfileTeamsPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/home">Home</a>
-        <a href="/profile">My Profile</a>
+        <Link href="/home">Home</Link>
+        <Link href="/profile">My Profile</Link>
       </div>
 
       <div className="wrapper">
         <header className="header">
-          <a href="/home">
+          <Link href="/home">
             <div className="logo-main">GameBattles</div>
             <div className="logo-sub">Where Gaming Finds Its Edge</div>
-          </a>
+          </Link>
         </header>
 
         <div className="title-bar">My Teams</div>
 
         <div className="tabs">
-          <a className="tab" href="/profile">Profile</a>
-          <a className="tab active" href="/profile/teams">Teams</a>
-          <a className="tab" href="/profile/matches">Matches</a>
-          <a className="tab" href="/profile/friends">Friends</a>
+          <Link className="tab" href="/profile">Profile</Link>
+          <Link className="tab active" href="/profile/teams">Teams</Link>
+          <Link className="tab" href="/profile/matches">Matches</Link>
+          <Link className="tab" href="/profile/friends">Friends</Link>
         </div>
 
         <div className="box">
@@ -297,9 +299,9 @@ export default function ProfileTeamsPage() {
                   <div className="team-card" key={team.id}>
                     {renderTeamHead(team)}
                     <div className="team-actions">
-                      <a className="view-btn" href={`/teams/${team.id}`}>
+                      <Link className="view-btn" href={`/teams/${team.id}`}>
                         View Team
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 ))}

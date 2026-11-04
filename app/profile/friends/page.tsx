@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
@@ -338,9 +340,9 @@ export default function FriendsPage() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/profile/inbox">Inbox</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/profile/inbox">Inbox</Link>
           </div>
 
           <header className="header">
@@ -351,11 +353,11 @@ export default function FriendsPage() {
           </header>
 
           <nav className="nav">
-            <a href="/profile">Profile</a>
-            <a className="active" href="/profile/friends">Friends</a>
-            <a href="/profile/teams">Teams</a>
-            <a href="/profile/awards">Awards</a>
-            <a href="/profile/inbox">Inbox</a>
+            <Link href="/profile">Profile</Link>
+            <Link className="active" href="/profile/friends">Friends</Link>
+            <Link href="/profile/teams">Teams</Link>
+            <Link href="/profile/awards">Awards</Link>
+            <Link href="/profile/inbox">Inbox</Link>
           </nav>
 
           {error ? (
@@ -376,9 +378,9 @@ export default function FriendsPage() {
                           <div className="sub">GameBattles Friend</div>
                         </div>
 
-                        <a className="btn" href={`/profile?userId=${friend.id}`}>
+                        <Link className="btn" href={`/profile?userId=${friend.id}`}>
                           View
-                        </a>
+                        </Link>
                       </div>
                     ))
                   )}

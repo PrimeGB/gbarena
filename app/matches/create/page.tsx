@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
@@ -599,7 +601,7 @@ function CreateMatchContent() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img src={gameImage} alt={gameName} />
+                <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
               </div>
 
               <div>
@@ -614,11 +616,11 @@ function CreateMatchContent() {
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/profile/teams">My Teams</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href={`/ladders/${platform}/${category}/${game}/${ladder}/rankings`}>Ladder</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile/teams">My Teams</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
+            <Link href={`/ladders/${platform}/${category}/${game}/${ladder}/rankings`}>Ladder</Link>
           </nav>
 
           <section className="title-bar">
@@ -1086,12 +1088,12 @@ function CreateMatchContent() {
                       {posting ? "Posting..." : "Post Match"}
                     </button>
 
-                    <a
+                    <Link
                       className="action-btn"
                       href={`/matches/finder?teamId=${teamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}
                     >
                       Match Finder
-                    </a>
+                    </Link>
 
                     <button
                       className="action-btn red"

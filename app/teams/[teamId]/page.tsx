@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
@@ -831,7 +833,7 @@ export default function TeamPage() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img src={gameCover(team?.game)} alt="Game Cover" />
+                <img loading="lazy" decoding="async" src={gameCover(team?.game)} alt="Game Cover" />
               </div>
 
               <div>
@@ -847,7 +849,7 @@ export default function TeamPage() {
             <div className="team-avatar">
               {team?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={team.avatar_url as string} alt="Team Avatar" />
+                <img loading="lazy" decoding="async" src={team.avatar_url as string} alt="Team Avatar" />
               ) : (
                 teamTag.slice(0, 2)
               )}
@@ -873,7 +875,7 @@ export default function TeamPage() {
                     <div className="team-logo-box">
                       {team?.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={team.logo_url as string} alt="Team Logo" />
+                        <img loading="lazy" decoding="async" src={team.logo_url as string} alt="Team Logo" />
                       ) : (
                         "Team Logo"
                       )}
@@ -896,24 +898,24 @@ export default function TeamPage() {
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (
-                          <a
+                          <Link
                             className="team-action-btn"
                             href={`/matches/create?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
                           >
                             Create Match
-                          </a>
+                          </Link>
                         ) : (
                           <button className="team-action-btn locked" type="button">
                             Create Match
                           </button>
                         )}
 
-                        <a
+                        <Link
                           className="team-action-btn secondary"
                           href={`/matches/finder?teamId=${teamId}&platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}&ladder=${team?.ladder || "team"}`}
                         >
                           Match Finder
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -968,7 +970,7 @@ export default function TeamPage() {
                             <div className="match-list-opponent">{getOpponentName(match)}</div>
 
                             <div className="match-list-details">
-                              <a href={`/matches/${match.id}`}>Details</a>
+                              <Link href={`/matches/${match.id}`}>Details</Link>
                             </div>
 
                             <div className={`match-list-result ${resultClass(match, teamId)}`}>
@@ -1016,12 +1018,12 @@ export default function TeamPage() {
                           <tr key={member.user_id}>
                             <td className="member-name">
                               <div className="member-identity">
-                                <a
+                                <Link
                                   className="status-box"
                                   href={`/profile?userId=${encodeURIComponent(member.user_id)}`}
                                 >
                                   <span className="online-guy"></span>
-                                </a>
+                                </Link>
 
                                 <span className="member-text">
                                   <span className="member-gt">{member.username}</span>
@@ -1041,9 +1043,9 @@ export default function TeamPage() {
                         <tr>
                           <td className="member-name">
                             <div className="member-identity">
-                              <a className="status-box" href="/profile">
+                              <Link className="status-box" href="/profile">
                                 <span className="online-guy"></span>
-                              </a>
+                              </Link>
 
                               <span className="member-text">
                                 <span className="member-gt">{leaderName}</span>
@@ -1069,14 +1071,14 @@ export default function TeamPage() {
 
                   <div className="side-box-body">
                     {canEditTeamProfile ? (
-                      <a href={`/teams/${teamId}/edit`}>Edit Team Profile</a>
+                      <Link href={`/teams/${teamId}/edit`}>Edit Team Profile</Link>
                     ) : (
                       <span className="locked-control">Edit Team Profile</span>
                     )}
                     <br />
 
                     {canEditRoster ? (
-                      <a href={`/teams/${teamId}/roster`}>Edit Roster</a>
+                      <Link href={`/teams/${teamId}/roster`}>Edit Roster</Link>
                     ) : (
                       <span className="locked-control">Edit Roster</span>
                     )}

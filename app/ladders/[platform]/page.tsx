@@ -38,7 +38,7 @@ export default function LadderPlatformPage() {
             >
               {categoryImage(category.value) && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={categoryImage(category.value)!} alt="" />
+                <img loading="lazy" decoding="async" src={categoryImage(category.value)!} alt="" />
               )}
               {ladderCategoryLabel(category.value)}
             </Link>

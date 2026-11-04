@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
@@ -1242,26 +1244,26 @@ function TeamHubContent() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
-            <a className="logo-link" href="/home">
+            <Link className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>
               <div className="logo-sub">Where Gaming Finds Its Edge</div>
-            </a>
+            </Link>
 
             <div className="hub-badge">Create Team</div>
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
-            <a href="/players/top">Top Players</a>
+            <Link href="/home">Home</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
+            <Link href="/teams/top">Top Teams</Link>
+            <Link href="/players/top">Top Players</Link>
           </nav>
 
           <section className="title-bar">
@@ -1325,8 +1327,8 @@ function TeamHubContent() {
                       <div className="message-text">You need to sign in before joining this ladder.</div>
 
                       <div className="actions">
-                        <a className="action-btn gold" href="/login">Sign In</a>
-                        <a className="action-btn" href="/join">Create Account</a>
+                        <Link className="action-btn gold" href="/login">Sign In</Link>
+                        <Link className="action-btn" href="/join">Create Account</Link>
                         <a className="action-btn red" href={rankingsUrl}>Cancel</a>
                       </div>
                     </>

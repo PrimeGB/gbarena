@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -1624,19 +1624,19 @@ export default function MatchDetailsPage() {
                 <div className="team-card left-card">
                   <div className="team-main">
                     {postingTeam?.id ? (
-                      <a className="team-logo-link" href={`/teams/${postingTeam.id}`}>
+                      <Link className="team-logo-link" href={`/teams/${postingTeam.id}`}>
                         <div className="team-logo">
                           {postingTeam?.logo_url ? (
-                            <img src={postingTeam.logo_url} alt="Posting Team Logo" />
+                            <img loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
                           ) : (
                             postingTeam?.tag || "GB"
                           )}
                         </div>
-                      </a>
+                      </Link>
                     ) : (
                       <div className="team-logo">
                         {postingTeam?.logo_url ? (
-                          <img src={postingTeam.logo_url} alt="Posting Team Logo" />
+                          <img loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
                         ) : (
                           postingTeam?.tag || "GB"
                         )}
@@ -1694,19 +1694,19 @@ export default function MatchDetailsPage() {
                     </div>
 
                     {acceptingTeam?.id ? (
-                      <a className="team-logo-link" href={`/teams/${acceptingTeam.id}`}>
+                      <Link className="team-logo-link" href={`/teams/${acceptingTeam.id}`}>
                         <div className="team-logo">
                           {acceptingTeam?.logo_url ? (
-                            <img src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                            <img loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
                           ) : (
                             acceptingTeam?.tag || "GB"
                           )}
                         </div>
-                      </a>
+                      </Link>
                     ) : (
                       <div className="team-logo">
                         {acceptingTeam?.logo_url ? (
-                          <img src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                          <img loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
                         ) : (
                           acceptingTeam?.tag || "GB"
                         )}

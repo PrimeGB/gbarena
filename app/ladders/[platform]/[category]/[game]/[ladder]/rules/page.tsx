@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getGameRules } from "../../../../../../../lib/matchRules";
 
 type LadderRulesPageProps = {
@@ -40,12 +41,12 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   return (
     <main className="page">
       <section className="rules-panel">
-        <a
+        <Link
           className="back-link"
           href={`/ladders/${platform}/${category}/${game}/${ladder}/rankings`}
         >
           Back to {gameName} rankings
-        </a>
+        </Link>
 
         <header>
           <p>{prettyText(platform)} {categoryName} Ladder Rules</p>
@@ -218,7 +219,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
 
         <p className="community-link">
           For general conduct and platform-wide rules, see the{" "}
-          <a href="/rules">Community &amp; Match Rules</a>.
+          <Link href="/rules">Community &amp; Match Rules</Link>.
         </p>
       </section>
 

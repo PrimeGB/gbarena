@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function LatestNewsPage() {
   return (
     <>
@@ -220,12 +221,12 @@ export default function LatestNewsPage() {
         </header>
 
         <nav className="nav">
-          <a href="/">Home</a>
-          <a href="/forums">Forums</a>
-          <a href="/members">Members</a>
-          <a href="/profile">Profile</a>
-          <a href="/rules">Rules</a>
-          <a href="/support">Support</a>
+          <Link href="/">Home</Link>
+          <Link href="/forums">Forums</Link>
+          <Link href="/members">Members</Link>
+          <Link href="/profile">Profile</Link>
+          <Link href="/rules">Rules</Link>
+          <Link href="/support">Support</Link>
         </nav>
 
         <div className="layout news-layout">

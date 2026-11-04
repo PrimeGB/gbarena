@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function HistoryPage() {
   return (
     <>
@@ -224,10 +225,10 @@ export default function HistoryPage() {
       <main className="page-bg">
         <div className="wrapper">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/about">About Us</a>
-            <a href="/rules">Rules</a>
-            <a href="/support">Support</a>
+            <Link href="/home">Home</Link>
+            <Link href="/about">About Us</Link>
+            <Link href="/rules">Rules</Link>
+            <Link href="/support">Support</Link>
           </div>
 
           <header className="header">

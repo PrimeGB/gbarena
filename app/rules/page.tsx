@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function RulesPage() {
   return (
     <>
@@ -23,10 +24,10 @@ export default function RulesPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/about">About Us</a>
-        <a href="/history">History</a>
-        <a href="/support">Support</a>
+        <Link href="/">Home</Link>
+        <Link href="/about">About Us</Link>
+        <Link href="/history">History</Link>
+        <Link href="/support">Support</Link>
       </div>
 
       <div className="wrapper">

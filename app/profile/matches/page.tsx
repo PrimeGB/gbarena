@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function ProfileMatchesPage() {
   const matches = [
     {
@@ -225,8 +226,8 @@ export default function ProfileMatchesPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/profile">My Profile</a>
+        <Link href="/">Home</Link>
+        <Link href="/profile">My Profile</Link>
       </div>
 
       <div className="wrapper">
@@ -240,10 +241,10 @@ export default function ProfileMatchesPage() {
         <div className="title-bar">My Matches</div>
 
         <div className="tabs">
-          <a className="tab" href="/profile">Profile</a>
-          <a className="tab" href="/profile/teams">Teams</a>
-          <a className="tab active" href="/profile/matches">Matches</a>
-          <a className="tab" href="/profile/friends">Friends</a>
+          <Link className="tab" href="/profile">Profile</Link>
+          <Link className="tab" href="/profile/teams">Teams</Link>
+          <Link className="tab active" href="/profile/matches">Matches</Link>
+          <Link className="tab" href="/profile/friends">Friends</Link>
         </div>
 
         <div className="box">

@@ -854,89 +854,89 @@ export default function Home() {
             </div>
 
             <div className="top-help">
-              <a href="/support">Help</a>
+              <Link href="/support">Help</Link>
             </div>
           </div>
 
-          <a className="hotspot general" href="/general-info"></a>
-          <a className="hotspot getting" href="/getting-started"></a>
+          <Link className="hotspot general" href="/general-info"></Link>
+          <Link className="hotspot getting" href="/getting-started"></Link>
 
           <div className="drop-wrap nav-zone playstation">
-            <a className="drop-click" href="/ladders/playstation"></a>
+            <Link className="drop-click" href="/ladders/playstation"></Link>
             <span className="nav-label">PLAYSTATION</span>
             <div className="dropdown">
-              <a href="/ladders/playstation/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
-              <a href="/ladders/playstation/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
-              <a href="/ladders/playstation/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
-              <a href="/ladders/playstation/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
-              <a href="/ladders/playstation/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
-              <a href="/ladders/playstation/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
-            <a href="/ladders/playstation/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
+              <Link href="/ladders/playstation/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
+              <Link href="/ladders/playstation/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
+              <Link href="/ladders/playstation/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
+              <Link href="/ladders/playstation/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
+              <Link href="/ladders/playstation/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
+              <Link href="/ladders/playstation/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
+            <Link href="/ladders/playstation/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
             </div>
           </div>
 
           <div className="drop-wrap nav-zone xbox">
-            <a className="drop-click" href="/ladders/xbox"></a>
+            <Link className="drop-click" href="/ladders/xbox"></Link>
             <span className="nav-label">XBOX</span>
             <div className="dropdown">
-              <a href="/ladders/xbox/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
-              <a href="/ladders/xbox/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
-              <a href="/ladders/xbox/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
-              <a href="/ladders/xbox/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
-              <a href="/ladders/xbox/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
-              <a href="/ladders/xbox/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
-            <a href="/ladders/xbox/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
+              <Link href="/ladders/xbox/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
+              <Link href="/ladders/xbox/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
+              <Link href="/ladders/xbox/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
+              <Link href="/ladders/xbox/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
+              <Link href="/ladders/xbox/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
+              <Link href="/ladders/xbox/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
+            <Link href="/ladders/xbox/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
             </div>
           </div>
 
           <div className="drop-wrap nav-zone nintendo">
-            <a className="drop-click" href="/ladders/nintendo"></a>
+            <Link className="drop-click" href="/ladders/nintendo"></Link>
             <span className="nav-label">NINTENDO</span>
             <div className="dropdown">
-              <a href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
-              <a href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
-              <a href="/ladders/nintendo/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
+              <Link href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
+              <Link href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
+              <Link href="/ladders/nintendo/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
             </div>
           </div>
 
           <div className="drop-wrap nav-zone pc">
-            <a className="drop-click" href="/ladders/pc"></a>
+            <Link className="drop-click" href="/ladders/pc"></Link>
             <span className="nav-label">PC</span>
             <div className="dropdown">
-              <a href="/ladders/pc/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</a>
-              <a href="/ladders/pc/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</a>
-              <a href="/ladders/pc/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</a>
-              <a href="/ladders/pc/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</a>
-              <a href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</a>
-              <a href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</a>
-              <a href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</a>
+              <Link href="/ladders/pc/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
+              <Link href="/ladders/pc/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
+              <Link href="/ladders/pc/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
+              <Link href="/ladders/pc/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
+              <Link href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
+              <Link href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
+              <Link href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
             </div>
           </div>
 
           <div className="drop-wrap nav-zone mobile">
-            <a className="drop-click" href="/ladders/mobile"></a>
+            <Link className="drop-click" href="/ladders/mobile"></Link>
             <span className="nav-label">MOBILE</span>
             <div className="dropdown">
-              <a href="/ladders/mobile/clash-of-clans"><span className="game-icon coc-icon">CoC</span>Clash of Clans</a>
-              <a href="/ladders/mobile/clash-royale"><span className="game-icon cr-icon">CR</span>Clash Royale</a>
-              <a href="/ladders/mobile/cod-mobile"><span className="game-icon cod-icon">CODM</span>Call of Duty: Mobile</a>
-              <a href="/ladders/mobile/uno"><span className="game-icon uno-icon">UNO</span>UNO</a>
+              <Link href="/ladders/mobile/clash-of-clans"><span className="game-icon coc-icon">CoC</span>Clash of Clans</Link>
+              <Link href="/ladders/mobile/clash-royale"><span className="game-icon cr-icon">CR</span>Clash Royale</Link>
+              <Link href="/ladders/mobile/cod-mobile"><span className="game-icon cod-icon">CODM</span>Call of Duty: Mobile</Link>
+              <Link href="/ladders/mobile/uno"><span className="game-icon uno-icon">UNO</span>UNO</Link>
             </div>
           </div>
 
-          <a className="hotspot nav-zone tournaments" href="/tournaments">
+          <Link className="hotspot nav-zone tournaments" href="/tournaments">
             <span className="nav-label">TOURNAMENTS</span>
-          </a>
+          </Link>
 
-          <a className="hotspot nav-zone members" href="/members">
+          <Link className="hotspot nav-zone members" href="/members">
             <span className="nav-label">MEMBERS</span>
-          </a>
-          <a className="hotspot nav-zone forums" href="/forums">
+          </Link>
+          <Link className="hotspot nav-zone forums" href="/forums">
             <span className="nav-label">FORUMS</span>
-          </a>
-          <a className="hotspot nav-zone staff-zone" href="/staff">
+          </Link>
+          <Link className="hotspot nav-zone staff-zone" href="/staff">
             <span className="nav-label">STAFF</span>
-          </a>
+          </Link>
 
           <form className="search-box" action="/search">
             <input name="q" />
@@ -947,24 +947,24 @@ export default function Home() {
             <aside className="left-panel">
               <div className="panel-title">Community</div>
 
-              <a className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></a>
-              <a className="side-link" href="/players/top">Top Players <span className="arrow">›</span></a>
-              <a className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></a>
+              <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
               <div className="section-title">Awards &amp; Achievements</div>
 
-              <a className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></a>
+              <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
 
               <div className="section-title">About GameBattles</div>
 
-              <a className="side-link" href="/about">About Us <span className="arrow">›</span></a>
-              <a className="side-link" href="/history">History <span className="arrow">›</span></a>
-              <a className="side-link" href="/rules">Rules <span className="arrow">›</span></a>
+              <Link className="side-link" href="/about">About Us <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/history">History <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/rules">Rules <span className="arrow">›</span></Link>
 
               <div className="section-title">Contact Us</div>
 
-              <a className="side-link" href="/contact">Contact Page <span className="arrow">›</span></a>
-              <a className="side-link" href="/support">Support Center <span className="arrow">›</span></a>
+              <Link className="side-link" href="/contact">Contact Page <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/support">Support Center <span className="arrow">›</span></Link>
 
               <div className="section-title">Social Links</div>
 
@@ -976,10 +976,10 @@ export default function Home() {
                 <span className="social"><span className="social-icon tiktok-icon">♪</span>TikTok</span>
                 <span className="arrow">›</span>
               </a>
-              <a className="side-link" href="/social/facebook">
+              <Link className="side-link" href="/social/facebook">
                 <span className="social"><span className="social-icon facebook-icon">f</span>Facebook</span>
                 <span className="arrow">›</span>
-              </a>
+              </Link>
             </aside>
 
             <section className="hero-expanded">

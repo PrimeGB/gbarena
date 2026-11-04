@@ -210,7 +210,7 @@ export default function EditTeamProfilePage() {
                 Team logo
                 {team.logo_url && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img className="preview" src={team.logo_url} alt="Current team logo" />
+                  <img loading="lazy" decoding="async" className="preview" src={team.logo_url} alt="Current team logo" />
                 )}
                 <input
                   type="file"
@@ -223,7 +223,7 @@ export default function EditTeamProfilePage() {
                 Team avatar
                 {team.avatar_url && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img className="preview" src={team.avatar_url} alt="Current team avatar" />
+                  <img loading="lazy" decoding="async" className="preview" src={team.avatar_url} alt="Current team avatar" />
                 )}
                 <input
                   type="file"

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
@@ -1803,9 +1803,9 @@ function ProfilePageContent() {
                   {logoUrl || avatarUrl ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="pf-avatar-bg" src={logoUrl || avatarUrl} alt="" aria-hidden="true" />
+                      <img loading="lazy" decoding="async" className="pf-avatar-bg" src={logoUrl || avatarUrl} alt="" aria-hidden="true" />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="pf-avatar-img" src={logoUrl || avatarUrl} alt={playerName} />
+                      <img loading="lazy" decoding="async" className="pf-avatar-img" src={logoUrl || avatarUrl} alt={playerName} />
                     </>
                   ) : (
                     <span>{playerName.slice(0, 2).toUpperCase()}</span>
@@ -2126,7 +2126,7 @@ function ProfilePageContent() {
                         <div className="pf-friend-avatar">
                           {friend.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={friend.avatar_url} alt={friend.username} />
+                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} />
                           ) : (
                             friend.username.slice(0, 2).toUpperCase()
                           )}

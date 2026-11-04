@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { usePathname } from "next/navigation";
 
 type CodTitle = {
@@ -397,9 +399,9 @@ export default function CallOfDutyLaddersPage() {
       <main className={`page ${platformClass}`}>
         <div className="wrapper">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
@@ -412,11 +414,11 @@ export default function CallOfDutyLaddersPage() {
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
-            <a href="/players/top">Top Players</a>
+            <Link href="/home">Home</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
+            <Link href="/teams/top">Top Teams</Link>
+            <Link href="/players/top">Top Players</Link>
           </nav>
 
           <section className="title-bar">
@@ -433,12 +435,12 @@ export default function CallOfDutyLaddersPage() {
                 <div className="game-card" key={game.slug}>
                   <div className="game-title">{game.title}</div>
 
-                  <a
+                  <Link
                     className="game-image"
                     href={`/ladders/${platform}/old-school/${game.slug}`}
                   >
-                    <img src={game.image} alt={game.title} />
-                  </a>
+                    <img loading="lazy" decoding="async" src={game.image} alt={game.title} />
+                  </Link>
 
                   <div className="card-body">
                     <div className="ladder-list">

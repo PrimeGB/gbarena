@@ -1,3 +1,4 @@
+import Link from "next/link";
 import InfoPage from "../../components/InfoPage";
 
 export const metadata = { title: "Account Help - GameBattles" };
@@ -21,7 +22,7 @@ export default function AccountSupportPage() {
       <p>Update your avatar, bio, and favorites from Edit Profile.</p>
       <h2>Still stuck?</h2>
       <p>
-        Send us a message from the <a href="/contact">Contact page</a> with your username and a
+        Send us a message from the <Link href="/contact">Contact page</Link> with your username and a
         description of the problem.
       </p>
     </InfoPage>

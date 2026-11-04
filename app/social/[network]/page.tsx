@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import InfoPage from "../../components/InfoPage";
 
@@ -22,7 +23,7 @@ export default async function SocialPage({ params }: { params: Promise<{ network
         {social
           ? `Our ${social.name} channel is coming soon.`
           : "That social channel does not exist."}{" "}
-        In the meantime, find us and chat with the community in the <a href="/forums">forums</a>.
+        In the meantime, find us and chat with the community in the <Link href="/forums">forums</Link>.
       </p>
     </InfoPage>
   );

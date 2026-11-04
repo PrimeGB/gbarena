@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMemo, useState } from "react";
 
 type PostType = "Suggestion" | "Bug Report";
@@ -453,9 +455,9 @@ export default function SuggestionsPage() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
@@ -468,11 +470,11 @@ export default function SuggestionsPage() {
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/profile/teams">My Teams</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
-            <a href="/teams/top">Top Teams</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile/teams">My Teams</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
+            <Link href="/teams/top">Top Teams</Link>
           </nav>
 
           <section className="title-bar">

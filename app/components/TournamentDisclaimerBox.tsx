@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 
 const SECTIONS: { title: string; items: string[] }[] = [
@@ -80,7 +82,7 @@ export default function TournamentDisclaimerBox() {
               </ul>
             </div>
           ))}
-          <a href="/credits-terms" className="td-link">Full Credits Terms</a>
+          <Link href="/credits-terms" className="td-link">Full Credits Terms</Link>
           <div className="td-note">By entering a tournament you agree to these terms.</div>
         </div>
       )}

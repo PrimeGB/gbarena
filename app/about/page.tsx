@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function AboutPage() {
   return (
     <>
@@ -162,9 +163,9 @@ export default function AboutPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/forums">Forums</a>
-        <a href="/support">Support</a>
+        <Link href="/">Home</Link>
+        <Link href="/forums">Forums</Link>
+        <Link href="/support">Support</Link>
       </div>
 
       <div className="wrapper">

@@ -231,9 +231,9 @@ export default function SupportPage() {
       <main className="page-bg">
         <div className="wrapper">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/contact">Contact</a>
-            <a href="/suggestions">Suggestions</a>
+            <Link href="/home">Home</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/suggestions">Suggestions</Link>
           </div>
 
           <header className="header">
@@ -263,9 +263,9 @@ export default function SupportPage() {
                   Arena account.
                 </p>
 
-                <a className="button blue" href="/support/account">
+                <Link className="button blue" href="/support/account">
                   Account Support
-                </a>
+                </Link>
               </div>
             </section>
 
@@ -277,9 +277,9 @@ export default function SupportPage() {
                   or anything that needs staff help after a match is created.
                 </p>
 
-                <a className="button" href="/support/matches">
+                <Link className="button" href="/support/matches">
                   Match Support
-                </a>
+                </Link>
               </div>
             </section>
 
@@ -292,9 +292,9 @@ export default function SupportPage() {
                   Suggestions Box.
                 </p>
 
-                <a className="button blue" href="/suggestions">
+                <Link className="button blue" href="/suggestions">
                   Report Bug
-                </a>
+                </Link>
               </div>
             </section>
 
@@ -306,9 +306,9 @@ export default function SupportPage() {
                   impersonation, abuse, and other concerns to staff.
                 </p>
 
-                <a className="button blue" href="/report">
+                <Link className="button blue" href="/report">
                   Submit a Report
-                </a>
+                </Link>
               </div>
             </section>
 
@@ -319,9 +319,9 @@ export default function SupportPage() {
                   Browse GameBattles awards and submit a request for staff review.
                 </p>
 
-                <a className="button blue" href="/awards">
+                <Link className="button blue" href="/awards">
                   Awards Center
-                </a>
+                </Link>
               </div>
             </section>
 

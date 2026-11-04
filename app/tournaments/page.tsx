@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
@@ -203,11 +205,11 @@ export default function TournamentsPage() {
 
       <div className="t-page">
         <nav className="t-nav">
-          <a href="/home">Home</a>
-          <a href="/forums">Forums</a>
-          <a href="/members">Members</a>
-          <a href="/rules">Rules</a>
-          <a href="/support">Support</a>
+          <Link href="/home">Home</Link>
+          <Link href="/forums">Forums</Link>
+          <Link href="/members">Members</Link>
+          <Link href="/rules">Rules</Link>
+          <Link href="/support">Support</Link>
         </nav>
 
         <div className="t-hero">
@@ -334,9 +336,9 @@ export default function TournamentsPage() {
                           Paid Entry - Online Registration Coming Soon
                         </button>
                       ) : !user ? (
-                        <a className="t-btn" href="/login">
+                        <Link className="t-btn" href="/login">
                           Sign In To Register
-                        </a>
+                        </Link>
                       ) : myReg ? (
                         <button
                           className="t-btn"

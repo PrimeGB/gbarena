@@ -1,3 +1,4 @@
+import Link from "next/link";
 import InfoPage from "../../../components/InfoPage";
 import { MatchJoinGuide } from "../../../components/MatchJoinGuide";
 
@@ -31,7 +32,7 @@ export default function MatchFinderHelpPage() {
       <MatchJoinGuide battlefield />
       <h2>5. Disputes</h2>
       <p>
-        If the reports do not match, open a <a href="/support/dispute-ticket">dispute ticket</a> and
+        If the reports do not match, open a <Link href="/support/dispute-ticket">dispute ticket</Link> and
         staff will review the proof.
       </p>
     </InfoPage>

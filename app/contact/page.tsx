@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function ContactPage() {
   return (
     <>
@@ -218,9 +219,9 @@ export default function ContactPage() {
       <main className="page-bg">
         <div className="wrapper">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/support">Support</a>
-            <a href="/suggestions">Suggestions</a>
+            <Link href="/home">Home</Link>
+            <Link href="/support">Support</Link>
+            <Link href="/suggestions">Suggestions</Link>
           </div>
 
           <header className="header">
@@ -255,9 +256,9 @@ export default function ContactPage() {
                   use the <span className="highlight">Suggestions Box</span>.
                 </p>
 
-                <a className="button" href="/suggestions">
+                <Link className="button" href="/suggestions">
                   Go to Suggestions Box
-                </a>
+                </Link>
               </div>
             </section>
 
@@ -275,9 +276,9 @@ export default function ContactPage() {
                   messages.
                 </p>
 
-                <a className="button blue" href="/support">
+                <Link className="button blue" href="/support">
                   Open Support Center
-                </a>
+                </Link>
               </div>
             </section>
 

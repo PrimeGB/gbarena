@@ -1,3 +1,4 @@
+import Link from "next/link";
 import InfoPage from "../components/InfoPage";
 
 export const metadata = { title: "Disclaimer - GameBattles" };
@@ -23,7 +24,7 @@ export default function DisclaimerPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Questions? Visit the <a href="/contact">Contact page</a> or the <a href="/support">Support Center</a>.
+        Questions? Visit the <Link href="/contact">Contact page</Link> or the <Link href="/support">Support Center</Link>.
       </p>
     </InfoPage>
   );

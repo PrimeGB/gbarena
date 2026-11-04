@@ -131,7 +131,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
       <div className="top-strip">
         <Link href="/">Home</Link>
         <Link href="/profile">My Profile</Link>
-        <a href="/support">Support</a>
+        <Link href="/support">Support</Link>
       </div>
 
       <div className="wrapper">

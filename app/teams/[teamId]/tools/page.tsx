@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "../../../../lib/useUser";
@@ -63,26 +65,26 @@ export default function TeamToolsPage() {
             <p className="tools-note">Only the team leader can use team tools.</p>
           ) : (
             <div className="tools-list">
-              <a href={`/matches/create?${matchQuery}`}>
+              <Link href={`/matches/create?${matchQuery}`}>
                 <strong>Create a Match</strong>
                 <span>Post a match challenge for {team.name || "your team"}.</span>
-              </a>
-              <a href={`/matches/finder?${matchQuery}`}>
+              </Link>
+              <Link href={`/matches/finder?${matchQuery}`}>
                 <strong>Match Finder</strong>
                 <span>Browse open matches and accept one.</span>
-              </a>
-              <a href={`/teams/${teamId}/roster`}>
+              </Link>
+              <Link href={`/teams/${teamId}/roster`}>
                 <strong>Edit Roster</strong>
                 <span>Invite players, change roles and remove members.</span>
-              </a>
-              <a href={`/teams/${teamId}/edit`}>
+              </Link>
+              <Link href={`/teams/${teamId}/edit`}>
                 <strong>Edit Profile</strong>
                 <span>Update the clan tag, bio, logo and avatar.</span>
-              </a>
-              <a href={`/teams/${teamId}/log`}>
+              </Link>
+              <Link href={`/teams/${teamId}/log`}>
                 <strong>Team Log</strong>
                 <span>See roster changes and match activity.</span>
-              </a>
+              </Link>
             </div>
           )}
         </div>

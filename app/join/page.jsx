@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
@@ -1312,15 +1314,15 @@ export default function JoinPage() {
 
             <div className="bottom-links">
               <div className="bottom-left">
-                <a href="/login">Already have an account?</a>
+                <Link href="/login">Already have an account?</Link>
               </div>
 
               <div className="bottom-middle">
-                <a href="/disclaimer">Disclaimer</a>
+                <Link href="/disclaimer">Disclaimer</Link>
               </div>
 
               <div className="bottom-right">
-                <a href="/home">Back to Home</a>
+                <Link href="/home">Back to Home</Link>
               </div>
             </div>
           </div>

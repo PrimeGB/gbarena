@@ -305,7 +305,7 @@ export default function XboxBattlefieldPage() {
                     className="game-image"
                     href={`/ladders/playstation/battlefield/${game.slug}`}
                   >
-                    <img src={game.image} alt={game.title} />
+                    <img loading="lazy" decoding="async" src={game.image} alt={game.title} />
                   </Link>
 
                   <div className="card-body">

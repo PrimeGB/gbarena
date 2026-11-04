@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
@@ -1127,15 +1129,15 @@ function EditProfileContent() {
 
       <div className="page">
         <div className="top-strip">
-          <a href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</a>
-          <a href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Back to Profile</a>
+          <Link href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</Link>
+          <Link href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Back to Profile</Link>
         </div>
 
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">
               <div className="logo-circle">
-                {logoPreview ? <img src={logoPreview} alt="Logo Preview" /> : "GB"}
+                {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "GB"}
               </div>
 
               <div>
@@ -1155,8 +1157,8 @@ function EditProfileContent() {
           </div>
 
           <nav className="nav">
-            <a href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</a>
-            <a href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Profile</a>
+            <Link href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</Link>
+            <Link href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Profile</Link>
             <button className={activeTab === "main" ? "active" : ""} onClick={() => handleTabChange("main")}>Main Edit</button>
             <button className={activeTab === "awards" ? "active" : ""} onClick={() => handleTabChange("awards")}>Awards</button>
             <button className={activeTab === "friends" ? "active" : ""} onClick={() => handleTabChange("friends")}>Friends</button>
@@ -1171,7 +1173,7 @@ function EditProfileContent() {
                 <div className="box-body">
                   <label className="editor-box">
                     <input type="file" accept="image/*" onChange={handleLogoChange} />
-                    {logoPreview ? <img src={logoPreview} alt="Logo Preview" /> : "LOGO PREVIEW"}
+                    {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "LOGO PREVIEW"}
                   </label>
 
                   <label className="edit-button">
@@ -1190,7 +1192,7 @@ function EditProfileContent() {
                 <div className="box-body">
                   <label className="editor-box">
                     <input type="file" accept="image/*" onChange={handleAvatarChange} />
-                    {avatarPreview ? <img src={avatarPreview} alt="Avatar Preview" /> : "AVATAR PREVIEW"}
+                    {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} alt="Avatar Preview" /> : "AVATAR PREVIEW"}
                   </label>
 
                   <label className="edit-button">
@@ -1200,11 +1202,11 @@ function EditProfileContent() {
 
                   <div className="profile-preview">
                     <div className="avatar-mini">
-                      {avatarPreview ? <img src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
+                      {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
                     </div>
 
                     <div className="logo-mini">
-                      {logoPreview ? <img src={logoPreview} alt="Mini Logo Preview" /> : "LOGO"}
+                      {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Mini Logo Preview" /> : "LOGO"}
                     </div>
 
                     <div>
@@ -1512,7 +1514,7 @@ function EditProfileContent() {
                             {friend ? (
                               <>
                                 <div className="friend-avatar">
-                                  {friend.avatar_url ? <img src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                                  {friend.avatar_url ? <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
                                 </div>
                                 <div className="slot-name">{friend.username}</div>
                                 <button type="button" className="slot-remove" onClick={() => changeFriends(displayFriends.filter((_, i) => i !== idx))} aria-label={`Remove ${friend.username}`}>×</button>
@@ -1566,7 +1568,7 @@ function EditProfileContent() {
                               title={`${friend.username}. Click or drag to add.`}
                             >
                               <div className="friend-avatar">
-                                {friend.avatar_url ? <img src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                                {friend.avatar_url ? <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
                               </div>
                               <div className="slot-name">{friend.username}</div>
                               {used && <div className="pool-badge">On profile</div>}

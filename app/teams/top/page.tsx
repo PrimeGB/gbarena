@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function TopTeamsPage() {
 
   const teams = [
@@ -303,11 +304,11 @@ export default function TopTeamsPage() {
         </header>
 
         <nav className="nav">
-          <a href="/">Home</a>
-          <a href="/latest-news">Latest News</a>
-          <a href="/players/top">Top Players</a>
-          <a href="/forums">Forums</a>
-          <a href="/members">Members</a>
+          <Link href="/">Home</Link>
+          <Link href="/latest-news">Latest News</Link>
+          <Link href="/players/top">Top Players</Link>
+          <Link href="/forums">Forums</Link>
+          <Link href="/members">Members</Link>
         </nav>
 
         <div className="layout">
@@ -319,7 +320,7 @@ export default function TopTeamsPage() {
             </div>
 
             <div className="sidebar">
-              <a href="/teams/top">Top Teams</a>
+              <Link href="/teams/top">Top Teams</Link>
               <a href="#">Highest Win Streaks</a>
               <a href="#">Most Active Teams</a>
               <a href="#">Top Weekly Earners</a>

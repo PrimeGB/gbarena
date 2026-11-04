@@ -429,7 +429,7 @@ function SearchPageInner() {
                         <div className="result-row" key={team.id}>
                           <div className="avatar">
                             {team.logo_url ? (
-                              <img src={team.logo_url} alt={team.name || "Team"} />
+                              <img loading="lazy" decoding="async" src={team.logo_url} alt={team.name || "Team"} />
                             ) : (
                               cleanText(team.tag, "GB").slice(0, 2)
                             )}

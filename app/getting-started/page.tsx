@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function GettingStartedPage() {
   return (
     <>
@@ -28,10 +29,10 @@ export default function GettingStartedPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/general-info">General Info</a>
-        <a href="/rules">Rules</a>
-        <a href="/support">Support</a>
+        <Link href="/">Home</Link>
+        <Link href="/general-info">General Info</Link>
+        <Link href="/rules">Rules</Link>
+        <Link href="/support">Support</Link>
       </div>
 
       <div className="wrapper">

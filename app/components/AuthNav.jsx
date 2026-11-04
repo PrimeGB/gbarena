@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
@@ -54,9 +56,9 @@ export default function AuthNav() {
         <span className="top-btn">Loading...</span>
       ) : user ? (
         <>
-          <a className="top-btn" href="/profile">
+          <Link className="top-btn" href="/profile">
             {profileMissing ? "Complete profile" : `Hi, ${username || "Profile"}`}
-          </a>
+          </Link>
           <span className="top-sep">|</span>
           <button
             type="button"
@@ -69,13 +71,13 @@ export default function AuthNav() {
         </>
       ) : (
         <>
-          <a className="top-btn" href="/login">
+          <Link className="top-btn" href="/login">
             Login
-          </a>
+          </Link>
           <span className="top-sep">|</span>
-          <a className="top-btn" href="/join">
+          <Link className="top-btn" href="/join">
             Join
-          </a>
+          </Link>
         </>
       )}
     </div>

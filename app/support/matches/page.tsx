@@ -1,3 +1,4 @@
+import Link from "next/link";
 import InfoPage from "../../components/InfoPage";
 
 export const metadata = { title: "Match Help - GameBattles" };
@@ -7,7 +8,7 @@ export default function MatchSupportPage() {
     <InfoPage title="Match Help" eyebrow="Support" backHref="/support" backLabel="Back to Support Center">
       <h2>Posting and accepting</h2>
       <p>
-        See <a href="/matches/finder/help">How Match Finder Works</a> for the full flow.
+        See <Link href="/matches/finder/help">How Match Finder Works</Link> for the full flow.
       </p>
       <h2>Reporting results</h2>
       <p>
@@ -16,13 +17,13 @@ export default function MatchSupportPage() {
       </p>
       <h2>No-shows and disputes</h2>
       <p>
-        Open a <a href="/support/dispute-ticket">dispute ticket</a> and include screenshots or
+        Open a <Link href="/support/dispute-ticket">dispute ticket</Link> and include screenshots or
         video. Staff will review and make a ruling.
       </p>
       <h2>Rules</h2>
       <p>
         Each ladder has its own rules page, linked from its rankings. General site rules are on
-        the <a href="/rules">Rules page</a>.
+        the <Link href="/rules">Rules page</Link>.
       </p>
     </InfoPage>
   );

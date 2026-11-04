@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
@@ -80,9 +82,9 @@ export default function ForumThreadPage() {
       <div style={{ padding: 20, color: "#d7e2ee", background: "#000", minHeight: "60vh" }}>
         <h2>Thread not found</h2>
         <p>The requested forum thread could not be located.</p>
-        <a href="/forums" style={{ color: "#7fc0ff" }}>
+        <Link href="/forums" style={{ color: "#7fc0ff" }}>
           Back to forums
-        </a>
+        </Link>
       </div>
     );
   }
@@ -114,9 +116,9 @@ export default function ForumThreadPage() {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <a href="/forums" style={{ color: "#cfeefe" }}>
+        <Link href="/forums" style={{ color: "#cfeefe" }}>
           Back to forums
-        </a>
+        </Link>
       </div>
     </div>
   );

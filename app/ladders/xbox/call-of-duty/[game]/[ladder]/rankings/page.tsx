@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
@@ -586,15 +588,15 @@ export default function LadderRankingsPage() {
         <div className="shell">
           <section className="ladder-box">
             <div className="tabs">
-              <a className={ladder === "team" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/team/rankings`}>
+              <Link className={ladder === "team" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/team/rankings`}>
                 Team
-              </a>
-              <a className={ladder === "doubles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/doubles/rankings`}>
+              </Link>
+              <Link className={ladder === "doubles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/doubles/rankings`}>
                 Doubles
-              </a>
-              <a className={ladder === "singles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/singles/rankings`}>
+              </Link>
+              <Link className={ladder === "singles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/singles/rankings`}>
                 Singles
-              </a>
+              </Link>
             </div>
 
             <div className="hero">
@@ -619,18 +621,18 @@ export default function LadderRankingsPage() {
               <a className="sub-tab active" href="#">
                 Standings
               </a>
-              <a className="sub-tab" href={`/matches/finder?platform=xbox&category=call-of-duty&game=${game}&ladder=${ladder}`}>
+              <Link className="sub-tab" href={`/matches/finder?platform=xbox&category=call-of-duty&game=${game}&ladder=${ladder}`}>
                 Match Finder
-              </a>
-              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/playoff-bracket`}>
+              </Link>
+              <Link className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/playoff-bracket`}>
                 Playoff Bracket
-              </a>
-              <a className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/rules`}>
+              </Link>
+              <Link className="sub-tab" href={`/ladders/xbox/call-of-duty/${game}/${ladder}/rules`}>
                 Rules
-              </a>
-              <a className="sub-tab" href="/support">
+              </Link>
+              <Link className="sub-tab" href="/support">
                 Support
-              </a>
+              </Link>
             </div>
 
             <div className="standings-wrap">
@@ -674,11 +676,11 @@ export default function LadderRankingsPage() {
                           </td>
 
                           <td>
-                            <a className="team-cell" href={`/teams/${team.id}`}>
+                            <Link className="team-cell" href={`/teams/${team.id}`}>
                               <span className="team-logo">
                                 {team.avatar_url || team.logo_url ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={team.avatar_url || team.logo_url || ""} alt={`${team.name || "Team"} avatar`} />
+                                  <img loading="lazy" decoding="async" src={team.avatar_url || team.logo_url || ""} alt={`${team.name || "Team"} avatar`} />
                                 ) : (
                                   team.tag || "GB"
                                 )}
@@ -693,7 +695,7 @@ export default function LadderRankingsPage() {
                                   </span>
                                 ))}
                               </span>
-                            </a>
+                            </Link>
                           </td>
 
                           <td className="wins">{wins}</td>

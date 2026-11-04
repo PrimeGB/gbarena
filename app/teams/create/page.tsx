@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
@@ -343,16 +345,16 @@ function CreateTeamContent() {
       <main className="page">
         <div className="wrap">
           <div className="top-strip">
-            <a href="/home">Home</a>
-            <a href="/profile">My Profile</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile">My Profile</Link>
+            <Link href="/forums">Forums</Link>
           </div>
 
           <header className="header">
-            <a className="logo-link" href="/home">
+            <Link className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>
               <div className="logo-sub">Create Team</div>
-            </a>
+            </Link>
 
             <div className="badge">{platformName} · {ladderName} Ladder</div>
           </header>

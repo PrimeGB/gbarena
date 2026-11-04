@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -511,7 +513,7 @@ export default function ForumsPage() {
                 </>
               )}
             </div>
-            <a className="forum-breadcrumb" href="/rules">Forum Rules</a>
+            <Link className="forum-breadcrumb" href="/rules">Forum Rules</Link>
           </div>
 
           <div className="forum-columns" aria-hidden="true">
@@ -540,9 +542,9 @@ export default function ForumsPage() {
                   <div className="latest-topic">
                     {board.latestPost ? (
                       <>
-                        <a href={`/forums/${board.latestPost.id}`} title={board.latestPost.subject}>
+                        <Link href={`/forums/${board.latestPost.id}`} title={board.latestPost.subject}>
                           {board.latestPost.subject}
-                        </a>
+                        </Link>
                         <span>by {board.latestPost.author} · {new Date(board.latestPost.createdAt).toLocaleDateString()}</span>
                       </>
                     ) : (

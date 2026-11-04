@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
@@ -678,7 +680,7 @@ function MatchFinderContent() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img src={gameImage} alt={gameName} />
+                <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
               </div>
 
               <div>
@@ -693,10 +695,10 @@ function MatchFinderContent() {
           </header>
 
           <nav className="nav">
-            <a href="/home">Home</a>
-            <a href="/profile/teams">My Teams</a>
-            <a href="/members">Members</a>
-            <a href="/forums">Forums</a>
+            <Link href="/home">Home</Link>
+            <Link href="/profile/teams">My Teams</Link>
+            <Link href="/members">Members</Link>
+            <Link href="/forums">Forums</Link>
             <a href={ladderUrl}>Ladder</a>
           </nav>
 
@@ -719,7 +721,7 @@ function MatchFinderContent() {
                     <div className="ladder-line"><span>Roster:</span> {rosterText}</div>
                   </div>
 
-                  <a className="help-box" href="/matches/finder/help">How Match Finder Works</a>
+                  <Link className="help-box" href="/matches/finder/help">How Match Finder Works</Link>
                   {viewerCanManageMatches ? (
                     <a className="quick-create" href={createUrl}>Create Match</a>
                   ) : (

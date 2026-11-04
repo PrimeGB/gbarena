@@ -1,3 +1,4 @@
+import Link from "next/link";
 export default function GeneralInfoPage() {
   return (
     <>
@@ -25,11 +26,11 @@ export default function GeneralInfoPage() {
       `}</style>
 
       <div className="top-strip">
-        <a href="/">Home</a>
-        <a href="/about">About Us</a>
-        <a href="/history">History</a>
-        <a href="/rules">Rules</a>
-        <a href="/support">Support</a>
+        <Link href="/">Home</Link>
+        <Link href="/about">About Us</Link>
+        <Link href="/history">History</Link>
+        <Link href="/rules">Rules</Link>
+        <Link href="/support">Support</Link>
       </div>
 
       <div className="wrapper">
