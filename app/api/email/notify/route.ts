@@ -3,7 +3,15 @@ const SITE = "https://gamebattles.app";
 const escape = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-type Template = { subject: string; heading: string; intro: string; button: string; href: string; accent: string };
+type Template = {
+  subject: string;
+  heading: string;
+  intro: string;
+  button: string;
+  href: string;
+  accent: string;
+  steps?: string[];
+};
 
 function buildTemplate(type: string, subject: string, relatedType: string, relatedId: string): Template {
   const matchHref = relatedType === "match" && relatedId ? `${SITE}/matches/${relatedId}` : `${SITE}/messages`;
@@ -17,7 +25,21 @@ function buildTemplate(type: string, subject: string, relatedType: string, relat
   });
 
   if (type === "welcome") {
-    return make("Welcome to GameBattles!", "Your account is ready. Build or join a team and start climbing the ladders.", "Get Started", `${SITE}/getting-started`, "#f2c14e");
+    return {
+      ...make(
+        "Welcome to GameBattles!",
+        "Your account is ready and you're officially part of the competition. Here's how to get started:",
+        "Get Started",
+        `${SITE}/getting-started`,
+        "#f2c14e"
+      ),
+      steps: [
+        "Complete your profile and link your gaming accounts",
+        "Add friends and find a team, or create your own",
+        "Challenge teams on the ladders and tournaments",
+        "Play fair and follow the site rules",
+      ],
+    };
   }
   if (subject.startsWith("Match accepted")) return make("Match Accepted", "Congratulations, you got a match!", "View Match", matchHref, "#3fb950");
   if (subject.startsWith("Confirm the score")) return make("Confirm the Score", "Your opponent reported a score. Confirm it or dispute it.", "Review Score", matchHref, "#f2c14e");
@@ -38,7 +60,8 @@ function render(t: Template) {
 <tr><td style="background:#101c28;padding:18px 24px;border-bottom:3px solid ${t.accent};color:#f2c14e;font-size:20px;font-weight:bold;letter-spacing:1px;">GAMEBATTLES</td></tr>
 <tr><td style="padding:28px 24px;color:#d7e2ee;">
 <h1 style="margin:0 0 14px;font-size:22px;color:#ffffff;">${escape(t.heading)}</h1>
-<p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#b9c7d6;">${escape(t.intro)}</p>
+<p style="margin:0 0 ${t.steps ? "14px" : "24px"};font-size:15px;line-height:1.55;color:#b9c7d6">${escape(t.intro)}</p>
+${t.steps ? `<ul style="margin:0 0 24px;padding-left:20px;font-size:14px;line-height:1.8;color:#d7e2ee;">${t.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ul>` : ""}
 <a href="${t.href}" style="display:inline-block;background:#c40000;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;font-size:14px;">${escape(t.button)}</a>
 </td></tr>
 <tr><td style="padding:16px 24px;border-top:1px solid #13293d;color:#6f8294;font-size:12px;">You can turn off email notifications anytime in Edit Profile on GameBattles.</td></tr>
