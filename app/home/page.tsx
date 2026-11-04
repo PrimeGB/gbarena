@@ -74,19 +74,32 @@ export default function Home() {
           inset:0;
           z-index:5;
           pointer-events:none;
-          clip-path:inset(8.6% 37.5% 78.9% 15.8%);
+          clip-path:inset(8.6% 36.5% 78.9% 16.9%);
         }
 
         .title-shift > div{
           position:absolute;
           top:0;
           bottom:0;
-          left:1%;
-          right:-1%;
+          left:2%;
+          right:-2%;
           background:
             linear-gradient(to bottom,rgba(6,20,35,.08),rgba(5,18,32,.14)),
             url("/homepage.png");
           background-size:100% 100%;
+        }
+
+        .logo-backdrop{
+          position:absolute;
+          left:8%;
+          top:14.7%;
+          width:14%;
+          aspect-ratio:1/1;
+          transform:translate(-50%,-50%);
+          z-index:33;
+          pointer-events:none;
+          border-radius:50%;
+          background:radial-gradient(circle,#06152b 0%,#06152b 62%,rgba(6,21,43,.85) 72%,rgba(6,21,43,0) 100%);
         }
 
         .logo-emblem{
@@ -823,6 +836,7 @@ export default function Home() {
           <div className="dark-blue-blend"></div>
 
           <div className="title-shift" aria-hidden="true"><div></div></div>
+          <div className="logo-backdrop" aria-hidden="true"></div>
           <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
           <div className="controller-spin-ring"></div>
           <img className="logo-emblem logo-emblem-text" src="/logo-emblem.png" alt="" aria-hidden="true" />
