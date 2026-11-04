@@ -1663,6 +1663,13 @@ function EditProfileContent() {
                 </div>
 
                 <div className="box">
+                  <div className="box-title">Account Security</div>
+                  <div className="box-body">
+                    <Link href="/profile/security">Two-factor, sessions, export or delete your account</Link>
+                  </div>
+                </div>
+
+                <div className="box">
                   <div className="box-title">Password</div>
                   <div className="box-body">
                     <div className="form-row">

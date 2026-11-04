@@ -360,6 +360,8 @@ export default function JoinPage() {
   const [success, setSuccess] = useState(false);
   const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [openedAt] = useState(() => Date.now());
 
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i);
@@ -418,6 +420,10 @@ export default function JoinPage() {
   }, [email]);
 
   async function validateBeforeAgreement() {
+    if (website || Date.now() - openedAt < 4000) {
+      setError("Please take a moment to fill out the form, then try again.");
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccess(false);
@@ -1196,6 +1202,16 @@ export default function JoinPage() {
               placeholder="A reminder only you will understand"
               autoComplete="off"
               maxLength={100}
+            />
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
             />
             <p className="hint-note">
               Choose a clue, not your actual password. Keep it private.

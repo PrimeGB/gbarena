@@ -9,6 +9,7 @@ export default function SiteNav({ ladderHref = "/ladders/xbox" }: SiteNavProps) 
     { label: "Tournaments", href: "/coming-soon" },
     { label: "Create a Team", href: "/teams/create" },
     { label: "Forums", href: "/forums" },
+    { label: "Recruit", href: "/recruit" },
     { label: "Leaderboards", href: "/teams/top" },
     { label: "Support", href: "/support" },
   ];

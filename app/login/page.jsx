@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
 
   async function handlePasswordReset() {
     setLoading(true);
@@ -94,6 +96,46 @@ export default function LoginPage() {
       return;
     }
 
+    if (data?.user?.id) {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        const factor = factors?.totp?.find((f) => f.status === "verified");
+        if (factor) {
+          setMfaFactorId(factor.id);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    finishLogin(data, emailToUse);
+  }
+
+  async function handleMfaVerify() {
+    setError("");
+    setLoading(true);
+    const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+    if (cErr || !challenge) {
+      setError(cErr?.message || "Could not start verification.");
+      setLoading(false);
+      return;
+    }
+    const { error: vErr } = await supabase.auth.mfa.verify({
+      factorId: mfaFactorId,
+      challengeId: challenge.id,
+      code: mfaCode.trim(),
+    });
+    if (vErr) {
+      setError("That code was not correct.");
+      setLoading(false);
+      return;
+    }
+    const { data: sessionData } = await supabase.auth.getSession();
+    finishLogin({ user: sessionData.session?.user }, sessionData.session?.user?.email || "");
+  }
+
+  async function finishLogin(data, emailToUse) {
     if (data?.user?.id) {
       const metadataUsername =
         data.user.user_metadata?.username ||
@@ -194,9 +236,24 @@ export default function LoginPage() {
             autoComplete="off"
             onSubmit={(e) => {
               e.preventDefault();
-              handleLogin();
+              if (mfaFactorId) handleMfaVerify();
+              else handleLogin();
             }}
           >
+            {mfaFactorId ? (
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="6-digit authenticator code"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                style={styles.input}
+                autoFocus
+              />
+            ) : (
+              <>
             <input
               type="text"
               name="login-username"
@@ -222,6 +279,8 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
             />
+              </>
+            )}
 
             <button type="submit" style={styles.button} disabled={loading}>
               {loading ? "Logging in..." : "Login"}

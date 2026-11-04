@@ -267,7 +267,21 @@ export default function MatchDetailsPage() {
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [h2h, setH2h] = useState<{ a_wins: number; b_wins: number; total: number } | null>(null);
+  const [proofs, setProofs] = useState<{ id: string; proof_url: string; team_id: string }[]>([]);
 
+  useEffect(() => {
+    if (!match?.posting_team_id || !match?.accepting_team_id || match.id === "preview") return;
+    supabase
+      .rpc("gb_head_to_head", { p_team_a: match.posting_team_id, p_team_b: match.accepting_team_id })
+      .then(({ data }) => setH2h((data as any) || null));
+    supabase
+      .from("match_proofs")
+      .select("id,proof_url,team_id")
+      .eq("match_id", match.id)
+      .then(({ data }) => setProofs((data as any) || []));
+  }, [match?.id, match?.posting_team_id, match?.accepting_team_id, match?.status]);
   useEffect(() => {
     async function loadMatch() {
       setLoading(true);
@@ -844,6 +858,22 @@ export default function MatchDetailsPage() {
     }
 
     setActionMessage("Score submitted. Awaiting opponent confirmation.");
+
+    if (proofFile) {
+      const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${currentUser?.id}/${match.id}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("match-proofs").getPublicUrl(path);
+        await supabase.from("match_proofs").insert([
+          { match_id: match.id, team_id: verifiedUserTeamId, user_id: currentUser?.id, proof_url: urlData.publicUrl, proof_note: "Score report proof" },
+        ]);
+      } else {
+        setActionMessage("Score submitted, but the proof image could not be uploaded.");
+      }
+      setProofFile(null);
+    }
+
     await reloadMatch();
   }
 
@@ -1832,6 +1862,34 @@ export default function MatchDetailsPage() {
                   >
                     Submit
                   </button>
+
+                  {canSubmitScore && (
+                    <label className="score-note" style={{ display: "block" }}>
+                      Proof screenshot (optional):{" "}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                      />
+                    </label>
+                  )}
+
+                  {proofs.length > 0 && (
+                    <div className="score-note">
+                      Proof:{" "}
+                      {proofs.map((p, i) => (
+                        <a key={p.id} href={p.proof_url} target="_blank" rel="noreferrer" style={{ marginRight: 8 }}>
+                          Screenshot {i + 1}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {h2h && h2h.total > 0 && (
+                    <div className="score-note">
+                      Head-to-head: {postingTeam?.name || "Team"} {h2h.a_wins} - {h2h.b_wins} {acceptingTeam?.name || "Team"} ({h2h.total} match{h2h.total === 1 ? "" : "es"})
+                    </div>
+                  )}
 
                   {canConfirmScore && (
                     <>
