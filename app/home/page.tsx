@@ -69,6 +69,19 @@ export default function Home() {
             drop-shadow(0 0 8px rgba(0,130,220,.35));
         }
 
+        .logo-emblem{
+          position:absolute;
+          left:8.5%;
+          top:14.7%;
+          width:10.7%;
+          aspect-ratio:1/1;
+          transform:translate(-50%,-50%);
+          z-index:34;
+          pointer-events:none;
+          border-radius:50%;
+          filter:drop-shadow(0 0 5px rgba(30,120,255,.5));
+        }
+
         .controller-spin-ring{
           position:absolute;
           left:8%;
@@ -780,72 +793,11 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
+          <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
           <div className="controller-overlay">
             <div className="controller-spin-ring"></div>
 
-            <svg viewBox="0 0 260 180" aria-hidden="true">
-              <defs>
-                <linearGradient id="controllerBody" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="38%" stopColor="#d8dce0" />
-                  <stop offset="72%" stopColor="#a7afb7" />
-                  <stop offset="100%" stopColor="#6e7882" />
-                </linearGradient>
-                <linearGradient id="controllerEdge" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="#3f4a55" />
-                </linearGradient>
-                <filter id="controllerShadow" x="-40%" y="-40%" width="180%" height="180%">
-                  <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000000" floodOpacity=".8" />
-                </filter>
-              </defs>
-
-              <path
-                d="M55 69
-                   C67 38 96 45 112 59
-                   C119 65 125 67 130 67
-                   C135 67 141 65 148 59
-                   C164 45 193 38 205 69
-                   C218 101 237 145 215 159
-                   C194 173 171 135 158 120
-                   C150 111 141 108 130 108
-                   C119 108 110 111 102 120
-                   C89 135 66 173 45 159
-                   C23 145 42 101 55 69Z"
-                fill="url(#controllerBody)"
-                stroke="url(#controllerEdge)"
-                strokeWidth="4"
-                filter="url(#controllerShadow)"
-              />
-
-              <path d="M73 88 H102 V101 H73Z" fill="#003e68" />
-              <path d="M81 80 H94 V109 H81Z" fill="#003e68" />
-
-              <circle cx="177" cy="83" r="8" fill="#003e68" />
-              <circle cx="198" cy="94" r="8" fill="#003e68" />
-              <circle cx="177" cy="105" r="8" fill="#003e68" />
-              <circle cx="156" cy="94" r="8" fill="#003e68" />
-
-              <circle cx="118" cy="85" r="5" fill="#4f5f6c" />
-              <circle cx="143" cy="85" r="5" fill="#4f5f6c" />
-
-              <path
-                d="M82 54
-                   C88 20 125 16 143 48"
-                fill="none"
-                stroke="#e5edf4"
-                strokeWidth="10"
-                strokeLinecap="round"
-              />
-              <path
-                d="M86 54
-                   C92 28 122 25 137 49"
-                fill="none"
-                stroke="#6d7a86"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-            </svg>
+            
           </div>
 
           <div className="real-top-bar">
