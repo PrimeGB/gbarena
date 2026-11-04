@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import PlayerSearchInput from "../components/PlayerSearchInput";
 
 type ProfileResult = {
   id: string;
@@ -151,7 +152,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
             <p>Search by username, EA ID, Xbox gamertag, or PC name.</p>
 
             <form className="search-box" action="/members" method="get">
-              <input name="q" placeholder="Enter a username or gaming ID..." defaultValue={search} />
+              <PlayerSearchInput name="q" placeholder="Enter a username or gaming ID..." defaultValue={search} />
               <button type="submit">Search Members</button>
             </form>
 
