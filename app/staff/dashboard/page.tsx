@@ -410,6 +410,7 @@ export default function StaffDashboardPage() {
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
               {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
           {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/moderation">Moderation</Link>}
+          {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
               {(isOwner || permissions.includes("staff_directory")) && (
                 <a href="#staff-directory" onClick={(e) => { e.preventDefault(); setView("roster"); }}>Staff roster</a>
               )}

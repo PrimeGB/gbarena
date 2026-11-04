@@ -948,6 +948,20 @@ export default function MatchDetailsPage() {
     }
 
     setActionMessage("Dispute opened. Staff must resolve this match.");
+
+    if (proofFile && currentUser?.id) {
+      const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${currentUser.id}/${match.id}-dispute-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("match-proofs").getPublicUrl(path);
+        await supabase.from("match_proofs").insert([
+          { match_id: match.id, team_id: userTeamId, user_id: currentUser.id, proof_url: urlData.publicUrl, proof_note: "Dispute proof" },
+        ]);
+      }
+      setProofFile(null);
+    }
+
     await reloadMatch();
   }
 
@@ -1927,6 +1941,11 @@ export default function MatchDetailsPage() {
                             value={disputeDetails}
                             onChange={(e) => setDisputeDetails(e.target.value)}
                             placeholder="Optional details"
+                          />{" "}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
                           />{" "}
                           <button
                             className="dispute-btn"
