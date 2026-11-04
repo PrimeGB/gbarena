@@ -1827,8 +1827,8 @@ function ProfilePageContent() {
                     <a className="pf-btn" href={`/profile/friends?userId=${viewedUserId}`}>View Friends</a>
                   )}
                 </div>
-                                    )}
-                                  </div>
+                )}
+              </div>
 
             </div>
           ) : (
