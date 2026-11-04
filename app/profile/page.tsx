@@ -1496,7 +1496,7 @@ function ProfilePageContent() {
           overflow:hidden;
         }
         .pf-avatar .pf-avatar-bg{ display:none; }
-        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center; }
+        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%;         object-fit:cover; object-position:center; }
         .pf-identity{ flex:1; min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; }
         .pf-name{
           font-size:34px;
@@ -1812,6 +1812,7 @@ function ProfilePageContent() {
                   )}
                 </div>
 
+                {currentUser?.id && (
                 <div className="pf-banner-actions">
                   {isViewingOwnProfile ? (
                     <>
@@ -1826,7 +1827,8 @@ function ProfilePageContent() {
                     <a className="pf-btn" href={`/profile/friends?userId=${viewedUserId}`}>View Friends</a>
                   )}
                 </div>
-              </div>
+                                    )}
+                                  </div>
 
             </div>
           ) : (
