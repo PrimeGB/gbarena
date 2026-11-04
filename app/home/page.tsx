@@ -69,26 +69,6 @@ export default function Home() {
             drop-shadow(0 0 8px rgba(0,130,220,.35));
         }
 
-        .title-shift{
-          position:absolute;
-          inset:0;
-          z-index:5;
-          pointer-events:none;
-          clip-path:inset(8.6% 36.5% 78.9% 14.8%);
-        }
-
-        .title-shift > div{
-          position:absolute;
-          top:0;
-          bottom:0;
-          left:2%;
-          right:-2%;
-          background:
-            linear-gradient(to bottom,rgba(6,20,35,.08),rgba(5,18,32,.14)),
-            url("/homepage-clean.png");
-          background-size:100% 100%;
-        }
-
         .logo-emblem{
           position:absolute;
           left:7.5%;
@@ -822,7 +802,6 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
-          <div className="title-shift" aria-hidden="true"><div></div></div>
           <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
           <div className="controller-spin-ring"></div>
           <img className="logo-emblem logo-emblem-text" src="/logo-emblem.png" alt="" aria-hidden="true" />
