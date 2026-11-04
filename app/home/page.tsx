@@ -69,9 +69,29 @@ export default function Home() {
             drop-shadow(0 0 8px rgba(0,130,220,.35));
         }
 
+        .title-shift{
+          position:absolute;
+          inset:0;
+          z-index:5;
+          pointer-events:none;
+          clip-path:inset(8.6% 37.5% 78.9% 15.8%);
+        }
+
+        .title-shift > div{
+          position:absolute;
+          top:0;
+          bottom:0;
+          left:1%;
+          right:-1%;
+          background:
+            linear-gradient(to bottom,rgba(6,20,35,.08),rgba(5,18,32,.14)),
+            url("/homepage.png");
+          background-size:100% 100%;
+        }
+
         .logo-emblem{
           position:absolute;
-          left:8%;
+          left:7.5%;
           top:14.7%;
           width:10.2%;
           aspect-ratio:1/1;
@@ -82,9 +102,14 @@ export default function Home() {
           filter:drop-shadow(0 0 5px rgba(30,120,255,.5));
         }
 
+        .logo-emblem-text{
+          z-index:36;
+          clip-path:inset(69% 13% 18% 13%);
+        }
+
         .controller-spin-ring{
           position:absolute;
-          left:8%;
+          left:7.5%;
           top:14.7%;
           width:8.8%;
           aspect-ratio:1/1;
@@ -797,8 +822,10 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
+          <div className="title-shift" aria-hidden="true"><div></div></div>
           <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
           <div className="controller-spin-ring"></div>
+          <img className="logo-emblem logo-emblem-text" src="/logo-emblem.png" alt="" aria-hidden="true" />
 
           <div className="real-top-bar">
             <div className="auth-holder">
