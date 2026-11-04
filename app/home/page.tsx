@@ -64,45 +64,28 @@ export default function Home() {
           align-items:center;
           justify-content:center;
           filter:
-            drop-shadow(1px 2px 2px rgba(0,0,0,.85))
-            drop-shadow(0 0 4px rgba(255,255,255,.35))
-            drop-shadow(0 0 9px rgba(0,140,235,.45));
-        }
-
-        .controller-frame{
-          position:absolute;
-          left:8.5%;
-          top:14.7%;
-          width:10.5%;
-          aspect-ratio:1/1;
-          transform:translate(-50%,-50%);
-          z-index:34;
-          pointer-events:none;
-          filter:drop-shadow(0 0 5px rgba(30,120,255,.55));
-        }
-
-        .controller-frame > svg{
-          position:absolute;
-          inset:0;
-          width:100%;
-          height:100%;
+            drop-shadow(2px 3px 3px rgba(0,0,0,.75))
+            drop-shadow(0 0 5px rgba(255,255,255,.25))
+            drop-shadow(0 0 8px rgba(0,130,220,.35));
         }
 
         .controller-spin-ring{
           position:absolute;
-          inset:6.5%;
+          left:8%;
+          top:8%;
+          width:84%;
+          height:84%;
           border-radius:50%;
-          background:conic-gradient(from 0deg,
-            rgba(255,255,255,0) 0deg,
-            rgba(255,255,255,0) 230deg,
-            rgba(190,230,255,.55) 320deg,
-            rgba(255,255,255,.95) 350deg,
-            rgba(255,255,255,0) 360deg);
-          -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px),#000 calc(100% - 1px),transparent 100%);
-          mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px),#000 calc(100% - 1px),transparent 100%);
-          filter:blur(.4px);
-          animation:controllerRingSpin 4.5s linear infinite;
+          border:3px solid rgba(90,170,230,.22);
+          border-top-color:rgba(255,255,255,.78);
+          border-right-color:rgba(95,190,255,.58);
+          z-index:1;
+          animation:controllerRingSpin 10s linear infinite;
+          box-shadow:
+            inset 0 0 10px rgba(0,0,0,.65),
+            0 0 8px rgba(0,110,190,.22);
         }
+
         @keyframes controllerRingSpin{
           0%{transform:rotate(0deg);}
           100%{transform:rotate(360deg);}
@@ -115,6 +98,7 @@ export default function Home() {
           height:100%;
           transform:rotate(-2deg);
         }
+
         .real-top-bar{
           position:absolute;
           left:0;
@@ -796,67 +780,23 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
-          <div className="controller-frame" aria-hidden="true">
-            <svg viewBox="0 0 200 200">
-              <defs>
-                <linearGradient id="cfSilver" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#f4f8fc" />
-                  <stop offset="35%" stopColor="#8d9db0" />
-                  <stop offset="65%" stopColor="#dfe8f1" />
-                  <stop offset="100%" stopColor="#6c7b8c" />
-                </linearGradient>
-                <linearGradient id="cfBlue" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#5fc0ff" />
-                  <stop offset="30%" stopColor="#1d78f0" />
-                  <stop offset="70%" stopColor="#0b45c4" />
-                  <stop offset="100%" stopColor="#2a8cff" />
-                </linearGradient>
-                <radialGradient id="cfFill" cx="50%" cy="40%" r="65%">
-                  <stop offset="0%" stopColor="#0f2848" />
-                  <stop offset="100%" stopColor="#030a14" />
-                </radialGradient>
-                <radialGradient id="cfFlare" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity=".95" />
-                  <stop offset="40%" stopColor="#7fc8ff" stopOpacity=".55" />
-                  <stop offset="100%" stopColor="#1d78f0" stopOpacity="0" />
-                </radialGradient>
-                <filter id="cfGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" />
-                </filter>
-              </defs>
-              <circle cx="100" cy="100" r="86" fill="none" stroke="#2f8dff" strokeWidth="14" opacity=".55" filter="url(#cfGlow)" />
-              <circle cx="100" cy="100" r="98" fill="none" stroke="url(#cfSilver)" strokeWidth="3" />
-              <circle cx="100" cy="100" r="95" fill="none" stroke="#02070f" strokeWidth="3" />
-              <circle cx="100" cy="100" r="86" fill="none" stroke="url(#cfBlue)" strokeWidth="13" />
-              <circle cx="100" cy="100" r="91" fill="none" stroke="#9ad4ff" strokeWidth="1.2" opacity=".75" />
-              <circle cx="100" cy="100" r="80.5" fill="none" stroke="#02070f" strokeWidth="2.5" />
-              <circle cx="100" cy="100" r="77" fill="none" stroke="#1f6fe0" strokeWidth="2.5" />
-              <circle cx="100" cy="100" r="74" fill="none" stroke="url(#cfSilver)" strokeWidth="2.5" />
-              <circle cx="100" cy="100" r="72" fill="url(#cfFill)" />
-              <circle cx="46" cy="38" r="22" fill="url(#cfFlare)" />
-              <circle cx="168" cy="52" r="12" fill="url(#cfFlare)" opacity=".7" />
-            </svg>
-            <div className="controller-spin-ring"></div>
-          </div>
           <div className="controller-overlay">
+            <div className="controller-spin-ring"></div>
 
             <svg viewBox="0 0 260 180" aria-hidden="true">
               <defs>
-                <linearGradient id="controllerBody" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="controllerBody" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="45%" stopColor="#e4e9ee" />
-                  <stop offset="100%" stopColor="#8f9aa6" />
+                  <stop offset="38%" stopColor="#d8dce0" />
+                  <stop offset="72%" stopColor="#a7afb7" />
+                  <stop offset="100%" stopColor="#6e7882" />
                 </linearGradient>
                 <linearGradient id="controllerEdge" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="#2f3b47" />
+                  <stop offset="100%" stopColor="#3f4a55" />
                 </linearGradient>
-                <radialGradient id="controllerStick" cx="40%" cy="35%" r="70%">
-                  <stop offset="0%" stopColor="#5a7084" />
-                  <stop offset="100%" stopColor="#0d1e2c" />
-                </radialGradient>
                 <filter id="controllerShadow" x="-40%" y="-40%" width="180%" height="180%">
-                  <feDropShadow dx="2" dy="4" stdDeviation="3" floodColor="#000000" floodOpacity=".85" />
+                  <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000000" floodOpacity=".8" />
                 </filter>
               </defs>
 
@@ -874,46 +814,34 @@ export default function Home() {
                    C23 145 42 101 55 69Z"
                 fill="url(#controllerBody)"
                 stroke="url(#controllerEdge)"
-                strokeWidth="5"
-                strokeLinejoin="round"
+                strokeWidth="4"
                 filter="url(#controllerShadow)"
               />
 
-              <path
-                d="M62 74 C72 50 94 54 108 66 C118 74 142 74 152 66 C166 54 188 50 198 74"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="3"
-                strokeLinecap="round"
-                opacity=".9"
-              />
+              <path d="M73 88 H102 V101 H73Z" fill="#003e68" />
+              <path d="M81 80 H94 V109 H81Z" fill="#003e68" />
 
-              <path d="M70 87 H100 V102 H70Z" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
-              <path d="M79 78 H91 V111 H79Z" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
+              <circle cx="177" cy="83" r="8" fill="#003e68" />
+              <circle cx="198" cy="94" r="8" fill="#003e68" />
+              <circle cx="177" cy="105" r="8" fill="#003e68" />
+              <circle cx="156" cy="94" r="8" fill="#003e68" />
 
-              <circle cx="177" cy="82" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
-              <circle cx="199" cy="94" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
-              <circle cx="177" cy="106" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
-              <circle cx="155" cy="94" r="9" fill="#1456d8" stroke="#082a73" strokeWidth="2" />
-
-              <circle cx="115" cy="122" r="12" fill="url(#controllerStick)" stroke="#e8eef3" strokeWidth="2.5" />
-              <circle cx="145" cy="122" r="12" fill="url(#controllerStick)" stroke="#e8eef3" strokeWidth="2.5" />
-
-              <text x="130" y="88" textAnchor="middle" fontSize="15" fontWeight="900" fontStyle="italic" fill="#1456d8" fontFamily="Arial, sans-serif">GB</text>
+              <circle cx="118" cy="85" r="5" fill="#4f5f6c" />
+              <circle cx="143" cy="85" r="5" fill="#4f5f6c" />
 
               <path
                 d="M82 54
                    C88 20 125 16 143 48"
                 fill="none"
-                stroke="#f4f8fb"
-                strokeWidth="11"
+                stroke="#e5edf4"
+                strokeWidth="10"
                 strokeLinecap="round"
               />
               <path
                 d="M86 54
                    C92 28 122 25 137 49"
                 fill="none"
-                stroke="#52606c"
+                stroke="#6d7a86"
                 strokeWidth="4"
                 strokeLinecap="round"
               />
