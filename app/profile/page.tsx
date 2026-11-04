@@ -94,27 +94,6 @@ type TeamMemberRow = {
   teams: TeamProfileRow | TeamProfileRow[] | null;
 };
 
-type PlayerStats = {
-  wins: number;
-  losses: number;
-  win_pct: number | null;
-  current_streak: number;
-  current_streak_type: "W" | "L" | null;
-  best_win_streak: number;
-  last_10: ("W" | "L")[];
-  by_game: { game: string | null; wins: number; losses: number }[];
-};
-
-type SeasonHistoryRow = {
-  season_id: string;
-  name: string;
-  wins: number;
-  losses: number;
-  place: number;
-  players: number;
-  current: boolean;
-};
-
 type FriendRequestRow = {
   requester_id: string;
   recipient_id: string;
@@ -147,19 +126,6 @@ function ProfilePageContent() {
   const [currentProfileName, setCurrentProfileName] = useState("");
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
-  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
-  const [seasonHistory, setSeasonHistory] = useState<SeasonHistoryRow[]>([]);
-
-  useEffect(() => {
-    if (!viewedUserId) return;
-    supabase.rpc("gb_player_stats", { p_user: viewedUserId }).then(({ data, error: rpcError }) => {
-      setPlayerStats(rpcError ? null : (data as PlayerStats));
-    });
-    supabase.rpc("gb_player_season_history", { p_user: viewedUserId }).then(({ data, error: rpcError }) => {
-      setSeasonHistory(rpcError ? [] : ((data || []) as SeasonHistoryRow[]));
-    });
-  }, [viewedUserId]);
-
   function favoriteSystemClass(system: string) {
     const cleanSystem = system.toLowerCase();
 
@@ -1550,18 +1516,6 @@ function ProfilePageContent() {
         }
         .pf-btn:hover{ background:#3b91f0; }
         .pf-inbox-btn{ position:relative; }
-        .pf-stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
-        .pf-stat{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:10px; text-align:center; }
-        .pf-stat b{ display:block; font-size:20px; color:#ffe9a8; }
-        .pf-stat span{ font-size:11px; opacity:.75; text-transform:uppercase; }
-        .pf-form{ display:flex; gap:4px; margin-bottom:10px; }
-        .pf-form-pip{ width:22px; height:22px; border-radius:4px; display:inline-grid; place-items:center; font-size:11px; font-weight:800; color:#fff; }
-        .pf-form-pip.w{ background:#2e8b3d; }
-        .pf-form-pip.l{ background:#a33030; }
-        .pf-stat-table{ width:100%; border-collapse:collapse; font-size:13px; }
-        .pf-stat-table td{ padding:6px 8px; border-top:1px solid rgba(255,255,255,.1); }
-        .pf-stat-table td:not(:first-child){ text-align:right; }
-        @media (max-width:600px){ .pf-stat-grid{ grid-template-columns:repeat(2,1fr); } }
         .pf-inbox-btn .mail-dot{ right:8px; top:50%; transform:translateY(-50%); }
         .pf-banner-strip{
           display:flex;
@@ -2042,52 +1996,6 @@ function ProfilePageContent() {
               </aside>
 
               <main className="main-column">
-                {playerStats && playerStats.wins + playerStats.losses > 0 && (
-                  <div className="pf-section">
-                    <div className="pf-section-title"><span>Player Stats</span></div>
-                    <div className="pf-stat-grid">
-                      <div className="pf-stat"><b>{playerStats.wins}-{playerStats.losses}</b><span>Record</span></div>
-                      <div className="pf-stat"><b>{playerStats.win_pct ?? 0}%</b><span>Win Rate</span></div>
-                      <div className="pf-stat"><b>{playerStats.current_streak_type ? `${playerStats.current_streak_type}${playerStats.current_streak}` : "-"}</b><span>Streak</span></div>
-                      <div className="pf-stat"><b>{playerStats.best_win_streak}</b><span>Best Win Streak</span></div>
-                    </div>
-                    <div className="pf-form">
-                      {playerStats.last_10.map((result, index) => (
-                        <span key={index} className={`pf-form-pip ${result === "W" ? "w" : "l"}`}>{result}</span>
-                      ))}
-                    </div>
-                    {playerStats.by_game.length > 0 && (
-                      <table className="pf-stat-table">
-                        <tbody>
-                          {playerStats.by_game.map((row) => (
-                            <tr key={row.game || "unknown"}>
-                              <td>{row.game || "Unknown game"}</td>
-                              <td>{row.wins}-{row.losses}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                )}
-
-                {seasonHistory.length > 0 && (
-                  <div className="pf-section">
-                    <div className="pf-section-title"><span>Season History</span></div>
-                    <table className="pf-stat-table">
-                      <tbody>
-                        {seasonHistory.map((row) => (
-                          <tr key={row.season_id}>
-                            <td>{row.name}{row.current ? " (current)" : ""}</td>
-                            <td>{row.wins}-{row.losses}</td>
-                            <td>#{row.place} of {row.players}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
                 <div className="pf-section">
                   <div className="pf-section-title"><span>Top Awards</span></div>
                   <div className="pf-award-row">
