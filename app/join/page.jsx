@@ -428,6 +428,7 @@ export default function JoinPage() {
 
     let active = true;
     let processingUserId = "";
+    let redirectTimer;
 
     async function finishConfirmedSignup(user) {
       if (!active || !user?.email_confirmed_at || processingUserId === user.id) return;
@@ -441,6 +442,9 @@ export default function JoinPage() {
           setConfirmationRequired(false);
           setConfirmationComplete(true);
           setSuccess(true);
+          redirectTimer = window.setTimeout(() => {
+            if (active) router.replace("/login");
+          }, 1800);
         }
       } catch (confirmationError) {
         console.error("Could not finish confirmed signup:", confirmationError);
@@ -471,9 +475,10 @@ export default function JoinPage() {
 
     return () => {
       active = false;
+      if (redirectTimer) window.clearTimeout(redirectTimer);
       authListener.subscription.unsubscribe();
     };
-  }, [ensureProfileAndWelcome]);
+  }, [ensureProfileAndWelcome, router]);
 
   useEffect(() => {
     const checkUsername = async () => {
@@ -1855,7 +1860,7 @@ export default function JoinPage() {
             {success && (
               <div className="success">
                 {confirmationComplete
-                  ? `Email confirmed. Your account is ready, and a GameBattles welcome email is on its way to ${email.trim() || "your inbox"}.`
+                  ? `Email confirmed. Your welcome email is on its way. Redirecting you to log in...`
                   : confirmationRequired
                     ? `Check ${email.trim()} for a confirmation link. Click it to activate your account; your welcome email will be sent after confirmation. This email is permanently linked to your account.`
                     : "Account created successfully. Your email is permanently linked to this account. Redirecting to login..."}

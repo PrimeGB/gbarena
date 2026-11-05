@@ -325,20 +325,6 @@ export default function SupportPage() {
               </div>
             </section>
 
-            <section className="panel">
-              <div className="panel-header">Disputes</div>
-              <div className="panel-body">
-                <p>
-                  Disputes are for official match problems only. Do not use general
-                  contact messages to avoid the dispute system.
-                </p>
-
-                <Link className="button red" href="/matches/finder">
-                  Open a Match to Submit a Dispute Ticket
-                </Link>
-              </div>
-            </section>
-
             <div className="warning full">
               <p>
                 <strong>Important:</strong> Support is for real help requests.

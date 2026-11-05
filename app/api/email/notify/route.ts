@@ -7,8 +7,8 @@ type Template = {
   subject: string;
   heading: string;
   intro: string;
-  button: string;
-  href: string;
+  button?: string;
+  href?: string;
   accent: string;
   steps?: string[];
 };
@@ -26,19 +26,11 @@ function buildTemplate(type: string, subject: string, relatedType: string, relat
 
   if (type === "welcome") {
     return {
-      ...make(
-        "Welcome to GameBattles!",
-        "Your account is ready and you're officially part of the competition. Here's how to get started:",
-        "Get Started",
-        `${SITE}/getting-started`,
-        "#f2c14e"
-      ),
-      steps: [
-        "Complete your profile and link your gaming accounts",
-        "Add friends and find a team, or create your own",
-        "Challenge teams on the ladders and tournaments",
-        "Play fair and follow the site rules",
-      ],
+      subject: "Welcome to GameBattles!",
+      heading: "Welcome to GameBattles!",
+      intro:
+        "Your account is ready. GameBattles is a community for competitive gaming, teamwork, ladders, and tournaments. Set up your profile, find teammates, and start competing whenever you're ready.",
+      accent: "#f2c14e",
     };
   }
   if (subject.startsWith("Match accepted")) return make("Match Accepted", "Congratulations, you got a match!", "View Match", matchHref, "#3fb950");
@@ -62,9 +54,9 @@ function render(t: Template) {
 <h1 style="margin:0 0 14px;font-size:22px;color:#ffffff;">${escape(t.heading)}</h1>
 <p style="margin:0 0 ${t.steps ? "14px" : "24px"};font-size:15px;line-height:1.55;color:#b9c7d6">${escape(t.intro)}</p>
 ${t.steps ? `<ul style="margin:0 0 24px;padding-left:20px;font-size:14px;line-height:1.8;color:#d7e2ee;">${t.steps.map((s) => `<li>${escape(s)}</li>`).join("")}</ul>` : ""}
-<a href="${t.href}" style="display:inline-block;background:#c40000;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;font-size:14px;">${escape(t.button)}</a>
+${t.button && t.href ? `<a href="${t.href}" style="display:inline-block;background:#c40000;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;font-size:14px;">${escape(t.button)}</a>` : ""}
 </td></tr>
-<tr><td style="padding:16px 24px;border-top:1px solid #13293d;color:#6f8294;font-size:12px;">You can turn off email notifications anytime in Edit Profile on GameBattles.</td></tr>
+${t.href ? `<tr><td style="padding:16px 24px;border-top:1px solid #13293d;color:#6f8294;font-size:12px;">You can turn off email notifications anytime in Edit Profile on GameBattles.</td></tr>` : ""}
 </table></td></tr></table></body></html>`;
 }
 
