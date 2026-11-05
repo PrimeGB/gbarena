@@ -12,7 +12,7 @@ export const gamingPlatforms = [
   { value: "xbox", label: "Xbox Gamertag" },
   { value: "playstation", label: "PlayStation Online ID" },
   { value: "nintendo", label: "Nintendo Switch ID" },
-  { value: "pc", label: "PC / In-game ID" },
+  { value: "pc", label: "PC (Steam / Battle.net / Epic / EA ID)" },
   { value: "mobile", label: "Mobile / In-game ID" },
   { value: "ea", label: "EA Account ID" },
 ] as const;

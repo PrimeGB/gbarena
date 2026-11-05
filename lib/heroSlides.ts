@@ -64,6 +64,9 @@ function interleave(groups: string[][]): string[] {
   return out;
 }
 
+// Steam app ids that must never appear in the rotation.
+const BLOCKED_STEAM_APPS = new Set<number>([5348470, 5279240]);
+
 export async function getHeroSlides(): Promise<string[]> {
   const pinned = PINNED_STEAM_APPS.map(
     (id) => `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${id}/header.jpg`
@@ -84,6 +87,7 @@ export async function getHeroSlides(): Promise<string[]> {
         ...(data.top_sellers?.items ?? []).slice(0, 3),
       ];
       live = items
+        .filter((item) => !BLOCKED_STEAM_APPS.has(item.id))
         .map((item) => item.large_capsule_image)
         .filter((url): url is string => Boolean(url));
     }

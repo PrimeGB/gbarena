@@ -59,6 +59,7 @@ function EditProfileContent() {
   const [gamingAccountGame, setGamingAccountGame] = useState<string>("modern-warfare-4");
   const [gamingAccountId, setGamingAccountId] = useState("");
   const [gamingAccountError, setGamingAccountError] = useState("");
+  const [steamPrefill, setSteamPrefill] = useState("");
   const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
   const [earnedAwards, setEarnedAwards] = useState<EarnedAward[]>([]);
@@ -84,9 +85,33 @@ function EditProfileContent() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (searchParams.get("platform") !== "ea") return;
+    const platformParam = searchParams.get("platform");
+    if (platformParam !== "ea" && platformParam !== "pc") return;
 
-    setGamingAccountPlatform("ea");
+    setGamingAccountPlatform(platformParam);
+
+    const steamError = searchParams.get("steam_error");
+    if (steamError) {
+      setGamingAccountError(
+        steamError === "unavailable"
+          ? "Steam could not be reached. Please try again."
+          : "Steam sign-in could not be verified. Please try again.",
+      );
+    }
+
+    const steamId = searchParams.get("steam_id");
+    if (steamId) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("gb_steam_game") || "null");
+        if (saved?.category && saved?.game) {
+          setGamingAccountCategory(saved.category);
+          setGamingAccountGame(saved.game);
+        }
+      } catch {}
+      setSteamPrefill(steamId);
+      setGamingAccountId(steamId);
+    }
+
     if (searchParams.get("focus") !== "gaming-account") return;
 
     requestAnimationFrame(() => {
@@ -102,8 +127,12 @@ function EditProfileContent() {
         account.category === gamingAccountCategory &&
         account.game === gamingAccountGame,
     );
-    setGamingAccountId(existingAccount?.account_id || "");
-  }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame]);
+    setGamingAccountId(
+      existingAccount?.account_id ||
+        (gamingAccountPlatform === "pc" ? steamPrefill : "") ||
+        "",
+    );
+  }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame, steamPrefill]);
 
   useEffect(() => {
     function warnBeforeLeave(event: BeforeUnloadEvent) {
@@ -281,6 +310,14 @@ function EditProfileContent() {
     }
 
     setSavingGamingAccount(false);
+  }
+
+  function linkWithSteam() {
+    sessionStorage.setItem(
+      "gb_steam_game",
+      JSON.stringify({ category: gamingAccountCategory, game: gamingAccountGame }),
+    );
+    window.location.href = "/api/steam/login";
   }
 
   async function removeGamingAccount(account: GamingAccount) {
@@ -1377,9 +1414,28 @@ function EditProfileContent() {
                         value={gamingAccountId}
                         maxLength={80}
                         onChange={(event) => setGamingAccountId(event.target.value)}
-                        placeholder={gamingAccountPlatform === "ea" ? "Enter your EA ID" : "Enter your in-game/platform ID"}
+                        placeholder={
+                          gamingAccountPlatform === "ea"
+                            ? "Enter your EA ID"
+                            : gamingAccountPlatform === "pc"
+                              ? "Steam, Battle.net, Epic or EA ID"
+                              : "Enter your in-game/platform ID"
+                        }
                       />
                     </div>
+                    {gamingAccountPlatform === "pc" && (
+                      <div className="form-row">
+                        <label>Steam</label>
+                        <div>
+                          <button className="save-button" type="button" onClick={linkWithSteam}>
+                            Link with Steam
+                          </button>
+                          <div className="field-note">
+                            Sign in through Steam to fill in your Steam ID automatically. GameBattles never sees your Steam password. Playing through Battle.net, Epic or EA instead? Type that ID above.
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="save-row">
                       <button
                         className="save-button"
