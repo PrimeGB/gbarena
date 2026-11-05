@@ -112,13 +112,13 @@ function EditProfileContent() {
       setGamingAccountId(steamId);
     }
 
-    if (searchParams.get("focus") !== "gaming-account") return;
+    if (searchParams.get("focus") !== "gaming-account" || loading) return;
 
     requestAnimationFrame(() => {
       gamingAccountSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       gamingAccountIdInputRef.current?.focus({ preventScroll: true });
     });
-  }, [searchParams]);
+  }, [searchParams, loading]);
 
   useEffect(() => {
     const existingAccount = gamingAccounts.find(
@@ -1364,6 +1364,11 @@ function EditProfileContent() {
                 <div className="box" ref={gamingAccountSectionRef}>
                   <div className="box-title">Gaming Accounts</div>
                   <div className="box-body">
+                    {steamPrefill && gamingAccountPlatform === "pc" && (
+                      <div className="notice" style={{ borderColor: "#3fbf6f", color: "#8be3a8" }}>
+                        Steam account verified: {steamPrefill}. Pick the game you play, then press Save Gaming Account to finish linking.
+                      </div>
+                    )}
                     <div className="notice">
                       {gamingAccountPlatform === "ea"
                         ? "Enter the EA ID shown in your EA account, then save it here. Signing in on EA does not automatically share your ID with GameBattles. IDs used for an open or active match cannot be changed until that commitment ends."
