@@ -1343,8 +1343,9 @@ function EditProfileContent() {
                       <input value={gtXbox} onChange={(e) => { setGtXbox(e.target.value); markChanged(); }} placeholder="Xbox GT" style={{marginBottom:8}} />
                       <input value={gtPlaystation} onChange={(e) => { setGtPlaystation(e.target.value); markChanged(); }} placeholder="PlayStation ID" style={{marginBottom:8}} />
                       <input value={gtNintendo} onChange={(e) => { setGtNintendo(e.target.value); markChanged(); }} placeholder="Nintendo ID" style={{marginBottom:8}} />
-                      <input value={gtPc} onChange={(e) => { setGtPc(e.target.value); markChanged(); }} placeholder="PC / Steam ID" />
-                      <div className="field-note">Provide platform-specific IDs so friends and teams can find you.</div>
+                      <input value={gtPc} onChange={(e) => { setGtPc(e.target.value); markChanged(); }} placeholder="PC / Steam ID" style={{marginBottom:8}} />
+                      <button className="save-button" type="button" onClick={linkWithSteam}>Link with Steam</button>
+                      <div className="field-note">Provide platform-specific IDs so friends and teams can find you. Steam players: use Link with Steam to sign in through Steam and pick up your ID automatically.</div>
                     </div>
 
                     <div className="save-row">
