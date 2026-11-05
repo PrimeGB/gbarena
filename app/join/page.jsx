@@ -7,6 +7,17 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 
+async function checkEmailTaken(email) {
+  const res = await fetch("/api/auth/availability", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error("Email check failed");
+  const result = await res.json();
+  return Boolean(result.emailTaken);
+}
+
 const regionsByCountry = {
   Canada: [
     "Alberta",
@@ -514,11 +525,7 @@ export default function JoinPage() {
 
       setCheckingEmail(true);
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("email")
-        .ilike("email", cleanEmail)
-        .maybeSingle();
+      const data = await checkEmailTaken(cleanEmail);
 
       setEmailStatus(data ? "taken" : "available");
       setCheckingEmail(false);
@@ -618,11 +625,13 @@ export default function JoinPage() {
       return;
     }
 
-    const { data: existingEmail, error: emailLookupError } = await supabase
-      .from("profiles")
-      .select("email")
-      .ilike("email", cleanEmail)
-      .maybeSingle();
+    let existingEmail = null;
+    let emailLookupError = null;
+    try {
+      existingEmail = await checkEmailTaken(cleanEmail);
+    } catch (lookupError) {
+      emailLookupError = lookupError;
+    }
 
     if (emailLookupError) {
       console.error("Could not verify email availability:", emailLookupError);

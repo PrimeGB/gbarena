@@ -381,7 +381,7 @@ export default function TeamPage() {
       if (memberUserIds.length > 0) {
         const { data: memberProfiles } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, username, gb_rank_points, gb_wins, gb_losses")
           .in("id", memberUserIds);
 
         (memberProfiles || []).forEach((profile: any) => {

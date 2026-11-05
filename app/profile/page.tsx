@@ -18,7 +18,7 @@ import {
 type Profile = {
   id?: string;
   username: string | null;
-  email: string | null;
+  email?: string | null;
   xbox_gt?: string | null;
   psn_gt?: string | null;
   nintendo_gt?: string | null;
@@ -204,7 +204,7 @@ function ProfilePageContent() {
 
     supabase
       .from("profiles")
-      .select("id, username, email, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, credits, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at, profile_views")
+      .select("id, username, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, credits, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at, profile_views")
       .eq("id", viewedUserId)
       .single()
       .then(async ({ data }) => {

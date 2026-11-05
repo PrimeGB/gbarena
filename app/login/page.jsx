@@ -53,23 +53,18 @@ export default function LoginPage() {
     setSuccess(false);
 
     const trimmedUsername = username.trim();
-    const useEmailLogin = trimmedUsername.includes("@");
-    let emailToUse = trimmedUsername;
+    let data = null;
+    let loginError = null;
 
-    if (!useEmailLogin) {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("email")
-        .ilike("username", trimmedUsername)
-        .maybeSingle();
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: trimmedUsername, password }),
+      });
+      const result = await res.json().catch(() => ({}));
 
-      if (profileError) {
-        setError("Unable to look up username. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      if (!profile) {
+      if (result?.code === "username_not_found") {
         setError(
           "Username not found. If you meant to use your email, enter your full email address instead."
         );
@@ -77,13 +72,18 @@ export default function LoginPage() {
         return;
       }
 
-      emailToUse = profile.email;
+      if (!res.ok || !result?.session) {
+        loginError = { message: result?.error || "Invalid login credentials." };
+      } else {
+        const { data: sessionResult, error: sessionError } = await supabase.auth.setSession(result.session);
+        if (sessionError) loginError = sessionError;
+        else data = sessionResult;
+      }
+    } catch {
+      loginError = { message: "Unable to sign in. Please try again." };
     }
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
-      email: emailToUse,
-      password,
-    });
+    const emailToUse = data?.user?.email || "";
 
     if (loginError) {
       const message = loginError.message || "Invalid login credentials.";
