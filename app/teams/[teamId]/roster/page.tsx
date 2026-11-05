@@ -414,6 +414,15 @@ export default function EditRosterPage() {
     loadRoster();
   }, [teamId, user?.id]);
 
+  useEffect(() => {
+    if (search.trim().length < 2) return;
+    const timer = setTimeout(() => {
+      searchAccounts();
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const searchAccounts = async () => {
     const query = search.trim();
 
@@ -426,13 +435,23 @@ export default function EditRosterPage() {
     setMessage("");
     setError("");
 
-    const { data: profiles, error: searchError } = await supabase
-      .from("profiles")
-      .select(
-        "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt, gb_rank_points, gb_wins, gb_losses"
-      )
-      .ilike("username", `%${query}%`)
+    const safeQuery = query.replace(/[%_,()]/g, "");
+    const profileColumns =
+      "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt, gb_rank_points, gb_wins, gb_losses";
+
+    const { data: gtMatches } = await supabase
+      .from("gaming_accounts")
+      .select("user_id")
+      .ilike("account_id", `%${safeQuery}%`)
       .limit(10);
+    const gtUserIds = [...new Set((gtMatches || []).map((row) => row.user_id))];
+
+    let profileQuery = supabase.from("profiles").select(profileColumns);
+    profileQuery =
+      gtUserIds.length > 0
+        ? profileQuery.or(`username.ilike.%${safeQuery}%,id.in.(${gtUserIds.join(",")})`)
+        : profileQuery.ilike("username", `%${safeQuery}%`);
+    const { data: profiles, error: searchError } = await profileQuery.limit(10);
 
     if (searchError) {
       setError(searchError.message);
@@ -892,10 +911,10 @@ export default function EditRosterPage() {
                 <input
                   type="text"
                   value={search}
-                  placeholder="Enter GameBattles username..."
+                  placeholder="Type a username or gamertag..."
                   onChange={(event) => {
                     setSearch(event.target.value);
-                    setSearchResults([]);
+                    if (event.target.value.trim().length < 2) setSearchResults([]);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -1292,15 +1311,15 @@ export default function EditRosterPage() {
           padding: 0 13px;
         }
 
-        .roster-panel {
+        .invite-panel {
           order: 1;
         }
 
-        .legend-panel {
+        .roster-panel {
           order: 2;
         }
 
-        .invite-panel {
+        .legend-panel {
           order: 3;
         }
 
