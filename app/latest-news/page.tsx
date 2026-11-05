@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { newsCategories } from "./categoryData";
+
 export default function LatestNewsPage() {
   return (
     <>
@@ -232,13 +234,15 @@ export default function LatestNewsPage() {
         <div className="layout news-layout">
           <aside className="panel">
             <div className="panel-title">News Categories</div>
-            <Link className="side-link" href="/latest-news#latest-updates">Latest Updates</Link>
-            <Link className="side-link" href="/latest-news#upcoming-updates">Upcoming Updates</Link>
-            <Link className="side-link" href="/suggestions">Accepted Suggestions</Link>
-            <Link className="side-link" href="/ladders">New Ladders</Link>
-            <Link className="side-link" href="/tournaments">Tournaments</Link>
-            <Link className="side-link" href="/forums#top-clips">Top Clips</Link>
-            <Link className="side-link" href="/rules">Rule Changes</Link>
+            {newsCategories.map((category) => (
+              <Link
+                className="side-link"
+                href={`/latest-news/${category.slug}`}
+                key={category.slug}
+              >
+                {category.title}
+              </Link>
+            ))}
           </aside>
 
           <main className="panel" id="latest-updates">
