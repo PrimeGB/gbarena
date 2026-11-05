@@ -25,7 +25,7 @@ const codTitles: CodTitle[] = [
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Modern Warfare 2",
+    title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2-2009",
     image: "/New%20folder/mw2.jpg",
     ladders: ["Singles", "Duos", "Team"],
@@ -37,9 +37,9 @@ const codTitles: CodTitle[] = [
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Modern Warfare 3",
+    title: "Call of Duty: Modern Warfare 3 (2011)",
     slug: "mw3-2011",
-    image: "/New%20folder/mw3.jpg",
+    image: "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
@@ -57,9 +57,9 @@ function ladderSlug(ladder: string) {
 function prettyText(value: string) {
   if (value === "cod4-2007") return "Call Of Duty 4: Modern Warfare";
   if (value === "waw-2008") return "Call Of Duty: World At War";
-  if (value === "mw2-2009") return "Call Of Duty: Modern Warfare 2";
+  if (value === "mw2-2009") return "Call Of Duty: Modern Warfare 2 (2009)";
   if (value === "bo1-2010") return "Call Of Duty: Black Ops";
-  if (value === "mw3-2011") return "Call Of Duty: Modern Warfare 3";
+  if (value === "mw3-2011") return "Call Of Duty: Modern Warfare 3 (2011)";
   if (value === "bo2-2012") return "Call Of Duty: Black Ops II";
 
   return value

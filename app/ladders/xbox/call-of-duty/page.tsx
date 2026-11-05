@@ -13,9 +13,10 @@ type CodTitle = {
 
 const codTitles: CodTitle[] = [
   {
-    title: "Call of Duty: Modern Warfare 4",
+    title: "Call of Duty: Modern Warfare (2019)",
     slug: "modern-warfare-4",
-    image: "/mw4.jpeg",
+    image:
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
@@ -26,21 +27,21 @@ const codTitles: CodTitle[] = [
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Modern Warfare III",
+    title: "Call of Duty: Modern Warfare III (2023)",
     slug: "modern-warfare-iii",
     image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: Modern Warfare II",
+    title: "Call of Duty: Modern Warfare II (2022)",
     slug: "modern-warfare-ii",
     image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg",
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
-    title: "Call of Duty: MW2",
+    title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2",
     image:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg",

@@ -28,6 +28,21 @@ export default function TeamTabs({
     { key: "matches", label: "Matches", href: `${base}#matches` },
   ];
 
+  function navigateToSection(
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) {
+    const sectionId = href.split("#")[1];
+    if (!sectionId || window.location.pathname !== base) return;
+
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    event.preventDefault();
+    window.history.replaceState(window.history.state, "", href);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const right: { key: TeamTabKey; label: string; href: string; show: boolean }[] = [
     { key: "edit-profile", label: "Edit Profile", href: `${base}/edit`, show: canEditProfile },
     { key: "edit-roster", label: "Edit Roster", href: `${base}/roster`, show: canEditRoster },
@@ -40,7 +55,12 @@ export default function TeamTabs({
       <div className="team-tabs">
         <div className="team-tabs-group">
           {left.map((tab) => (
-            <a key={tab.key} href={tab.href} className={tab.key === active ? "on" : ""}>
+            <a
+              key={tab.key}
+              href={tab.href}
+              className={tab.key === active ? "on" : ""}
+              onClick={(event) => navigateToSection(event, tab.href)}
+            >
               {tab.label}
             </a>
           ))}

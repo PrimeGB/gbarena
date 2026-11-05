@@ -17,11 +17,11 @@ function cleanName(value: string | null) {
 }
 
 const gameNames: Record<string, string> = {
-  "modern-warfare-4": "Call of Duty: Modern Warfare 4",
+  "modern-warfare-4": "Call of Duty: Modern Warfare (2019)",
   "black-ops-6": "Call of Duty: Black Ops 6",
-  "modern-warfare-iii": "Call of Duty: Modern Warfare III",
+  "modern-warfare-iii": "Call of Duty: Modern Warfare III (2023)",
   warzone: "Call of Duty: Warzone",
-  "modern-warfare-ii": "Call of Duty: Modern Warfare II",
+  "modern-warfare-ii": "Call of Duty: Modern Warfare II (2022)",
   vanguard: "Call of Duty: Vanguard",
   "black-ops-cold-war": "Call of Duty: Black Ops Cold War",
   "battlefield-6": "Battlefield 6",

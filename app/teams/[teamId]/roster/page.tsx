@@ -50,9 +50,10 @@ function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
 
   const replacements: Record<string, string> = {
-    mw2: "Modern Warfare 2",
-    "modern-warfare-4": "Modern Warfare 4",
-    "modern-warfare-iii": "Modern Warfare III",
+    mw2: "Modern Warfare 2 (2009)",
+    "modern-warfare-4": "Modern Warfare (2019)",
+    "modern-warfare-ii": "Modern Warfare II (2022)",
+    "modern-warfare-iii": "Modern Warfare III (2023)",
     "black-ops-6": "Black Ops 6",
     "battlefield-6": "Battlefield 6",
     "battlefield-2042": "Battlefield 2042",
@@ -327,7 +328,9 @@ export default function EditRosterPage() {
 
     const { data: memberProfiles } = await supabase
       .from("profiles")
-      .select("*")
+      .select(
+        "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt, gb_rank_points, gb_wins, gb_losses"
+      )
       .in("id", memberUserIds);
 
     const { data: accountRows, error: accountError } = await supabase
@@ -425,7 +428,9 @@ export default function EditRosterPage() {
 
     const { data: profiles, error: searchError } = await supabase
       .from("profiles")
-      .select("*")
+      .select(
+        "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt, gb_rank_points, gb_wins, gb_losses"
+      )
       .ilike("username", `%${query}%`)
       .limit(10);
 

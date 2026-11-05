@@ -29,7 +29,7 @@ type TeamRow = {
 type PlayerSearchResult = {
   id: string;
   username: string | null;
-  email: string | null;
+  gamertag: string | null;
   canInvite: boolean;
 };
 
@@ -135,6 +135,7 @@ function TeamHubContent() {
   const [searchPlayer, setSearchPlayer] = useState("");
   const [searchingPlayers, setSearchingPlayers] = useState(false);
   const [playerResults, setPlayerResults] = useState<PlayerSearchResult[]>([]);
+  const [playerSearchError, setPlayerSearchError] = useState("");
 
   const username =
     currentUser?.user_metadata?.username ||
@@ -240,43 +241,120 @@ function TeamHubContent() {
 
       if (!selectedSlot || cleanSearch.length < 2) {
         setPlayerResults([]);
+        setPlayerSearchError("");
         return;
       }
 
       setSearchingPlayers(true);
+      setPlayerSearchError("");
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, email")
-        .or(`username.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`)
-        .limit(6);
+      const [profileSearch, accountSearch] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, username")
+          .ilike("username", `%${cleanSearch}%`)
+          .limit(6),
+        supabase
+          .from("gaming_accounts")
+          .select("user_id, account_id")
+          .eq("platform", platform)
+          .eq("category", category)
+          .eq("game", game)
+          .ilike("account_id", `%${cleanSearch}%`)
+          .limit(6),
+      ]);
 
-      if (!profiles || profiles.length === 0) {
+      if (profileSearch.error || accountSearch.error) {
+        console.error(
+          "Could not search players for team invites:",
+          profileSearch.error || accountSearch.error
+        );
         setPlayerResults([]);
+        setPlayerSearchError("Player search is unavailable. Please try again.");
         setSearchingPlayers(false);
         return;
       }
 
-      const profileIds = profiles.map((profile: any) => profile.id);
+      const profiles = profileSearch.data || [];
+      const accounts = accountSearch.data || [];
+      const profileIds = new Set(profiles.map((profile) => profile.id));
+      const accountUserIds = [...new Set(accounts.map((account) => account.user_id))];
+      const missingProfileIds = accountUserIds.filter((id) => !profileIds.has(id));
+      let gamertagProfiles: { id: string; username: string | null }[] = [];
 
-      const { data: activeMembers } = await supabase
+      if (missingProfileIds.length > 0) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("id", missingProfileIds);
+
+        if (error) {
+          console.error("Could not load player names for team invites:", error);
+          setPlayerResults([]);
+          setPlayerSearchError("Player search is unavailable. Please try again.");
+          setSearchingPlayers(false);
+          return;
+        }
+
+        gamertagProfiles = data || [];
+      }
+
+      const profileById = new Map(
+        [...profiles, ...gamertagProfiles].map((profile) => [profile.id, profile])
+      );
+      const accountByUserId = new Map(
+        accounts.map((account) => [account.user_id, account.account_id])
+      );
+      const resultsById = new Map<string, PlayerSearchResult>();
+
+      for (const account of accounts) {
+        resultsById.set(account.user_id, {
+          id: account.user_id,
+          username: profileById.get(account.user_id)?.username || null,
+          gamertag: account.account_id,
+          canInvite: true,
+        });
+      }
+
+      for (const profile of [...profiles, ...gamertagProfiles]) {
+        if (!resultsById.has(profile.id)) {
+          resultsById.set(profile.id, {
+            id: profile.id,
+            username: profile.username,
+            gamertag: accountByUserId.get(profile.id) || null,
+            canInvite: true,
+          });
+        }
+      }
+
+      const profileResultIds = [...resultsById.keys()];
+
+      const { data: activeMembers, error: activeMembersError } = await supabase
         .from("team_members")
         .select("user_id")
-        .in("user_id", profileIds);
+        .in("user_id", profileResultIds);
+
+      if (activeMembersError) {
+        console.error("Could not verify current team memberships:", activeMembersError);
+        setPlayerResults([]);
+        setPlayerSearchError("Player search is unavailable. Please try again.");
+        setSearchingPlayers(false);
+        return;
+      }
 
       const activeUserIds = activeMembers
         ? activeMembers.map((member: any) => member.user_id)
         : [];
 
-      const results = profiles.map((profile: any) => ({
-        id: profile.id,
-        username: profile.username,
-        email: profile.email,
-        canInvite:
-          profile.id !== currentUser?.id &&
-          !activeUserIds.includes(profile.id) &&
-          !roster.some((slot) => slot.playerId === profile.id),
-      }));
+      const results = [...resultsById.values()]
+        .map((player) => ({
+          ...player,
+          canInvite:
+            player.id !== currentUser?.id &&
+            !activeUserIds.includes(player.id) &&
+            !roster.some((slot) => slot.playerId === player.id),
+        }))
+        .slice(0, 6);
 
       setPlayerResults(results);
       setSearchingPlayers(false);
@@ -284,7 +362,7 @@ function TeamHubContent() {
 
     const delay = setTimeout(searchPlayers, 350);
     return () => clearTimeout(delay);
-  }, [searchPlayer, selectedSlot, currentUser?.id, roster]);
+  }, [searchPlayer, selectedSlot, currentUser?.id, roster, platform, category, game]);
 
   function handleClanTag(value: string) {
     setClanTag(value.slice(0, 3).toUpperCase());
@@ -311,7 +389,7 @@ function TeamHubContent() {
           ? {
               ...slot,
               playerId: player.id,
-              username: player.username || player.email || "Invited Player",
+              username: player.username || player.gamertag || "Invited Player",
               role: "Member",
             }
           : slot
@@ -1015,12 +1093,6 @@ function TeamHubContent() {
           font-weight:bold;
         }
 
-        .player-email{
-          color:#8aa7c0;
-          font-size:10px;
-          margin-top:2px;
-        }
-
         .player-status.bad{
           color:#ff5b5b;
           font-size:10px;
@@ -1502,11 +1574,12 @@ function TeamHubContent() {
                                           className="slot-search-input"
                                           value={searchPlayer}
                                           onChange={(e) => setSearchPlayer(e.target.value)}
-                                          placeholder="Type username or email"
+                                          placeholder="Type username or gamertag"
                                           autoFocus
                                         />
 
                                         {searchingPlayers && <div className="small-note">Searching players...</div>}
+                                        {playerSearchError && <div className="small-note">{playerSearchError}</div>}
 
                                         {!searchingPlayers && searchPlayer.trim().length >= 2 && playerResults.length === 0 && (
                                           <div className="small-note">No matching players found.</div>
@@ -1518,7 +1591,9 @@ function TeamHubContent() {
                                               <div className="player-result" key={player.id}>
                                                 <div>
                                                   <div className="player-info">{player.username || "No username"}</div>
-                                                  <div className="player-email">{player.email}</div>
+                                                  {player.gamertag && (
+                                                    <div className="small-note">Gamertag: {player.gamertag}</div>
+                                                  )}
                                                 </div>
 
                                                 {player.canInvite ? (

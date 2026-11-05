@@ -33,8 +33,9 @@ type TeamRosterId = {
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
   if (value === "mw2") return "Modern Warfare 2";
-  if (value === "modern-warfare-4") return "Modern Warfare 4";
-  if (value === "modern-warfare-iii") return "Modern Warfare III";
+  if (value === "modern-warfare-4") return "Modern Warfare (2019)";
+  if (value === "modern-warfare-ii") return "Modern Warfare II (2022)";
+  if (value === "modern-warfare-iii") return "Modern Warfare III (2023)";
   if (value === "black-ops-6") return "Black Ops 6";
 
   return value

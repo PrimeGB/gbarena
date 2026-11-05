@@ -68,9 +68,10 @@ type RosterMember = {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "";
-  if (value === "mw2") return "Modern Warfare 2";
-  if (value === "modern-warfare-4") return "Modern Warfare 4";
-  if (value === "modern-warfare-iii") return "Modern Warfare III";
+  if (value === "mw2") return "Modern Warfare 2 (2009)";
+  if (value === "modern-warfare-4") return "Modern Warfare (2019)";
+  if (value === "modern-warfare-ii") return "Modern Warfare II (2022)";
+  if (value === "modern-warfare-iii") return "Modern Warfare III (2023)";
   if (value === "black-ops-6") return "Black Ops 6";
   if (value === "battlefield-6") return "Battlefield 6";
   if (value === "battlefield-2042") return "Battlefield 2042";
@@ -204,7 +205,15 @@ function gameCover(game: string | null | undefined) {
   }
 
   if (game === "modern-warfare-4") {
-    return "/mw4.jpeg";
+    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
+  }
+
+  if (game === "modern-warfare-ii") {
+    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg?t=1778886532";
+  }
+
+  if (game === "modern-warfare-iii") {
+    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604";
   }
 
   return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
@@ -232,6 +241,7 @@ export default function TeamPage() {
 
   const [team, setTeam] = useState<TeamData | null>(null);
   const [viewerRole, setViewerRole] = useState<TeamRole>("member");
+  const [viewerIsMember, setViewerIsMember] = useState(false);
   const [leaderName, setLeaderName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -307,6 +317,8 @@ export default function TeamPage() {
       if (!teamId) return;
 
       setLoading(true);
+      setViewerRole("member");
+      setViewerIsMember(false);
 
       const { data: teamData } = await supabase
         .from("teams")
@@ -456,8 +468,13 @@ export default function TeamPage() {
           setViewerRole(normalizeRole(memberData.role));
         }
 
+        if (memberData) {
+          setViewerIsMember(true);
+        }
+
         if (teamData?.owner_id && String(teamData.owner_id) === String(user.id)) {
           setViewerRole("leader");
+          setViewerIsMember(true);
         }
       }
 
@@ -469,6 +486,15 @@ export default function TeamPage() {
 
     loadTeamPage();
   }, [teamId, user]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const sectionId = window.location.hash.slice(1);
+    if (sectionId !== "roster" && sectionId !== "matches") return;
+
+    document.getElementById(sectionId)?.scrollIntoView({ block: "start" });
+  }, [loading]);
 
   async function handleDisband() {
     if (!teamId) return;
@@ -498,7 +524,7 @@ export default function TeamPage() {
   }
 
   async function handleLeave() {
-    if (!teamId || !user?.id) return;
+    if (!teamId || !user?.id || !viewerIsMember || isLeader) return;
 
     if (!confirm("Leave this team?")) return;
 
@@ -1087,14 +1113,18 @@ export default function TeamPage() {
                     )}
                     <br />
 
-                    {isLeader ? (
+                    {loading ? (
+                      <span className="locked-control">Loading team permissions...</span>
+                    ) : isLeader ? (
                       <button className="danger-link" disabled={deleting} onClick={handleDisband} type="button">
                         {deleting ? "Disbanding..." : "Disband Team"}
                       </button>
-                    ) : (
+                    ) : viewerIsMember ? (
                       <button className="danger-link" onClick={handleLeave} type="button">
                         Leave Team
                       </button>
+                    ) : (
+                      <span className="locked-control">You are not a member of this team</span>
                     )}
                   </div>
                 </div>

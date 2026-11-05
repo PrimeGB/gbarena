@@ -52,10 +52,10 @@ type EligibleMatchPlayer = {
 function prettyText(value: string | null) {
   if (!value) return "";
 
-  if (value === "mw2") return "Call of Duty: Modern Warfare 2";
-  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II";
-  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare 4";
-  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III";
+  if (value === "mw2") return "Call of Duty: Modern Warfare 2 (2009)";
+  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II (2022)";
+  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare (2019)";
+  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III (2023)";
   if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
   if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
   if (value === "vanguard") return "Call of Duty: Vanguard";
@@ -76,10 +76,11 @@ function getGameImage(game: string | null, category?: string) {
   if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
   if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
   if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
+  if (game === "modern-warfare-4") return "/mw4.jpeg";
   if (game === "mw2")  return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
-  if (game === "modern-warfare-ii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1938090/header.jpg";
+  if (game === "modern-warfare-ii") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg?t=1778886532";
   if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
-  if (game === "modern-warfare-iii") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg";
+  if (game === "modern-warfare-iii") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604";
   if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
   if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
   if (game === "battlefield-6") return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
@@ -87,7 +88,13 @@ function getGameImage(game: string | null, category?: string) {
   if (game === "battlefield-v") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
   if (game === "battlefield-1") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
 
-  return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
+  if (category === "call-of-duty") {
+    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
+  }
+  if (category === "battlefield" || game?.startsWith("battlefield-")) {
+    return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
+  }
+  return "";
 }
 
 function getLadderName(ladder: string | null) {
@@ -680,7 +687,9 @@ function MatchFinderContent() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
+                {gameImage && (
+                  <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
+                )}
               </div>
 
               <div>

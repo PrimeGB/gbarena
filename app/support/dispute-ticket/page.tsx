@@ -39,11 +39,11 @@ type TeamRow = {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
-  if (value === "mw2") return "Call of Duty: Modern Warfare 2";
-  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II";
-  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare 4";
+  if (value === "mw2") return "Call of Duty: Modern Warfare 2 (2009)";
+  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II (2022)";
+  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare (2019)";
   if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
-  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III";
+  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III (2023)";
   if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
 
   return value
