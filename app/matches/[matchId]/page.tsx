@@ -723,7 +723,7 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    const result = data as any;
+    const result = data as { ok?: boolean; message?: string } | null;
     if (result && result.ok === false) {
       setCommentMessage(result.message || "Comment could not be posted.");
       await loadComments();
@@ -808,24 +808,6 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    const reportedWinnerTeamId =
-      postScore > acceptScore ? match.posting_team_id : match.accepting_team_id;
-    const reportedLoserTeamId =
-      postScore > acceptScore ? match.accepting_team_id : match.posting_team_id;
-
-    if (!reportedWinnerTeamId || !reportedLoserTeamId || !verifiedUserTeamId) {
-      setActionMessage("Match teams could not be verified.");
-      return;
-    }
-
-    const confirmationTeamId =
-      verifiedUserTeamId === match.posting_team_id ? match.accepting_team_id : match.posting_team_id;
-
-    if (!confirmationTeamId) {
-      setActionMessage("Opponent team could not be verified.");
-      return;
-    }
-
     const confirmText =
       "Submit this score for confirmation? The opposing team must confirm it before the match is completed.";
 
@@ -833,27 +815,18 @@ export default function MatchDetailsPage() {
 
     setActionLoading(true);
 
-    const { error } = await supabase
-      .from("matches")
-      .update({
-        posting_team_score: postScore,
-        accepting_team_score: acceptScore,
-        reported_by_team_id: verifiedUserTeamId,
-        reported_winner_team_id: reportedWinnerTeamId,
-        reported_loser_team_id: reportedLoserTeamId,
-        confirmation_team_id: confirmationTeamId,
-        reporting_status: "awaiting_confirmation",
-        status: "awaiting_confirmation",
-        score_reported_at: new Date().toISOString(),
-      })
-      .eq("id", match.id)
-      .eq("finalized", false)
-      .or("reporting_status.is.null,reporting_status.eq.none");
+    const { data, error } = await supabase.rpc("report_match_score", {
+      match_uuid: match.id,
+      reporting_team_uuid: verifiedUserTeamId,
+      posting_score: postScore,
+      accepting_score: acceptScore,
+    });
 
     setActionLoading(false);
 
-    if (error) {
-      setActionMessage("Score could not be submitted. It may have already been reported.");
+    const result = data as { ok?: boolean; message?: string } | null;
+    if (error || result?.ok !== true) {
+      setActionMessage(result?.message || "Score could not be submitted. It may have already been reported.");
       return;
     }
 
@@ -899,7 +872,7 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    const result = data as any;
+    const result = data as { ok?: boolean; message?: string } | null;
     if (result && result.ok === false) {
       setActionMessage(result.message || "Result could not be confirmed.");
       return;
@@ -927,23 +900,16 @@ export default function MatchDetailsPage() {
     setActionLoading(true);
     setActionMessage("");
 
-    const { error } = await supabase
-      .from("matches")
-      .update({
-        status: "disputed",
-        reporting_status: "disputed",
-        disputed_at: new Date().toISOString(),
-        dispute_reason: reason.trim(),
-      })
-      .eq("id", match.id)
-      .eq("finalized", false)
-      .eq("reporting_status", "awaiting_confirmation")
-      .eq("confirmation_team_id", userTeamId);
+    const { data, error } = await supabase.rpc("dispute_match_score", {
+      match_uuid: match.id,
+      dispute_reason_text: reason.trim(),
+    });
 
     setActionLoading(false);
 
-    if (error) {
-      setActionMessage("Dispute could not be created.");
+    const result = data as { ok?: boolean; message?: string } | null;
+    if (error || result?.ok !== true) {
+      setActionMessage(result?.message || "Dispute could not be created.");
       return;
     }
 
