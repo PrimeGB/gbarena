@@ -545,30 +545,6 @@ export default function Home() {
           animation-delay:49s;
         }
 
-        .hero-expanded .slide-nine{
-          background-image:
-            linear-gradient(to bottom,rgba(10,18,26,.1),rgba(0,0,0,.5)),
-            radial-gradient(circle at 52% 44%,rgba(255,95,45,.36),transparent 230px),
-            url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2519060/header.jpg");
-          animation-delay:56s;
-        }
-
-        .hero-expanded .slide-ten{
-          background-image:
-            linear-gradient(to bottom,rgba(10,18,26,.1),rgba(0,0,0,.52)),
-            radial-gradient(circle at 53% 44%,rgba(70,180,255,.34),transparent 230px),
-            url("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1240440/header.jpg");
-          animation-delay:63s;
-        }
-
-        .hero-expanded .slide-eleven{
-          background-image:
-            linear-gradient(to bottom,rgba(10,18,26,.1),rgba(0,0,0,.52)),
-            radial-gradient(circle at 53% 44%,rgba(120,210,255,.34),transparent 230px),
-            url("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/976730/header.jpg");
-          animation-delay:70s;
-        }
-
         @keyframes heroFade{
           0%{opacity:0;transform:scale(1.03);}
           3%{opacity:1;transform:scale(1.01);}
@@ -768,6 +744,30 @@ export default function Home() {
           line-height:1.5;
           text-align:center;
         }
+        .mobile-home-cup{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          margin-top:14px;
+          padding:13px;
+          border:1px solid #876b24;
+          background:linear-gradient(120deg,#211c0c,#0b1720);
+        }
+        .mobile-home-cup strong,.mobile-home-cup span{display:block;}
+        .mobile-home-cup strong{color:#ffe28a;font-size:12px;letter-spacing:.06em;}
+        .mobile-home-cup span{margin-top:5px;color:#c7d4df;font-size:11px;line-height:1.45;}
+        .mobile-home-cup a{
+          flex:none;
+          padding:10px 12px;
+          border-radius:5px;
+          background:#d5a92f;
+          color:#111;
+          font-size:11px;
+          font-weight:900;
+          text-decoration:none;
+        }
+        .mobile-home-start p{margin:-3px 0 10px;color:#a8bfd1;font-size:12px;line-height:1.5;}
       }
 
       @media(max-width:360px){
@@ -946,6 +946,7 @@ export default function Home() {
               <div className="panel-title">Community</div>
 
               <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/activity">Live Community <span className="arrow">›</span></Link>
               <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
@@ -999,6 +1000,23 @@ export default function Home() {
               <div className="mobile-home-title">GAMEBATTLES</div>
               <div className="mobile-home-tagline">WHERE GAMING FINDS ITS EDGE</div>
             </div>
+            <div className="mobile-home-cup">
+              <div>
+                <strong>FREE WEEKLY CUPS</strong>
+                <span>Every Saturday · 8 PM Eastern · 5 credits and a winner award per player</span>
+              </div>
+              <Link href="/tournaments">See events</Link>
+            </div>
+            <div className="mobile-home-section mobile-home-start">
+              <h2 className="mobile-home-heading">Jump in</h2>
+              <p>Find a team, enter a free cup, and meet the players you’ll be competing against.</p>
+              <div className="mobile-home-links">
+                <Link href="/getting-started">Start here</Link>
+                <Link href="/tournaments">Free tournaments</Link>
+                <Link href="/activity">Live community</Link>
+                <Link href="/matches/finder">Find a match</Link>
+              </div>
+            </div>
             <div className="mobile-home-section">
               <h2 className="mobile-home-heading">Compete</h2>
               <div className="mobile-home-links">
@@ -1015,6 +1033,7 @@ export default function Home() {
               <h2 className="mobile-home-heading">Community</h2>
               <div className="mobile-home-links">
                 <Link href="/members">Members</Link>
+                <Link href="/activity">Live community</Link>
                 <Link href="/forums">Forums</Link>
                 <Link href="/staff">Staff</Link>
                 <Link href="/latest-news">Latest news</Link>

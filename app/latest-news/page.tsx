@@ -252,6 +252,33 @@ export default function LatestNewsPage() {
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
+                    <span className="tag">Community Update</span>
+                    A More Connected GameBattles
+                  </div>
+                  <div className="news-date">November 5, 2026</div>
+                </div>
+                <div className="news-body">
+                  Follow players and teams from their pages, with Following and
+                  Followers counts on player profiles. The{" "}
+                  <Link href="/activity">community activity feed</Link> brings match
+                  results, team wins, awards, and other milestones together so you can
+                  react and share the moments that matter.
+                  <br /><br />
+                  Free weekly Community Cups are scheduled for Saturdays at 8 PM
+                  Eastern. Each winning player receives 5 credits and a winner award;
+                  the monthly top team receives 25 credits and an award for each player.
+                  New players can find active competitions and get started more easily
+                  on mobile, while game art remains curated instead of automatically
+                  rotating in unrelated storefront images. Visit the{" "}
+                  <Link href="/tournaments">tournament hub</Link> to see available
+                  events and the <Link href="/activity">activity feed</Link> to catch
+                  up with the community.
+                </div>
+              </div>
+
+              <div className="news-post">
+                <div className="news-head">
+                  <div className="news-title">
                     <span className="tag">Profile Update</span>
                     Simplified Profile Navigation
                   </div>
@@ -362,7 +389,7 @@ export default function LatestNewsPage() {
 
             <div className="mini-note">
               <b>Newest updates</b><br />
-              Game-specific ladders and tournament pages are now available.
+              Follow players and teams, catch community moments, and find free weekly cups.
             </div>
 
             <div className="mini-note">
@@ -377,7 +404,7 @@ export default function LatestNewsPage() {
 
             <div className="mini-note">
               <b>Tournaments</b><br />
-              <Link href="/tournaments">See events across all games.</Link>
+              <Link href="/tournaments">See weekly cups and events across all games.</Link>
             </div>
           </aside>
         </div>

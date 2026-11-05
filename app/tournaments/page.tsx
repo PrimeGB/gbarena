@@ -25,6 +25,7 @@ type Tournament = {
   entry_fee_credits: number;
   prize_credits: number;
   prize_per_player?: boolean;
+  competition_type?: "standard" | "weekly_cup";
   prize: string | null;
   rules: string | null;
   status: string;
@@ -252,6 +253,7 @@ function TournamentListing() {
         .t-card.live{border-color:#c40000;box-shadow:0 0 18px rgba(196,0,0,.25);}
         .t-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#0f2a40;border-bottom:1px solid #3b7fc2;padding:12px 16px;}
         .t-name{font-size:16px;font-weight:900;color:#f2c14e;text-transform:uppercase;letter-spacing:.3px;}
+        .t-cup-label{display:inline-block;margin-left:9px;padding:4px 7px;border:1px solid #6b5217;border-radius:999px;color:#ffe9a8;font-size:9px;vertical-align:middle;letter-spacing:.05em;}
         .t-badge{font-size:10px;font-weight:bold;padding:3px 10px;border:1px solid;border-radius:999px;text-transform:uppercase;}
         .t-badge.free{background:#0d3a1f;border-color:#2fbf62;color:#7dffae;}
         .t-badge.paid{background:#3a2a05;border-color:#f2c14e;color:#ffd978;}
@@ -304,6 +306,7 @@ function TournamentListing() {
             </>
           )}
           <Link href="/forums">Forums</Link>
+          <Link href="/activity">Community</Link>
           <Link href="/members">Members</Link>
           <Link href="/rules">Rules</Link>
           <Link href="/support">Support</Link>
@@ -315,7 +318,7 @@ function TournamentListing() {
             <p>
               {scope
                 ? `Upcoming and live events for ${gameLabel} on ${scope.platform}. View event details, rules and prizes, or register your eligible team.`
-                : "Every GameBattles tournament starts here. Browse what's coming up, check the date, time, rules and prizes, and see whether it's free to enter."}
+                : "Every GameBattles tournament starts here. Find free Saturday Community Cups, enter with your team, and compete for credits and winner awards. Monthly team champions also earn credits and an award."}
             </p>
           </div>
           <div className="t-hero-side">
@@ -371,7 +374,12 @@ function TournamentListing() {
                     className={`t-card ${t.status === "live" ? "live" : ""}`}
                   >
                     <div className="t-head">
-                      <div className="t-name">{t.title}</div>
+                      <div className="t-name">
+                        {t.title}
+                        {t.competition_type === "weekly_cup" && (
+                          <span className="t-cup-label">Weekly Community Cup</span>
+                        )}
+                      </div>
                       <div>
                         {t.status === "live" && (
                           <span className="t-badge live">Live</span>

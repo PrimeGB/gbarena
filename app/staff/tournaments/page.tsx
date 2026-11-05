@@ -17,10 +17,64 @@ type Tournament = {
   entry_fee: number | null;
   entry_fee_credits: number;
   prize_credits: number;
+  competition_type: "standard" | "weekly_cup";
 };
 
+function getNextSaturdayAtEightEastern(weeksAhead = 0) {
+  const now = new Date();
+  const easternParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const part = (type: string) => easternParts.find((value) => value.type === type)?.value || "";
+  const weekdays: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  };
+  const today = new Date(Date.UTC(Number(part("year")), Number(part("month")) - 1, Number(part("day"))));
+  let daysUntilSaturday = (6 - weekdays[part("weekday")]) % 7 + weeksAhead * 7;
+  if (daysUntilSaturday === 0 && Number(part("hour")) >= 20) daysUntilSaturday = 7;
+  today.setUTCDate(today.getUTCDate() + daysUntilSaturday);
+
+  const wantedWallTime = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+    20
+  );
+  let instant = new Date(wantedWallTime);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const displayed = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(instant);
+    const value = (type: string) => Number(displayed.find((entry) => entry.type === type)?.value);
+    const displayedWallTime = Date.UTC(
+      value("year"),
+      value("month") - 1,
+      value("day"),
+      value("hour"),
+      value("minute")
+    );
+    instant = new Date(instant.getTime() + wantedWallTime - displayedWallTime);
+  }
+
+  const local = (value: number) => String(value).padStart(2, "0");
+  return `${instant.getFullYear()}-${local(instant.getMonth() + 1)}-${local(instant.getDate())}T${local(instant.getHours())}:${local(instant.getMinutes())}`;
+}
+
 const emptyForm = {
-  title: "",
+  title: "Weekly Free Community Cup",
+  competition_type: "weekly_cup",
   platform: "",
   game: "",
   format: "Single Elimination",
@@ -29,8 +83,8 @@ const emptyForm = {
   check_in_minutes: "30",
   max_teams: "",
   entry_fee_credits: "0",
-  prize_credits: "0",
-  prize: "",
+  prize_credits: "5",
+  prize: "5 credits per player + Weekly Cup Winner award",
   rules: "",
 };
 
@@ -48,6 +102,7 @@ export default function StaffTournamentsPage() {
   const [payTeam, setPayTeam] = useState("");
   const [payPlace, setPayPlace] = useState("1");
   const [payAmount, setPayAmount] = useState("");
+  const [rewardBusy, setRewardBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -62,7 +117,7 @@ export default function StaffTournamentsPage() {
     setAllowed(true);
     const { data } = await supabase
       .from("tournaments")
-      .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits")
+      .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits,competition_type")
       .order("starts_at", { ascending: true });
     setTournaments((data as Tournament[]) || []);
     setChecking(false);
@@ -70,12 +125,31 @@ export default function StaffTournamentsPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      setChecking(false);
-      return;
-    }
-    load();
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      if (!user) {
+        setChecking(false);
+        return;
+      }
+      void load();
+    });
+    return () => {
+      active = false;
+    };
   }, [authLoading, user, load]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        setForm((current) => ({ ...current, starts_at: getNextSaturdayAtEightEastern() }));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function set<K extends keyof typeof emptyForm>(key: K, value: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -85,7 +159,7 @@ export default function StaffTournamentsPage() {
     e.preventDefault();
     setError("");
     setNotice("");
-    if (!form.title.trim()) {
+    if (!form.title.trim() || !form.starts_at) {
       setError("A title and a start date/time are required.");
       return;
     }
@@ -105,6 +179,8 @@ export default function StaffTournamentsPage() {
       entry_fee: 0,
       entry_fee_credits: fee,
       prize_credits: prizeCredits,
+      prize_per_player: form.competition_type === "weekly_cup",
+      competition_type: form.competition_type,
       prize: form.prize.trim() || null,
       rules: form.rules.trim() || null,
       created_by: user?.id,
@@ -114,7 +190,7 @@ export default function StaffTournamentsPage() {
       setError(insertError.message);
       return;
     }
-    setForm(emptyForm);
+    setForm({ ...emptyForm, starts_at: getNextSaturdayAtEightEastern(1) });
     setNotice("Tournament created.");
     load();
   }
@@ -169,6 +245,33 @@ export default function StaffTournamentsPage() {
     }
     setNotice(`Paid ${Number(data).toLocaleString()} credits to the team.`);
     setPayFor(null);
+  }
+
+  async function awardChampion(rewardType: "weekly_cup" | "monthly", tournamentId?: string) {
+    setError("");
+    setNotice("");
+    setRewardBusy(true);
+    const { data, error: rewardError } = await supabase.rpc(
+      "staff_award_competition_champion",
+      {
+        p_reward_type: rewardType,
+        p_tournament_id: tournamentId || null,
+      }
+    );
+    setRewardBusy(false);
+    if (rewardError) {
+      setError(rewardError.message);
+      return;
+    }
+    const result = data as {
+      players_rewarded?: number;
+      credits_per_player?: number;
+      award?: string;
+    };
+    setNotice(
+      `${result.players_rewarded || 0} players received ${result.credits_per_player || 0} credits each and the ${result.award || "champion"} award.`
+    );
+    load();
   }
 
   async function remove(id: string) {
@@ -227,11 +330,45 @@ export default function StaffTournamentsPage() {
             {notice && <div className="st-msg ok">{notice}</div>}
 
             <div className="st-panel">
+              <div className="st-title">Monthly Championship</div>
+              <div className="st-body">
+                The previous full month&apos;s top team on the official team leaderboard receives 25 credits per player and the Monthly Team Champion award.
+                <div style={{ marginTop: 10 }}>
+                  <button className="st-btn" disabled={rewardBusy} onClick={() => awardChampion("monthly")}>
+                    {rewardBusy ? "Awarding..." : "Award monthly champion"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="st-panel">
               <div className="st-title">Create Tournament</div>
               <form className="st-body st-form" onSubmit={create}>
                 <label className="wide">
                   Title
                   <input value={form.title} onChange={(e) => set("title", e.target.value)} maxLength={120} />
+                </label>
+                <label>
+                  Event type
+                  <select
+                    value={form.competition_type}
+                    onChange={(e) => {
+                      const competitionType = e.target.value;
+                      setForm((current) => ({
+                        ...current,
+                        competition_type: competitionType,
+                        title: competitionType === "weekly_cup" ? "Weekly Free Community Cup" : "",
+                        entry_fee_credits: "0",
+                        prize_credits: competitionType === "weekly_cup" ? "5" : "0",
+                        prize: competitionType === "weekly_cup"
+                          ? "5 credits per player + Weekly Cup Winner award"
+                          : "",
+                      }));
+                    }}
+                  >
+                    <option value="weekly_cup">Weekly Free Cup</option>
+                    <option value="standard">Standard tournament</option>
+                  </select>
                 </label>
                 <label>
                   Platform
@@ -257,7 +394,7 @@ export default function StaffTournamentsPage() {
                   <input value={form.team_size} onChange={(e) => set("team_size", e.target.value)} />
                 </label>
                 <label>
-                  Start date and time (your local time)
+                  Start date and time (your local time; default is Saturday at 8 PM Eastern)
                   <input type="datetime-local" value={form.starts_at} onChange={(e) => set("starts_at", e.target.value)} />
                 </label>
                 <label>
@@ -269,12 +406,12 @@ export default function StaffTournamentsPage() {
                   <input type="number" min={2} value={form.max_teams} onChange={(e) => set("max_teams", e.target.value)} />
                 </label>
                 <label>
-                  Entry fee (credits, 0 = free)
-                  <input type="number" min={0} step="1" value={form.entry_fee_credits} onChange={(e) => set("entry_fee_credits", e.target.value)} />
+                  Entry fee (credits, weekly cups are free)
+                  <input type="number" min={0} step="1" value={form.entry_fee_credits} disabled={form.competition_type === "weekly_cup"} onChange={(e) => set("entry_fee_credits", e.target.value)} />
                 </label>
                 <label>
-                  Prize (credits, paid to winning team)
-                  <input type="number" min={0} step="1" value={form.prize_credits} onChange={(e) => set("prize_credits", e.target.value)} />
+                  Prize (credits per winner)
+                  <input type="number" min={0} step="1" value={form.prize_credits} disabled={form.competition_type === "weekly_cup"} onChange={(e) => set("prize_credits", e.target.value)} />
                 </label>
                 <label className="wide">
                   Prizes (display text)
@@ -304,16 +441,26 @@ export default function StaffTournamentsPage() {
                       <small>
                         {t.starts_at ? new Date(t.starts_at).toLocaleString() : "Date TBD"} - {t.status} -{" "}
                         {t.entry_fee_credits > 0 ? `${t.entry_fee_credits} credit entry` : "Free"}
-                        {t.prize_credits > 0 ? ` - ${t.prize_credits} credit prize` : ""}
+                        {t.prize_credits > 0 ? ` - ${t.prize_credits} credits${t.competition_type === "weekly_cup" ? " per player" : " prize"}` : ""}
                       </small>
                     </div>
                     <div className="st-actions">
                       <Link className="st-btn" href={`/tournaments/${t.id}`}>
                         Bracket
                       </Link>
-                      <button className="st-btn" onClick={() => openPay(t)}>
-                        Pay Prize
-                      </button>
+                      {t.competition_type === "weekly_cup" ? (
+                        <button
+                          className="st-btn"
+                          disabled={t.status !== "completed" || rewardBusy}
+                          onClick={() => awardChampion("weekly_cup", t.id)}
+                        >
+                          {rewardBusy ? "Awarding..." : "Award Cup Winner (5 credits + badge)"}
+                        </button>
+                      ) : (
+                        <button className="st-btn" onClick={() => openPay(t)}>
+                          Pay Prize
+                        </button>
+                      )}
                       {t.status !== "live" && (
                         <button className="st-btn" onClick={() => setStatus(t.id, "live")}>
                           Go Live
@@ -329,9 +476,11 @@ export default function StaffTournamentsPage() {
                           Cancel
                         </button>
                       )}
-                      <button className="st-btn red" onClick={() => remove(t.id)}>
-                        Delete
-                      </button>
+                      {t.competition_type !== "weekly_cup" && (
+                        <button className="st-btn red" onClick={() => remove(t.id)}>
+                          Delete
+                        </button>
+                      )}
                     </div>
                     {payFor === t.id && (
                       <div className="st-body" style={{ width: "100%", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

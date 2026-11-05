@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
+import FollowButton from "../components/FollowButton";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
@@ -127,6 +128,52 @@ function ProfilePageContent() {
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
+  const [followCounts, setFollowCounts] = useState<{
+    following_count: number;
+    followers_count: number;
+  } | null>(null);
+  const [followCountsError, setFollowCountsError] = useState("");
+
+  const loadFollowCounts = useCallback(async (
+    targetId: string,
+    isCurrent: () => boolean = () => true
+  ) => {
+    const { data, error: countsError } = await supabase.rpc(
+      "gb_community_follow_counts",
+      { p_target_type: "player", p_target_id: targetId }
+    );
+    if (!isCurrent()) return;
+    if (countsError) {
+      setFollowCounts(null);
+      setFollowCountsError(countsError.message);
+      return;
+    }
+
+    const counts = Array.isArray(data) ? data[0] : data;
+    setFollowCounts(
+      counts
+        ? {
+            following_count: Number(counts.following_count),
+            followers_count: Number(counts.followers_count),
+          }
+        : null
+    );
+    setFollowCountsError("");
+  }, []);
+
+  useEffect(() => {
+    if (!viewedUserId) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setFollowCounts(null);
+      setFollowCountsError("");
+      void loadFollowCounts(viewedUserId, () => active);
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadFollowCounts, viewedUserId]);
 
   useEffect(() => {
     if (!viewedUserId) return;
@@ -1498,6 +1545,7 @@ function ProfilePageContent() {
         .pf-avatar .pf-avatar-bg{ display:none; }
         .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%;         object-fit:cover; object-position:center; }
         .pf-identity{ flex:1; min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; }
+        .pf-name-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
         .pf-name{
           font-size:34px;
           font-weight:bold;
@@ -1775,7 +1823,16 @@ function ProfilePageContent() {
                 </div>
 
                 <div className="pf-identity">
-                  <div className="pf-name">{playerName}</div>
+                  <div className="pf-name-row">
+                    <div className="pf-name">{playerName}</div>
+                    {!isViewingOwnProfile && viewedUserId && (
+                      <FollowButton
+                        targetType="player"
+                        targetId={viewedUserId}
+                        onChange={() => void loadFollowCounts(viewedUserId)}
+                      />
+                    )}
+                  </div>
                   <div className="pf-facts">
                     <div>
                       <span>Member Since</span>
@@ -1903,6 +1960,17 @@ function ProfilePageContent() {
                   )}
                   <div className="pf-rank-points">{gbRankPoints} points</div>
                   <div className="stat-row"><span>Reputation</span><span>100%</span></div>
+                  <div className="stat-row">
+                    <span>Following</span>
+                    <span>{followCounts ? followCounts.following_count.toLocaleString() : "..."}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span>Followers</span>
+                    <span>{followCounts ? followCounts.followers_count.toLocaleString() : "..."}</span>
+                  </div>
+                  {followCountsError && (
+                    <div className="error" role="alert">{followCountsError}</div>
+                  )}
                 </div>
 
                 <div className="box control-center-box">

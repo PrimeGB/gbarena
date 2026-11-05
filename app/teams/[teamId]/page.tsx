@@ -8,6 +8,7 @@ import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
+import FollowButton from "../../components/FollowButton";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -266,6 +267,8 @@ export default function TeamPage() {
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
+  const [teamFollowers, setTeamFollowers] = useState<number | null>(null);
+  const [teamFollowError, setTeamFollowError] = useState("");
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -346,6 +349,18 @@ export default function TeamPage() {
 
       if (teamData) {
         setTeam(teamData as TeamData);
+        const { data: followData, error: followError } = await supabase.rpc(
+          "gb_community_follow_counts",
+          { p_target_type: "team", p_target_id: teamId }
+        );
+        if (followError) {
+          setTeamFollowers(null);
+          setTeamFollowError(followError.message);
+        } else {
+          const counts = Array.isArray(followData) ? followData[0] : followData;
+          setTeamFollowers(counts ? Number(counts.followers_count) : 0);
+          setTeamFollowError("");
+        }
       }
 
       const { data: rankedTeams } = await supabase
@@ -655,6 +670,9 @@ export default function TeamPage() {
           margin-top:4px;
         }
 
+        .team-follow-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;color:#a9c3db;font-size:11px;font-weight:bold;}
+        .team-follow-error{margin-top:5px;color:#ffb3b3;font-size:11px;}
+
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
         .founder-name{color:#d7ad4a;font-weight:bold;}
 
@@ -931,6 +949,38 @@ export default function TeamPage() {
                         <div className="team-name">{teamName}</div>
                         <div className="team-tag">Clan Tag: {teamTag}</div>
                         <div className="team-public-id">Team ID: {teamPublicId}</div>
+                        <div className="team-follow-row">
+                          <span>
+                            Followers: {teamFollowers === null ? "..." : teamFollowers.toLocaleString()}
+                          </span>
+                          {team && (
+                            <FollowButton
+                              targetType="team"
+                              targetId={team.id}
+                              onChange={async () => {
+                                const { data: followData, error: followError } =
+                                  await supabase.rpc("gb_community_follow_counts", {
+                                    p_target_type: "team",
+                                    p_target_id: team.id,
+                                  });
+                                if (followError) {
+                                  setTeamFollowError(followError.message);
+                                  return;
+                                }
+                                const counts = Array.isArray(followData)
+                                  ? followData[0]
+                                  : followData;
+                                setTeamFollowers(
+                                  counts ? Number(counts.followers_count) : 0
+                                );
+                                setTeamFollowError("");
+                              }}
+                            />
+                          )}
+                        </div>
+                        {teamFollowError && (
+                          <div className="team-follow-error" role="alert">{teamFollowError}</div>
+                        )}
                       </div>
 
                       <div className="team-line">Achievements: None</div>

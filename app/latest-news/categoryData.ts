@@ -15,12 +15,28 @@ export const newsCategories: NewsCategory[] = [
   {
     slug: "upcoming-updates",
     title: "Upcoming Updates",
-    intro: "A place for work in progress and upcoming GameBattles improvements.",
+    intro: "Recent launches and upcoming GameBattles improvements.",
     items: [
       {
-        label: "In Progress",
-        title: "More site improvements",
-        description: "We are continuing to refine the experience. Confirmed changes and launch details will be shared here when they are ready.",
+        label: "Available Now",
+        title: "Community feed and follows",
+        description: "Follow players and teams, see following and follower counts on player profiles, and react to and share match results, team wins, awards, and other community moments.",
+        link: "/activity",
+        linkLabel: "Open the activity feed",
+      },
+      {
+        label: "Available Now",
+        title: "Free weekly Community Cups",
+        description: "Saturday cups offer a weekly competition loop, with 5 credits and a winner award for each winning player. The monthly top team earns 25 credits and an award for each player.",
+        link: "/tournaments",
+        linkLabel: "Browse tournaments",
+      },
+      {
+        label: "Available Now",
+        title: "Easier mobile entry",
+        description: "The homepage highlights active competitions and gives new players a clearer path to get started.",
+        link: "/tournaments",
+        linkLabel: "Find a competition",
       },
       {
         label: "Available Now",
