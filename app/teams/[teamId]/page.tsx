@@ -175,7 +175,19 @@ function stableTeamNumber(teamId: string) {
   return String(hash + 100000);
 }
 
-function gameCover(game: string | null | undefined) {
+function gameCover(game: string | null | undefined, category?: string | null) {
+  if (category === "clash-of-clans" || category === "clash-royale" || category === "cod-mobile" || category === "uno") {
+    return `/games/${category}.jpg`;
+  }
+  if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
+  if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
+  if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
+  if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
+  if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
+  if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
+  if (game === "mw3-2011") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg";
+  if (game === "mw2-2009") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
+
   if (game === "mw2") {
     return "https://upload.wikimedia.org/wikipedia/en/5/52/Call_of_Duty_Modern_Warfare_2_%282009%29_cover.png";
   }
@@ -214,6 +226,10 @@ function gameCover(game: string | null | undefined) {
 
   if (game === "modern-warfare-iii") {
     return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604";
+  }
+
+  if (category === "call-of-duty" || category === "old-school") {
+    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
   }
 
   return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
@@ -859,7 +875,7 @@ export default function TeamPage() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img loading="lazy" decoding="async" src={gameCover(team?.game)} alt="Game Cover" />
+                <img loading="lazy" decoding="async" src={gameCover(team?.game, team?.category)} alt="Game Cover" />
               </div>
 
               <div>

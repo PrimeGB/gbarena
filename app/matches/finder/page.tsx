@@ -76,7 +76,13 @@ function getGameImage(game: string | null, category?: string) {
   if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
   if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
   if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
-  if (game === "modern-warfare-4") return "/mw4.jpeg";
+  if (game === "cod4-2007") return "https://cdn.cloudflare.steamstatic.com/steam/apps/7940/header.jpg";
+  if (game === "waw-2008") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10090/header.jpg";
+  if (game === "mw2-2009") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
+  if (game === "bo1-2010") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42700/header.jpg";
+  if (game === "mw3-2011") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg";
+  if (game === "bo2-2012") return "https://cdn.cloudflare.steamstatic.com/steam/apps/202970/header.jpg";
+  if (game === "modern-warfare-4") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
   if (game === "mw2")  return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
   if (game === "modern-warfare-ii") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg?t=1778886532";
   if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
