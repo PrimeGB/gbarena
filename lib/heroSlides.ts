@@ -65,7 +65,7 @@ function interleave(groups: string[][]): string[] {
 }
 
 // Steam app ids that must never appear in the rotation.
-const BLOCKED_STEAM_APPS = new Set<number>([5348470, 5279240]);
+const BLOCKED_STEAM_APPS = new Set<number>([5348470, 5279240, 4188260]);
 
 export async function getHeroSlides(): Promise<string[]> {
   const pinned = PINNED_STEAM_APPS.map(
