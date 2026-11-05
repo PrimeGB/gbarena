@@ -15,7 +15,7 @@ export const CURATED_SLIDES: string[] = [
 ];
 
 // Steam app ids that are always featured. Screenshots are pulled live for each.
-export const PINNED_STEAM_APPS: number[] = [2769570];
+export const PINNED_STEAM_APPS: number[] = [];
 
 // Games whose screenshots join the rotation: Battlefield 6, Call of Duty, Gears, Rainbow Six Siege.
 export const SHOWCASE_STEAM_APPS: { id: number; shots: number }[] = [
