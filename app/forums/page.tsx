@@ -427,7 +427,11 @@ export default function ForumsPage() {
               <div className="forum-section-title">{section.title}</div>
               <div className="forum-section-description">{section.description}</div>
               {section.boards.map((board) => (
-                <div className="forum-row" key={board.category}>
+                <div
+                  className="forum-row"
+                  id={board.category === "Top Clips" ? "top-clips" : undefined}
+                  key={board.category}
+                >
                   <div>
                     <button
                       className="forum-board-name"

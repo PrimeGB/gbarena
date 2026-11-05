@@ -232,16 +232,16 @@ export default function LatestNewsPage() {
         <div className="layout news-layout">
           <aside className="panel">
             <div className="panel-title">News Categories</div>
-            <a className="side-link" href="#">Latest Updates</a>
-            <a className="side-link" href="#">Upcoming Updates</a>
-            <a className="side-link" href="#">Accepted Suggestions</a>
-            <a className="side-link" href="#">New Ladders</a>
-            <a className="side-link" href="#">Tournaments</a>
-            <a className="side-link" href="#">Top Clips</a>
-            <a className="side-link" href="#">Rule Changes</a>
+            <Link className="side-link" href="/latest-news#latest-updates">Latest Updates</Link>
+            <Link className="side-link" href="/latest-news#upcoming-updates">Upcoming Updates</Link>
+            <Link className="side-link" href="/suggestions">Accepted Suggestions</Link>
+            <Link className="side-link" href="/ladders">New Ladders</Link>
+            <Link className="side-link" href="/tournaments">Tournaments</Link>
+            <Link className="side-link" href="/forums#top-clips">Top Clips</Link>
+            <Link className="side-link" href="/rules">Rule Changes</Link>
           </aside>
 
-          <main className="panel">
+          <main className="panel" id="latest-updates">
             <div className="panel-title">Latest News</div>
 
             <div className="news-feed">
@@ -326,15 +326,28 @@ export default function LatestNewsPage() {
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
-                    <span className="tag">In Progress</span>
+                    <span className="tag">Now Available</span>
                     Owner Email Alerts for Feedback
                   </div>
-                  <div className="news-date">Ongoing</div>
+                  <div className="news-date">November 4, 2026</div>
                 </div>
                 <div className="news-body">
-                  Suggestion and bug submissions are being connected to email alerts
-                  for the site owner, including the submitted title and details. New
-                  improvements will be posted here as they become available.
+                  Suggestions and bug reports now send an email alert to the site
+                  owner so important player feedback can be reviewed.
+                </div>
+              </div>
+
+              <div className="news-post" id="upcoming-updates">
+                <div className="news-head">
+                  <div className="news-title">
+                    <span className="tag">Coming Up</span>
+                    Upcoming GameBattles Improvements
+                  </div>
+                  <div className="news-date">In Progress</div>
+                </div>
+                <div className="news-body">
+                  More site improvements are being worked on. Confirmed changes and
+                  launch details will be posted here as they are ready.
                 </div>
               </div>
             </div>
