@@ -245,7 +245,7 @@ export default function LatestNewsPage() {
             ))}
           </aside>
 
-          <main className="panel" id="latest-updates">
+          <main className="panel">
             <div className="panel-title">Latest News</div>
 
             <div className="news-feed">

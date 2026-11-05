@@ -13,37 +13,6 @@ export type NewsCategory = {
 
 export const newsCategories: NewsCategory[] = [
   {
-    slug: "latest-updates",
-    title: "Latest Updates",
-    intro: "Recently shipped GameBattles improvements and announcements.",
-    items: [
-      {
-        label: "Profile Update",
-        title: "Simplified profile navigation",
-        description: "Removed the Ladders link from player-profile navigation.",
-      },
-      {
-        label: "Profile Update",
-        title: "Cleaner player profiles",
-        description: "Removed the extra Friends shortcut from other players' profile headers.",
-      },
-      {
-        label: "Competition Update",
-        title: "Game-specific ladders and tournaments",
-        description: "Team competition links now open pages for the team's game and platform.",
-        link: "/ladders",
-        linkLabel: "Browse all ladders",
-      },
-      {
-        label: "Community Update",
-        title: "Owner email alerts for feedback",
-        description: "Suggestions and bug reports now send an email alert to the site owner.",
-        link: "/suggestions",
-        linkLabel: "Open the suggestions box",
-      },
-    ],
-  },
-  {
     slug: "upcoming-updates",
     title: "Upcoming Updates",
     intro: "A place for work in progress and upcoming GameBattles improvements.",
