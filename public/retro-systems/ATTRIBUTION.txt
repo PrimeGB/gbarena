@@ -1,6 +1,9 @@
-Retro console photos used in the homepage slideshow
+The homepage slideshow uses retro-lan-room.png, an original AI-generated
+gaming-room image with no external image attribution.
 
-The following photographs are by Evan-Amos and released into the public domain:
+The following console photographs remain available in this folder but are not
+currently shown in the homepage slideshow. They are by Evan-Amos and released
+into the public domain:
 - GameCube-Set.jpg: https://commons.wikimedia.org/wiki/File:GameCube-Set.jpg
 - PlayStation-SCPH-1000-with-Controller.jpg: https://commons.wikimedia.org/wiki/File:PlayStation-SCPH-1000-with-Controller.jpg
 - PS2-Fat-Console-Set.jpg: https://commons.wikimedia.org/wiki/File:PS2-Fat-Console-Set.jpg

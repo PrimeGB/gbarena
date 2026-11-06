@@ -27,6 +27,7 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
           transition:opacity 1.2s ease, transform 8s ease-out;
         }
         .hero-expanded .hs-slide.active{opacity:1;transform:scale(1);}
+        .hero-expanded .hs-slide.retro-slide{filter:brightness(.84) saturate(.78);}
         .hero-expanded .hs-credits{
           position:absolute;
           right:14px;
@@ -41,7 +42,11 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
       {images.map((src, index) => (
         <div
           key={src}
-          className={index === active ? "hs-slide active" : "hs-slide"}
+          className={[
+            "hs-slide",
+            index === active ? "active" : "",
+            src === "/retro-systems/retro-lan-room.png" ? "retro-slide" : "",
+          ].filter(Boolean).join(" ")}
           style={{
             backgroundImage: `linear-gradient(to bottom,rgba(10,18,26,.08),rgba(0,0,0,.48)), url("${src}")`,
           }}
