@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
 import FollowButton from "../components/FollowButton";
+import ProfileFollowingFeed from "../components/ProfileFollowingFeed";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
@@ -2072,6 +2073,7 @@ function ProfilePageContent() {
                     )}
                   </div>
                 </div>
+                {isViewingOwnProfile && <ProfileFollowingFeed />}
               </aside>
 
               <main className="main-column">
