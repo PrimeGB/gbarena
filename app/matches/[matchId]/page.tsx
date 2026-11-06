@@ -124,6 +124,12 @@ type MatchParticipant = {
   account_id_at_match: string;
 };
 
+function getMatchProofPath(proofUrl: string) {
+  const marker = "/match-proofs/";
+  const markerIndex = proofUrl.indexOf(marker);
+  return markerIndex >= 0 ? proofUrl.slice(markerIndex + marker.length) : proofUrl;
+}
+
 function clean(value: string | null | undefined, fallback = "TBD") {
   if (!value) return fallback;
   return value;
@@ -199,7 +205,7 @@ function getBestOfNumber(bestOf: string | null | undefined) {
 }
 
 function validateSeriesScore(bestOf: number, scoreA: number, scoreB: number) {
-  const requiredWins = bestOf === 7 ? 4 : bestOf === 5 ? 3 : 2;
+  const requiredWins = bestOf === 7 ? 4 : bestOf === 5 ? 3 : bestOf === 1 ? 1 : 2;
   const winnerScore = Math.max(scoreA, scoreB);
   const loserScore = Math.min(scoreA, scoreB);
 
@@ -268,20 +274,56 @@ export default function MatchDetailsPage() {
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofError, setProofError] = useState("");
   const [h2h, setH2h] = useState<{ a_wins: number; b_wins: number; total: number } | null>(null);
   const [proofs, setProofs] = useState<{ id: string; proof_url: string; team_id: string }[]>([]);
+  const [proofRefreshKey, setProofRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!match?.posting_team_id || !match?.accepting_team_id || match.id === "preview") return;
     supabase
       .rpc("gb_head_to_head", { p_team_a: match.posting_team_id, p_team_b: match.accepting_team_id })
       .then(({ data }) => setH2h((data as any) || null));
-    supabase
+    let cancelled = false;
+    void supabase
       .from("match_proofs")
       .select("id,proof_url,team_id")
       .eq("match_id", match.id)
-      .then(({ data }) => setProofs((data as any) || []));
-  }, [match?.id, match?.posting_team_id, match?.accepting_team_id, match?.status]);
+      .then(async ({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          setProofError(`Match proof could not be loaded: ${error.message}`);
+          return;
+        }
+        const rows = data || [];
+        const signedProofs = await Promise.all(
+          rows.map(async (proof) => {
+            const { data: signed, error: signingError } = await supabase.storage
+              .from("match-proofs")
+              .createSignedUrl(getMatchProofPath(proof.proof_url), 3600);
+            if (signingError || !signed?.signedUrl) {
+              return { error: signingError?.message || "No signed URL was returned" };
+            }
+            return { proof: { ...proof, proof_url: signed.signedUrl } };
+          })
+        );
+        if (cancelled) return;
+        const failed = signedProofs.find((result) => "error" in result);
+        if (failed && "error" in failed) {
+          setProofError(`Match proof link could not be created: ${failed.error}`);
+          return;
+        }
+        setProofError("");
+        const successfulProofs: { id: string; proof_url: string; team_id: string }[] = [];
+        for (const result of signedProofs) {
+          if ("proof" in result && result.proof) successfulProofs.push(result.proof);
+        }
+        setProofs(successfulProofs);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [match?.id, match?.posting_team_id, match?.accepting_team_id, match?.status, proofRefreshKey]);
   useEffect(() => {
     async function loadMatch() {
       setLoading(true);
@@ -547,7 +589,7 @@ export default function MatchDetailsPage() {
         ...featuredSettings.map((setting) => ({ label: setting.label, value: setting.value || "" })),
       ].filter((row) => ("status" in row && row.status) || row.value)
     : [];
-  const requiredWins = bestOfNumber === 7 ? 4 : bestOfNumber === 5 ? 3 : 2;
+  const requiredWins = bestOfNumber === 7 ? 4 : bestOfNumber === 5 ? 3 : bestOfNumber === 1 ? 1 : 2;
   const ladderRules = match
     ? [
         {
@@ -834,15 +876,19 @@ export default function MatchDetailsPage() {
 
     if (proofFile) {
       const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${currentUser?.id}/${match.id}-${Date.now()}.${ext}`;
+      const path = `${match.id}/${currentUser?.id}/${match.id}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from("match-proofs").getPublicUrl(path);
-        await supabase.from("match_proofs").insert([
-          { match_id: match.id, team_id: verifiedUserTeamId, user_id: currentUser?.id, proof_url: urlData.publicUrl, proof_note: "Score report proof" },
-        ]);
-      } else {
+      if (uploadError) {
         setActionMessage("Score submitted, but the proof image could not be uploaded.");
+      } else {
+        const { error: proofInsertError } = await supabase.from("match_proofs").insert([
+          { match_id: match.id, team_id: verifiedUserTeamId, user_id: currentUser?.id, proof_url: path, proof_note: "Score report proof" },
+        ]);
+        if (proofInsertError) {
+          setActionMessage(`Score submitted, but its proof could not be saved: ${proofInsertError.message}`);
+        } else {
+          setProofRefreshKey((key) => key + 1);
+        }
       }
       setProofFile(null);
     }
@@ -917,13 +963,19 @@ export default function MatchDetailsPage() {
 
     if (proofFile && currentUser?.id) {
       const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${currentUser.id}/${match.id}-dispute-${Date.now()}.${ext}`;
+      const path = `${match.id}/${currentUser.id}/${match.id}-dispute-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from("match-proofs").getPublicUrl(path);
-        await supabase.from("match_proofs").insert([
-          { match_id: match.id, team_id: userTeamId, user_id: currentUser.id, proof_url: urlData.publicUrl, proof_note: "Dispute proof" },
+      if (uploadError) {
+        setActionMessage("The dispute was opened, but its proof image could not be uploaded.");
+      } else {
+        const { error: proofInsertError } = await supabase.from("match_proofs").insert([
+          { match_id: match.id, team_id: userTeamId, user_id: currentUser.id, proof_url: path, proof_note: "Dispute proof" },
         ]);
+        if (proofInsertError) {
+          setActionMessage(`The dispute was opened, but its proof could not be saved: ${proofInsertError.message}`);
+        } else {
+          setProofRefreshKey((key) => key + 1);
+        }
       }
       setProofFile(null);
     }
@@ -1854,6 +1906,7 @@ export default function MatchDetailsPage() {
                     </label>
                   )}
 
+                  {proofError && <div className="score-note" role="alert">{proofError}</div>}
                   {proofs.length > 0 && (
                     <div className="score-note">
                       Proof:{" "}
