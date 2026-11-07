@@ -110,7 +110,9 @@ export default function ProfileFollowingFeed() {
             ))}
           </div>
         )}
-        <Link className="pf-follow-feed-more" href="/activity">View Feed</Link>
+        {user && (
+          <Link className="pf-follow-feed-more" href="/activity">View Feed</Link>
+        )}
       </div>
       <style>{`
         .pf-follow-feed{flex:none;overflow:hidden;border:1px solid #244764;background:linear-gradient(145deg,#0d2132,#07111b);border-radius:8px}

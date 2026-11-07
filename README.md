@@ -18,13 +18,15 @@ GameBattles is currently being rebuilt from the ground up using modern technolog
 
 The platform is not yet publicly released.
 
-The community feed supports following players and teams, reacting to match and
-award moments, and sharing activity links. Staff create the first free Saturday
-Community Cup (default start: 8 PM Eastern); the next one is then scheduled
-automatically each week. Weekly winners receive 5 credits and a winner award per
-player. Staff can award the previous month's top team 25 credits and a champion
-award per player. Apply the community and competition migration in
-`supabase/migrations` before deploying these features.
+The signed-in activity page provides a general feed and saved Favorites.
+Community updates remain in the feed for 48 hours unless saved. The profile's
+Following box previews recent activity from followed players and teams.
+Players can react to match and award moments and share activity links. Staff
+create the first free Saturday Community Cup (default start: 8 PM Eastern); the
+next one is then scheduled automatically each week. Weekly winners receive 5
+credits and a winner award per player. Staff can award the previous month's top
+team 25 credits and a champion award per player. Apply the community and
+competition migration in `supabase/migrations` before deploying these features.
 
 The home-page hero uses only its existing curated images. It no longer adds
 storefront or trending-game art automatically; future game art should feature

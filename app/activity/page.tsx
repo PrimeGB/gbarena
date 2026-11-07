@@ -23,8 +23,7 @@ type Reaction = {
 };
 
 type ReactionSummary = Record<string, Record<string, Reaction>>;
-type FollowTarget = { target_type: "player" | "team"; target_id: string };
-type FeedMode = "everyone" | "following" | "favorites";
+type FeedMode = "feed" | "favorites";
 
 const REACTIONS = [
   { key: "gg", label: "GG", icon: "👏" },
@@ -32,12 +31,18 @@ const REACTIONS = [
   { key: "heart", label: "Love", icon: "💙" },
 ] as const;
 
+function activityLabel(kind: string) {
+  if (kind === "match") return "MATCH RESULT";
+  if (kind === "award") return "PLAYER AWARD";
+  if (kind === "team") return "TEAM UPDATE";
+  return "COMMUNITY UPDATE";
+}
+
 export default function ActivityPage() {
   const { user, loading: authLoading } = useUser();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [reactions, setReactions] = useState<ReactionSummary>({});
-  const [follows, setFollows] = useState<Set<string>>(new Set());
-  const [feedMode, setFeedMode] = useState<FeedMode>("everyone");
+  const [feedMode, setFeedMode] = useState<FeedMode>("feed");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -45,24 +50,12 @@ export default function ActivityPage() {
 
   const load = useCallback(async () => {
     setError("");
-    const [feedResult, followsResult] =
-      await Promise.all([
-        feedMode === "favorites"
-          ? supabase.rpc("gb_user_activity_favorites")
-          : supabase.rpc("gb_recent_activity", {
-              p_limit: 50,
-              p_following_only: feedMode === "following",
-            }),
-        user
-          ? supabase
-              .from("community_follows")
-              .select("target_type,target_id")
-              .eq("follower_id", user.id)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
-
-    const { data, error: feedError } = feedResult;
-    const { data: followData, error: followsError } = followsResult;
+    const { data, error: feedError } = feedMode === "favorites"
+      ? await supabase.rpc("gb_user_activity_favorites")
+      : await supabase.rpc("gb_recent_activity", {
+          p_limit: 50,
+          p_following_only: false,
+        });
 
     if (feedError) {
       setError(feedError.message);
@@ -70,22 +63,9 @@ export default function ActivityPage() {
       setLoaded(true);
       return;
     }
-    if (followsError) {
-      setError(followsError.message);
-      setItems([]);
-      setLoaded(true);
-      return;
-    }
 
     const nextItems = (data || []) as ActivityItem[];
     setItems(nextItems);
-    setFollows(
-      new Set(
-        ((followData || []) as FollowTarget[]).map(
-          (follow) => `${follow.target_type}:${follow.target_id}`
-        )
-      )
-    );
 
     if (nextItems.length) {
       const { data: summary, error: summaryError } = await supabase.rpc(
@@ -114,10 +94,10 @@ export default function ActivityPage() {
       setReactions({});
     }
     setLoaded(true);
-  }, [feedMode, user]);
+  }, [feedMode]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !user) return;
     let active = true;
     queueMicrotask(() => {
       if (active) void load();
@@ -125,7 +105,7 @@ export default function ActivityPage() {
     return () => {
       active = false;
     };
-  }, [authLoading, load]);
+  }, [authLoading, load, user]);
 
   async function toggleReaction(item: ActivityItem, reaction: string) {
     if (!user) {
@@ -168,33 +148,6 @@ export default function ActivityPage() {
     await load();
   }
 
-  async function toggleFollow(type: "player" | "team", id: string) {
-    if (!user) {
-      setError("Sign in to follow players and teams.");
-      return;
-    }
-    const key = `${type}:${id}`;
-    setBusy(key);
-    setError("");
-    const { data, error: actionError } = await supabase.rpc(
-      "gb_toggle_community_follow",
-      { p_target_type: type, p_target_id: id }
-    );
-    setBusy(null);
-    if (actionError) {
-      setError(actionError.message);
-      return;
-    }
-    setFollows((current) => {
-      const next = new Set(current);
-      if (data) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-    if (feedMode === "following") await load();
-    setNotice(data ? `Following ${type}.` : `Unfollowed ${type}.`);
-  }
-
   async function share(item: ActivityItem) {
     const url = new URL(item.href || "/activity", window.location.origin).toString();
     try {
@@ -213,165 +166,139 @@ export default function ActivityPage() {
   return (
     <main className="community-page">
       <style>{`
-        .community-page{min-height:100vh;background:#03070b;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;padding:24px 14px 60px}
-        .community-wrap{max-width:920px;margin:0 auto}
-        .community-nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-        .community-nav a{color:#b9dfff;font-size:12px;font-weight:800;text-decoration:none}
-        .community-hero,.community-feed{border:1px solid #244764;background:linear-gradient(145deg,#0d2132,#07111b);border-radius:12px;overflow:hidden}
-        .community-hero{padding:22px;margin-bottom:14px}
-        .community-kicker{color:#8ed1ff;font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
-        .community-hero h1{margin:8px 0;color:#fff;font-size:clamp(25px,6vw,36px)}
-        .community-hero p{margin:0;color:#a8bfd1;font-size:14px;line-height:1.55}
-        .community-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
-        .community-actions a{padding:11px 15px;border-radius:7px;background:#d5a92f;color:#101010;font-size:12px;font-weight:900;text-decoration:none}
-        .community-actions a.secondary{border:1px solid #3c7198;background:#0b1c2a;color:#d7eaff}
-        .community-feed-head{padding:16px 18px;border-bottom:1px solid #23415a;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-        .community-feed-head h2{margin:0;color:#f2c14e;font-size:15px;text-transform:uppercase}
-        .community-tabs{display:flex;gap:6px}
-        .community-tabs button,.community-follow,.community-share,.community-reaction,.community-save{min-height:36px;border:1px solid #355774;border-radius:7px;background:#0a1a28;color:#d7eaff;font:700 12px Tahoma;cursor:pointer}
-        .community-tabs button{padding:7px 12px}
-        .community-tabs button[aria-pressed="true"],.community-reaction[aria-pressed="true"],.community-save[aria-pressed="true"]{border-color:#f2c14e;background:#2b2412;color:#ffe9a8}
-        .community-item{padding:16px 18px;border-bottom:1px solid #172e41}
+        .community-page{min-height:100vh;background:#05090e;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;padding:28px 16px 60px}
+        .community-wrap{max-width:720px;margin:0 auto}
+        .community-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+        .community-nav a{color:#a9c8df;font-size:12px;font-weight:800;text-decoration:none}
+        .community-nav a:hover{color:#fff}
+        .community-new-here{padding:8px 11px;border:1px solid #28465e;border-radius:6px;background:#0b1722}
+        .community-feed,.community-gate{border:1px solid #223c51;background:#0a141e;border-radius:10px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.24)}
+        .community-feed-head{padding:18px 20px 0;border-bottom:1px solid #1b3041}
+        .community-heading-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+        .community-feed-head h1{margin:0;color:#f4f8fc;font-size:22px;letter-spacing:-.02em}
+        .community-feed-caption{margin:6px 0 15px;color:#91a9bc;font-size:12px;line-height:1.5}
+        .community-tabs{display:flex;gap:22px}
+        .community-tabs button{position:relative;padding:0 2px 12px;border:0;background:transparent;color:#9eb2c2;font:700 13px Tahoma;cursor:pointer}
+        .community-tabs button[aria-pressed="true"]{color:#fff}
+        .community-tabs button[aria-pressed="true"]:after{position:absolute;right:0;bottom:-1px;left:0;height:3px;border-radius:3px 3px 0 0;background:#e6b944;content:""}
+        .community-tabs button:focus-visible,.community-control:focus-visible{outline:2px solid #f2c14e;outline-offset:3px}
+        .community-item{display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;padding:17px 20px;border-bottom:1px solid #1b2c3b}
         .community-item:last-child{border-bottom:0}
-        .community-item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-        .community-item-link{color:#eaf5ff;font-size:14px;font-weight:700;line-height:1.5;text-decoration:none}
-        .community-time{flex:none;color:#849caf;font-size:11px}
-        .community-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}
-        .community-follow,.community-share,.community-reaction,.community-save{padding:7px 10px}
-        .community-follow{border-color:#336a91;color:#a9d8ff}
-        .community-share{color:#d7e2ee}
-        .community-save{color:#ffe39a}
-        .community-empty,.community-message{padding:20px;color:#a8bfd1;font-size:13px;line-height:1.6}
+        .community-kind-icon{display:grid;width:36px;height:36px;place-items:center;border:1px solid #31516a;border-radius:50%;background:#102131;color:#a9dfff;font-size:14px;font-weight:900}
+        .community-item-content{min-width:0}
+        .community-item-meta{display:flex;align-items:center;gap:8px;margin:1px 0 7px;color:#90a8bb;font-size:10px}
+        .community-item-meta strong{color:#c3d5e3;font-size:10px;letter-spacing:.045em}
+        .community-item-meta time{margin-left:auto;white-space:nowrap;color:#7f96a8}
+        .community-item-link{display:block;color:#eaf2f8;font-size:14px;font-weight:500;line-height:1.55;text-decoration:none;overflow-wrap:anywhere}
+        .community-item-link:hover{color:#f5d477}
+        .community-controls{display:flex;align-items:center;gap:9px;margin-top:12px}
+        .community-control{min-height:30px;padding:5px 9px;border:1px solid transparent;border-radius:5px;background:transparent;color:#91a8ba;font:700 11px Tahoma;cursor:pointer}
+        .community-control:hover{border-color:#2b465c;background:#10202e;color:#e4eff7}
+        .community-control[aria-pressed="true"]{color:#f2ce68}
+        .community-control:disabled{opacity:.55;cursor:wait}
+        .community-empty,.community-message{padding:28px 20px;color:#a8bfd1;font-size:13px;line-height:1.6}
         .community-message.error{color:#ffb3b3}
-        .community-message.notice{color:#8ff0b2}
-        @media(max-width:520px){.community-page{padding:14px 10px 40px}.community-hero{padding:17px}.community-item{padding:14px}.community-item-top{display:block}.community-time{display:block;margin-top:7px}.community-feed-head{align-items:flex-start}.community-feed-head h2{width:100%}.community-actions a{flex:1;text-align:center}}
+        .community-message.notice{padding:10px 20px;border-bottom:1px solid #1b3041;color:#9ce2b0}
+        .community-gate{margin-top:42px;padding:28px}
+        .community-gate h1{margin:0 0 8px;color:#fff;font-size:22px}
+        .community-gate p{margin:0 0 18px;color:#a8bfd1;font-size:13px;line-height:1.6}
+        .community-sign-in{display:inline-flex;padding:10px 15px;border-radius:6px;background:#e2b63e;color:#111;font-size:12px;font-weight:900;text-decoration:none}
+        @media(max-width:520px){.community-page{padding:18px 10px 40px}.community-feed-head{padding:15px 14px 0}.community-feed-head h1{font-size:19px}.community-tabs{gap:17px}.community-item{grid-template-columns:32px minmax(0,1fr);gap:9px;padding:14px}.community-kind-icon{width:30px;height:30px;font-size:12px}.community-item-link{font-size:13px}.community-gate{padding:22px}}
       `}</style>
 
       <div className="community-wrap">
-        <nav className="community-nav" aria-label="Community navigation">
-          <Link href="/home">Home</Link>
-          <Link href="/tournaments">Tournaments</Link>
-          <Link href="/forums">Forums</Link>
-          <Link href="/teams/top">Leaderboards</Link>
-        </nav>
-        <section className="community-hero">
-          <div className="community-kicker">The GameBattles community</div>
-          <h1>Every win has a story.</h1>
-          <p>Follow the teams and players you care about, celebrate big moments, and share the rivalry. Updates stay for 48 hours; save favorites to keep them.</p>
-          <div className="community-actions">
-            <Link href="/tournaments">Find your next cup</Link>
-            <Link className="secondary" href="/getting-started">New here? Get started</Link>
-          </div>
-        </section>
-
-        <section className="community-feed" aria-labelledby="community-feed-title">
-          <div className="community-feed-head">
-            <h2 id="community-feed-title">{feedMode === "favorites" ? "Saved activity" : feedMode === "following" ? "Following feed" : "Community feed"}</h2>
-            <div className="community-tabs" role="group" aria-label="Activity feed">
-              <button type="button" aria-pressed={feedMode === "everyone"} onClick={() => setFeedMode("everyone")}>Everyone</button>
-              <button
-                type="button"
-                aria-pressed={feedMode === "following"}
-                onClick={() => {
-                  if (!user) {
-                    setError("Sign in to see activity from people and teams you follow.");
-                    return;
-                  }
-                  setFeedMode("following");
-                }}
-              >
-                Following
-              </button>
-              <button
-                type="button"
-                aria-pressed={feedMode === "favorites"}
-                onClick={() => {
-                  if (!user) {
-                    setError("Sign in to see saved activity.");
-                    return;
-                  }
-                  setFeedMode("favorites");
-                }}
-              >
-                Favorites
-              </button>
-            </div>
-          </div>
-          {error && <div className="community-message error" role="alert">{error}</div>}
-          {notice && <div className="community-message notice" role="status">{notice}</div>}
-          {!loaded && <div className="community-empty">Loading community activity...</div>}
-          {loaded && items.length === 0 && (
-            <div className="community-empty">
-              {feedMode === "favorites"
-                ? "No saved activity yet. Save a feed update to keep it here after 48 hours."
-                : feedMode === "following"
-                  ? "No activity from your follows in the last 48 hours. Follow a team or player from the public feed."
-                  : "No new moments in the last 48 hours. Join a cup, play a match, and be the first to light up the feed."}
-            </div>
-          )}
-          {items.map((item) => (
-            <article className="community-item" key={item.id}>
-              <div className="community-item-top">
-                {item.href
-                  ? <Link className="community-item-link" href={item.href}>{item.text}</Link>
-                  : <span className="community-item-link">{item.text}</span>}
-                <time className="community-time" dateTime={item.at}>{new Date(item.at).toLocaleString()}</time>
+        {!user && !authLoading ? (
+          <>
+            <nav className="community-nav" aria-label="Community navigation">
+              <Link href="/home">Home</Link>
+              <Link className="community-new-here" href="/getting-started">New here? Get started</Link>
+            </nav>
+            <section className="community-gate">
+              <h1>Your GameBattles feed</h1>
+              <p>Sign in to see recent community updates and your saved favorites.</p>
+              <Link className="community-sign-in" href="/login">Sign in</Link>
+            </section>
+          </>
+        ) : authLoading ? (
+          <div className="community-gate" role="status">Loading your feed...</div>
+        ) : (
+          <>
+            <nav className="community-nav" aria-label="Community navigation">
+              <Link href="/home">Home</Link>
+              <Link className="community-new-here" href="/getting-started">New here? Get started</Link>
+            </nav>
+            <section className="community-feed" aria-labelledby="community-feed-title">
+              <div className="community-feed-head">
+                <div className="community-heading-row">
+                  <h1 id="community-feed-title">GameBattles Feed</h1>
+                </div>
+                <p className="community-feed-caption">Recent matches, team updates, and community achievements from the last 48 hours.</p>
+                <div className="community-tabs" role="group" aria-label="Your activity feed">
+                  <button type="button" aria-pressed={feedMode === "feed"} onClick={() => setFeedMode("feed")}>Your Feed</button>
+                  <button type="button" aria-pressed={feedMode === "favorites"} onClick={() => setFeedMode("favorites")}>Favorites</button>
+                </div>
               </div>
-              <div className="community-controls">
-                <button
-                  className="community-save"
-                  type="button"
-                  aria-pressed={item.favorited || false}
-                  disabled={busy === `favorite:${item.id}`}
-                  onClick={() => toggleFavorite(item)}
-                >
-                  {item.favorited ? "★ Saved" : "☆ Save"}
-                </button>
-                {item.team_id && (
-                  <button
-                    className="community-follow"
-                    type="button"
-                    disabled={busy === `team:${item.team_id}`}
-                    onClick={() => toggleFollow("team", item.team_id!)}
-                  >
-                    {follows.has(`team:${item.team_id}`) ? "Following team" : "＋ Follow team"}
-                  </button>
-                )}
-                {Array.from(new Set(item.user_ids || (item.user_id ? [item.user_id] : [])))
-                  .filter((playerId) => playerId !== user?.id)
-                  .map((playerId) => (
-                    <button
-                      className="community-follow"
-                      type="button"
-                      key={playerId}
-                      disabled={busy === `player:${playerId}`}
-                      onClick={() => toggleFollow("player", playerId)}
-                    >
-                      {follows.has(`player:${playerId}`) ? "Following player" : "＋ Follow player"}
-                    </button>
-                  ))}
-                {REACTIONS.map((reaction) => {
-                  const summary = reactions[item.id]?.[reaction.key];
-                  const key = `${item.id}:${reaction.key}`;
-                  return (
-                    <button
-                      className="community-reaction"
-                      type="button"
-                      key={reaction.key}
-                      aria-label={`${reaction.label}, ${summary?.count || 0} reactions`}
-                      aria-pressed={summary?.reacted || false}
-                      disabled={busy === key}
-                      onClick={() => toggleReaction(item, reaction.key)}
-                    >
-                      {reaction.icon} {summary?.count || 0}
-                    </button>
-                  );
-                })}
-                <button className="community-share" type="button" onClick={() => share(item)}>↗ Share</button>
-              </div>
-            </article>
-          ))}
-        </section>
+              {error && <div className="community-message error" role="alert">{error}</div>}
+              {notice && <div className="community-message notice" role="status">{notice}</div>}
+              {!loaded && <div className="community-empty">Loading your feed...</div>}
+              {loaded && items.length === 0 && (
+                <div className="community-empty">
+                  {feedMode === "favorites"
+                    ? "No favorites saved yet. Save an update to keep it here after it leaves the feed."
+                    : "No updates from the last 48 hours yet. Check back soon for new community activity."}
+                </div>
+              )}
+              {items.map((item) => (
+                <article className="community-item" key={item.id}>
+                  <div className="community-kind-icon" aria-hidden="true">
+                    {item.kind === "match" ? "VS" : item.kind === "award" ? "★" : item.kind === "team" ? "T" : "•"}
+                  </div>
+                  <div className="community-item-content">
+                    <div className="community-item-meta">
+                      <strong>{activityLabel(item.kind)}</strong>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={item.at}>{new Date(item.at).toLocaleString()}</time>
+                    </div>
+                    {item.href ? (
+                      <Link className="community-item-link" href={item.href}>{item.text}</Link>
+                    ) : (
+                      <span className="community-item-link">{item.text}</span>
+                    )}
+                    <div className="community-controls">
+                      <button
+                        className="community-control"
+                        type="button"
+                        aria-pressed={item.favorited || false}
+                        disabled={busy === `favorite:${item.id}`}
+                        onClick={() => toggleFavorite(item)}
+                      >
+                        {item.favorited ? "★ Saved" : "☆ Save"}
+                      </button>
+                      {REACTIONS.map((reaction) => {
+                        const summary = reactions[item.id]?.[reaction.key];
+                        const key = `${item.id}:${reaction.key}`;
+                        return (
+                          <button
+                            className="community-control"
+                            type="button"
+                            key={reaction.key}
+                            aria-label={`${reaction.label}, ${summary?.count || 0} reactions`}
+                            aria-pressed={summary?.reacted || false}
+                            disabled={busy === key}
+                            onClick={() => toggleReaction(item, reaction.key)}
+                          >
+                            {reaction.icon} {summary?.count || 0}
+                          </button>
+                        );
+                      })}
+                      <button className="community-control" type="button" onClick={() => share(item)}>↗ Share</button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </section>
+          </>
+        )}
       </div>
     </main>
   );
