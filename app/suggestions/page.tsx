@@ -536,6 +536,14 @@ export default function SuggestionsPage() {
                   match help, score issues, or staff reports. Misusing this page
                   can lead to warnings or account consequences.
                 </div>
+                {selectedType === "Bug Report" && (
+                  <div className="warning-box">
+                    Found a site issue? Include your GameBattles username, steps to
+                    reproduce it, and any useful evidence in the details. Staff
+                    review reports and may recognize verified contributions with
+                    awards such as Bug Finder; awards are not automatic.
+                  </div>
+                )}
 
                 {error && <p role="alert" className="warning-box">{error}</p>}
                 {success && <p role="status" className="success-box">{success}</p>}

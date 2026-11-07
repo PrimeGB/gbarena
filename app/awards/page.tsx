@@ -46,6 +46,10 @@ export default function AwardsPage() {
           <p style={styles.subheading}>
             Browse every award and trophy you can work toward on GameBattles.
           </p>
+          <p style={{ ...styles.subheading, marginTop: 8 }}>
+            Awards without the automatic label are reviewed and granted by staff.
+            Found a site issue? <Link href="/suggestions">Report a bug</Link> and include your GameBattles username for award consideration.
+          </p>
         </header>
         {error && <p role="alert" style={styles.error}>{error}</p>}
         <section style={styles.content}>

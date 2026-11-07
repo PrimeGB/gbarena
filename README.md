@@ -30,6 +30,12 @@ The home-page hero uses only its existing curated images. It no longer adds
 storefront or trending-game art automatically; future game art should feature
 games that have ladders on GameBattles.
 
+The award catalog includes staff-reviewed player, staff, and community awards.
+Members reporting a site bug through the Suggestions Box should include their
+GameBattles username and reproduction details for award consideration. Staff
+verify contributions and grant these awards manually. Apply the award catalog
+migration in `supabase/migrations` before deploying the new awards.
+
 
 ---
 

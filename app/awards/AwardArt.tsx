@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import AutoBadgeArt, { hasAutoBadge } from "./AutoBadges";
+import ServiceAwardArt, { hasServiceAward } from "./ServiceAwardArt";
 
 // Illustrated art (public/awards/art/N.png) for the awards that have a hand-made emblem.
 const SPRITES: Record<string, number> = {
@@ -76,6 +77,9 @@ export const AWARD_CSS = `
 .award-sprite{display:block;width:100%;height:150px;object-fit:contain;mix-blend-mode:screen;-webkit-mask-image:radial-gradient(ellipse at center,#000 66%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 66%,transparent 100%);transition:transform .3s,filter .3s;filter:saturate(1.25) contrast(1.15) brightness(1.55)}
 .award-card:hover .award-art,.award-card:hover .award-sprite{transform:scale(1.09)}
 .award-card:hover .award-sprite{filter:saturate(1.4) contrast(1.15) brightness(1.8) drop-shadow(0 0 10px var(--accent))}
+.award-card:has(.service-award-art):hover{box-shadow:0 8px 18px rgba(0,0,0,.65);border-color:#827568!important}
+.award-stage:has(.service-award-art){background:linear-gradient(145deg,#292a29,#101213 65%,#080909)}
+.award-card:hover .service-award-art{transform:scale(1.04)}
 .award-glow{animation:awardPulse 3.2s ease-in-out infinite;transform-origin:center}
 .award-sparkles path{opacity:0;animation:awardTwinkle 2.8s ease-in-out infinite}
 .award-sparkles .sp2{animation-delay:.9s}.award-sparkles .sp3{animation-delay:1.8s}
@@ -360,6 +364,7 @@ function EmblemArt({ name, group, height = 150 }: { name: string; group: string;
 }
 
 export default function AwardArt({ name, group, height }: { name: string; group: string; height?: number }) {
+  if (hasServiceAward(name)) return <ServiceAwardArt name={name} height={height} />;
   if (hasAutoBadge(name)) return <AutoBadgeArt name={name} height={height} />;
   const sprite = SPRITES[name];
   if (sprite) return <SpriteArt name={name} id={sprite} height={height} />;
