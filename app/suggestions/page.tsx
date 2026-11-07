@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useMemo, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 type PostType = "Suggestion" | "Bug Report";
 
@@ -69,7 +70,23 @@ export default function SuggestionsPage() {
     setError("");
     setSuccess("");
 
+    let bugReportSaved = false;
+    let bugReportSaveError = "";
     try {
+      if (selectedType === "Bug Report") {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          bugReportSaveError = userError.message;
+        } else if (userData.user) {
+          const { error: reportError } = await supabase.rpc("gb_submit_bug_finder_report", {
+            p_title: cleanTitle,
+            p_details: cleanDetails,
+          });
+          if (reportError) bugReportSaveError = reportError.message;
+          else bugReportSaved = true;
+        }
+      }
+
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +98,17 @@ export default function SuggestionsPage() {
       });
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error || "Your submission could not be sent. Please try again.");
+        if (bugReportSaved) {
+          setTitle("");
+          setDetails("");
+        }
+        setError(
+          bugReportSaved
+            ? `Your bug report is saved for staff review, but its email notification failed: ${result.error || "Please contact support."}`
+            : bugReportSaveError
+              ? `Your bug report could not be sent or saved for staff review: ${result.error || "Email delivery failed."} ${bugReportSaveError}`
+              : result.error || "Your submission could not be sent. Please try again."
+        );
         return;
       }
 
@@ -98,9 +125,26 @@ export default function SuggestionsPage() {
       setPosts([newPost, ...posts]);
       setTitle("");
       setDetails("");
-      setSuccess("Thanks! Your submission was sent to the GameBattles owner.");
-    } catch {
-      setError("Your submission could not be sent. Please check your connection and try again.");
+      setSuccess(
+        selectedType === "Bug Report" && bugReportSaved
+          ? "Your bug report was saved for staff review. Bug Finder awards are granted only after staff confirms the issue is fixed."
+          : "Thanks! Your submission was sent to the GameBattles owner."
+      );
+      if (bugReportSaveError) {
+        setError(`Your report was emailed, but could not be added to Bug Finder review: ${bugReportSaveError}`);
+      }
+    } catch (submitError) {
+      if (bugReportSaved) {
+        setTitle("");
+        setDetails("");
+      }
+      setError(
+        bugReportSaved
+          ? `Your bug report is saved for staff review, but its email notification could not be sent: ${submitError instanceof Error ? submitError.message : "Please try again later."}`
+          : bugReportSaveError
+            ? `Your report could not be emailed or added to Bug Finder review: ${bugReportSaveError}. ${submitError instanceof Error ? submitError.message : "Please try again later."}`
+            : `Your submission could not be sent: ${submitError instanceof Error ? submitError.message : "Please check your connection and try again."}`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -540,8 +584,9 @@ export default function SuggestionsPage() {
                   <div className="warning-box">
                     Found a site issue? Include your GameBattles username, steps to
                     reproduce it, and any useful evidence in the details. Staff
-                    review reports and may recognize verified contributions with
-                    awards such as Bug Finder; awards are not automatic.
+                    review reports and award tiers require a unique issue confirmed
+                    and fixed by staff. Submit while signed in for Bug Finder
+                    consideration.
                   </div>
                 )}
 

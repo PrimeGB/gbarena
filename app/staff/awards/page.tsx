@@ -44,11 +44,21 @@ type AwardRequest = {
   created_at: string;
 };
 
+type BugFinderReport = {
+  id: number;
+  title: string;
+  details: string;
+  reporter: string;
+  created_at: string;
+};
+
 export default function StaffAwardsPage() {
   const { user, loading: authLoading } = useUser();
   const [catalog, setCatalog] = useState<CatalogAward[]>([]);
   const [activeAwards, setActiveAwards] = useState<ActiveAward[]>([]);
   const [requests, setRequests] = useState<AwardRequest[]>([]);
+  const [bugReports, setBugReports] = useState<BugFinderReport[]>([]);
+  const [bugReviewingId, setBugReviewingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -75,6 +85,7 @@ export default function StaffAwardsPage() {
       setCatalog([]);
       setActiveAwards([]);
       setRequests([]);
+      setBugReports([]);
       setError(permissionError?.message || "This account cannot access award administration.");
       setLoading(false);
       return;
@@ -84,17 +95,20 @@ export default function StaffAwardsPage() {
       { data: catalogData, error: catalogError },
       { data: activeData, error: activeError },
       { data: requestData, error: requestError },
+      { data: bugReportData, error: bugReportError },
     ] = await Promise.all([
       supabase.rpc("staff_list_awards"),
       supabase.rpc("staff_list_active_awards"),
       supabase.rpc("staff_list_award_requests"),
+      supabase.rpc("staff_list_bug_finder_reports"),
     ]);
-    const loadError = catalogError || activeError || requestError;
+    const loadError = catalogError || activeError || requestError || bugReportError;
     if (loadError) {
       setIsStaff(false);
       setCatalog([]);
       setActiveAwards([]);
       setRequests([]);
+      setBugReports([]);
       setError(`Award administration could not be loaded: ${loadError.message}`);
       setLoading(false);
       return;
@@ -103,6 +117,7 @@ export default function StaffAwardsPage() {
     setCatalog((catalogData || []) as CatalogAward[]);
     setActiveAwards((activeData || []) as ActiveAward[]);
     setRequests((requestData || []) as AwardRequest[]);
+    setBugReports((bugReportData || []) as BugFinderReport[]);
     setLoading(false);
   }, [user]);
 
@@ -210,6 +225,44 @@ export default function StaffAwardsPage() {
     await loadAwards();
   }
 
+  async function reviewBugReport(report: BugFinderReport, result: "fixed" | "rejected" | "duplicate") {
+    const reason = window.prompt(
+      result === "fixed"
+        ? `Describe how bug report ${report.id} was confirmed and fixed.`
+        : `Why is bug report ${report.id} being marked ${result}?`
+    );
+    if (reason === null) return;
+    if (reason.trim().length < 10) {
+      setError("Enter a review reason of at least 10 characters.");
+      return;
+    }
+
+    setBugReviewingId(report.id);
+    setError("");
+    setNotice("");
+    try {
+      const { error: reviewError } = await supabase.rpc("staff_review_bug_finder_report", {
+        p_report_id: report.id,
+        p_result: result,
+        p_review_reason: reason.trim(),
+      });
+      if (reviewError) {
+        setError(`Bug report could not be reviewed: ${reviewError.message}`);
+        return;
+      }
+      setNotice(
+        result === "fixed"
+          ? `Bug report ${report.id} marked confirmed and fixed. Eligible Bug Finder tiers were awarded.`
+          : `Bug report ${report.id} marked ${result}.`
+      );
+      await loadAwards();
+    } catch (reviewError) {
+      setError(`Bug report could not be reviewed: ${reviewError instanceof Error ? reviewError.message : "Please try again."}`);
+    } finally {
+      setBugReviewingId(null);
+    }
+  }
+
   const filteredCatalog = catalog.filter((award) =>
     `${award.name} ${award.award_group} ${award.purpose}`
       .toLowerCase()
@@ -244,6 +297,51 @@ export default function StaffAwardsPage() {
           <div style={styles.content}>
             {error && <p role="alert" style={styles.error}>{error}</p>}
             {notice && <p role="status" style={styles.notice}>{notice}</p>}
+
+            <section style={styles.panel}>
+              <h2 style={styles.sectionTitle}>Bug Finder review queue ({bugReports.length})</h2>
+              <p style={styles.empty}>
+                Only distinct reports marked fixed after staff verification count toward the Gold, Emerald, Diamond, and Mythic tiers.
+              </p>
+              {bugReports.length === 0 ? (
+                <p style={styles.empty}>No bug reports are waiting for review.</p>
+              ) : (
+                <div style={styles.list}>
+                  {bugReports.map((report) => (
+                    <article key={report.id} style={styles.card}>
+                      <strong>#{report.id} · {report.title}</strong>
+                      <p style={{ whiteSpace: "pre-wrap" }}>{report.details}</p>
+                      <small>
+                        Reported by {report.reporter} · {new Date(report.created_at).toLocaleString()}
+                      </small>
+                      <div style={styles.actions}>
+                        <button
+                          disabled={bugReviewingId === report.id}
+                          onClick={() => void reviewBugReport(report, "fixed")}
+                          style={styles.button}
+                        >
+                          Confirm &amp; mark fixed
+                        </button>
+                        <button
+                          disabled={bugReviewingId === report.id}
+                          onClick={() => void reviewBugReport(report, "duplicate")}
+                          style={styles.secondaryButton}
+                        >
+                          Mark duplicate
+                        </button>
+                        <button
+                          disabled={bugReviewingId === report.id}
+                          onClick={() => void reviewBugReport(report, "rejected")}
+                          style={styles.secondaryButton}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <section style={styles.panel}>
               <h2 style={styles.sectionTitle}>Grant an award</h2>

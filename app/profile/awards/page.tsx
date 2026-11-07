@@ -19,6 +19,12 @@ type PlayerAward = {
   revoke_reason: string | null;
 };
 
+type ReferralProgress = {
+  referral_code: string;
+  qualified_referrals: number;
+  pending_referrals: number;
+};
+
 function PlayerAwardsContent() {
   const { user, loading } = useUser();
   const searchParams = useSearchParams();
@@ -26,6 +32,8 @@ function PlayerAwardsContent() {
   const viewedUserId = requestedUserId || user?.id || "";
   const [username, setUsername] = useState("");
   const [awards, setAwards] = useState<PlayerAward[]>([]);
+  const [referralProgress, setReferralProgress] = useState<ReferralProgress | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
 
@@ -67,6 +75,37 @@ function PlayerAwardsContent() {
     };
   }, [loading, viewedUserId]);
 
+  useEffect(() => {
+    if (loading || !user || viewedUserId !== user.id) return;
+    let cancelled = false;
+
+    async function loadReferralProgress() {
+      const { data, error: referralError } = await supabase.rpc("gb_referral_progress");
+      if (cancelled) return;
+      if (referralError) {
+        setError(`Referral progress could not be loaded: ${referralError.message}`);
+        return;
+      }
+      setReferralProgress(((data || []) as ReferralProgress[])[0] || null);
+    }
+
+    void loadReferralProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, viewedUserId]);
+
+  async function copyReferralLink() {
+    if (!referralProgress) return;
+    const referralUrl = `${window.location.origin}/join?ref=${encodeURIComponent(referralProgress.referral_code)}`;
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setReferralCopied(true);
+    } catch (copyError) {
+      setError(`Referral link could not be copied: ${copyError instanceof Error ? copyError.message : "Clipboard access was denied."}`);
+    }
+  }
+
   const backHref = requestedUserId ? `/profile?userId=${encodeURIComponent(requestedUserId)}` : "/profile";
 
   return (
@@ -84,12 +123,50 @@ function PlayerAwardsContent() {
         .pa-group{margin:4px 0 6px;color:#f2c14e;font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
         .pa-meta{margin:6px 0 0;color:#a9c3db;font-size:11px}
         .pa-error{padding:12px;border:1px solid #a83e3e;color:#ffd5d5}
+        .pa-invite{margin-top:20px;padding:16px;border:1px solid #315f88;background:linear-gradient(145deg,#10263a,#07111b)}
+        .pa-invite h2{margin:0 0 8px;color:#f2c14e;font-size:15px;text-transform:uppercase}
+        .pa-invite p{color:#c3d6e8;font-size:12px;line-height:1.6}
+        .pa-link-row{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+        .pa-link{flex:1;min-width:220px;padding:10px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit}
+        .pa-copy{padding:10px 14px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;font-weight:900;cursor:pointer}
+        .pa-progress{color:#8fe8bf!important}
       `}</style>
       <div className="pa-shell">
         <Link className="pa-back" href={backHref}>← Back to profile</Link>
         <h1 className="pa-title">{ready ? `${username}'s Awards` : "Player Awards"}</h1>
         <p className="pa-sub">Awards earned on GameBattles.</p>
         <Link className="pa-catalog" href="/awards">Browse the award catalog →</Link>
+        {user && viewedUserId === user.id && (
+          <section className="pa-invite">
+            <h2>Invite players. Earn community awards.</h2>
+            <p>
+              Share your unique link. Invites count after a new player verifies
+              their email and links a gaming account not already claimed by another
+              account. Tiers unlock at 1, 3, 5,
+              and 10 qualified referrals.
+            </p>
+            {referralProgress ? (
+              <>
+                <p className="pa-progress">
+                  {referralProgress.qualified_referrals} qualified · {referralProgress.pending_referrals} awaiting email verification or a linked gaming account
+                </p>
+                <div className="pa-link-row">
+                  <input
+                    className="pa-link"
+                    aria-label="Your referral link"
+                    readOnly
+                    value={`/join?ref=${referralProgress.referral_code}`}
+                  />
+                  <button className="pa-copy" type="button" onClick={() => void copyReferralLink()}>
+                    {referralCopied ? "Copied" : "Copy invite link"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p>{error ? "Referral link is unavailable." : "Loading your referral link..."}</p>
+            )}
+          </section>
+        )}
         {error && <p className="pa-error" role="alert">{error}</p>}
         {!viewedUserId && !loading && <p className="pa-empty">Sign in to view your awards.</p>}
         {!ready && viewedUserId && <p className="pa-empty">Loading awards...</p>}

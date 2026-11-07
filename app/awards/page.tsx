@@ -48,7 +48,9 @@ export default function AwardsPage() {
           </p>
           <p style={{ ...styles.subheading, marginTop: 8 }}>
             Awards without the automatic label are reviewed and granted by staff.
-            Found a site issue? <Link href="/suggestions">Report a bug</Link> and include your GameBattles username for award consideration.
+            Bug Finder tiers unlock at 1, 3, 5, and 10 unique issues confirmed
+            and fixed by staff. <Link href="/suggestions">Report a bug</Link> while
+            signed in for consideration.
           </p>
         </header>
         {error && <p role="alert" style={styles.error}>{error}</p>}

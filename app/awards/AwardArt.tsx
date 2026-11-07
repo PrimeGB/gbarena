@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import AutoBadgeArt, { hasAutoBadge } from "./AutoBadges";
-import ServiceAwardArt, { hasServiceAward } from "./ServiceAwardArt";
+import ServiceAwardArt, { hasServiceAward, serviceAwardAccent } from "./ServiceAwardArt";
 
 // Illustrated art (public/awards/art/N.png) for the awards that have a hand-made emblem.
 const SPRITES: Record<string, number> = {
@@ -65,6 +65,7 @@ function pickTone(name: string, group: string): Tone {
 }
 
 export function awardAccent(name: string, group: string) {
+  if (hasServiceAward(name)) return serviceAwardAccent(name);
   return SPRITES[name] ? TONES.crimson.glow : pickTone(name, group).glow;
 }
 

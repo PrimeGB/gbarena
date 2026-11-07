@@ -374,7 +374,13 @@ export default function JoinPage() {
   const [success, setSuccess] = useState(false);
   const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [confirmationComplete, setConfirmationComplete] = useState(false);
+  const [referralIssue, setReferralIssue] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [referralCode] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const code = new URLSearchParams(window.location.search).get("ref")?.trim() || "";
+    return /^[0-9a-f]{32}$/i.test(code) ? code.toLowerCase() : "";
+  });
   const [website, setWebsite] = useState("");
   const [openedAt] = useState(() => Date.now());
 
@@ -388,6 +394,7 @@ export default function JoinPage() {
 
   const ensureProfileAndWelcome = useCallback(async (user) => {
     const metadata = user.user_metadata || {};
+    let referralApplied = null;
     const { data: existingProfile, error: profileLookupError } = await supabase
       .from("profiles")
       .select("id")
@@ -417,6 +424,16 @@ export default function JoinPage() {
       if (profileError) throw profileError;
     }
 
+    if (typeof metadata.referral_code === "string" && metadata.referral_code.trim()) {
+      const { data, error: referralError } = await supabase.rpc("gb_attribute_referral");
+      if (referralError) {
+        console.error("Referral attribution could not be saved:", referralError);
+        referralApplied = false;
+      } else {
+        referralApplied = data === true;
+      }
+    }
+
     const { error: welcomeMessageError } = await supabase.rpc("send_system_message", {
       target_user_id: user.id,
       message_subject: "Welcome To GameBattles",
@@ -430,6 +447,8 @@ export default function JoinPage() {
     if (welcomeMessageError) {
       console.error("Welcome message could not be sent:", welcomeMessageError);
     }
+
+    return referralApplied;
   }, []);
 
   useEffect(() => {
@@ -448,8 +467,9 @@ export default function JoinPage() {
       setError("");
 
       try {
-        await ensureProfileAndWelcome(user);
+        const referralApplied = await ensureProfileAndWelcome(user);
         if (active) {
+          if (referralApplied === false) setReferralIssue(true);
           setConfirmationRequired(false);
           setConfirmationComplete(true);
           setSuccess(true);
@@ -543,6 +563,7 @@ export default function JoinPage() {
     setLoading(true);
     setError("");
     setSuccess(false);
+    setReferralIssue(false);
 
     const cleanUsername = username.trim();
     const cleanEmail = email.trim().toLowerCase();
@@ -656,6 +677,7 @@ export default function JoinPage() {
     setLoading(true);
     setError("");
     setSuccess(false);
+    setReferralIssue(false);
 
     try {
       const cleanUsername = username.trim();
@@ -679,6 +701,7 @@ export default function JoinPage() {
             location: cleanRegion,
             agreed_to_rules: true,
             agreed_to_rules_at: new Date().toISOString(),
+            ...(referralCode ? { referral_code: referralCode } : {}),
           },
         },
       });
@@ -756,7 +779,8 @@ export default function JoinPage() {
 
       const emailConfirmed = !!data.user.email_confirmed_at;
       if (emailConfirmed) {
-        await ensureProfileAndWelcome(data.user);
+        const referralApplied = await ensureProfileAndWelcome(data.user);
+        if (referralApplied === false) setReferralIssue(true);
       }
 
       setShowAgreement(false);
@@ -1873,6 +1897,11 @@ export default function JoinPage() {
                   : confirmationRequired
                     ? `Check ${email.trim()} for a confirmation link. Click it to activate your account; your welcome email will be sent after confirmation. This email is permanently linked to your account.`
                     : "Account created successfully. Your email is permanently linked to this account. Redirecting to login..."}
+                {referralIssue && (
+                  <p>
+                    Your account is active, but the invite link could not be verified and was not applied.
+                  </p>
+                )}
               </div>
             )}
 

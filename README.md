@@ -33,10 +33,15 @@ storefront or trending-game art automatically; future game art should feature
 games that have ladders on GameBattles.
 
 The award catalog includes staff-reviewed player, staff, and community awards.
-Members reporting a site bug through the Suggestions Box should include their
-GameBattles username and reproduction details for award consideration. Staff
-verify contributions and grant these awards manually. Apply the award catalog
-migration in `supabase/migrations` before deploying the new awards.
+Signed-in members can submit site bugs through the Suggestions Box. Staff review
+reports and award cumulative Bug Finder tiers after confirming a unique issue
+has been fixed (1, 3, 5, and 10 fixes). Referral links are available from a
+player's awards page; an invite qualifies after the new member verifies their
+email and links a gaming account not already claimed by another account. The
+referral tiers unlock at 1, 3, 5, and 10 qualified invites. Staff review bug
+reports in the Awards & Trophy Management portal, where decisions are audited.
+Apply the tiered bug and referral awards migration in `supabase/migrations`
+before deploying these features.
 
 
 ---
