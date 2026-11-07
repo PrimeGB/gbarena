@@ -456,8 +456,6 @@ export default function Home() {
         }
 
         .discord-icon{background:#5865f2;}
-        .x-icon{background:#000;border:1px solid #fff;}
-        .youtube-icon{background:#ff0000;}
         .tiktok-icon{background:#111;color:#00f2ea;border:1px solid #ff0050;}
         .facebook-icon{background:#1877f2;}
 
@@ -950,6 +948,10 @@ export default function Home() {
               <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
+              <div className="section-title">Awards &amp; Achievements</div>
+
+              <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
+
               <div className="section-title">About GameBattles</div>
 
               <Link className="side-link" href="/about">About Us <span className="arrow">›</span></Link>
@@ -965,14 +967,6 @@ export default function Home() {
 
               <Link className="side-link" href="/social/discord">
                 <span className="social"><span className="social-icon discord-icon">☯</span>Discord</span>
-                <span className="arrow">›</span>
-              </Link>
-              <Link className="side-link" href="/social/x">
-                <span className="social"><span className="social-icon x-icon">𝕏</span>X / Twitter</span>
-                <span className="arrow">›</span>
-              </Link>
-              <Link className="side-link" href="/social/youtube">
-                <span className="social"><span className="social-icon youtube-icon">▶</span>YouTube</span>
                 <span className="arrow">›</span>
               </Link>
               <a className="side-link" href="https://www.tiktok.com/@gamebattlescommunity?lang=en" target="_blank" rel="noopener noreferrer">
