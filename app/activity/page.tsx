@@ -14,6 +14,7 @@ type ActivityItem = {
   team_id: string | null;
   user_id: string | null;
   user_ids?: string[];
+  favorited?: boolean;
 };
 
 type Reaction = {
@@ -23,6 +24,7 @@ type Reaction = {
 
 type ReactionSummary = Record<string, Record<string, Reaction>>;
 type FollowTarget = { target_type: "player" | "team"; target_id: string };
+type FeedMode = "everyone" | "following" | "favorites";
 
 const REACTIONS = [
   { key: "gg", label: "GG", icon: "👏" },
@@ -35,7 +37,7 @@ export default function ActivityPage() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [reactions, setReactions] = useState<ReactionSummary>({});
   const [follows, setFollows] = useState<Set<string>>(new Set());
-  const [followingOnly, setFollowingOnly] = useState(false);
+  const [feedMode, setFeedMode] = useState<FeedMode>("everyone");
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -43,12 +45,14 @@ export default function ActivityPage() {
 
   const load = useCallback(async () => {
     setError("");
-    const [{ data, error: feedError }, { data: followData, error: followsError }] =
+    const [feedResult, followsResult] =
       await Promise.all([
-        supabase.rpc("gb_recent_activity", {
-          p_limit: 50,
-          p_following_only: followingOnly,
-        }),
+        feedMode === "favorites"
+          ? supabase.rpc("gb_user_activity_favorites")
+          : supabase.rpc("gb_recent_activity", {
+              p_limit: 50,
+              p_following_only: feedMode === "following",
+            }),
         user
           ? supabase
               .from("community_follows")
@@ -56,6 +60,9 @@ export default function ActivityPage() {
               .eq("follower_id", user.id)
           : Promise.resolve({ data: [], error: null }),
       ]);
+
+    const { data, error: feedError } = feedResult;
+    const { data: followData, error: followsError } = followsResult;
 
     if (feedError) {
       setError(feedError.message);
@@ -107,7 +114,7 @@ export default function ActivityPage() {
       setReactions({});
     }
     setLoaded(true);
-  }, [followingOnly, user]);
+  }, [feedMode, user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -140,6 +147,27 @@ export default function ActivityPage() {
     await load();
   }
 
+  async function toggleFavorite(item: ActivityItem) {
+    if (!user) {
+      setError("Sign in to save community activity to Favorites.");
+      return;
+    }
+    const key = `favorite:${item.id}`;
+    setBusy(key);
+    setError("");
+    const { data, error: actionError } = await supabase.rpc(
+      "gb_toggle_activity_favorite",
+      { p_activity_id: item.id }
+    );
+    setBusy(null);
+    if (actionError) {
+      setError(actionError.message);
+      return;
+    }
+    setNotice(data ? "Saved to Favorites. It will stay available after 48 hours." : "Removed from Favorites.");
+    await load();
+  }
+
   async function toggleFollow(type: "player" | "team", id: string) {
     if (!user) {
       setError("Sign in to follow players and teams.");
@@ -163,7 +191,7 @@ export default function ActivityPage() {
       else next.delete(key);
       return next;
     });
-    if (followingOnly) await load();
+    if (feedMode === "following") await load();
     setNotice(data ? `Following ${type}.` : `Unfollowed ${type}.`);
   }
 
@@ -200,18 +228,19 @@ export default function ActivityPage() {
         .community-feed-head{padding:16px 18px;border-bottom:1px solid #23415a;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
         .community-feed-head h2{margin:0;color:#f2c14e;font-size:15px;text-transform:uppercase}
         .community-tabs{display:flex;gap:6px}
-        .community-tabs button,.community-follow,.community-share,.community-reaction{min-height:36px;border:1px solid #355774;border-radius:7px;background:#0a1a28;color:#d7eaff;font:700 12px Tahoma;cursor:pointer}
+        .community-tabs button,.community-follow,.community-share,.community-reaction,.community-save{min-height:36px;border:1px solid #355774;border-radius:7px;background:#0a1a28;color:#d7eaff;font:700 12px Tahoma;cursor:pointer}
         .community-tabs button{padding:7px 12px}
-        .community-tabs button[aria-pressed="true"],.community-reaction[aria-pressed="true"]{border-color:#f2c14e;background:#2b2412;color:#ffe9a8}
+        .community-tabs button[aria-pressed="true"],.community-reaction[aria-pressed="true"],.community-save[aria-pressed="true"]{border-color:#f2c14e;background:#2b2412;color:#ffe9a8}
         .community-item{padding:16px 18px;border-bottom:1px solid #172e41}
         .community-item:last-child{border-bottom:0}
         .community-item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
         .community-item-link{color:#eaf5ff;font-size:14px;font-weight:700;line-height:1.5;text-decoration:none}
         .community-time{flex:none;color:#849caf;font-size:11px}
         .community-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:12px}
-        .community-follow,.community-share,.community-reaction{padding:7px 10px}
+        .community-follow,.community-share,.community-reaction,.community-save{padding:7px 10px}
         .community-follow{border-color:#336a91;color:#a9d8ff}
         .community-share{color:#d7e2ee}
+        .community-save{color:#ffe39a}
         .community-empty,.community-message{padding:20px;color:#a8bfd1;font-size:13px;line-height:1.6}
         .community-message.error{color:#ffb3b3}
         .community-message.notice{color:#8ff0b2}
@@ -228,7 +257,7 @@ export default function ActivityPage() {
         <section className="community-hero">
           <div className="community-kicker">The GameBattles community</div>
           <h1>Every win has a story.</h1>
-          <p>Follow the teams and players you care about, celebrate big moments, and share the rivalry.</p>
+          <p>Follow the teams and players you care about, celebrate big moments, and share the rivalry. Updates stay for 48 hours; save favorites to keep them.</p>
           <div className="community-actions">
             <Link href="/tournaments">Find your next cup</Link>
             <Link className="secondary" href="/getting-started">New here? Get started</Link>
@@ -237,21 +266,34 @@ export default function ActivityPage() {
 
         <section className="community-feed" aria-labelledby="community-feed-title">
           <div className="community-feed-head">
-            <h2 id="community-feed-title">Live community feed</h2>
+            <h2 id="community-feed-title">{feedMode === "favorites" ? "Saved activity" : feedMode === "following" ? "Following feed" : "Community feed"}</h2>
             <div className="community-tabs" role="group" aria-label="Activity feed">
-              <button type="button" aria-pressed={!followingOnly} onClick={() => setFollowingOnly(false)}>Everyone</button>
+              <button type="button" aria-pressed={feedMode === "everyone"} onClick={() => setFeedMode("everyone")}>Everyone</button>
               <button
                 type="button"
-                aria-pressed={followingOnly}
+                aria-pressed={feedMode === "following"}
                 onClick={() => {
                   if (!user) {
                     setError("Sign in to see activity from people and teams you follow.");
                     return;
                   }
-                  setFollowingOnly(true);
+                  setFeedMode("following");
                 }}
               >
                 Following
+              </button>
+              <button
+                type="button"
+                aria-pressed={feedMode === "favorites"}
+                onClick={() => {
+                  if (!user) {
+                    setError("Sign in to see saved activity.");
+                    return;
+                  }
+                  setFeedMode("favorites");
+                }}
+              >
+                Favorites
               </button>
             </div>
           </div>
@@ -260,9 +302,11 @@ export default function ActivityPage() {
           {!loaded && <div className="community-empty">Loading community activity...</div>}
           {loaded && items.length === 0 && (
             <div className="community-empty">
-              {followingOnly
-                ? "No activity from your follows yet. Follow a team or player from the public feed."
-                : "No new moments yet. Join a cup, play a match, and be the first to light up the feed."}
+              {feedMode === "favorites"
+                ? "No saved activity yet. Save a feed update to keep it here after 48 hours."
+                : feedMode === "following"
+                  ? "No activity from your follows in the last 48 hours. Follow a team or player from the public feed."
+                  : "No new moments in the last 48 hours. Join a cup, play a match, and be the first to light up the feed."}
             </div>
           )}
           {items.map((item) => (
@@ -274,6 +318,15 @@ export default function ActivityPage() {
                 <time className="community-time" dateTime={item.at}>{new Date(item.at).toLocaleString()}</time>
               </div>
               <div className="community-controls">
+                <button
+                  className="community-save"
+                  type="button"
+                  aria-pressed={item.favorited || false}
+                  disabled={busy === `favorite:${item.id}`}
+                  onClick={() => toggleFavorite(item)}
+                >
+                  {item.favorited ? "★ Saved" : "☆ Save"}
+                </button>
                 {item.team_id && (
                   <button
                     className="community-follow"
