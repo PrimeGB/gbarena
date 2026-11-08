@@ -1878,7 +1878,7 @@ function ProfilePageContent() {
                 {currentUser?.id && isViewingOwnProfile && (
                 <div className="pf-banner-actions">
                   <Link className="pf-btn" href="/profile/edit">Account / Profile</Link>
-                  <Link className="pf-btn" href="/profile/edit?focus=gaming-account">Gaming Accounts</Link>
+                  <Link className="pf-btn" href="/profile/gaming-accounts">Gaming Accounts</Link>
                   <Link className="pf-btn pf-inbox-btn" href="/profile/inbox">
                     Inbox
                     {unreadInboxCount > 0 && <span className="mail-dot"></span>}
@@ -1903,11 +1903,9 @@ function ProfilePageContent() {
             <Link className="tab" href="/profile/friends">Friends</Link>
             <Link className="tab" href="/profile/awards">Awards</Link>
             <a className="tab" href="/players">Find Players</a>
-            {isViewingOwnProfile && (
-              <Link className="tab" href="/profile/edit?focus=gaming-account">
-                Gaming Accounts
-              </Link>
-            )}
+            <Link className="tab" href={isViewingOwnProfile ? "/profile/gaming-accounts" : `/profile/gaming-accounts?userId=${encodeURIComponent(viewedUserId)}`}>
+              Gaming Accounts
+            </Link>
           </div>
 
           {!profile ? (
