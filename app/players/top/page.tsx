@@ -20,7 +20,7 @@ type PlayerContext = {
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
   if (value === "mw2") return "MW2";
-  if (value === "modern-warfare-4") return "MW4";
+  if (value === "modern-warfare-4") return "Modern Warfare (2019)";
   return value.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 

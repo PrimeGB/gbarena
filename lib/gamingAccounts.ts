@@ -18,7 +18,7 @@ export const gamingPlatforms = [
 ] as const;
 
 export const gamingGames = [
-  { category: "call-of-duty", value: "modern-warfare-4", label: "Modern Warfare 4" },
+  { category: "call-of-duty", value: "modern-warfare-4", label: "Modern Warfare (2019)" },
   { category: "call-of-duty", value: "modern-warfare-ii", label: "Modern Warfare II" },
   { category: "call-of-duty", value: "modern-warfare-iii", label: "Modern Warfare III" },
   { category: "call-of-duty", value: "black-ops-6", label: "Black Ops 6" },

@@ -2,34 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ladderGameImage } from "../../../lib/ladderCatalog";
 
 const fortniteTitles = [
   {
     title: "Fortnite Battle Royale",
     slug: "battle-royale",
-    image:
-      "/games/fn-3.jpg",
+    image: ladderGameImage("fortnite", "battle-royale") || "",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Zero Build",
     slug: "zero-build",
-    image:
-      "/games/fn-4.jpg",
+    image: ladderGameImage("fortnite", "zero-build") || "",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Ranked",
     slug: "ranked",
-    image:
-      "/games/fn-1.jpg",
+    image: ladderGameImage("fortnite", "ranked") || "",
     ladders: ["Singles", "Duos", "Squads"],
   },
   {
     title: "Fortnite Reload",
     slug: "reload",
-    image:
-      "/games/fn-2.jpg",
+    image: ladderGameImage("fortnite", "reload") || "",
     ladders: ["Duos", "Squads"],
   },
 ];

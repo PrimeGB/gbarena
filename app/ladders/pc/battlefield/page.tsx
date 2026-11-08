@@ -1,34 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 const battlefieldTitles = [
   {
     title: "Battlefield 6",
     slug: "battlefield-6",
-    image:
-      "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481",
+    image: ladderGameImage("battlefield", "battlefield-6") || "",
     ladders: [] as string[],
   },
   {
     title: "Battlefield 2042",
     slug: "battlefield-2042",
-    image:
-      "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg",
+    image: ladderGameImage("battlefield", "battlefield-2042") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Battlefield V",
     slug: "battlefield-v",
-    image:
-      "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg",
+    image: ladderGameImage("battlefield", "battlefield-v") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Battlefield 1",
     slug: "battlefield-1",
-    image:
-      "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg",
+    image: ladderGameImage("battlefield", "battlefield-1") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
 ];

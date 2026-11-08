@@ -8,6 +8,7 @@ import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import { GamingAccount, gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 import { getGameRules } from "../../../lib/matchRules";
+import { ladderGameImage } from "../../../lib/ladderCatalog";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -30,35 +31,7 @@ function prettyText(value: string | null) {
 }
 
 function getGameImage(game: string | null, category?: string) {
-  if (category === "clash-of-clans" || category === "clash-royale" || category === "cod-mobile" || category === "uno") return `/games/${category}.jpg`;
-  if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
-  if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
-  if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
-  if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
-  if (game === "cod4-2007") return "https://cdn.cloudflare.steamstatic.com/steam/apps/7940/header.jpg";
-  if (game === "waw-2008") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10090/header.jpg";
-  if (game === "mw2-2009") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
-  if (game === "bo1-2010") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42700/header.jpg";
-  if (game === "mw3-2011") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg";
-  if (game === "bo2-2012") return "https://cdn.cloudflare.steamstatic.com/steam/apps/202970/header.jpg";
-  if (game === "modern-warfare-4") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
-  if (game === "mw2")  return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
-  if (game === "modern-warfare-ii") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg?t=1778886532";
-  if (game === "black-ops-6") return "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg";
-  if (game === "modern-warfare-iii") return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604";
-  if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
-  if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
-  if (game === "battlefield-6") return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
-  if (game === "battlefield-2042") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg";
-  if (game === "battlefield-v") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
-  if (game === "battlefield-1") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
-  if (category === "call-of-duty") {
-    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
-  }
-  if (category === "battlefield" || game?.startsWith("battlefield-")) {
-    return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
-  }
-  return "";
+  return category ? ladderGameImage(category, game || "") || "" : "";
 }
 
 function getLadderName(ladder: string | null) {

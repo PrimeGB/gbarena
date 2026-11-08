@@ -4,41 +4,39 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 type PlatformKey = "xbox" | "playstation" | "nintendo" | "pc";
-
-const rocketLeagueImage =
-  "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
 
 const rocketLeagueTitles = [
   {
     title: "Rocket League Soccer",
     slug: "soccar",
-    image: rocketLeagueImage,
+    image: ladderGameImage("rocket-league", "soccar") || "",
     ladders: ["Singles", "Duos", "Standard"],
   },
   {
     title: "Rocket League Hoops",
     slug: "hoops",
-    image: rocketLeagueImage,
+    image: ladderGameImage("rocket-league", "hoops") || "",
     ladders: ["Duos"],
   },
   {
     title: "Rocket League Rumble",
     slug: "rumble",
-    image: rocketLeagueImage,
+    image: ladderGameImage("rocket-league", "rumble") || "",
     ladders: ["Team"],
   },
   {
     title: "Rocket League Dropshot",
     slug: "dropshot",
-    image: rocketLeagueImage,
+    image: ladderGameImage("rocket-league", "dropshot") || "",
     ladders: ["Team"],
   },
   {
     title: "Rocket League Snow Day",
     slug: "snow-day",
-    image: rocketLeagueImage,
+    image: ladderGameImage("rocket-league", "snow-day") || "",
     ladders: ["Team"],
   },
 ];

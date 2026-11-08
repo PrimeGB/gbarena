@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { ladderGameImage } from "../../../lib/ladderCatalog";
 
 type PlatformKey = "xbox" | "playstation" | "nintendo" | "pc";
 
@@ -10,36 +11,31 @@ const rocketLeagueTitles = [
   {
     title: "Rocket League Soccar",
     slug: "soccar",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg",
+    image: ladderGameImage("rocket-league", "soccar") || "",
     ladders: ["Singles", "Duos", "Standard"],
   },
   {
     title: "Rocket League Hoops",
     slug: "hoops",
-    image:
-      "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
+    image: ladderGameImage("rocket-league", "hoops") || "",
     ladders: ["Duos"],
   },
   {
     title: "Rocket League Rumble",
     slug: "rumble",
-    image:
-      "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1600&auto=format&fit=crop",
+    image: ladderGameImage("rocket-league", "rumble") || "",
     ladders: ["Team"],
   },
   {
     title: "Rocket League Dropshot",
     slug: "dropshot",
-    image:
-      "https://images.unsplash.com/photo-1593305841991-05c297ba4575?q=80&w=1600&auto=format&fit=crop",
+    image: ladderGameImage("rocket-league", "dropshot") || "",
     ladders: ["Team"],
   },
   {
     title: "Rocket League Snow Day",
     slug: "snow-day",
-    image:
-      "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop",
+    image: ladderGameImage("rocket-league", "snow-day") || "",
     ladders: ["Team"],
   },
 ];

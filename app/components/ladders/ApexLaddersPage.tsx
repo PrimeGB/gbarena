@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { ladderGameImage } from "../../../lib/ladderCatalog";
 
 type PlatformKey = "xbox" | "playstation" | "nintendo" | "pc";
 
@@ -10,29 +11,25 @@ const apexTitles = [
   {
     title: "Apex Legends Battle Royale",
     slug: "battle-royale",
-    image:
-      "/games/apex-1.jpg",
+    image: ladderGameImage("apex", "battle-royale") || "",
     ladders: ["Duos", "Trios"],
   },
   {
     title: "Apex Legends Ranked",
     slug: "ranked",
-    image:
-      "/games/apex-2.jpg",
+    image: ladderGameImage("apex", "ranked") || "",
     ladders: ["Duos", "Trios"],
   },
   {
     title: "Apex Legends Mixtape",
     slug: "mixtape",
-    image:
-      "/games/apex-3.jpg",
+    image: ladderGameImage("apex", "mixtape") || "",
     ladders: ["Team Deathmatch", "Control", "Gun Run"],
   },
   {
     title: "Apex Legends Wildcard",
     slug: "wildcard",
-    image:
-      "/games/apex-4.jpg",
+    image: ladderGameImage("apex", "wildcard") || "",
     ladders: ["Trios", "Squads"],
   },
 ];

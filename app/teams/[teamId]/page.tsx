@@ -9,7 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
-import { ladderPlatformLabel } from "../../../lib/ladderCatalog";
+import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -177,66 +177,6 @@ function stableTeamNumber(teamId: string) {
   return String(hash + 100000);
 }
 
-function gameCover(game: string | null | undefined, category?: string | null) {
-  if (category === "clash-of-clans" || category === "clash-royale" || category === "cod-mobile" || category === "uno") {
-    return `/games/${category}.jpg`;
-  }
-  if (category === "rocket-league") return "https://cdn.cloudflare.steamstatic.com/steam/apps/252950/header.jpg";
-  if (category === "rainbow-six") return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg";
-  if (category === "apex") return "https://media.contentapi.ea.com/content/dam/apex-legends/common/articles/apex-legends-media/apex-media-wallpaper-4.jpg.adapt.crop191x100.1200w.jpg";
-  if (category === "fortnite") return "https://cdn2.unrealengine.com/fortnite-og-social-1920x1080-1920x1080-7b5f76f66d9b.jpg";
-  if (game === "vanguard") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg";
-  if (game === "black-ops-cold-war") return "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg";
-  if (game === "mw3-2011") return "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg";
-  if (game === "mw2-2009") return "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg";
-
-  if (game === "mw2") {
-    return "https://upload.wikimedia.org/wikipedia/en/5/52/Call_of_Duty_Modern_Warfare_2_%282009%29_cover.png";
-  }
-
-  if (game === "black-ops-6") {
-    return "https://upload.wikimedia.org/wikipedia/en/5/51/Call_of_Duty_Black_Ops_6_cover_art.jpg";
-  }
-
-  if (game === "modern-warfare-iii") {
-    return "https://upload.wikimedia.org/wikipedia/en/7/7e/Call_of_Duty_Modern_Warfare_III_cover_art.jpg";
-  }
-
-  if (game === "battlefield-6") {
-    return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
-  }
-
-  if (game === "battlefield-2042") {
-    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1517290/header.jpg";
-  }
-
-  if (game === "battlefield-v") {
-    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238810/header.jpg";
-  }
-
-  if (game === "battlefield-1") {
-    return "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1238840/header.jpg";
-  }
-
-  if (game === "modern-warfare-4") {
-    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
-  }
-
-  if (game === "modern-warfare-ii") {
-    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg?t=1778886532";
-  }
-
-  if (game === "modern-warfare-iii") {
-    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604";
-  }
-
-  if (category === "call-of-duty" || category === "old-school") {
-    return "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798";
-  }
-
-  return "https://drop-assets.ea.com/images/2I7VhVjwdzBgmbpeldmM8t/4f2dcad2d115abd786aa2bb9ff38d89f/battlefield-6-standard-edition-16x9.jpg?im=AspectCrop%3D%2816%2C9%29%2CxPosition%3D0.5%2CyPosition%3D0.5356481481481481";
-}
-
 function eligibilityStatus(member: any, hasGamingId: boolean): "green" | "yellow" | "purple" | "red" {
   const status = String(member?.status || member?.invite_status || "").toLowerCase();
 
@@ -280,6 +220,10 @@ export default function TeamPage() {
   const teamTag = team?.tag || "TAG";
   const platformName = prettyText(team?.platform || "xbox");
   const gameName = prettyText(team?.game || "modern-warfare-4");
+  const coverImage =
+    team?.category && team.game
+      ? ladderGameImage(team.category, team.game)
+      : null;
   const ladderName = prettyText(team?.ladder || "team") + " Ladder";
   const systemName = team?.platform
     ? ladderPlatformLabel(team.platform) || prettyText(team.platform)
@@ -934,7 +878,11 @@ export default function TeamPage() {
           <header className="header">
             <div className="game-header">
               <div className="game-cover">
-                <img loading="lazy" decoding="async" src={gameCover(team?.game, team?.category)} alt="Game Cover" />
+                {coverImage ? (
+                  <img loading="lazy" decoding="async" src={coverImage} alt={`${gameName} cover`} />
+                ) : (
+                  <span>{gameName}</span>
+                )}
               </div>
 
               <div>

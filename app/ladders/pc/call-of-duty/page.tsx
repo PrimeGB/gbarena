@@ -1,55 +1,49 @@
 "use client";
 
 import Link from "next/link";
+import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 const codTitles = [
   {
     title: "Call of Duty: Modern Warfare (2019)",
     slug: "modern-warfare-4",
-    image:
-      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2000950/header.jpg?t=1778886798",
+    image: ladderGameImage("call-of-duty", "modern-warfare-4") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops 6",
     slug: "black-ops-6",
-    image:
-      "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg",
+    image: ladderGameImage("call-of-duty", "black-ops-6") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare III (2023)",
     slug: "modern-warfare-iii",
-    image:
-      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595270/7d0f21912a075c33bbb5ea558100e187ceb234ac/header.jpg?t=1778886604",
+    image: ladderGameImage("call-of-duty", "modern-warfare-iii") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare II (2022)",
     slug: "modern-warfare-ii",
-    image:
-      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3595230/ce4d5e53b36cb9d3c4309d1df72bf8663bbbc7ef/header.jpg",
+    image: ladderGameImage("call-of-duty", "modern-warfare-ii") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/10180/header.jpg",
+    image: ladderGameImage("call-of-duty", "mw2") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Vanguard",
     slug: "vanguard",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/1985820/header.jpg",
+    image: ladderGameImage("call-of-duty", "vanguard") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops Cold War",
     slug: "black-ops-cold-war",
-    image:
-      "https://cdn.cloudflare.steamstatic.com/steam/apps/1985810/header.jpg",
+    image: ladderGameImage("call-of-duty", "black-ops-cold-war") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
 ];

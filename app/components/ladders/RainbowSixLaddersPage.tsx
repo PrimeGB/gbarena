@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+import { ladderGameImage } from "../../../lib/ladderCatalog";
 
 type PlatformKey = "xbox" | "playstation" | "pc";
 
@@ -10,29 +11,25 @@ const siegeTitles = [
   {
     title: "Rainbow Six Siege Ranked",
     slug: "ranked",
-    image:
-      "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/359550/header.jpg",
+    image: ladderGameImage("rainbow-six", "ranked") || "",
     ladders: ["Team"],
   },
   {
     title: "Rainbow Six Siege Standard",
     slug: "standard",
-    image:
-      "/games/r6-1.jpg",
+    image: ladderGameImage("rainbow-six", "standard") || "",
     ladders: ["Team"],
   },
   {
     title: "Rainbow Six Siege Quick Match",
     slug: "quick-match",
-    image:
-      "/games/r6-2.jpg",
+    image: ladderGameImage("rainbow-six", "quick-match") || "",
     ladders: ["Team"],
   },
   {
     title: "Rainbow Six Siege Competitive",
     slug: "competitive",
-    image:
-      "/games/r6-3.jpg",
+    image: ladderGameImage("rainbow-six", "competitive") || "",
     ladders: ["Team", "Academy Team"],
   },
 ];

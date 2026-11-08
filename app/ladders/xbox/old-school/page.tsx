@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 import { usePathname } from "next/navigation";
 
@@ -15,37 +16,37 @@ const codTitles: CodTitle[] = [
   {
     title: "Call of Duty 4: Modern Warfare",
     slug: "cod4-2007",
-    image: "/New%20folder/cod4.jpg",
+    image: ladderGameImage("old-school", "cod4-2007") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: World at War",
     slug: "waw-2008",
-    image: "/New%20folder/waw.jpg",
+    image: ladderGameImage("old-school", "waw-2008") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2-2009",
-    image: "/New%20folder/mw2.jpg",
+    image: ladderGameImage("old-school", "mw2-2009") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops",
     slug: "bo1-2010",
-    image: "/New%20folder/bo1.jpg",
+    image: ladderGameImage("old-school", "bo1-2010") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 3 (2011)",
     slug: "mw3-2011",
-    image: "https://cdn.cloudflare.steamstatic.com/steam/apps/42690/header.jpg",
+    image: ladderGameImage("old-school", "mw3-2011") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops II",
     slug: "bo2-2012",
-    image: "/New%20folder/bo2.jpg",
+    image: ladderGameImage("old-school", "bo2-2012") || "",
     ladders: ["Singles", "Duos", "Team"],
   },
 ];
