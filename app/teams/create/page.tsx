@@ -340,9 +340,19 @@ function CreateTeamContent() {
           color:#a9c3db;
           font-size:11px;
         }
+        @media(max-width:768px){
+          .page{padding:10px 0 32px;}
+          .wrap{width:calc(100% - 20px);}
+          .header{align-items:flex-start;flex-direction:column;gap:12px;padding:18px 14px;}
+          .logo-main{font-size:clamp(26px,8vw,38px);overflow-wrap:anywhere;}
+          .badge{padding:9px 12px;}
+          .title-bar,.content,.panel{padding:16px;}
+          .btn-row{flex-wrap:wrap;}
+          .btn{flex:1 1 150px;min-width:0;}
+        }
       `}</style>
 
-      <main className="page">
+      <main className="page team-create-page">
         <div className="wrap">
           <div className="top-strip">
             <Link href="/home">Home</Link>

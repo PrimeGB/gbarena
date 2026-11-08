@@ -1,6 +1,7 @@
 import AuthNav from "./components/AuthNav";
 import HeroSlides from "./components/HeroSlides";
 import Link from "next/link";
+import MobileHome from "./components/MobileHome";
 
 export default function Home() {
   return (
@@ -772,9 +773,16 @@ export default function Home() {
         .page{padding:0;}
         .mobile-home{padding:14px 10px 20px;}
         .mobile-home-links{grid-template-columns:1fr;}
+      }
+
+      @media(max-width:768px){
+        .page.home-landing{width:100% !important;padding:0;}
+        .home-landing .homepage{border:0;}
+        .home-landing .mobile-home{display:none;}
+      }
       `}</style>
 
-      <main className="page">
+      <main className="page home-landing">
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
@@ -989,69 +997,7 @@ export default function Home() {
             </section>
           </div>
 
-          <section className="mobile-home">
-            <div className="mobile-home-hero">
-              <div className="mobile-home-title">GAMEBATTLES</div>
-              <div className="mobile-home-tagline">WHERE GAMING FINDS ITS EDGE</div>
-            </div>
-            <div className="mobile-home-cup">
-              <div>
-                <strong>FREE WEEKLY CUPS</strong>
-                <span>Every Saturday · 8 PM Eastern · 5 credits and a winner award per player</span>
-              </div>
-              <Link href="/tournaments">See events</Link>
-            </div>
-            <div className="mobile-home-section mobile-home-start">
-              <h2 className="mobile-home-heading">Jump in</h2>
-              <p>Find a team, enter a free cup, and meet the players you’ll be competing against.</p>
-              <div className="mobile-home-links">
-                <Link href="/getting-started">Start here</Link>
-                <Link href="/tournaments">Free tournaments</Link>
-                <Link href="/activity">Live community</Link>
-                <Link href="/matches/finder">Find a match</Link>
-              </div>
-            </div>
-            <div className="mobile-home-section">
-              <h2 className="mobile-home-heading">Compete</h2>
-              <div className="mobile-home-links">
-                <Link href="/ladders/playstation">PlayStation ladders</Link>
-                <Link href="/ladders/xbox">Xbox ladders</Link>
-                <Link href="/ladders/nintendo">Nintendo ladders</Link>
-                <Link href="/ladders/pc">PC ladders</Link>
-                <Link href="/ladders/mobile">Mobile ladders</Link>
-                <Link href="/matches/finder">Find a match</Link>
-                <Link href="/teams/top">Top teams</Link>
-              </div>
-            </div>
-            <div className="mobile-home-section">
-              <h2 className="mobile-home-heading">Community</h2>
-              <div className="mobile-home-links">
-                <Link href="/members">Members</Link>
-                <Link href="/activity">Live community</Link>
-                <Link href="/forums">Forums</Link>
-                <Link href="/staff">Staff</Link>
-                <Link href="/latest-news">Latest news</Link>
-                <Link href="/players/top">Top players</Link>
-                <Link href="/suggestions">Suggestions</Link>
-              </div>
-            </div>
-            <div className="mobile-home-section">
-              <h2 className="mobile-home-heading">GameBattles</h2>
-              <div className="mobile-home-links">
-                <Link href="/about">About us</Link>
-                <Link href="/history">History</Link>
-                <Link href="/rules">Rules</Link>
-                <Link href="/getting-started">Getting started</Link>
-                <Link href="/contact">Contact</Link>
-                <Link href="/support">Support</Link>
-                <a href="https://discord.gg/nKZdS2BDS6">Discord</a>
-              </div>
-            </div>
-            <footer className="mobile-home-footer">
-              © 2026 Competitive Gaming Network
-            </footer>
-          </section>
-
+          <MobileHome />
           <footer className="footer-cover">
             © 2026 Competitive Gaming Network
           </footer>

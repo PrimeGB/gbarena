@@ -108,6 +108,11 @@ export default function TeamTabs({
           border-color: #3d8fd8;
           color: #fff;
         }
+        @media (max-width: 768px) {
+          .team-tabs { justify-content: flex-start; gap: 8px; }
+          .team-tabs-group { gap: 6px; }
+          .team-tabs a { display: flex; align-items: center; min-height: 42px; border-radius: 5px; }
+        }
       `}</style>
     </>
   );

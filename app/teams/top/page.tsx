@@ -280,6 +280,17 @@ export default function TopTeamsPage() {
           color:#a9c3db;
           font-size:10px;
         }
+        @media(max-width:768px){
+          .wrapper{width:calc(100% - 20px);}
+          .nav{height:auto;min-height:44px;overflow-x:auto;gap:18px;}
+          .nav a{flex:0 0 auto;padding:12px 0;}
+          .layout{grid-template-columns:minmax(0,1fr);}
+          .layout > main{min-width:0;order:-1;}
+          .rank-table{white-space:nowrap;}
+          .rank-table th,.rank-table td{padding:12px 10px;}
+          .panel-title{min-height:36px;font-size:12px;}
+          .page-info{font-size:13px;line-height:1.5;}
+        }
 
       `}</style>
 
@@ -287,7 +298,7 @@ export default function TopTeamsPage() {
         GameBattles Top Teams Rankings
       </div>
 
-      <div className="wrapper">
+      <div className="wrapper team-rankings-page">
 
         <header className="header">
 

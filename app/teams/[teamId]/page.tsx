@@ -696,6 +696,7 @@ export default function TeamPage() {
         }
 
         .stats-table,.roster-table{width:100%;border-collapse:collapse;font-size:12px;}
+        .table-hint{display:none;}
         .stats-table th,.roster-table th{
           background:#050c14;color:#fff;padding:9px 8px;border-bottom:1px solid #244b70;
           text-align:center;font-size:11px;text-transform:uppercase;
@@ -886,9 +887,38 @@ export default function TeamPage() {
           font-weight:900;
           text-transform:uppercase;
         }
+        @media(max-width:768px){
+          .page{padding:10px 0 32px;}
+          .wrap{width:calc(100% - 20px);overflow:hidden;}
+          .wrap .site-nav-bar{flex-wrap:nowrap;justify-content:flex-start;gap:18px;overflow-x:auto;padding:0 14px;scrollbar-width:thin;}
+          .wrap .site-nav-bar a{flex:0 0 auto;display:flex;align-items:center;min-height:44px;font-size:11px;}
+          .header{min-height:84px;padding:14px;}
+          .game-header{min-width:0;gap:12px;}
+          .game-cover{width:76px;height:58px;flex-shrink:0;}
+          .game-name{font-size:11px;margin-bottom:5px;}
+          .ladder-name{font-size:20px;overflow-wrap:anywhere;}
+          .avatar-row{height:74px;}
+          .team-avatar{left:14px;top:7px;width:60px;height:60px;}
+          .tabs-pad{padding:0 12px;}
+          .content{display:flex;flex-direction:column;padding:4px 12px 14px;gap:12px;}
+          .main,.side{width:100% !important;min-width:0;margin:0 !important;}
+          .team-head{grid-template-columns:minmax(0,1fr);padding:10px;gap:10px;}
+          .team-logo-box{width:100%;height:auto;min-height:0;aspect-ratio:16/9;margin:0;border-radius:12px;}
+          .team-info{min-height:0;padding:20px 16px;}
+          .team-title-block{min-height:0;transform:none;margin-bottom:14px;}
+          .team-name{font-size:clamp(26px,8vw,36px);overflow-wrap:anywhere;}
+          .team-match-actions{gap:8px;}
+          .team-action-btn{padding:0 6px;text-align:center;}
+          .mini-grid{grid-template-columns:minmax(0,1fr);}
+          .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+          .stats-table,.roster-table{display:table;width:100%;max-width:none;min-width:600px;}
+          .table-hint{display:block;color:#9bb4c9;font-size:11px;padding:8px 10px 0;}
+          .side-box,.side-box.ladder-info-box{min-height:0;}
+          .side-box-body{padding:12px 14px;}
+        }
       `}</style>
 
-      <main className="page">
+      <main className="page team-detail-page">
         <div className="wrap">
           <header className="header">
             <div className="game-header">
@@ -1019,6 +1049,8 @@ export default function TeamPage() {
                 <div className="panel">
                   <div className="panel-title">Team Stats</div>
 
+                  <p className="table-hint">Swipe to see all stats →</p>
+                  <div className="table-scroll" role="region" aria-label="Team stats, scroll horizontally for more columns" tabIndex={0}>
                   <table className="stats-table">
                     <thead>
                       <tr>
@@ -1048,6 +1080,7 @@ export default function TeamPage() {
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="mini-grid">
@@ -1086,6 +1119,8 @@ export default function TeamPage() {
                 <div className="panel" id="roster">
                   <div className="panel-title">Roster</div>
 
+                  <p className="table-hint">Swipe to see the full roster →</p>
+                  <div className="table-scroll" role="region" aria-label="Roster, scroll horizontally for more columns" tabIndex={0}>
                   <table className="roster-table">
                     <thead>
                       <tr>
@@ -1157,6 +1192,7 @@ export default function TeamPage() {
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
 

@@ -32,6 +32,19 @@ iframe {
 }
 
 @media (max-width: 768px) {
+  html:has(.home-landing),
+  body:has(.home-landing),
+  html:has(.team-detail-page),
+  body:has(.team-detail-page),
+  html:has(.team-create-page),
+  body:has(.team-create-page),
+  html:has(.team-hub-page),
+  body:has(.team-hub-page),
+  html:has(.team-rankings-page),
+  body:has(.team-rankings-page) {
+    min-width: 0;
+  }
+
   html,
   body {
     width: 100%;

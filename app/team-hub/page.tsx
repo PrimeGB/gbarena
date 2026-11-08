@@ -1311,9 +1311,22 @@ function TeamHubContent() {
 
           .rules-modal{ width:92%; }
         }
+        @media(max-width:768px){
+          .page{padding:10px 0 32px;}
+          .wrap{width:calc(100% - 20px);}
+          .logo-main{font-size:clamp(26px,8vw,38px);line-height:1.1;overflow-wrap:anywhere;}
+          .hub-badge{font-size:13px;padding:9px 14px;}
+          .title-bar{padding:16px;}
+          .content{padding:12px;}
+          .old-grid{gap:12px;}
+          .main-panel{order:-1;min-width:0;}
+          .main-body,.side-body{padding:12px;}
+          .form-body{padding:12px;}
+          .modal-actions{flex-wrap:wrap;}
+        }
       `}</style>
 
-      <main className="page">
+      <main className="page team-hub-page">
         <div className="wrap">
           <div className="top-strip">
             <Link href="/home">Home</Link>
