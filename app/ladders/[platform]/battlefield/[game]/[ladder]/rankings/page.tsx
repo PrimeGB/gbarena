@@ -204,7 +204,7 @@ export default function BattlefieldRankingsPage() {
           Back to {gameName} ladders
         </Link>
         <header>
-          <p>{platformName} Battlefield Ladder Rankings</p>
+          <p><span className="system-label">System: {platformName}</span> Battlefield Ladder Rankings</p>
           <h1>{gameName} {ladderName}</h1>
           <Link
             className="create-link"
@@ -309,6 +309,18 @@ export default function BattlefieldRankingsPage() {
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
+        }
+        .system-label {
+          display: inline-block;
+          margin-right: 5px;
+          padding: 3px 7px;
+          border: 1px solid rgba(125,182,216,.35);
+          border-radius: 999px;
+          color: #d3e8f5;
+          font-size: 10px;
+          letter-spacing: normal;
+          text-transform: none;
+          vertical-align: 1px;
         }
         h1 {
           margin: 0 0 14px;

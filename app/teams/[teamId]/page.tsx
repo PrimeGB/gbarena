@@ -952,6 +952,7 @@ export default function TeamPage() {
           <div className="tabs-pad">
             <TeamTabs
               teamId={teamId}
+              platform={team?.platform || null}
               ladderHref={ladderUrl}
               active="team"
               canEditProfile={canEditTeamProfile}

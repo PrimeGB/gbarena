@@ -1,3 +1,5 @@
+import { ladderPlatformLabel } from "../../lib/ladderCatalog";
+
 export type TeamTabKey =
   | "team"
   | "roster"
@@ -9,6 +11,7 @@ export type TeamTabKey =
 
 type TeamTabsProps = {
   teamId: string;
+  platform: string | null;
   ladderHref: string;
   active: TeamTabKey;
   canEditProfile?: boolean;
@@ -17,12 +20,14 @@ type TeamTabsProps = {
 
 export default function TeamTabs({
   teamId,
+  platform,
   ladderHref,
   active,
   canEditProfile = false,
   canEditRoster = false,
 }: TeamTabsProps) {
   const base = `/teams/${teamId}`;
+  const platformName = platform ? ladderPlatformLabel(platform) || platform : null;
 
   const left: { key: TeamTabKey; label: string; href: string }[] = [
     { key: "team", label: "Team", href: base },
@@ -66,6 +71,9 @@ export default function TeamTabs({
               {tab.label}
             </a>
           ))}
+          {platformName && (
+            <span className="team-system">System: {platformName}</span>
+          )}
         </div>
         <div className="team-tabs-group">
           {right
@@ -110,10 +118,20 @@ export default function TeamTabs({
           border-color: #3d8fd8;
           color: #fff;
         }
+        .team-system {
+          display: inline-flex;
+          align-items: center;
+          padding: 0 9px;
+          border: 1px solid #26394b;
+          border-radius: 3px;
+          color: #8fa5b9;
+          font-size: 11px;
+        }
         @media (max-width: 768px) {
           .team-tabs { justify-content: flex-start; gap: 8px; }
           .team-tabs-group { gap: 6px; }
           .team-tabs a { display: flex; align-items: center; min-height: 42px; border-radius: 5px; }
+          .team-system { min-height: 42px; }
         }
       `}</style>
     </>

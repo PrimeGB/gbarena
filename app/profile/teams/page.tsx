@@ -191,7 +191,7 @@ export default function ProfileTeamsPage() {
           </div>
         </div>
         <div className="team-chips">
-          <span className="chip">{prettyText(team.platform)}</span>
+          <span className="chip">System: {prettyText(team.platform)}</span>
           <span className="chip">{prettyText(team.game)}</span>
           <span className="chip">{prettyText(team.ladder)}</span>
         </div>

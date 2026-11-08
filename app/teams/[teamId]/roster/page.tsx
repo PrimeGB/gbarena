@@ -872,6 +872,7 @@ export default function EditRosterPage() {
         <div className="tabs-pad">
           <TeamTabs
             teamId={teamId}
+            platform={team.platform}
             ladderHref={`/ladders/${team.platform || "xbox"}/${team.category || "call-of-duty"}/${team.game || "modern-warfare-4"}/${team.ladder || "team"}/rankings`}
             active="edit-roster"
             canEditProfile={isLeader}

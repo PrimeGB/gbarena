@@ -125,6 +125,7 @@ export default function TeamLogPage() {
         <div className="log-pad">
           <TeamTabs
             teamId={teamId}
+            platform={team?.platform || null}
             ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`}
             active="log"
             canEditProfile={isLeader}
