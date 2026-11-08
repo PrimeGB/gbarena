@@ -153,7 +153,7 @@ export default function EditTeamProfilePage() {
   }
 
   return (
-    <main className="page">
+    <main className="page team-editor">
       <div className="nav-shell">
         <SiteNav
           ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}`}
@@ -166,9 +166,15 @@ export default function EditTeamProfilePage() {
 
       <section className="panel">
         <header>
-          <Link href={`/teams/${teamId}`}>Back to team profile</Link>
-          <p>Team Controls</p>
-          <h1>Edit Team Profile</h1>
+          <Link className="back-link" href={`/teams/${teamId}`}>← Back to team</Link>
+          <div className="header-content">
+            <div>
+              <p className="eyebrow">TEAM SETTINGS</p>
+              <h1>Edit team profile</h1>
+              <p className="header-description">Give your team its own identity, on and off the ladder.</p>
+            </div>
+            {team && <span className="team-badge">{team.name || "Your team"}</span>}
+          </div>
         </header>
 
         {loading ? (
@@ -180,66 +186,80 @@ export default function EditTeamProfilePage() {
           </div>
         ) : team ? (
           <form onSubmit={saveTeam}>
-            <label>
-              Team name (cannot be changed)
-              <input
-                value={team.name || ""}
-                readOnly
-                aria-readonly="true"
-              />
-            </label>
-
-            <label>
-              Clan tag
-              <input
-                value={teamTag}
-                onChange={(event) =>
-                  setTeamTag(event.target.value.slice(0, 5).toUpperCase())
-                }
-                maxLength={5}
-                required
-              />
-            </label>
-
-            <label>
-              Team bio
-              <textarea
-                value={teamBio}
-                onChange={(event) => setTeamBio(event.target.value)}
-                maxLength={1000}
-                rows={5}
-              />
-            </label>
-
-            <div className="uploads">
-              <label>
-                Team logo
-                {team.logo_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img loading="lazy" decoding="async" className="preview" src={team.logo_url} alt="Current team logo" />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => setLogoFile(event.target.files?.[0] || null)}
+            <section className="form-section" aria-labelledby="team-details-heading">
+              <div className="section-heading">
+                <div><h2 id="team-details-heading">Team details</h2><p>The basics players see on your team profile.</p></div>
+                <span>01</span>
+              </div>
+              <div className="details-grid">
+                <label className="field">
+                  <span>Team name</span>
+                  <input value={team.name || ""} readOnly aria-readonly="true" aria-describedby="name-hint" />
+                  <small id="name-hint">Team names cannot be changed.</small>
+                </label>
+                <label className="field">
+                  <span>Clan tag</span>
+                  <input
+                    value={teamTag}
+                    onChange={(event) => setTeamTag(event.target.value.slice(0, 5).toUpperCase())}
+                    maxLength={5}
+                    required
+                    aria-describedby="tag-hint"
+                  />
+                  <small id="tag-hint">1–5 characters</small>
+                </label>
+              </div>
+              <label className="field bio-field">
+                <span>Team bio <span className="optional">Optional</span></span>
+                <textarea
+                  value={teamBio}
+                  onChange={(event) => setTeamBio(event.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder="Tell players a little about your team..."
+                  aria-describedby="bio-hint"
                 />
+                <small id="bio-hint">{teamBio.length} / 1,000 characters</small>
               </label>
+            </section>
 
-              <label>
-                Team avatar
-                {team.avatar_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img loading="lazy" decoding="async" className="preview" src={team.avatar_url} alt="Current team avatar" />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => setAvatarFile(event.target.files?.[0] || null)}
-                />
-              </label>
-            </div>
+            <section className="form-section" aria-labelledby="team-images-heading">
+              <div className="section-heading">
+                <div><h2 id="team-images-heading">Team images</h2><p>Choose the images that represent your team.</p></div>
+                <span>02</span>
+              </div>
+              <div className="uploads">
+                <div className="upload-card">
+                  <div className="upload-preview">
+                    {team.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img loading="lazy" decoding="async" src={team.logo_url} alt="Current team logo" />
+                    ) : <span aria-hidden="true">◇</span>}
+                  </div>
+                  <div className="upload-content">
+                    <label htmlFor="team-logo">Team logo</label>
+                    <p>{logoFile ? "New image selected" : team.logo_url ? "Current team logo" : "No logo uploaded yet"}</p>
+                    <input id="team-logo" type="file" accept="image/*" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} />
+                  </div>
+                </div>
+                <div className="upload-card">
+                  <div className="upload-preview avatar">
+                    {team.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img loading="lazy" decoding="async" src={team.avatar_url} alt="Current team avatar" />
+                    ) : <span aria-hidden="true">◇</span>}
+                  </div>
+                  <div className="upload-content">
+                    <label htmlFor="team-avatar">Team avatar</label>
+                    <p>{avatarFile ? "New image selected" : team.avatar_url ? "Current team avatar" : "No avatar uploaded yet"}</p>
+                    <input id="team-avatar" type="file" accept="image/*" onChange={(event) => setAvatarFile(event.target.files?.[0] || null)} />
+                  </div>
+                </div>
+              </div>
+              <p className="upload-note">Choose a new image only if you want to replace the current one.</p>
+            </section>
 
-            {error && <p className="error message">{error}</p>}
+            {error && <p className="error message" role="alert">{error}</p>}
             <div className="actions">
               <Link href={`/teams/${teamId}`}>Cancel</Link>
               <button type="submit" disabled={saving}>
@@ -253,114 +273,136 @@ export default function EditTeamProfilePage() {
       <style jsx>{`
         .page {
           min-height: 100vh;
-          padding: 32px 16px;
-          background: radial-gradient(circle at top, #173d5f, #02060a 65%);
+          padding: 12px 16px 10px;
+          background: radial-gradient(ellipse at 50% 0, #122b40, #050c14 55%);
           color: #eaf6ff;
-          font-family: Tahoma, Verdana, Arial, sans-serif;
+          font-family: Arial, Helvetica, sans-serif;
         }
         .nav-shell {
-          max-width: 760px;
-          margin: 0 auto 14px;
+          max-width: 960px;
+          margin: 0 auto 10px;
         }
         .tabs-shell {
-          padding: 0 4px;
+          padding: 4px 0 0;
         }
         .panel {
-          max-width: 760px;
+          max-width: 960px;
           margin: 0 auto;
-          border: 1px solid #2d6f9f;
-          background: #071522;
-          box-shadow: 0 0 34px #000c;
+          overflow: hidden;
+          border: 1px solid #213d54;
+          border-radius: 12px;
+          background: #0a1724;
+          box-shadow: 0 20px 60px #0008;
         }
         header {
-          padding: 20px 24px;
-          border-bottom: 1px solid #2d6f9f;
-          background: linear-gradient(#153a57, #071522);
+          padding: 16px 24px;
+          border-bottom: 1px solid #213b50;
+          background: linear-gradient(120deg, #142d41, #0b1c2b);
         }
-        header a,
-        .actions a {
-          color: #9bd8ff;
+        .back-link {
+          color: #a7c7dd;
           font-size: 12px;
           font-weight: 700;
           text-decoration: none;
         }
-        header p {
-          margin: 22px 0 4px;
-          color: #b8dfff;
-          font-size: 11px;
-          font-weight: 700;
-          text-transform: uppercase;
+        .back-link:hover { color: #fff; }
+        .header-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 20px;
+          margin-top: 12px;
+        }
+        .eyebrow {
+          margin: 0 0 8px;
+          color: #e5bf69;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: .14em;
         }
         h1 {
           margin: 0;
-          color: #f2c14e;
-          font-size: 26px;
-          text-transform: uppercase;
+          color: #fff;
+          font-size: clamp(24px, 3vw, 30px);
+          font-weight: 800;
+          letter-spacing: -.03em;
         }
+        .header-description { margin: 5px 0 0; color: #a9bfd0; font-size: 13px; line-height: 1.5; }
+        .team-badge { max-width: 40%; padding: 8px 12px; border: 1px solid #35546b; border-radius: 6px; color: #c9dbe8; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
         form {
           display: grid;
-          gap: 18px;
-          padding: 24px;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          column-gap: 28px;
+          padding: 0 24px;
         }
-        label {
+        .form-section { min-width: 0; padding: 14px 0; }
+        .section-heading { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+        .section-heading h2 { margin: 0; color: #edf5fb; font-size: 17px; font-weight: 800; }
+        .section-heading p { margin: 6px 0 0; color: #91aabc; font-size: 12px; line-height: 1.5; }
+        .section-heading > span { color: #658198; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+        .details-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+        .field {
           display: grid;
           gap: 8px;
-          color: #cfe2f2;
+          min-width: 0;
+          color: #d7e6f0;
           font-size: 12px;
           font-weight: 700;
-          text-transform: uppercase;
         }
-        input,
-        textarea {
+        .bio-field { margin-top: 14px; }
+        .optional { color: #7e9aaf; font-size: 11px; font-weight: 400; margin-left: 5px; }
+        .field input, .field textarea {
           width: 100%;
-          border: 1px solid #315b7d;
-          background: #02070c;
+          min-width: 0;
+          border: 1px solid #304b60;
+          border-radius: 6px;
+          background: #07121d;
           color: #fff;
-          padding: 10px;
-          font: 14px Tahoma, Verdana, Arial, sans-serif;
+          padding: 12px 13px;
+          font: 14px Arial, Helvetica, sans-serif;
         }
-        input[readonly] {
-          color: #8ea4b6;
-          background: #101a23;
-          cursor: not-allowed;
+        .field input[readonly] {
+          color: #a0b4c4;
+          background: #101f2c;
         }
-        textarea {
-          resize: vertical;
-        }
-        input:focus,
-        textarea:focus {
-          outline: 1px solid #72b6e2;
-          border-color: #72b6e2;
-        }
-        .uploads {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 18px;
-        }
-        .preview {
-          width: 88px;
-          height: 88px;
+        .field textarea { resize: vertical; min-height: 78px; line-height: 1.5; }
+        .field textarea::placeholder { color: #6f899c; }
+        input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid #8ccfff; outline-offset: 2px; }
+        .field small { color: #91aabc; font-size: 11px; font-weight: 400; }
+        .uploads { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+        .upload-card { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 15px; border: 1px solid #294256; border-radius: 8px; background: #0c1c2a; }
+        .upload-preview { display: flex; align-items: center; justify-content: center; flex: 0 0 68px; width: 68px; height: 68px; overflow: hidden; border: 1px solid #36566e; border-radius: 8px; background: #07131e; color: #7594a9; font-size: 26px; }
+        .upload-preview.avatar { border-radius: 50%; }
+        .upload-preview img {
+          width: 100%;
+          height: 100%;
           object-fit: cover;
-          border: 1px solid #315b7d;
-          background: #02070c;
         }
+        .upload-content { min-width: 0; flex: 1; }
+        .upload-content label { display: block; color: #e6f0f7; font-size: 13px; font-weight: 700; }
+        .upload-content p { margin: 5px 0 8px; color: #91aabc; font-size: 11px; }
+        .upload-content input { width: 100%; min-width: 0; color: #a9c1d2; font-size: 11px; }
+        .upload-content input::file-selector-button { margin-right: 8px; padding: 7px 10px; border: 1px solid #456780; border-radius: 4px; background: #172f42; color: #e8f4fc; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .upload-note { margin: 12px 0 0; color: #91aabc; font-size: 11px; line-height: 1.5; }
         .actions {
+          grid-column: 1 / -1;
           display: flex;
           justify-content: flex-end;
           align-items: center;
-          gap: 18px;
-          padding-top: 8px;
+          gap: 12px;
+          padding: 14px 0 18px;
+          border-top: 1px solid #203648;
         }
-        button {
-          border: 1px solid #e1b94e;
-          background: linear-gradient(#d8af45, #76530c);
-          color: #101010;
-          padding: 11px 18px;
-          font-weight: 900;
-          text-transform: uppercase;
+        .actions a, .actions button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 18px; border-radius: 6px; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .actions a { color: #c9dbe8; border: 1px solid #365269; }
+        .actions button {
+          border: 1px solid #e9c572;
+          background: #e8c16c;
+          color: #101a22;
           cursor: pointer;
         }
-        button:disabled {
+        .actions button:hover:not(:disabled) { background: #f4d28a; }
+        .actions button:disabled {
           cursor: wait;
           opacity: 0.65;
         }
@@ -378,19 +420,26 @@ export default function EditTeamProfilePage() {
           color: #ff8585;
         }
         .message {
-          margin: 0;
+          grid-column: 1 / -1;
+          margin: 20px 0 0;
+          padding: 12px;
+          border: 1px solid #713f45;
+          border-radius: 6px;
+          background: #2a171c;
+          font-size: 13px;
         }
-        @media (max-width: 560px) {
-          .uploads {
-            grid-template-columns: 1fr;
-          }
-          .actions {
-            align-items: stretch;
-            flex-direction: column-reverse;
-          }
-          .actions a {
-            text-align: center;
-          }
+        @media (max-width: 700px) {
+          .page { padding: 12px 0 32px; }
+          .nav-shell { width: 100%; margin-bottom: 12px; }
+          .tabs-shell { padding: 0 4px; }
+          .panel { border-radius: 8px; }
+          header { padding: 22px 18px; }
+          .header-content { align-items: flex-start; flex-direction: column; gap: 12px; margin-top: 24px; }
+          .team-badge { max-width: 100%; }
+          form { grid-template-columns: minmax(0, 1fr); padding: 0 18px; }
+          .form-section { padding: 20px 0; border-bottom: 1px solid #203648; }
+          .details-grid, .uploads { grid-template-columns: minmax(0, 1fr); }
+          .actions { align-items: stretch; flex-direction: column-reverse; }
         }
       `}</style>
     </main>
