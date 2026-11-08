@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { gamingCategoryLabel, gamingGameLabel, gamingGames } from "../../../lib/gamingAccounts";
-import { ladderPlatformLabel } from "../../../lib/ladderCatalog";
+import {
+  categoriesForPlatform,
+  gamesForCategory,
+  ladderPlatformLabel,
+  ladderPlatforms,
+  laddersForGame,
+} from "../../../lib/ladderCatalog";
 
 function cleanName(value: string | null) {
   if (!value) return "Team";
@@ -38,6 +44,110 @@ export default function CreateTeamPage() {
   );
 }
 
+function ChooseTeamLadder() {
+  const [platform, setPlatform] = useState("");
+  const [category, setCategory] = useState("");
+  const [game, setGame] = useState("");
+  const [ladder, setLadder] = useState("");
+  const categories = categoriesForPlatform(platform);
+  const games = gamesForCategory(category);
+  const ladders = category && game ? laddersForGame(category, game) : [];
+  const hubUrl = `/team-hub?${new URLSearchParams({ platform, category, game, ladder })}`;
+
+  return (
+    <main className="choose-team-page">
+      <style>{`
+        .choose-team-page{min-height:100vh;padding:40px 24px;background:radial-gradient(circle at top,rgba(20,80,130,.36),transparent 42%),#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif}
+        .choose-team-wrap{max-width:900px;margin:auto;background:#07111b;border:1px solid #2f6f9f;box-shadow:0 0 35px rgba(0,90,160,.5)}
+        .choose-team-top{display:flex;justify-content:flex-end;gap:18px;padding:9px 14px;background:linear-gradient(to bottom,#9a0000,#3a0000)}
+        .choose-team-top a{color:#fff;font-size:12px;font-weight:bold;text-decoration:none;text-transform:uppercase}
+        .choose-team-header{padding:20px 24px;background:linear-gradient(to bottom,#15324b,#07111b);border-bottom:2px solid #2f6f9f}
+        .choose-team-logo{color:#f4f8ff;font-size:38px;font-weight:bold;font-style:italic;text-decoration:none;text-transform:uppercase}
+        .choose-team-title{padding:24px;background:linear-gradient(to bottom,#205077,#0a1724);border-bottom:1px solid #2f638f}
+        .choose-team-title h1{margin:0 0 8px;color:#f2c14e;font-size:28px;text-transform:uppercase}
+        .choose-team-title p{margin:0;color:#cfe2f2;font-size:14px;line-height:1.5}
+        .choose-team-content{padding:24px}
+        .choose-team-panel{padding:24px;border:1px solid #244b70;background:#050c14}
+        .choose-team-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+        .choose-team-field{display:flex;flex-direction:column;gap:8px;color:#f2c14e;font-size:12px;font-weight:bold;text-transform:uppercase}
+        .choose-team-field select{width:100%;height:46px;padding:0 12px;border:1px solid #3b7fc2;background:#07111b;color:#fff;font:14px Tahoma,Verdana,Arial,sans-serif}
+        .choose-team-field select:disabled{opacity:.55}
+        .choose-team-field select:focus-visible,.choose-team-button:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
+        .choose-team-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+        .choose-team-button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid #ffe08a;background:linear-gradient(to bottom,#f2c14e,#93670d);color:#06111b;font-size:13px;font-weight:900;text-decoration:none;text-transform:uppercase}
+        .choose-team-back{color:#8ac6f5;font-size:13px}
+        .choose-team-note{margin:16px 0 0;color:#a9c3db;font-size:12px;line-height:1.5}
+        @media(max-width:600px){.choose-team-page{padding:10px}.choose-team-logo{font-size:clamp(25px,8vw,38px)}.choose-team-content,.choose-team-panel,.choose-team-title{padding:16px}.choose-team-fields{grid-template-columns:1fr}}
+      `}</style>
+      <div className="choose-team-wrap">
+        <nav className="choose-team-top" aria-label="Quick links">
+          <Link href="/home">Home</Link>
+          <Link href="/profile">My Profile</Link>
+          <Link href="/forums">Forums</Link>
+        </nav>
+        <header className="choose-team-header">
+          <Link className="choose-team-logo" href="/home">GameBattles</Link>
+        </header>
+        <section className="choose-team-title">
+          <h1>Create a Team</h1>
+          <p>Choose your system, game, and ladder to get started.</p>
+        </section>
+        <section className="choose-team-content">
+          <div className="choose-team-panel">
+            <div className="choose-team-fields">
+              <label className="choose-team-field">
+                System
+                <select value={platform} onChange={(event) => {
+                  setPlatform(event.target.value);
+                  setCategory("");
+                  setGame("");
+                  setLadder("");
+                }}>
+                  <option value="">Choose a system</option>
+                  {ladderPlatforms.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+              </label>
+              <label className="choose-team-field">
+                Game Category
+                <select value={category} disabled={!platform} onChange={(event) => {
+                  setCategory(event.target.value);
+                  setGame("");
+                  setLadder("");
+                }}>
+                  <option value="">Choose a game category</option>
+                  {categories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+              </label>
+              <label className="choose-team-field">
+                Game / Mode
+                <select value={game} disabled={!category} onChange={(event) => {
+                  setGame(event.target.value);
+                  setLadder("");
+                }}>
+                  <option value="">Choose a game or mode</option>
+                  {games.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+              </label>
+              <label className="choose-team-field">
+                Ladder
+                <select value={ladder} disabled={!game} onChange={(event) => setLadder(event.target.value)}>
+                  <option value="">Choose a ladder</option>
+                  {ladders.map((item) => <option key={item.slug} value={item.slug}>{item.title}</option>)}
+                </select>
+              </label>
+            </div>
+            <p className="choose-team-note">Each team belongs to one system, game and ladder. You can create another team for a different ladder.</p>
+            <div className="choose-team-actions">
+              {platform && category && game && ladder && <Link className="choose-team-button" href={hubUrl}>Continue to Team Setup</Link>}
+              <Link className="choose-team-back" href="/profile">Back to Profile</Link>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
 function CreateTeamContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,9 +170,11 @@ function CreateTeamContent() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const backUrl = useMemo(() => {
-    return `/team-hub?platform=${platformSlug}&category=${categorySlug}&game=${gameSlug}&ladder=${ladderSlug}`;
-  }, [platformSlug, categorySlug, gameSlug, ladderSlug]);
+  const backUrl = `/team-hub?platform=${platformSlug}&category=${categorySlug}&game=${gameSlug}&ladder=${ladderSlug}`;
+
+  if (!searchParams.get("platform") || !searchParams.get("category") || !searchParams.get("game") || !searchParams.get("ladder")) {
+    return <ChooseTeamLadder />;
+  }
 
   async function createTeam() {
     setMessage("");
