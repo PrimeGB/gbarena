@@ -2,13 +2,14 @@ export type TeamTabKey =
   | "team"
   | "roster"
   | "matches"
+  | "ladder"
   | "edit-profile"
   | "edit-roster"
-  | "tools"
   | "log";
 
 type TeamTabsProps = {
   teamId: string;
+  ladderHref: string;
   active: TeamTabKey;
   canEditProfile?: boolean;
   canEditRoster?: boolean;
@@ -16,6 +17,7 @@ type TeamTabsProps = {
 
 export default function TeamTabs({
   teamId,
+  ladderHref,
   active,
   canEditProfile = false,
   canEditRoster = false,
@@ -26,6 +28,7 @@ export default function TeamTabs({
     { key: "team", label: "Team", href: base },
     { key: "roster", label: "Roster", href: `${base}#roster` },
     { key: "matches", label: "Matches", href: `${base}#matches` },
+    { key: "ladder", label: "Ladder", href: ladderHref },
   ];
 
   function navigateToSection(
@@ -46,7 +49,6 @@ export default function TeamTabs({
   const right: { key: TeamTabKey; label: string; href: string; show: boolean }[] = [
     { key: "edit-profile", label: "Edit Profile", href: `${base}/edit`, show: canEditProfile },
     { key: "edit-roster", label: "Edit Roster", href: `${base}/roster`, show: canEditRoster },
-    { key: "tools", label: "Tools", href: `${base}/tools`, show: canEditProfile },
     { key: "log", label: "Log", href: `${base}/log`, show: canEditProfile },
   ];
 

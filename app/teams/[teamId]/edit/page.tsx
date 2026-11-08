@@ -19,6 +19,7 @@ type TeamProfile = {
   platform: string | null;
   category: string | null;
   game: string | null;
+  ladder: string | null;
 };
 
 function safeFileName(file: File) {
@@ -57,7 +58,7 @@ export default function EditTeamProfilePage() {
 
       const { data, error: teamError } = await supabase
         .from("teams")
-        .select("id,name,tag,bio,logo_url,avatar_url,owner_id,platform,category,game")
+        .select("id,name,tag,bio,logo_url,avatar_url,owner_id,platform,category,game,ladder")
         .eq("id", teamId)
         .maybeSingle();
 
@@ -160,7 +161,13 @@ export default function EditTeamProfilePage() {
           tournamentHref={`/tournaments?platform=${team?.platform || "xbox"}&category=${team?.category || "call-of-duty"}&game=${team?.game || "modern-warfare-4"}`}
         />
         <div className="tabs-shell">
-          <TeamTabs teamId={teamId} active="edit-profile" canEditProfile canEditRoster />
+          <TeamTabs
+            teamId={teamId}
+            ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`}
+            active="edit-profile"
+            canEditProfile
+            canEditRoster
+          />
         </div>
       </div>
 
