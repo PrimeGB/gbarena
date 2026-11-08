@@ -139,7 +139,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (bannerHovered || bannerFocused) return;
-    const timer = window.setInterval(() => setShowInviteBanner((current) => !current), 30000);
+    const timer = window.setInterval(() => setShowInviteBanner((current) => !current), 15000);
     return () => window.clearInterval(timer);
   }, [bannerHovered, bannerFocused]);
 
@@ -694,78 +694,64 @@ function ProfilePageContent() {
         .header-ad{
           width:360px;
           height:64px;
-          background:linear-gradient(to bottom,#07111b,#03070c);
-          border:1px solid #214d73;
+          border:1px solid #6f86bb;
+          border-radius:7px;
           display:flex;
-          align-items:stretch;
-          justify-content:stretch;
           overflow:hidden;
-          box-shadow:inset 0 0 16px rgba(0,0,0,.9),0 0 10px rgba(47,111,159,.18);
-          opacity:.96;
+          box-shadow:0 2px 12px rgba(0,0,0,.45),0 0 14px rgba(105,128,255,.25);
           position:relative;
         }
 
-        .header-ad:after{
-          content:"";
-          position:absolute;
-          inset:0;
-          background:linear-gradient(to right,rgba(7,17,27,.25),rgba(7,17,27,0) 42%,rgba(7,17,27,.35));
-          pointer-events:none;
+        .header-ad:hover,.header-ad:focus-within{
+          border-color:#fff;
+          box-shadow:0 2px 16px rgba(0,0,0,.55),0 0 18px rgba(126,161,255,.5);
         }
 
-        .header-ad:hover{
-          opacity:1;
-          border-color:#4daeff;
-          box-shadow:inset 0 0 16px rgba(0,0,0,.9),0 0 12px rgba(77,174,255,.22);
-        }
-
-        .header-ad img{
-          width:100%;
-          height:100%;
-          object-fit:cover;
-          object-position:center;
-          display:block;
-          filter:brightness(.82) contrast(1.12) saturate(.95);
-        }
-
-        .discord-banner{
-          display:block;
-          width:100%;
-          height:100%;
-          text-decoration:none;
-        }
-
-        .invite-banner{
+        .promo-banner{
           display:flex;
           align-items:center;
-          gap:10px;
+          gap:9px;
           width:100%;
-          padding:5px 12px;
-          background:linear-gradient(115deg,#173b56,#07111b 85%);
-          color:#d7eaff;
+          min-width:0;
+          padding:6px 9px;
+          color:#fff;
           text-decoration:none;
+          transition:filter .2s ease;
         }
-        .header-ad .invite-banner img{
-          width:49px;
-          height:49px;
+        .promo-banner:hover,.promo-banner:focus-visible{filter:brightness(1.12)}
+        .promo-banner:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+        .promo-discord{
+          background:linear-gradient(115deg,#273582 0%,#4c52b8 55%,#24275a 100%);
+        }
+        .promo-invite{
+          background:linear-gradient(115deg,#54340d 0%,#8a5717 50%,#352816 100%);
+        }
+        .promo-icon{
+          display:flex;
+          align-items:center;
+          justify-content:center;
           flex:none;
+          width:44px;
+          height:44px;
+          border:1px solid rgba(255,255,255,.4);
+          border-radius:12px;
+          background:rgba(255,255,255,.14);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+        }
+        .promo-icon svg{width:34px;height:34px;fill:#fff}
+        .promo-icon img{
+          width:40px;
+          height:40px;
           object-fit:contain;
-          filter:none;
         }
-        .invite-banner-copy{min-width:0;line-height:1.35}
-        .invite-banner-title{display:block;color:#f2c14e;font-size:13px;font-weight:800;letter-spacing:.35px}
-        .invite-banner-sub{display:block;font-size:10px;color:#d7eaff;margin-top:3px}
-
-        .discord-banner-art{
-          width:100%;
-          height:100%;
-          display:block;
-        }
-
-        .header-ad:hover img{
-          filter:brightness(.9) contrast(1.14) saturate(1);
-        }
-
+        .promo-copy{flex:1;min-width:0;line-height:1.2}
+        .promo-eyebrow{display:block;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#d9e0ff}
+        .promo-invite .promo-eyebrow{color:#ffe0a2}
+        .promo-title{display:block;margin-top:3px;font-size:14px;font-weight:900;color:#fff;white-space:nowrap}
+        .promo-sub{display:block;margin-top:3px;font-size:10px;color:#f1f3ff;white-space:nowrap}
+        .promo-action{flex:none;padding:6px 8px;border-radius:4px;background:#fff;color:#303d91;font-size:10px;font-weight:900;white-space:nowrap}
+        .promo-invite .promo-action{background:#ffdb7b;color:#382100}
+        @media (max-width:380px){.promo-banner{gap:7px;padding:6px 7px}.promo-title{font-size:12px}.promo-sub{font-size:9px}.promo-action{padding:6px}}
 
         .profile-title-bar{
           margin-top:5px;
@@ -1775,48 +1761,29 @@ function ProfilePageContent() {
 
             <div className="header-ad" onMouseEnter={() => setBannerHovered(true)} onMouseLeave={() => setBannerHovered(false)} onFocus={() => setBannerFocused(true)} onBlur={() => setBannerFocused(false)}>
               {showInviteBanner ? (
-                <Link className="invite-banner" href="/profile/awards#invite-rewards">
-                  <Image src="/logo-emblem.png" alt="" width={49} height={49} />
-                  <span className="invite-banner-copy">
-                    <span className="invite-banner-title">INVITE FRIENDS. EARN REWARDS.</span>
-                    <span className="invite-banner-sub">Share your link and unlock community awards</span>
+                <Link className="promo-banner promo-invite" href="/profile/awards#invite-rewards">
+                  <span className="promo-icon"><Image src="/logo-emblem.png" alt="" width={40} height={40} /></span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">GameBattles rewards</span>
+                    <span className="promo-title">INVITE FRIENDS</span>
+                    <span className="promo-sub">Bring friends. Unlock awards.</span>
                   </span>
+                  <span className="promo-action">GET LINK &#8594;</span>
                 </Link>
               ) : (
-            <a
-              className="discord-banner"
-              href="https://discord.gg/nKZdS2BDS6"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg
-                className="discord-banner-art"
-                viewBox="0 0 360 64"
-                preserveAspectRatio="none"
-                role="img"
-                aria-labelledby="discord-banner-title"
-              >
-                <title id="discord-banner-title">Join the GameBattles Discord</title>
-                <defs>
-                  <linearGradient id="discord-banner-bg" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#142f47" />
-                    <stop offset="1" stopColor="#07111b" />
-                  </linearGradient>
-                </defs>
-                <rect width="360" height="64" fill="url(#discord-banner-bg)" />
-                <path d="M0 52H360" stroke="#244b70" strokeWidth="1" />
-                <path d="M0 4H360" stroke="#2f6f9f" strokeOpacity=".35" />
-                <g transform="translate(11 8) scale(.72)" fill="#8ea0ff">
-                  <path d="M50.6 14.7a48 48 0 0 0-11.8-3.6l-1.5 3.1a44 44 0 0 0-10.6 0l-1.5-3.1a48 48 0 0 0-11.8 3.6C6 25.8 4 36.6 5 47.2a48 48 0 0 0 14.5 7.3l3.1-5.1a31 31 0 0 1-4.9-2.4l1.2-.9c9.4 4.4 19.7 4.4 29 0l1.2.9a31 31 0 0 1-4.9 2.4l3.1 5.1A48 48 0 0 0 57 47.2c1.2-12.3-2-23-6.4-32.5ZM23.8 39.4c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Zm16.4 0c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Z" />
-                </g>
-                <text x="82" y="29" fill="#f2c14e" fontFamily="Arial, sans-serif" fontSize="13" fontWeight="700" letterSpacing=".6">
-                  JOIN THE GAMEBATTLES DISCORD
-                </text>
-                <text x="82" y="43" fill="#d7eaff" fontFamily="Arial, sans-serif" fontSize="9" letterSpacing=".5">
-                  FIND PLAYERS • SET UP YOUR NEXT MATCH
-                </text>
-              </svg>
-            </a>
+                <a className="promo-banner promo-discord" href="https://discord.gg/nKZdS2BDS6" target="_blank" rel="noopener noreferrer">
+                  <span className="promo-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <path d="M50.6 14.7a48 48 0 0 0-11.8-3.6l-1.5 3.1a44 44 0 0 0-10.6 0l-1.5-3.1a48 48 0 0 0-11.8 3.6C6 25.8 4 36.6 5 47.2a48 48 0 0 0 14.5 7.3l3.1-5.1a31 31 0 0 1-4.9-2.4l1.2-.9c9.4 4.4 19.7 4.4 29 0l1.2.9a31 31 0 0 1-4.9 2.4l3.1 5.1A48 48 0 0 0 57 47.2c1.2-12.3-2-23-6.4-32.5ZM23.8 39.4c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Zm16.4 0c-2.8 0-5.1-2.5-5.1-5.5s2.3-5.5 5.1-5.5 5.1 2.5 5.1 5.5-2.3 5.5-5.1 5.5Z" />
+                    </svg>
+                  </span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">GameBattles community</span>
+                    <span className="promo-title">JOIN OUR DISCORD</span>
+                    <span className="promo-sub">Find players. Get in the game.</span>
+                  </span>
+                  <span className="promo-action">JOIN &#8594;</span>
+                </a>
               )}
             </div>
           </header>
