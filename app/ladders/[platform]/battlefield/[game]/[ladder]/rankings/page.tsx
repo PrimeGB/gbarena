@@ -204,8 +204,9 @@ export default function BattlefieldRankingsPage() {
           Back to {gameName} ladders
         </Link>
         <header>
-          <p><span className="system-label">System: {platformName}</span> Battlefield Ladder Rankings</p>
+          <p>Battlefield Ladder Rankings</p>
           <h1>{gameName} {ladderName}</h1>
+          <span className="system-label">System: {platformName}</span>
           <Link
             className="create-link"
             href={`/team-hub?platform=${platform}&category=battlefield&game=${game}&ladder=${ladder}`}
@@ -311,16 +312,17 @@ export default function BattlefieldRankingsPage() {
           text-transform: uppercase;
         }
         .system-label {
-          display: inline-block;
-          margin-right: 5px;
-          padding: 3px 7px;
+          display: inline-flex;
+          align-items: center;
+          margin: 0 0 12px;
+          padding: 5px 10px;
           border: 1px solid rgba(125,182,216,.35);
-          border-radius: 999px;
-          color: #d3e8f5;
-          font-size: 10px;
-          letter-spacing: normal;
+          border-radius: 5px;
+          background: rgba(15,42,64,.55);
+          color: #c4d9e8;
+          font-size: 11px;
+          letter-spacing: .01em;
           text-transform: none;
-          vertical-align: 1px;
         }
         h1 {
           margin: 0 0 14px;

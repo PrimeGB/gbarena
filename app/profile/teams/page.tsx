@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { ladderPlatformLabel } from "../../../lib/ladderCatalog";
 
 type TeamRow = {
   id: string;
@@ -187,11 +188,15 @@ export default function ProfileTeamsPage() {
           </div>
           <div>
             <div className="team-name">{team.name || "Unnamed Team"}</div>
-            <span className="team-tag">{team.tag || "TAG"}</span>
+            <div className="team-identifiers">
+              <span className="team-tag">{team.tag || "TAG"}</span>
+              <span className="system-chip">
+                System: {ladderPlatformLabel(team.platform || "") || prettyText(team.platform)}
+              </span>
+            </div>
           </div>
         </div>
         <div className="team-chips">
-          <span className="chip">System: {prettyText(team.platform)}</span>
           <span className="chip">{prettyText(team.game)}</span>
           <span className="chip">{prettyText(team.ladder)}</span>
         </div>
@@ -243,6 +248,8 @@ export default function ProfileTeamsPage() {
         .team-logo img{width:100%;height:100%;object-fit:cover;}
         .team-name{color:#fff;font-size:17px;font-weight:bold;text-transform:uppercase;line-height:1.2;overflow-wrap:anywhere;}
         .team-tag{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:999px;background:rgba(242,193,78,.12);border:1px solid #f2c14e;color:#f2c14e;font-size:11px;font-weight:bold;}
+        .team-identifiers{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+        .system-chip{display:inline-block;margin-top:4px;padding:3px 8px;border-radius:999px;background:#0a1d2b;border:1px solid #35546b;color:#a9bfd0;font-size:10px;font-weight:600;}
         .team-chips{display:flex;flex-wrap:wrap;gap:6px;}
         .chip{padding:4px 10px;border-radius:999px;background:#0f2a40;border:1px solid #244b70;color:#d7eaff;font-size:11px;}
         .team-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}

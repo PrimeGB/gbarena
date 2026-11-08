@@ -6,6 +6,7 @@ import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
 import SiteNav from "../../../components/SiteNav";
 import TeamTabs from "../../../components/TeamTabs";
+import { ladderPlatformLabel } from "../../../../lib/ladderCatalog";
 
 type TeamRow = {
   id: string;
@@ -125,14 +126,20 @@ export default function TeamLogPage() {
         <div className="log-pad">
           <TeamTabs
             teamId={teamId}
-            platform={team?.platform || null}
             ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`}
             active="log"
             canEditProfile={isLeader}
             canEditRoster={isLeader}
           />
 
-          <div className="log-bar">Team Log</div>
+          <div className="log-bar">
+            <span>Team Log</span>
+            {team?.platform && (
+              <span className="system-badge">
+                System: {ladderPlatformLabel(team.platform) || team.platform}
+              </span>
+            )}
+          </div>
 
           {loading || userLoading ? (
             <p className="log-note">Loading…</p>
@@ -167,7 +174,8 @@ export default function TeamLogPage() {
         .log-page{min-height:100vh;background:#02060a;padding:24px 12px;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
         .log-wrap{max-width:1000px;margin:0 auto;background:#07111b;border:1px solid #315f88;}
         .log-pad{padding:0 18px 22px;}
-        .log-bar{background:#000;color:#fff;font-weight:800;font-size:14px;padding:10px 12px;}
+        .log-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#000;color:#fff;font-weight:800;font-size:14px;padding:8px 12px;}
+        .system-badge{padding:4px 9px;border:1px solid #26394b;border-radius:4px;color:#9eb4c7;font-size:11px;font-weight:600;}
         .log-note{padding:20px;color:#8ea4b6;font-size:13px;}
         .log-table{width:100%;border-collapse:collapse;font-size:12px;}
         .log-table th{background:#0a1724;color:#fff;text-align:left;padding:8px 10px;border-bottom:1px solid #244b70;}

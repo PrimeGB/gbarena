@@ -6,6 +6,7 @@ import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
 import SiteNav from "../../../components/SiteNav";
 import TeamTabs from "../../../components/TeamTabs";
+import { ladderPlatformLabel } from "../../../../lib/ladderCatalog";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -857,7 +858,10 @@ export default function EditRosterPage() {
           </div>
 
           <div className="details">
-            {prettyText(team.platform)} &nbsp;|&nbsp;{" "}
+            <span className="system-badge">
+              System: {ladderPlatformLabel(team.platform || "") || prettyText(team.platform)}
+            </span>
+            &nbsp;|&nbsp;{" "}
             {prettyText(team.category)} &nbsp;|&nbsp;{" "}
             {prettyText(team.game)} &nbsp;|&nbsp;{" "}
             {prettyText(team.ladder)}
@@ -872,7 +876,6 @@ export default function EditRosterPage() {
         <div className="tabs-pad">
           <TeamTabs
             teamId={teamId}
-            platform={team.platform}
             ladderHref={`/ladders/${team.platform || "xbox"}/${team.category || "call-of-duty"}/${team.game || "modern-warfare-4"}/${team.ladder || "team"}/rankings`}
             active="edit-roster"
             canEditProfile={isLeader}
@@ -1268,6 +1271,17 @@ export default function EditRosterPage() {
           font-size: 9px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+        }
+
+        .system-badge {
+          display: inline-block;
+          padding: 3px 7px;
+          border: 1px solid #304c61;
+          border-radius: 4px;
+          color: #a9bfd0;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0;
         }
 
         .sub-nav {

@@ -380,14 +380,16 @@ export default function LadderRankingsPage() {
         .season strong{color:#ffffff;}
 
         .system-label{
-          display:inline-block;
-          margin-right:8px;
-          padding:2px 6px;
+          display:block;
+          width:max-content;
+          margin-bottom:5px;
+          padding:4px 9px;
           border:1px solid rgba(125,182,216,.35);
-          border-radius:999px;
-          color:#d3e8f5;
+          border-radius:4px;
+          background:rgba(15,42,64,.55);
+          color:#c4d9e8;
           font-size:10px;
-          line-height:14px;
+          line-height:15px;
         }
 
         .hero-right{display:flex;align-items:center;gap:12px;}
@@ -617,7 +619,7 @@ export default function LadderRankingsPage() {
                 <div>
                   <div className="hero-title">{ladderTitle}</div>
                   <div className="season">
-                    <span className="system-label">System: Xbox</span>
+                    <span className="system-label">Xbox System</span>
                     Season: <strong>{seasonLabel}</strong>
                   </div>
                 </div>

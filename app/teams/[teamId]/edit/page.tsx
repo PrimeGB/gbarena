@@ -7,6 +7,7 @@ import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
 import SiteNav from "../../../components/SiteNav";
 import TeamTabs from "../../../components/TeamTabs";
+import { ladderPlatformLabel } from "../../../../lib/ladderCatalog";
 
 type TeamProfile = {
   id: string;
@@ -163,7 +164,6 @@ export default function EditTeamProfilePage() {
         <div className="tabs-shell">
           <TeamTabs
             teamId={teamId}
-            platform={team?.platform || null}
             ladderHref={`/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`}
             active="edit-profile"
             canEditProfile
@@ -181,7 +181,16 @@ export default function EditTeamProfilePage() {
               <h1>Edit team profile</h1>
               <p className="header-description">Give your team its own identity, on and off the ladder.</p>
             </div>
-            {team && <span className="team-badge">{team.name || "Your team"}</span>}
+            {team && (
+              <div className="team-badges">
+                <span className="team-badge">{team.name || "Your team"}</span>
+                {team.platform && (
+                  <span className="system-badge">
+                    System: {ladderPlatformLabel(team.platform) || team.platform}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
@@ -336,7 +345,9 @@ export default function EditTeamProfilePage() {
           letter-spacing: -.03em;
         }
         .header-description { margin: 5px 0 0; color: #a9bfd0; font-size: 13px; line-height: 1.5; }
-        .team-badge { max-width: 40%; padding: 8px 12px; border: 1px solid #35546b; border-radius: 6px; color: #c9dbe8; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+        .team-badges { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 55%; }
+        .team-badge { padding: 8px 12px; border: 1px solid #35546b; border-radius: 6px; color: #c9dbe8; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+        .system-badge { padding: 6px 9px; border: 1px solid #304c61; border-radius: 6px; color: #a9bfd0; font-size: 11px; font-weight: 600; white-space: nowrap; }
         form {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -444,7 +455,7 @@ export default function EditTeamProfilePage() {
           .panel { border-radius: 8px; }
           header { padding: 22px 18px; }
           .header-content { align-items: flex-start; flex-direction: column; gap: 12px; margin-top: 24px; }
-          .team-badge { max-width: 100%; }
+          .team-badges { max-width: 100%; justify-content: flex-start; }
           form { grid-template-columns: minmax(0, 1fr); padding: 0 18px; }
           .form-section { padding: 20px 0; border-bottom: 1px solid #203648; }
           .details-grid, .uploads { grid-template-columns: minmax(0, 1fr); }

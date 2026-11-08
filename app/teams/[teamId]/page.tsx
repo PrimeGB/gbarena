@@ -9,6 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
+import { ladderPlatformLabel } from "../../../lib/ladderCatalog";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -280,6 +281,9 @@ export default function TeamPage() {
   const platformName = prettyText(team?.platform || "xbox");
   const gameName = prettyText(team?.game || "modern-warfare-4");
   const ladderName = prettyText(team?.ladder || "team") + " Ladder";
+  const systemName = team?.platform
+    ? ladderPlatformLabel(team.platform) || prettyText(team.platform)
+    : null;
   const teamPublicId = stableTeamNumber(team?.id || teamId);
 
   const ladderUrl = `/ladders/${team?.platform || "xbox"}/${team?.category || "call-of-duty"}/${team?.game || "modern-warfare-4"}/${team?.ladder || "team"}/rankings`;
@@ -612,6 +616,12 @@ export default function TeamPage() {
           color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;
         }
 
+        .system-badge{
+          display:inline-flex;align-items:center;margin-top:8px;padding:4px 9px;
+          border:1px solid #315f88;border-radius:4px;background:#0a1a28;
+          color:#a9c5d9;font-size:11px;font-weight:700;letter-spacing:.2px;
+        }
+
         .avatar-row{height:90px;background:#050b12;border-bottom:1px solid #244b70;position:relative;}
 
         .team-avatar{
@@ -897,6 +907,7 @@ export default function TeamPage() {
           .game-cover{width:76px;height:58px;flex-shrink:0;}
           .game-name{font-size:11px;margin-bottom:5px;}
           .ladder-name{font-size:20px;overflow-wrap:anywhere;}
+          .system-badge{margin-top:6px;padding:4px 8px;font-size:10px;}
           .avatar-row{height:74px;}
           .team-avatar{left:14px;top:7px;width:60px;height:60px;}
           .tabs-pad{padding:0 12px;}
@@ -929,6 +940,7 @@ export default function TeamPage() {
               <div>
                 <div className="game-name">{gameName}</div>
                 <div className="ladder-name">{ladderName}</div>
+                {systemName && <span className="system-badge">System: {systemName}</span>}
               </div>
             </div>
           </header>
@@ -952,7 +964,6 @@ export default function TeamPage() {
           <div className="tabs-pad">
             <TeamTabs
               teamId={teamId}
-              platform={team?.platform || null}
               ladderHref={ladderUrl}
               active="team"
               canEditProfile={canEditTeamProfile}
