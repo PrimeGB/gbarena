@@ -195,7 +195,7 @@ export default function EditTeamProfilePage() {
                 <label className="field">
                   <span>Team name</span>
                   <input value={team.name || ""} readOnly aria-readonly="true" aria-describedby="name-hint" />
-                  <small id="name-hint">Team names cannot be changed.</small>
+                  <small id="name-hint">Name changes require staff approval. <Link href={`/teams/${teamId}/name-change`}>Request a change</Link></small>
                 </label>
                 <label className="field">
                   <span>Clan tag</span>
@@ -369,6 +369,7 @@ export default function EditTeamProfilePage() {
         .field textarea::placeholder { color: #6f899c; }
         input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid #8ccfff; outline-offset: 2px; }
         .field small { color: #91aabc; font-size: 11px; font-weight: 400; }
+        .field small a { color: #8bcaf3; text-decoration: underline; }
         .uploads { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
         .upload-card { display: flex; align-items: center; gap: 14px; min-width: 0; padding: 15px; border: 1px solid #294256; border-radius: 8px; background: #0c1c2a; }
         .upload-preview { display: flex; align-items: center; justify-content: center; flex: 0 0 68px; width: 68px; height: 68px; overflow: hidden; border: 1px solid #36566e; border-radius: 8px; background: #07131e; color: #7594a9; font-size: 26px; }
