@@ -1,440 +1,163 @@
 "use client";
 
 import Link from "next/link";
-
-import { useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 
-type AppUser = {
-  id: string;
-};
+type Player = { id: string; username: string | null; avatar_url: string | null };
+type FriendRequest = { id: string; requester_id: string };
+type FriendList = { username: string | null; private: boolean; friends?: Player[] };
+type Loaded = { userId: string; list: FriendList; pending: FriendRequest[]; requesters: Player[] };
 
-type ProfileRow = {
-  id: string;
-  username: string | null;
-};
+function Avatar({ player }: { player: Player }) {
+  const name = player.username || "Unknown Player";
+  return (
+    <div className="friends-avatar">
+      {player.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={player.avatar_url} alt="" />
+      ) : name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
 
-type FriendRequest = {
-  id: string;
-  requester_id: string;
-  recipient_id: string;
-  status: string;
-  created_at: string;
-};
-
-export default function FriendsPage() {
+function FriendsContent() {
   const { user, loading } = useUser();
-  const currentUser = user as AppUser | null;
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get("userId") || "";
+  const viewedId = requestedId || user?.id || "";
+  const isOwn = !!user && user.id === viewedId;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [error, setError] = useState<{ userId: string; message: string } | null>(null);
+  const [busy, setBusy] = useState("");
 
-  const [friends, setFriends] = useState<ProfileRow[]>([]);
-  const [pending, setPending] = useState<FriendRequest[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
-  const [pageLoading, setPageLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  async function loadFriends() {
-    if (!currentUser?.id) {
-      setPageLoading(false);
+  const loadFriends = useCallback(async (isActive: () => boolean = () => true) => {
+    if (!viewedId) return;
+    const { data, error: listError } = await supabase.rpc("gb_profile_friends", { p_user: viewedId });
+    if (!isActive()) return;
+    if (listError || !data) {
+      setError({ userId: viewedId, message: listError ? `Friends could not be loaded: ${listError.message}` : "Player profile not found." });
       return;
     }
 
-    setError("");
-
-    const { data: requests, error: requestError } = await supabase
-      .from("friend_requests")
-      .select("*")
-      .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
-      .order("created_at", { ascending: false });
-
-    if (requestError) {
-      setError(requestError.message);
-      setPageLoading(false);
-      return;
+    let pending: FriendRequest[] = [];
+    let requesters: Player[] = [];
+    if (isOwn) {
+      const { data: requests, error: requestError } = await supabase
+        .from("friend_requests")
+        .select("id,requester_id")
+        .eq("recipient_id", viewedId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (!isActive()) return;
+      if (requestError) {
+        setError({ userId: viewedId, message: `Friend requests could not be loaded: ${requestError.message}` });
+        return;
+      }
+      pending = requests || [];
+      const ids = Array.from(new Set(pending.map((request) => request.requester_id)));
+      if (ids.length) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles").select("id,username,avatar_url").in("id", ids);
+        if (!isActive()) return;
+        if (profilesError) {
+          setError({ userId: viewedId, message: `Friend request profiles could not be loaded: ${profilesError.message}` });
+          return;
+        }
+        requesters = profiles || [];
+      }
     }
-
-    const allRequests = (requests || []) as FriendRequest[];
-
-    const accepted = allRequests.filter((request) => request.status === "accepted");
-    const pendingReceived = allRequests.filter(
-      (request) =>
-        request.status === "pending" && request.recipient_id === currentUser.id
-    );
-
-    const profileIds = Array.from(
-      new Set(
-        allRequests.flatMap((request) => [
-          request.requester_id,
-          request.recipient_id,
-        ])
-      )
-    ).filter((id) => id !== currentUser.id);
-
-    let profileMap: Record<string, ProfileRow> = {};
-
-    if (profileIds.length > 0) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", profileIds);
-
-      profileMap = ((profileData || []) as ProfileRow[]).reduce(
-        (map, profile) => {
-          map[profile.id] = profile;
-          return map;
-        },
-        {} as Record<string, ProfileRow>
-      );
-    }
-
-    const friendRows = accepted
-      .map((request) => {
-        const friendId =
-          request.requester_id === currentUser.id
-            ? request.recipient_id
-            : request.requester_id;
-
-        return profileMap[friendId];
-      })
-      .filter(Boolean) as ProfileRow[];
-
-    setProfiles(profileMap);
-    setFriends(Array.from(new Map(friendRows.map((row) => [row.id, row])).values()));
-    setPending(pendingReceived);
-    setPageLoading(false);
-  }
+    setError(null);
+    setLoaded({ userId: viewedId, list: data as FriendList, pending, requesters });
+  }, [viewedId, isOwn]);
 
   useEffect(() => {
-    if (!loading) loadFriends();
-  }, [loading, currentUser?.id]);
+    if (loading || !viewedId) return;
+    let active = true;
+    // The state updates in loadFriends happen after the network requests finish.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadFriends(() => active);
+    return () => { active = false; };
+  }, [loading, viewedId, loadFriends]);
 
   async function respond(requestId: string, status: "accepted" | "declined") {
-    if (!currentUser?.id) return;
-
-    await supabase
-      .from("friend_requests")
-      .update({
-        status,
-        responded_at: new Date().toISOString(),
-      })
-      .eq("id", requestId)
-      .eq("recipient_id", currentUser.id);
-
-    await loadFriends();
+    if (!user || busy) return;
+    setBusy(requestId);
+    setError(null);
+    const { data: updated, error: updateError } = await supabase.from("friend_requests")
+      .update({ status, responded_at: new Date().toISOString() })
+      .eq("id", requestId).eq("recipient_id", user.id).eq("status", "pending")
+      .select("id").maybeSingle();
+    if (updateError) setError({ userId: viewedId, message: `Friend request could not be updated: ${updateError.message}` });
+    else if (!updated) setError({ userId: viewedId, message: "This friend request is no longer pending. Refresh the page to see the latest requests." });
+    else await loadFriends();
+    setBusy("");
   }
 
-  if (loading || pageLoading) {
-    return <div className="loading">Loading friends...</div>;
-  }
-
-  if (!currentUser) {
-    return <div className="loading">You must be logged in.</div>;
-  }
+  const current = loaded?.userId === viewedId ? loaded : null;
+  const currentError = error?.userId === viewedId ? error.message : "";
+  const friends = current?.list.friends || [];
+  const backHref = requestedId ? `/profile?userId=${encodeURIComponent(requestedId)}` : "/profile";
 
   return (
-    <>
+    <main className="friends-page">
       <style>{`
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
-        a{text-decoration:none;}
-        button{font-family:Tahoma,Verdana,Arial,sans-serif;}
-
-        .loading{
-          min-height:100vh;
-          background:#000;
-          color:#fff;
-          padding:30px;
-        }
-
-        .page{
-          min-height:100vh;
-          background:linear-gradient(to bottom,#02060a,#000);
-          padding:30px 20px;
-        }
-
-        .wrap{
-          width:1040px;
-          margin:0 auto;
-          background:#07111b;
-          border:1px solid #315f88;
-          box-shadow:0 0 18px rgba(0,80,140,.25), inset 0 0 18px rgba(0,0,0,.65);
-        }
-
-        .top-strip{
-          height:30px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          gap:18px;
-          padding:0 14px;
-        }
-
-        .top-strip a{
-          color:#fff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .header{
-          min-height:92px;
-          background:linear-gradient(to bottom,#173956,#07111b);
-          border-bottom:2px solid #315f88;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          padding:0 22px;
-        }
-
-        .header h1{
-          color:#f2c14e;
-          font-size:34px;
-          font-weight:900;
-          text-transform:uppercase;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .header p{
-          color:#cfe2f2;
-          font-size:13px;
-          margin-top:6px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .nav{
-          height:34px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
-          gap:4px;
-        }
-
-        .nav a{
-          height:26px;
-          padding:6px 10px 0;
-          background:#0b1d2c;
-          border:1px solid #244b70;
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .nav a.active{
-          background:#15324b;
-          color:#f2c14e;
-          border-color:#2f6f9f;
-        }
-
-        .content{
-          padding:14px;
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:14px;
-        }
-
-        .panel{
-          border:1px solid #244b70;
-          background:#050b12;
-          min-height:360px;
-        }
-
-        .panel-title{
-          height:34px;
-          background:linear-gradient(to bottom,#18344f,#091521);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#d7ad4a;
-          font-size:12px;
-          font-weight:900;
-          text-transform:uppercase;
-          letter-spacing:1px;
-        }
-
-        .list{
-          padding:10px;
-        }
-
-        .row{
-          border:1px solid rgba(255,255,255,.08);
-          background:linear-gradient(to bottom,#071827,#030910);
-          margin-bottom:8px;
-          padding:10px;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:10px;
-        }
-
-        .name{
-          color:#7fc7ff;
-          font-size:14px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .sub{
-          color:#cfe2f2;
-          font-size:11px;
-          margin-top:4px;
-          text-transform:uppercase;
-        }
-
-        .btns{
-          display:flex;
-          gap:8px;
-        }
-
-        .btn{
-          border:1px solid #4b95d8;
-          background:linear-gradient(to bottom,#1c4b72,#0a1724);
-          color:#fff;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-          padding:8px 12px;
-          cursor:pointer;
-        }
-
-        .accept{
-          border-color:#27b45f;
-          background:linear-gradient(to bottom,#248c4d,#0d351e);
-        }
-
-        .decline{
-          border-color:#d34a4a;
-          background:linear-gradient(to bottom,#9c2626,#3b0909);
-        }
-
-        .empty,.error{
-          padding:34px 12px;
-          color:#cfe2f2;
-          text-align:center;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          line-height:20px;
-        }
-
-        .error{color:#ff9c9c;}
-
-        .footer{
-          height:36px;
-          background:#07111b;
-          border-top:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#a9c3db;
-          font-size:11px;
-        }
+        .friends-page{min-height:100vh;padding:28px 16px 60px;background:radial-gradient(circle at top,#123654,#02060a 55%);color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif}
+        .friends-shell{max-width:1000px;margin:auto}.friends-back{color:#8ac6f5;text-decoration:none;font-size:13px}
+        .friends-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin:20px 0}
+        .friends-heading h1{margin:0;color:#fff;font-size:28px}.friends-heading p{margin:7px 0 0;color:#a9c3db;font-size:13px;line-height:1.5}
+        .friends-count{padding:7px 11px;background:#102b41;border:1px solid #315f88;border-radius:20px;color:#d7eaff;font-size:12px;font-weight:bold}
+        .friends-section{margin:14px 0;border:1px solid #315f88;background:#07111b}.friends-section h2{margin:0;padding:11px 15px;background:linear-gradient(to bottom,#1f4c73,#0b2438);color:#f2c14e;font-size:13px;text-transform:uppercase}
+        .friends-body{padding:16px}.friends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+        .friends-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid #244b70;border-radius:9px;background:linear-gradient(145deg,#10263a,#050b12);min-width:0}
+        .friends-avatar{display:flex;align-items:center;justify-content:center;flex:none;width:52px;height:52px;overflow:hidden;border:1px solid #4d93c7;border-radius:10px;background:#173b59;color:#f2c14e;font-size:17px;font-weight:bold}
+        .friends-avatar img{width:100%;height:100%;object-fit:cover}.friends-info{min-width:0;flex:1}.friends-name{color:#fff;font-size:15px;font-weight:bold;overflow-wrap:anywhere}
+        .friends-link{display:inline-block;margin-top:8px;color:#8ac6f5;font-size:12px;text-decoration:none}.friends-link:hover,.friends-back:hover{text-decoration:underline}
+        .friends-empty{margin:0;color:#a9c3db;font-size:13px;line-height:1.6}.friends-error{padding:12px;border:1px solid #a83e3e;color:#ffd5d5}
+        .friends-requests{display:grid;gap:10px}.friends-request-actions{display:flex;gap:6px;flex-wrap:wrap}.friends-button{padding:8px 10px;border:1px solid #4d93c7;background:#173b59;color:#fff;font-weight:bold;cursor:pointer}.friends-button:disabled{opacity:.55;cursor:not-allowed}.friends-decline{border-color:#a44c4c;background:#512020}
+        @media(max-width:500px){.friends-page{padding:20px 12px 50px}.friends-card{flex-wrap:wrap}.friends-heading h1{font-size:24px}}
       `}</style>
-
-      <main className="page">
-        <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/profile/inbox">Inbox</Link>
+      <div className="friends-shell">
+        <Link className="friends-back" href={backHref}>Back to profile</Link>
+        <div className="friends-heading">
+          <div>
+            <h1>{isOwn ? "My Friends" : current?.list.username ? `${current.list.username}'s Friends` : "Friends"}</h1>
+            <p>{isOwn ? "Your friends and incoming requests, all in one place." : "Friends connected to this player."}</p>
           </div>
-
-          <header className="header">
-            <div>
-              <h1>Friends</h1>
-              <p>View friends and respond to friend requests</p>
-            </div>
-          </header>
-
-          <nav className="nav">
-            <Link href="/profile">Profile</Link>
-            <Link className="active" href="/profile/friends">Friends</Link>
-            <Link href="/profile/teams">Teams</Link>
-            <Link href="/profile/awards">Awards</Link>
-            <Link href="/profile/inbox">Inbox</Link>
-          </nav>
-
-          {error ? (
-            <div className="error">{error}</div>
-          ) : (
-            <section className="content">
-              <div className="panel">
-                <div className="panel-title">My Friends</div>
-
-                <div className="list">
-                  {friends.length === 0 ? (
-                    <div className="empty">No friends added yet.</div>
-                  ) : (
-                    friends.map((friend) => (
-                      <div className="row" key={friend.id}>
-                        <div>
-                          <div className="name">{friend.username || "Unknown Player"}</div>
-                          <div className="sub">GameBattles Friend</div>
-                        </div>
-
-                        <Link className="btn" href={`/profile?userId=${friend.id}`}>
-                          View
-                        </Link>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="panel">
-                <div className="panel-title">Friend Requests</div>
-
-                <div className="list">
-                  {pending.length === 0 ? (
-                    <div className="empty">No pending friend requests.</div>
-                  ) : (
-                    pending.map((request) => {
-                      const requester = profiles[request.requester_id];
-
-                      return (
-                        <div className="row" key={request.id}>
-                          <div>
-                            <div className="name">
-                              {requester?.username || "Unknown Player"}
-                            </div>
-                            <div className="sub">Wants to add you</div>
-                          </div>
-
-                          <div className="btns">
-                            <button
-                              className="btn accept"
-                              type="button"
-                              onClick={() => respond(request.id, "accepted")}
-                            >
-                              Accept
-                            </button>
-
-                            <button
-                              className="btn decline"
-                              type="button"
-                              onClick={() => respond(request.id, "declined")}
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+          {current && !current.list.private && <span className="friends-count">{friends.length} {friends.length === 1 ? "friend" : "friends"}</span>}
+        </div>
+        {currentError && <p className="friends-error" role="alert">{currentError}</p>}
+        {loading || (viewedId && !current && !currentError) ? <p className="friends-empty" role="status">Loading friends...</p>
+          : !viewedId ? <p className="friends-empty">Sign in to view your friends. <Link className="friends-back" href="/login">Sign in</Link></p>
+          : current?.list.private ? <section className="friends-section"><h2>Friends</h2><div className="friends-body"><p className="friends-empty">This friends list is private.</p></div></section>
+          : current && <>
+            <section className="friends-section">
+              <h2>Friends</h2>
+              <div className="friends-body">
+                {friends.length === 0 ? <p className="friends-empty">No friends added yet.</p> :
+                  <div className="friends-grid">{friends.map((friend) => <article className="friends-card" key={friend.id}>
+                    <Avatar player={friend} /><div className="friends-info"><div className="friends-name">{friend.username || "Unknown Player"}</div><Link className="friends-link" href={`/profile?userId=${encodeURIComponent(friend.id)}`}>View profile</Link></div>
+                  </article>)}</div>}
               </div>
             </section>
-          )}
-
-          <footer className="footer">© 2026 Competitive Gaming Network</footer>
-        </div>
-      </main>
-    </>
+            {isOwn && <section className="friends-section"><h2>Friend Requests ({current.pending.length})</h2><div className="friends-body">
+              {current.pending.length === 0 ? <p className="friends-empty">No pending friend requests.</p> :
+                <div className="friends-requests">{current.pending.map((request) => {
+                  const player = current.requesters.find((item) => item.id === request.requester_id) || { id: request.requester_id, username: null, avatar_url: null };
+                  return <article className="friends-card" key={request.id}><Avatar player={player} /><div className="friends-info"><div className="friends-name">{player.username || "Unknown Player"}</div><Link className="friends-link" href={`/profile?userId=${encodeURIComponent(player.id)}`}>View profile</Link></div><div className="friends-request-actions">
+                    <button className="friends-button" disabled={!!busy} onClick={() => void respond(request.id, "accepted")}>Accept</button>
+                    <button className="friends-button friends-decline" disabled={!!busy} onClick={() => void respond(request.id, "declined")}>Decline</button>
+                  </div></article>;
+                })}</div>}
+            </div></section>}
+          </>}
+      </div>
+    </main>
   );
+}
+
+export default function FriendsPage() {
+  return <Suspense fallback={<div>Loading friends...</div>}><FriendsContent /></Suspense>;
 }

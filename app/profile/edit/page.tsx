@@ -72,6 +72,7 @@ function EditProfileContent() {
   const [friendOver, setFriendOver] = useState<number | null>(null);
   const [friendsMessage, setFriendsMessage] = useState("");
   const [savingFriends, setSavingFriends] = useState(false);
+  const [friendsReady, setFriendsReady] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [secondaryEmail, setSecondaryEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -79,6 +80,9 @@ function EditProfileContent() {
   const [settingsMessage, setSettingsMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [statsPublic, setStatsPublic] = useState(true);
+  const [friendsPublic, setFriendsPublic] = useState(true);
+  const [friendsPrivacyReady, setFriendsPrivacyReady] = useState(false);
+  const [savingFriendsPrivacy, setSavingFriendsPrivacy] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
@@ -206,38 +210,35 @@ function EditProfileContent() {
         setEmailNotifications(emailRow?.email_notifications !== false);
         setStatsPublic(emailRow?.stats_public !== false);
 
-        // load accepted friends count
-        const { data: requests } = await supabase
-          .from("friend_requests")
-          .select("*")
-          .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`);
-
-        const accepted = (requests || []).filter((r: any) => r.status === "accepted");
-        const friendIds = Array.from(new Set(accepted.map((r: any) =>
-          r.requester_id === currentUser.id ? r.recipient_id : r.requester_id,
-        ).filter(Boolean))) as string[];
-        setFriendsCount(friendIds.length);
-        if (friendIds.length > 0) {
-          const { data: friendProfiles } = await supabase
-            .from("profiles")
-            .select("id,username,avatar_url")
-            .in("id", friendIds);
-          const loadedFriends = (friendProfiles || []).map((f: any) => ({
-            id: String(f.id),
-            username: f.username || "Unknown Player",
-            avatar_url: f.avatar_url || null,
-          })) as FriendOption[];
-          setFriends(loadedFriends);
-
-          const { data: friendPrefs } = await supabase
-            .from("profiles")
-            .select("display_friends")
-            .eq("id", currentUser.id)
-            .maybeSingle();
-          const savedFriends: string[] = Array.isArray(friendPrefs?.display_friends) ? friendPrefs.display_friends : [];
-          const valid = Array.from(new Set(savedFriends.filter((id) => loadedFriends.some((f) => f.id === id)))).slice(0, 4);
-          setDisplayFriends(valid.length > 0 || savedFriends.length > 0 ? valid : loadedFriends.slice(0, 4).map((f) => f.id));
+        const { data: privacyRow, error: privacyError } = await supabase
+          .from("profiles")
+          .select("friends_public")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+        if (privacyError || !privacyRow) {
+          setSettingsMessage({ ok: false, text: `Friends privacy could not be loaded${privacyError ? `: ${privacyError.message}` : "."}` });
+        } else {
+          setFriendsPublic(privacyRow.friends_public);
+          setFriendsPrivacyReady(true);
         }
+
+        const { data: friendPrefs, error: friendPrefsError } = await supabase.rpc("gb_profile_friends", { p_user: currentUser.id });
+        if (friendPrefsError || !friendPrefs) {
+          setFriendsMessage(`Could not load top friends${friendPrefsError ? `: ${friendPrefsError.message}` : "."}`);
+          return;
+        }
+        const loadedFriends: FriendOption[] = (friendPrefs.friends || []).map((f: { id: string; username: string | null; avatar_url: string | null }) => ({
+          id: f.id,
+          username: f.username || "Unknown Player",
+          avatar_url: f.avatar_url || null,
+        }));
+        setFriendsCount(loadedFriends.length);
+        setFriends(loadedFriends);
+        const savedFriends: string[] | null = Array.isArray(friendPrefs.top_ids) ? friendPrefs.top_ids : null;
+        setDisplayFriends(savedFriends === null
+          ? loadedFriends.slice(0, 4).map((f) => f.id)
+          : Array.from(new Set(savedFriends.filter((id) => loadedFriends.some((f) => f.id === id)))).slice(0, 4));
+        setFriendsReady(true);
       } catch (err) {
         // ignore load errors for now
       }
@@ -451,12 +452,14 @@ function EditProfileContent() {
     if (!currentUser) return;
     setSavingFriends(true);
     setFriendsMessage("");
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .update({ display_friends: displayFriends })
-      .eq("id", currentUser.id);
+      .eq("id", currentUser.id)
+      .select("id")
+      .maybeSingle();
     setSavingFriends(false);
-    if (error) {
+    if (error || !data) {
       console.error("Top friends save error:", error);
       setFriendsMessage("Could not save top friends. Please try again.");
       return;
@@ -476,6 +479,20 @@ function EditProfileContent() {
       return;
     }
     setSettingsMessage({ ok: true, text: next ? "Your stats are now public." : "Your stats are now private." });
+  }
+
+  async function toggleFriendsPublic(next: boolean) {
+    if (!currentUser || savingFriendsPrivacy) return;
+    setSavingFriendsPrivacy(true);
+    setSettingsMessage(null);
+    const { data, error } = await supabase.from("profiles").update({ friends_public: next }).eq("id", currentUser.id).select("id").maybeSingle();
+    if (error || !data) {
+      setSettingsMessage({ ok: false, text: error ? `Friends privacy could not be updated: ${error.message}` : "Friends privacy could not be updated. Please refresh and try again." });
+    } else {
+      setFriendsPublic(next);
+      setSettingsMessage({ ok: true, text: next ? "Your friends list is now public." : "Your friends list is now private." });
+    }
+    setSavingFriendsPrivacy(false);
   }
 
   async function toggleEmailNotifications(next: boolean) {
@@ -1635,7 +1652,7 @@ function EditProfileContent() {
                       })}
                     </div>
                     <div className="save-row">
-                      <button className="save-button" type="button" disabled={savingFriends} onClick={saveFriends}>
+                      <button className="save-button" type="button" disabled={savingFriends || !friendsReady} onClick={saveFriends}>
                         {savingFriends ? "Saving..." : "Save Friends"}
                       </button>
                       {friendsMessage && (
@@ -1731,6 +1748,13 @@ function EditProfileContent() {
                         Let other players view my stats
                       </label>
                       <div className="field-note">When off, the View Player Stats link is hidden on your profile and your stats page is private.</div>
+                    </div>
+                    <div className="form-row">
+                      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input type="checkbox" style={{ width: "auto" }} checked={friendsPublic} disabled={!friendsPrivacyReady || savingFriendsPrivacy} onChange={(event) => void toggleFriendsPublic(event.target.checked)} />
+                        Let other players view my friends
+                      </label>
+                      <div className="field-note">When off, your friends list and Top Friends are private. You can still see your own friends and requests.</div>
                     </div>
                                           <div className="form-row">
                                             <label style={{ display: "flex", alignItems: "center", gap: 8 }}>

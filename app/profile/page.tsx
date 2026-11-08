@@ -99,11 +99,6 @@ type TeamMemberRow = {
   teams: TeamProfileRow | TeamProfileRow[] | null;
 };
 
-type FriendRequestRow = {
-  requester_id: string;
-  recipient_id: string;
-};
-
 type FriendProfileRow = {
   id: string;
   username: string | null;
@@ -122,7 +117,8 @@ function ProfilePageContent() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
   const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
-  const [topFriends, setTopFriends] = useState<TopFriend[]>([]);
+  const [friendsResult, setFriendsResult] = useState<{ userId: string; friends: TopFriend[]; private: boolean; error: string } | null>(null);
+  const currentFriends = friendsResult?.userId === viewedUserId ? friendsResult : null;
   const [earnedAwards, setEarnedAwards] = useState<AwardHistoryEntry[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -349,60 +345,26 @@ function ProfilePageContent() {
         setTopTeams(loadedTeams);
       });
 
-    supabase
-      .from("friend_requests")
-      .select("requester_id, recipient_id, status")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${viewedUserId},recipient_id.eq.${viewedUserId}`)
-      .then(async ({ data }) => {
-        const requests: FriendRequestRow[] = data || [];
-
-        const friendIds = requests
-          .map((request) =>
-            request.requester_id === viewedUserId
-              ? request.recipient_id
-              : request.requester_id
-          )
-          .filter(Boolean);
-
-        if (friendIds.length === 0) {
-          setTopFriends([]);
-          return;
-        }
-
-        const { data: friendPrefs } = await supabase
-          .from("profiles")
-          .select("display_friends")
-          .eq("id", viewedUserId)
-          .maybeSingle();
-        const chosen: string[] = Array.isArray(friendPrefs?.display_friends)
-          ? friendPrefs.display_friends.filter((id: string) => friendIds.includes(id))
-          : [];
-        const orderedIds = (
-          Array.isArray(friendPrefs?.display_friends) ? chosen : friendIds
-        ).slice(0, 4);
-
-        if (orderedIds.length === 0) {
-          setTopFriends([]);
-          return;
-        }
-
-        const { data: friendProfiles } = await supabase
-          .from("profiles")
-          .select("id, username, avatar_url")
-          .in("id", orderedIds);
-
-        const loadedFriends = orderedIds
-          .map((id) => friendProfiles?.find((friend: FriendProfileRow) => friend.id === id))
-          .filter((friend): friend is FriendProfileRow => !!friend)
-          .map((friend) => ({
-            id: friend.id,
-            username: friend.username || "Unknown Player",
-            avatar_url: friend.avatar_url || null,
-          }));
-
-        setTopFriends(loadedFriends);
-      });
+    let active = true;
+    supabase.rpc("gb_profile_friends", { p_user: viewedUserId }).then(({ data, error: friendsLoadError }) => {
+      if (!active) return;
+      if (friendsLoadError || !data) {
+        setFriendsResult({ userId: viewedUserId, friends: [], private: false, error: friendsLoadError ? `Friends could not be loaded: ${friendsLoadError.message}` : "Friends could not be loaded." });
+        return;
+      }
+      const result = data as { private: boolean; friends?: FriendProfileRow[]; top_ids?: string[] | null };
+      const allFriends = result.friends || [];
+      const orderedFriends = Array.isArray(result.top_ids)
+        ? result.top_ids.map((id) => allFriends.find((friend) => friend.id === id)).filter((friend): friend is FriendProfileRow => !!friend)
+        : allFriends;
+      const friends = orderedFriends.slice(0, 4).map((friend) => ({
+        id: friend.id,
+        username: friend.username || "Unknown Player",
+        avatar_url: friend.avatar_url || null,
+      }));
+      setFriendsResult({ userId: viewedUserId, friends, private: result.private, error: "" });
+    });
+    return () => { active = false; };
   }, [viewedUserId, isViewingOwnProfile, currentUser?.email, usernameInput]);
 
   async function handleSave() {
@@ -1900,7 +1862,7 @@ function ProfilePageContent() {
           <div className="tabs">
             <Link className="tab active" href="/profile">Profile</Link>
             <Link className="tab" href="/profile/teams">Teams</Link>
-            <Link className="tab" href="/profile/friends">Friends</Link>
+            <Link className="tab" href={isViewingOwnProfile ? "/profile/friends" : `/profile/friends?userId=${encodeURIComponent(viewedUserId)}`}>Friends</Link>
             <Link className="tab" href="/profile/awards">Awards</Link>
             <a className="tab" href="/players">Find Players</a>
             <Link className="tab" href={isViewingOwnProfile ? "/profile/gaming-accounts" : `/profile/gaming-accounts?userId=${encodeURIComponent(viewedUserId)}`}>
@@ -2113,7 +2075,7 @@ function ProfilePageContent() {
                 <div className="pf-section">
                   <div className="pf-section-title"><span>Top Friends</span></div>
                   <div className="pf-friend-row">
-                    {topFriends.map((friend) => (
+                    {currentFriends?.friends.map((friend) => (
                       <a className="pf-friend" href={`/profile?userId=${friend.id}`} key={friend.id}>
                         <div className="pf-friend-avatar">
                           {friend.avatar_url ? (
@@ -2126,7 +2088,7 @@ function ProfilePageContent() {
                         <span>{friend.username}</span>
                       </a>
                     ))}
-                    {topFriends.length === 0 && <div className="pf-empty">No friends to show yet.</div>}
+                    {!currentFriends ? <div className="pf-empty">Loading friends...</div> : currentFriends.error ? <div className="pf-empty" role="alert">{currentFriends.error}</div> : currentFriends.private ? <div className="pf-empty">This friends list is private.</div> : currentFriends.friends.length === 0 && <div className="pf-empty">No friends to show yet.</div>}
                   </div>
                   <a className="pf-showall" href={`/profile/friends${isViewingOwnProfile ? "" : `?userId=${viewedUserId}`}`}>show all</a>
                 </div>
