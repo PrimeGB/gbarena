@@ -130,22 +130,31 @@ function PlayerAwardsContent() {
         .pa-link{flex:1;min-width:220px;padding:10px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit}
         .pa-copy{padding:10px 14px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#7b560e);color:#07111b;font-weight:900;cursor:pointer}
         .pa-progress{color:#8fe8bf!important}
+        .pa-rules{margin:10px 0;padding-left:18px;color:#c3d6e8;font-size:12px;line-height:1.7}
+        .pa-rules strong{color:#f2c14e}
+        .pa-invite a{color:#8ac6f5}
+        .pa-link{min-width:0;width:100%}
       `}</style>
       <div className="pa-shell">
         <Link className="pa-back" href={backHref}>← Back to profile</Link>
         <h1 className="pa-title">{ready ? `${username}'s Awards` : "Player Awards"}</h1>
         <p className="pa-sub">Awards earned on GameBattles.</p>
         <Link className="pa-catalog" href="/awards">Browse the award catalog →</Link>
-        {user && viewedUserId === user.id && (
-          <section className="pa-invite">
+        {(!requestedUserId || (user && viewedUserId === user.id)) && (
+          <section className="pa-invite" id="invite-rewards">
             <h2>Invite players. Earn community awards.</h2>
             <p>
-              Share your unique link. Invites count after a new player verifies
-              their email and links a gaming account not already claimed by another
-              account. Tiers unlock at 1, 3, 5,
-              and 10 qualified referrals.
+              Share your personal invite link with friends. When they join using it,
+              their eligible signup counts toward your community recruitment awards.
             </p>
-            {referralProgress ? (
+            <ul className="pa-rules">
+              <li>Friends must use your link when creating a new account. You cannot refer yourself.</li>
+              <li>Each friend must verify their email and link a gaming account not already claimed by another account before their invite qualifies.</li>
+              <li><strong>1 qualified invite:</strong> Recruitment Recruit; <strong>3:</strong> Community Recruiter; <strong>5:</strong> Recruitment Captain; <strong>10:</strong> Recruitment Legend.</li>
+            </ul>
+            {loading ? <p>Loading your referral link...</p> : !user ? (
+              <p><Link href="/login">Sign in</Link> to see and share your personal invite link.</p>
+            ) : referralProgress ? (
               <>
                 <p className="pa-progress">
                   {referralProgress.qualified_referrals} qualified · {referralProgress.pending_referrals} awaiting email verification or a linked gaming account

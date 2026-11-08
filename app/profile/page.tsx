@@ -128,11 +128,20 @@ function ProfilePageContent() {
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
+  const [showInviteBanner, setShowInviteBanner] = useState(false);
+  const [bannerHovered, setBannerHovered] = useState(false);
+  const [bannerFocused, setBannerFocused] = useState(false);
   const [followCounts, setFollowCounts] = useState<{
     following_count: number;
     followers_count: number;
   } | null>(null);
   const [followCountsError, setFollowCountsError] = useState("");
+
+  useEffect(() => {
+    if (bannerHovered || bannerFocused) return;
+    const timer = window.setInterval(() => setShowInviteBanner((current) => !current), 30000);
+    return () => window.clearInterval(timer);
+  }, [bannerHovered, bannerFocused]);
 
   const loadFollowCounts = useCallback(async (
     targetId: string,
@@ -721,8 +730,31 @@ function ProfilePageContent() {
 
         .discord-banner{
           display:block;
+          width:100%;
+          height:100%;
           text-decoration:none;
         }
+
+        .invite-banner{
+          display:flex;
+          align-items:center;
+          gap:10px;
+          width:100%;
+          padding:5px 12px;
+          background:linear-gradient(115deg,#173b56,#07111b 85%);
+          color:#d7eaff;
+          text-decoration:none;
+        }
+        .header-ad .invite-banner img{
+          width:49px;
+          height:49px;
+          flex:none;
+          object-fit:contain;
+          filter:none;
+        }
+        .invite-banner-copy{min-width:0;line-height:1.35}
+        .invite-banner-title{display:block;color:#f2c14e;font-size:13px;font-weight:800;letter-spacing:.35px}
+        .invite-banner-sub{display:block;font-size:10px;color:#d7eaff;margin-top:3px}
 
         .discord-banner-art{
           width:100%;
@@ -1717,6 +1749,11 @@ function ProfilePageContent() {
           .pf-award-row{ grid-template-columns:repeat(3,1fr); }
           .tabs{ flex-wrap:wrap; }
         }
+        @media (max-width:600px){
+          .header{height:auto;flex-direction:column;align-items:flex-start;gap:8px;padding:8px 14px}
+          .logo-box{width:100%;height:auto;min-height:50px}
+          .header-ad{width:min(360px,100%);flex:none;align-self:center}
+        }
       `}</style>
 
       <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}`}>
@@ -1736,8 +1773,18 @@ function ProfilePageContent() {
               </div>
             </div>
 
+            <div className="header-ad" onMouseEnter={() => setBannerHovered(true)} onMouseLeave={() => setBannerHovered(false)} onFocus={() => setBannerFocused(true)} onBlur={() => setBannerFocused(false)}>
+              {showInviteBanner ? (
+                <Link className="invite-banner" href="/profile/awards#invite-rewards">
+                  <Image src="/logo-emblem.png" alt="" width={49} height={49} />
+                  <span className="invite-banner-copy">
+                    <span className="invite-banner-title">INVITE FRIENDS. EARN REWARDS.</span>
+                    <span className="invite-banner-sub">Share your link and unlock community awards</span>
+                  </span>
+                </Link>
+              ) : (
             <a
-              className="header-ad discord-banner"
+              className="discord-banner"
               href="https://discord.gg/nKZdS2BDS6"
               target="_blank"
               rel="noopener noreferrer"
@@ -1770,6 +1817,8 @@ function ProfilePageContent() {
                 </text>
               </svg>
             </a>
+              )}
+            </div>
           </header>
 
           <SiteNav showLadders={false} />
