@@ -13,6 +13,7 @@ import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
 import { EliteEmblem, ELITE_LIMIT, getEliteBand } from "./EliteEmblem";
 import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
 import { supabase } from "../../lib/supabase";
+import { ladderPlatformLabel } from "../../lib/ladderCatalog";
 import {
   GamingAccount,
 } from "../../lib/gamingAccounts";
@@ -74,6 +75,7 @@ type TopTeam = {
   name: string;
   record: string;
   role: string;
+  platform: string | null;
   logo_url?: string | null;
 };
 
@@ -89,6 +91,7 @@ type TeamProfileRow = {
   logo_url: string | null;
   wins: number | null;
   losses: number | null;
+  platform: string | null;
 };
 
 type TeamMemberRow = {
@@ -321,7 +324,7 @@ function ProfilePageContent() {
 
     supabase
       .from("team_members")
-      .select("team_id, role, teams(id, name, logo_url, wins, losses, created_at)")
+      .select("team_id, role, teams(id, name, logo_url, wins, losses, platform, created_at)")
       .eq("user_id", viewedUserId)
       .limit(4)
       .then(({ data }) => {
@@ -337,6 +340,7 @@ function ProfilePageContent() {
                 name: team.name || "Unnamed Team",
                 record: `${team.wins || 0} - ${team.losses || 0}`,
                 role: prettyRole(row.role),
+                platform: team.platform,
                 logo_url: team.logo_url || null,
               };
             })
@@ -1685,6 +1689,7 @@ function ProfilePageContent() {
         }
         .pf-team-logo img{ width:100%; height:100%; object-fit:cover; object-position:center; }
         .pf-team-name{ font-weight:bold; font-size:13px; overflow-wrap:anywhere; }
+        .pf-team-platform{ display:block; margin-top:3px; color:#8fa9c2; font-size:10px; font-weight:normal; }
         .pf-team-meta{ text-align:right; font-size:12px; color:#b9cde0; }
         .pf-team-meta strong{ display:block; color:#fff; }
         .pf-record-head,.pf-record-row{
@@ -2144,7 +2149,12 @@ function ProfilePageContent() {
                             />
                           ) : getTeamInitials(team.name)}
                         </div>
-                        <div className="pf-team-name">{team.name}</div>
+                        <div className="pf-team-name">
+                          {team.name}
+                          {team.platform && (
+                            <span className="pf-team-platform">{ladderPlatformLabel(team.platform) || team.platform}</span>
+                          )}
+                        </div>
                         <div className="pf-team-meta">
                           <strong>{team.role}</strong>
                           <span>{team.record}</span>
