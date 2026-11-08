@@ -824,36 +824,6 @@ function ProfilePageContent() {
           text-decoration:underline;
         }
 
-        .tabs{
-          height:30px;
-          background:#050c14;
-          border-left:1px solid #244b70;
-          border-right:1px solid #244b70;
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:flex-end;
-          padding-left:8px;
-        }
-
-        .tab{
-          height:25px;
-          padding:6px 10px 0;
-          background:#0b1d2c;
-          border:1px solid #244b70;
-          border-bottom:none;
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          margin-right:4px;
-          display:block;
-        }
-
-        .tab.active{
-          background:#15324b;
-          color:#f2c14e;
-          border-color:#2f6f9f;
-        }
-
         .inbox-tab{
           position:relative;
           padding-right:22px;
@@ -1576,30 +1546,6 @@ function ProfilePageContent() {
         .pf-count-icon.silver{ background:linear-gradient(#f4f7fa,#9aa7b4); }
         .pf-count-icon.bronze{ background:linear-gradient(#e8b27c,#9a5a24); }
 
-        .tabs{
-          height:auto;
-          background:#07111b;
-          border:1px solid #244b70;
-          border-top:none;
-          padding:0;
-          display:flex;
-          align-items:stretch;
-        }
-        .tab{
-          flex:1;
-          height:auto;
-          padding:12px 8px;
-          background:transparent;
-          border:none;
-          border-bottom:2px solid transparent;
-          margin:0;
-          text-align:center;
-          color:#b9cde0;
-          font-weight:normal;
-          font-size:13px;
-        }
-        .tab:hover{ color:#fff; }
-        .tab.active{ background:transparent; color:#4aa3ff; border-bottom-color:#4aa3ff; }
         .inbox-tab{ padding-right:8px; }
         .mail-dot{ right:calc(50% - 30px); }
 
@@ -1689,7 +1635,6 @@ function ProfilePageContent() {
         .pf-banner-top{ padding:12px 14px; gap:14px; }
         .pf-avatar{ width:120px; height:120px; font-size:38px; }
         .pf-name{ font-size:30px; }
-        .tab{ padding:9px 6px; }
         .profile-grid{ margin-top:10px; gap:10px; padding:0 8px; }
         .main-column{ gap:10px; }
         .pf-section{ background:#09182a; border:1px solid #1d3d5c; padding:10px 12px; }
@@ -1733,7 +1678,6 @@ function ProfilePageContent() {
           .profile-grid{ grid-template-columns:1fr; }
           .pf-two-col{ grid-template-columns:1fr; }
           .pf-award-row{ grid-template-columns:repeat(3,1fr); }
-          .tabs{ flex-wrap:wrap; }
         }
         @media (max-width:600px){
           .header{height:auto;flex-direction:column;align-items:flex-start;gap:8px;padding:8px 14px}
@@ -1788,7 +1732,10 @@ function ProfilePageContent() {
             </div>
           </header>
 
-          <SiteNav showLadders={false} />
+          <SiteNav
+            showLadders={false}
+            profileFriendsHref={isViewingOwnProfile ? "/profile/friends" : `/profile/friends?userId=${encodeURIComponent(viewedUserId)}`}
+          />
 
           {profile ? (
             <div className="pf-banner">
@@ -1874,14 +1821,6 @@ function ProfilePageContent() {
               </div>
             </div>
           )}
-
-          <div className="tabs">
-            <Link className="tab active" href="/profile">Profile</Link>
-            <Link className="tab" href="/profile/teams">Teams</Link>
-            <Link className="tab" href={isViewingOwnProfile ? "/profile/friends" : `/profile/friends?userId=${encodeURIComponent(viewedUserId)}`}>Friends</Link>
-            <Link className="tab" href="/profile/awards">Awards</Link>
-            <a className="tab" href="/players">Find Players</a>
-          </div>
 
           {!profile ? (
             isViewingOwnProfile ? (
