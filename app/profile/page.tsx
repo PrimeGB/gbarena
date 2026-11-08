@@ -1881,9 +1881,6 @@ function ProfilePageContent() {
             <Link className="tab" href={isViewingOwnProfile ? "/profile/friends" : `/profile/friends?userId=${encodeURIComponent(viewedUserId)}`}>Friends</Link>
             <Link className="tab" href="/profile/awards">Awards</Link>
             <a className="tab" href="/players">Find Players</a>
-            <Link className="tab" href={isViewingOwnProfile ? "/profile/gaming-accounts" : `/profile/gaming-accounts?userId=${encodeURIComponent(viewedUserId)}`}>
-              Gaming Accounts
-            </Link>
           </div>
 
           {!profile ? (
@@ -2036,6 +2033,10 @@ function ProfilePageContent() {
   <a className="quick-link" href={`/profile/friends?userId=${viewedUserId}`}>
     View Player Friends
   </a>
+
+  <Link className="quick-link" href={`/profile/gaming-accounts?userId=${encodeURIComponent(viewedUserId)}`}>
+    View Player Gaming Accounts
+  </Link>
 
   <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>
     View Player Teams
