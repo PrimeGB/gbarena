@@ -16,7 +16,6 @@ export default function SiteNav({
     { label: "Create a Team", href: "/teams/create" },
     { label: "Forums", href: "/forums" },
     { label: "Recruit", href: "/recruit" },
-    { label: "Leaderboards", href: "/teams/top" },
     { label: "Support", href: "/support" },
   ];
 
