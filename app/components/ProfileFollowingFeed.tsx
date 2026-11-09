@@ -11,6 +11,10 @@ type ActivityItem = {
   text: string;
   href?: string;
   at: string;
+  follow_type: "player" | "team";
+  follow_id: string;
+  follow_name: string;
+  follow_href: string;
 };
 
 function activityLabel(kind: string) {
@@ -50,12 +54,13 @@ export default function ProfileFollowingFeed() {
       }
 
       const { data, error: feedError } = await supabase.rpc(
-        "gb_recent_activity",
-        { p_limit: 8, p_following_only: true }
+        "gb_profile_following_activity",
+        { p_limit: 8 }
       );
 
       if (!active) return;
       if (feedError) {
+        setItems([]);
         setError(feedError.message);
       } else {
         setItems((data || []) as ActivityItem[]);
@@ -97,7 +102,8 @@ export default function ProfileFollowingFeed() {
         {items.length > 0 && (
           <div className="pf-follow-feed-list" aria-label="Recent activity from people and teams you follow">
             {items.map((item) => (
-              <article className="pf-follow-feed-item" key={item.id}>
+              <article className="pf-follow-feed-item" key={`${item.id}:${item.follow_type}:${item.follow_id}`}>
+                <Link className="pf-follow-feed-name" href={item.follow_href}>{item.follow_name}</Link>
                 {item.href ? (
                   <Link className="pf-follow-feed-text" href={item.href}>{item.text}</Link>
                 ) : (
@@ -116,19 +122,20 @@ export default function ProfileFollowingFeed() {
         .pf-follow-feed{flex:none;overflow:hidden;border:1px solid #263b4d;background:#0a1119}
         .pf-follow-feed-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;color:#dca541;font-size:12px;letter-spacing:.04em}
         .pf-follow-feed-body{padding:0}
-        .pf-follow-feed-list{max-height:228px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
-        .pf-follow-feed-item{padding:9px 10px;border-top:1px solid #1c2b37;background:#0a1119}
+        .pf-follow-feed-list{max-height:144px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
+        .pf-follow-feed-item{padding:7px 10px;border-top:1px solid #1c2b37;background:#0a1119}
         .pf-follow-feed-item:nth-child(even){background:#0d1620}
-        .pf-follow-feed-meta{display:flex;justify-content:space-between;gap:8px;margin-top:5px;color:#8193a1;font-size:10px;line-height:1.3}
+        .pf-follow-feed-name{display:block;color:#7fc0ff;font-size:11px;font-weight:bold;line-height:1.3;text-decoration:none;overflow-wrap:anywhere}
+        .pf-follow-feed-name:hover{color:#fff;text-decoration:underline}
+        .pf-follow-feed-meta{display:flex;justify-content:space-between;gap:8px;margin-top:3px;color:#8193a1;font-size:10px;line-height:1.3}
         .pf-follow-feed-meta time{flex:none}
-        .pf-follow-feed-text{display:block;margin:0;color:#d7eaff;font-size:11px;font-weight:bold;line-height:1.4;text-decoration:none;overflow-wrap:anywhere}
-        a.pf-follow-feed-text{color:#7fc0ff}
+        .pf-follow-feed-text{display:block;margin:3px 0 0;color:#b9c9d6;font-size:11px;line-height:1.35;text-decoration:none;overflow-wrap:anywhere}
         a.pf-follow-feed-text:hover{color:#fff;text-decoration:underline}
         .pf-follow-feed-message,.pf-follow-feed-error{margin:0;padding:10px;color:#9aabba;font-size:11px;line-height:1.5}
         .pf-follow-feed-error{color:#ffb3b3}
         .pf-follow-feed-more{color:#7fc0ff;font-size:10px;font-weight:bold;letter-spacing:0;text-decoration:none;text-transform:none;white-space:nowrap}
         .pf-follow-feed-more:hover{color:#fff;text-decoration:underline}
-        .pf-follow-feed-more:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
+        .pf-follow-feed-more:focus-visible,.pf-follow-feed-name:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
       `}</style>
     </section>
   );
