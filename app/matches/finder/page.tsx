@@ -78,6 +78,10 @@ function getGameImage(game: string | null, category?: string) {
   return category ? ladderGameImage(category, game || "") || "" : "";
 }
 
+function GameCover({ image, name }: { image: string; name: string }) {
+  return <Image loading="lazy" decoding="async" src={image} alt={name} width={126} height={78} unoptimized={image.startsWith("https://")} />;
+}
+
 function getLadderName(ladder: string | null) {
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
@@ -645,7 +649,7 @@ function MatchFinderContent() {
             <div className="game-header">
               <div className="game-cover">
                 {gameImage && (
-                  <Image loading="lazy" decoding="async" src={gameImage} alt={gameName} width={126} height={78} />
+                  <GameCover image={gameImage} name={gameName} />
                 )}
               </div>
 
