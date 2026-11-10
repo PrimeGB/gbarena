@@ -9,6 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
+import TeamStreams from "../../components/TeamStreams";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
@@ -1213,6 +1214,7 @@ export default function TeamPage() {
                     </a>
                   </div>
                 </div>
+                <TeamStreams teamId={teamId} userId={user?.id} isMember={viewerIsMember} />
               </aside>
             </section>
           )}
