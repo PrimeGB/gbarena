@@ -1214,7 +1214,7 @@ export default function TeamPage() {
                     </a>
                   </div>
                 </div>
-                <TeamStreams teamId={teamId} userId={user?.id} isMember={viewerIsMember} />
+                <TeamStreams teamId={teamId} userId={user?.id} isMember={viewerIsMember && (team?.ladder?.toLowerCase() !== "singles" || team.owner_id === user?.id)} />
               </aside>
             </section>
           )}

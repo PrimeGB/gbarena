@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 type Stream = {
@@ -21,7 +21,8 @@ export default function TeamStreams({ teamId, userId, isMember }: {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const load = useCallback(async (initialize: boolean) => {
     const { data, error: loadError } = await supabase.rpc("gb_team_streams", { p_team_id: teamId });
@@ -50,17 +51,16 @@ export default function TeamStreams({ teamId, userId, isMember }: {
   }, [load]);
 
   async function save() {
-    setError("");
-    setNotice("");
+    setSaveError("");
     let parsed: URL;
     try {
       parsed = new URL(url.trim());
     } catch {
-      setError("Enter a valid HTTPS stream link.");
+      setSaveError("Enter a valid HTTPS stream link.");
       return;
     }
     if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
-      setError("Enter a valid HTTPS stream link without credentials.");
+      setSaveError("Enter a valid HTTPS stream link without credentials.");
       return;
     }
     setSaving(true);
@@ -71,50 +71,80 @@ export default function TeamStreams({ teamId, userId, isMember }: {
     });
     setSaving(false);
     if (saveError) {
-      setError(`Could not save your stream: ${saveError.message}`);
+      setSaveError(`Could not save your stream: ${saveError.message}`);
       return;
     }
-    if (await load(true)) setNotice("Stream settings saved.");
+    await load(true);
+    dialogRef.current?.close();
   }
 
   const liveStreams = streams.filter((stream) => stream.is_live);
   return (
     <div className="side-box team-streams">
-      <div className="side-box-title">Team Streams</div>
+      <div className="side-box-title team-streams-title">
+        <span>Team Streams</span>
+        {isMember && <button type="button" onClick={() => {
+          const own = streams.find((stream) => stream.user_id === userId);
+          setUrl(own?.url || "");
+          setLive(own?.is_live || false);
+          setSaveError("");
+          dialogRef.current?.showModal();
+        }}>Manage</button>}
+      </div>
       <div className="side-box-body team-streams-body">
-        <p>Watch team members during matches, tournaments, or anytime they go live.</p>
         {!loaded && <p>Loading streams...</p>}
-        {loaded && liveStreams.length === 0 && <p>No team streams are marked live right now.</p>}
-        {liveStreams.map((stream) => (
-          <a className="team-stream-link" href={stream.url} target="_blank" rel="noopener noreferrer" key={stream.user_id}>
-            <span className="team-stream-live">LIVE</span> {stream.username} <span aria-hidden="true">↗</span>
-          </a>
-        ))}
-        {isMember && (
-          <div className="team-stream-form">
-            <label htmlFor="team-stream-url">Your stream link</label>
-            <input id="team-stream-url" type="url" maxLength={2048} placeholder="https://..." value={url} onChange={(event) => setUrl(event.target.value)} />
-            <label className="team-stream-toggle"><input type="checkbox" checked={live} onChange={(event) => setLive(event.target.checked)} /> I am live</label>
-            <button type="button" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save stream"}</button>
-            <p>Live status is set by you. Switch it off when your stream ends.</p>
+        {loaded && !error && liveStreams.length === 0 && <p>No streams live right now.</p>}
+        {liveStreams.length > 0 && (
+          <div className="team-stream-list" aria-label="Live team streams">
+            {liveStreams.map((stream) => (
+              <div className="team-stream-row" key={stream.user_id}>
+                <span className="team-stream-name">{stream.username}</span>
+                <div><a className="team-stream-link" href={stream.url} target="_blank" rel="noopener noreferrer">Watch Here</a><span className="team-stream-live"> - LIVE</span></div>
+              </div>
+            ))}
           </div>
         )}
         {error && <p className="team-stream-error" role="alert">{error}</p>}
-        {notice && <p role="status">{notice}</p>}
+        {isMember && (
+          <dialog className="team-stream-dialog" ref={dialogRef} aria-labelledby="team-stream-dialog-title">
+            <h2 id="team-stream-dialog-title">Manage Your Stream</h2>
+            <div className="team-stream-form">
+              <label htmlFor="team-stream-url">Your stream link</label>
+              <input id="team-stream-url" type="url" maxLength={2048} placeholder="https://..." value={url} onChange={(event) => setUrl(event.target.value)} />
+              <label className="team-stream-toggle"><input type="checkbox" checked={live} onChange={(event) => setLive(event.target.checked)} /> I am live</label>
+              <p>Switch live off when your stream ends.</p>
+              {saveError && <p className="team-stream-error" role="alert">{saveError}</p>}
+              <div className="team-stream-actions">
+                <button type="button" disabled={saving} onClick={save}>{saving ? "Saving..." : "Save"}</button>
+                <button type="button" disabled={saving} onClick={() => dialogRef.current?.close()}>Cancel</button>
+              </div>
+            </div>
+          </dialog>
+        )}
       </div>
       <style>{`
         .side-box.team-streams{min-height:0}
-        .team-streams .team-streams-body{padding:12px;line-height:1.5}
-        .team-streams-body p{margin:0 0 9px;color:#a9bdcc;font-size:11px}
-        .team-streams-body a.team-stream-link{display:block;margin:6px 0;padding:7px 8px;background:#10293b;border:1px solid #28516b;color:#bde2ff;font-weight:bold;overflow-wrap:anywhere}
-        .team-stream-live{color:#fff;background:#b32935;border-radius:3px;padding:2px 4px;font-size:9px}
-        .team-stream-form{border-top:1px solid #244b70;margin-top:12px;padding-top:10px}
-        .team-stream-form label{display:block;font-weight:bold;font-size:11px;color:#d4e4ef}
-        .team-stream-form input[type=url]{width:100%;margin:5px 0 8px;padding:7px;color:#fff;background:#07131f;border:1px solid #31536a}
-        .team-stream-form label.team-stream-toggle{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-weight:normal}
-        .team-streams-body .team-stream-form button{padding:6px 10px;background:#214c69;color:#fff;font-weight:bold}
-        .team-stream-form button:disabled{opacity:.6;cursor:wait}
-        .team-stream-form p{margin:8px 0 0}
+        .team-streams-title{position:relative}
+        .team-streams-title button{position:absolute;right:9px;border:0;background:none;color:#7fc7ff;font:bold 10px Tahoma;cursor:pointer}
+        .team-streams .team-streams-body{padding:0;line-height:1.4}
+        .team-streams-body > p{margin:0;padding:9px 10px;color:#a9bdcc;font-size:11px}
+        .team-stream-list{max-height:144px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
+        .team-stream-row{padding:7px 10px;border-top:1px solid #1c2b37;background:#0a1119;font-size:11px;overflow-wrap:anywhere}
+        .team-stream-row:nth-child(even){background:#0d1620}
+        .team-stream-name{display:block;color:#7fc0ff;font-weight:bold;margin-bottom:3px}
+        .team-streams-body a.team-stream-link{color:#b9c9d6;font-size:11px;text-decoration:none}
+        .team-streams-body a.team-stream-link:hover{color:#fff;text-decoration:underline}
+        .team-stream-live{color:#f18a8a;font-size:10px;font-weight:bold}
+        .team-stream-dialog{margin:auto;width:min(360px,calc(100% - 32px));padding:16px;border:1px solid #315f88;background:#07131f;color:#d4e4ef}
+        .team-stream-dialog::backdrop{background:rgba(0,0,0,.75)}
+        .team-stream-dialog h2{margin:0 0 12px;color:#d7ad4a;font-size:13px;text-transform:uppercase}
+        .team-stream-form label{display:block;font-weight:bold;font-size:11px}
+        .team-stream-form input[type=url]{width:100%;margin:5px 0 10px;padding:8px;color:#fff;background:#020b13;border:1px solid #31536a}
+        .team-stream-form label.team-stream-toggle{display:flex;align-items:center;gap:6px;font-weight:normal}
+        .team-stream-form p{margin:8px 0;color:#a9bdcc;font-size:11px;line-height:1.4}
+        .team-stream-actions{display:flex;gap:8px;margin-top:12px}
+        .team-stream-actions button{padding:7px 12px;border:1px solid #315f88;background:#173a54;color:#fff;font:bold 11px Tahoma;cursor:pointer}
+        .team-stream-actions button:disabled{opacity:.6;cursor:wait}
         .team-streams-body p.team-stream-error{color:#ffabab}
       `}</style>
     </div>
