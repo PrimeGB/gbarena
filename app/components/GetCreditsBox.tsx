@@ -17,6 +17,33 @@ declare global {
 }
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+let paypalSdkPromise: Promise<void> | null = null;
+
+function loadPayPalSdk(clientId: string): Promise<void> {
+  if (window.paypal) return Promise.resolve();
+  if (paypalSdkPromise) return paypalSdkPromise;
+
+  paypalSdkPromise = new Promise<void>((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture`;
+    script.onload = () => {
+      if (window.paypal) resolve();
+      else {
+        script.remove();
+        reject(new Error("PayPal loaded without its payment controls."));
+      }
+    };
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("Could not load PayPal."));
+    };
+    document.body.appendChild(script);
+  }).catch((reason: unknown) => {
+    paypalSdkPromise = null;
+    throw reason;
+  });
+  return paypalSdkPromise;
+}
 
 export default function GetCreditsBox() {
   const { user, loading: authLoading } = useUser();
@@ -51,15 +78,20 @@ export default function GetCreditsBox() {
   }, [selected]);
 
   useEffect(() => {
-    if (!open || !userId || !CLIENT_ID || window.paypal) {
-      if (window.paypal) setSdkReady(true);
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CLIENT_ID)}&currency=USD&intent=capture`;
-    s.onload = () => setSdkReady(true);
-    s.onerror = () => setError("Could not load PayPal.");
-    document.body.appendChild(s);
+    if (!open || !userId || !CLIENT_ID) return;
+    let active = true;
+    loadPayPalSdk(CLIENT_ID).then(
+      () => {
+        if (active) {
+          setError("");
+          setSdkReady(true);
+        }
+      },
+      (reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Could not load PayPal.");
+      },
+    );
+    return () => { active = false; };
   }, [open, userId]);
 
   async function finishPayment(orderId: string) {
@@ -120,8 +152,12 @@ export default function GetCreditsBox() {
         setError(err?.message || "Payment failed.");
       },
     });
-    buttons.render(el);
+    let active = true;
+    void buttons.render(el).catch((reason: unknown) => {
+      if (active) setError(reason instanceof Error ? reason.message : "Could not display PayPal.");
+    });
     return () => {
+      active = false;
       try {
         buttons.close();
       } catch {

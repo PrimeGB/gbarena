@@ -33,6 +33,8 @@ type ForumPost = {
   hidden: boolean;
 };
 
+type ForumPostRow = Omit<ForumPost, "createdAt"> & { created_at: string };
+
 const forumSections: {
   title: string;
   description: string;
@@ -71,7 +73,7 @@ export default function ForumsPage() {
   const [search, setSearch] = useState("");
   const { user, loading: authLoading } = useUser();
 
-  function mapPost(p: any): ForumPost {
+  function mapPost(p: ForumPostRow): ForumPost {
     return {
       id: p.id,
       subject: p.subject,

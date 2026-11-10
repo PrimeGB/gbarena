@@ -32,7 +32,7 @@ function prettyText(value: string | null) {
     .join(" ");
 }
 
-function isMissingTableError(error: any) {
+function isMissingTableError(error: { message?: string; code?: string }) {
   const msg = String(error?.message || "").toLowerCase();
   return error?.code === "42P01" || msg.includes("does not exist") || (msg.includes("relation") && msg.includes("does not exist"));
 }
@@ -40,7 +40,7 @@ function isMissingTableError(error: any) {
 export default function ProfileTeamsPage() {
   const { user, loading: authLoading } = useUser();
   const [teams, setTeams] = useState<TeamRow[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<TeamRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [rankError, setRankError] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -64,39 +64,41 @@ export default function ProfileTeamsPage() {
     }
     setLoadError("");
 
-    const { data: ownedTeams } = await supabase
+    const { data: ownedTeams, error: ownedError } = await supabase
       .from("teams")
       .select("id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points")
-      .eq("owner_id", user.id);
+      .eq("owner_id", user.id)
+      .returns<TeamRow[]>();
 
-    const { data: memberRows } = await supabase
+    const { data: memberRows, error: memberError } = await supabase
       .from("team_members")
       .select("team_id, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points)")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .returns<{ teams: TeamRow | null }[]>();
 
-    let invitedRows: any[] = [];
+    const { data: invitedRows, error: inviteError } = await supabase
+      .from("team_invites")
+      .select("id, team_id, status, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points)")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
+      .returns<{ teams: TeamRow | null }[]>();
 
-    try {
-      const { data, error } = await supabase
-        .from("team_invites")
-        .select("id, team_id, status, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points)")
-        .eq("user_id", user.id)
-        .eq("status", "pending");
-
-      if (error && !isMissingTableError(error)) {
-        throw error;
-      }
-
-      invitedRows = data || [];
-    } catch {
-      invitedRows = [];
+    if (currentRequest !== requestId.current) return;
+    const queryError = ownedError || memberError || inviteError;
+    if (queryError) {
+      setTeams([]);
+      setPendingInvites([]);
+      setLoadError("Could not load your teams or invitations: " + queryError.message);
+      setLoadedUserId(user.id);
+      setLoading(false);
+      return;
     }
 
     const memberTeams =
-      memberRows?.map((row: any) => row.teams).filter(Boolean) || [];
+      memberRows?.map((row) => row.teams).filter((team): team is TeamRow => team !== null) || [];
 
     const pendingTeams =
-      invitedRows?.map((row: any) => row.teams).filter(Boolean) || [];
+      invitedRows?.map((row) => row.teams).filter((team): team is TeamRow => team !== null) || [];
 
     const combinedTeams = [...(ownedTeams || []), ...memberTeams];
 
@@ -353,11 +355,7 @@ export default function ProfileTeamsPage() {
                 <div className="box-title">Pending Team Invites</div>
                 <div className="box-body">
                   <div className="team-list">
-                    {pendingInvites.map((invite: any) => {
-                      const team = invite;
-                      if (!team) return null;
-
-                      return (
+                    {pendingInvites.map((team) => (
                         <div className="team-card" key={`invite-${team.id}`}>
                           {renderTeamHead(team)}
                           <div className="team-actions">
@@ -369,8 +367,7 @@ export default function ProfileTeamsPage() {
                             </button>
                           </div>
                         </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 </div>
               </div>

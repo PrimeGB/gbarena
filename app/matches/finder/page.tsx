@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -338,7 +339,10 @@ function MatchFinderContent() {
 
   // Effect 1: Handles Initial Load & Sets up the Realtime Database Listener
   useEffect(() => {
-    loadMatches();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadMatches();
+    });
 
     // Setup Realtime pipeline listener for any modifications to 'match_posts'
     const matchChannel = supabase
@@ -355,6 +359,7 @@ function MatchFinderContent() {
       .subscribe();
 
     return () => {
+      active = false;
       supabase.removeChannel(matchChannel);
     };
   }, [platform, category, game, ladder, loadMatches]);
@@ -640,7 +645,7 @@ function MatchFinderContent() {
             <div className="game-header">
               <div className="game-cover">
                 {gameImage && (
-                  <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
+                  <Image loading="lazy" decoding="async" src={gameImage} alt={gameName} width={126} height={78} />
                 )}
               </div>
 
