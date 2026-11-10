@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
+import { compareRankedTeams, ladderPlatforms } from "../../../../../../../lib/ladderStandings";
+import { ladderPlatformLabel } from "../../../../../../../lib/ladderCatalog";
+import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
 
 type TeamRow = {
   id: string;
@@ -86,6 +89,8 @@ export default function LadderRankingsPage() {
   const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [systems, setSystems] = useState<string[]>([]);
+  const [systemFilter, setSystemFilter] = useState("all");
   const [seasonLabel, setSeasonLabel] = useState("Current");
 
   useEffect(() => {
@@ -102,19 +107,7 @@ export default function LadderRankingsPage() {
   const ladderTitle = `${gameTitle} - ${prettyText(ladder)} Ladder`;
 
   const rankedTeams = useMemo(() => {
-    return [...teams].sort((a, b) => {
-      const ratingA = Number(a.rating_points || 100);
-      const ratingB = Number(b.rating_points || 100);
-      const winsA = Number(a.wins || 0);
-      const winsB = Number(b.wins || 0);
-      const lossesA = Number(a.losses || 0);
-      const lossesB = Number(b.losses || 0);
-
-      if (ratingB !== ratingA) return ratingB - ratingA;
-      if (winsB !== winsA) return winsB - winsA;
-      if (lossesA !== lossesB) return lossesA - lossesB;
-      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
-    });
+    return [...teams].sort(compareRankedTeams);
   }, [teams]);
 
   useEffect(() => {
@@ -122,7 +115,17 @@ export default function LadderRankingsPage() {
       setLoading(true);
       setError("");
 
-      const storageKey = `gb-ranks-xbox-call-of-duty-${game}-${ladder}`;
+      const storageKey = `gb-ranks-pool-xbox-call-of-duty-${game}-${ladder}`;
+      let availableSystems: string[];
+      try {
+        availableSystems = await ladderPlatforms("call-of-duty", game, "xbox");
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Could not load compatible systems.");
+        setLoading(false);
+        return;
+      }
+      setSystems(availableSystems);
+      setSystemFilter("all");
 
       if (typeof window !== "undefined") {
         const savedRanks = window.localStorage.getItem(storageKey);
@@ -140,10 +143,11 @@ export default function LadderRankingsPage() {
         .select(
           "id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,streak,xp,rating_points,created_at"
         )
-        .eq("platform", "xbox")
+        .in("platform", availableSystems)
         .eq("category", "call-of-duty")
         .eq("game", game)
         .eq("ladder", ladder)
+        .or("wins.gt.0,losses.gt.0")
         .order("rating_points", { ascending: false })
         .order("wins", { ascending: false })
         .order("losses", { ascending: true });
@@ -177,9 +181,9 @@ export default function LadderRankingsPage() {
               supabase.from("profiles").select("id,username").in("id", memberIds),
               supabase
                 .from("gaming_accounts")
-                .select("user_id,account_id")
+                .select("user_id,account_id,platform")
                 .in("user_id", memberIds)
-                .eq("platform", "xbox")
+                .in("platform", availableSystems)
                 .eq("category", "call-of-duty")
                 .eq("game", game),
             ]);
@@ -197,12 +201,13 @@ export default function LadderRankingsPage() {
             (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
           );
           const accountByUserId = new Map(
-            (accounts || []).map((account) => [account.user_id, account.account_id]),
+            (accounts || []).map((account) => [`${account.user_id}:${account.platform}`, account.account_id]),
           );
+          const teamSystems = new Map(loadedTeams.map((team) => [team.id, team.platform]));
           const rosterMap: Record<string, TeamRosterId[]> = {};
 
           (members || []).forEach((member) => {
-            const accountId = accountByUserId.get(member.user_id);
+            const accountId = accountByUserId.get(`${member.user_id}:${teamSystems.get(member.team_id)}`);
             if (!accountId) return;
             rosterMap[member.team_id] ||= [];
             rosterMap[member.team_id].push({
@@ -220,19 +225,7 @@ export default function LadderRankingsPage() {
         setTeamRosterIds({});
       }
 
-      const sortedNow = [...loadedTeams].sort((a, b) => {
-        const ratingA = Number(a.rating_points || 100);
-        const ratingB = Number(b.rating_points || 100);
-        const winsA = Number(a.wins || 0);
-        const winsB = Number(b.wins || 0);
-        const lossesA = Number(a.losses || 0);
-        const lossesB = Number(b.losses || 0);
-
-        if (ratingB !== ratingA) return ratingB - ratingA;
-        if (winsB !== winsA) return winsB - winsA;
-        if (lossesA !== lossesB) return lossesA - lossesB;
-        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
-      });
+      const sortedNow = [...loadedTeams].sort(compareRankedTeams);
 
       const newRankSnapshot: Record<string, number> = {};
       sortedNow.forEach((team, index) => {
@@ -605,7 +598,7 @@ export default function LadderRankingsPage() {
               <Link className={ladder === "team" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/team/rankings`}>
                 Team
               </Link>
-              <Link className={ladder === "doubles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/doubles/rankings`}>
+              <Link className={ladder === "duos" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/duos/rankings`}>
                 Doubles
               </Link>
               <Link className={ladder === "singles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/singles/rankings`}>
@@ -619,7 +612,7 @@ export default function LadderRankingsPage() {
                 <div>
                   <div className="hero-title">{ladderTitle}</div>
                   <div className="season">
-                    <span className="system-label">Xbox System</span>
+                    <RankingSystemFilter systems={systems} value={systemFilter} onChange={setSystemFilter} />
                     Season: <strong>{seasonLabel}</strong>
                   </div>
                 </div>
@@ -655,7 +648,7 @@ export default function LadderRankingsPage() {
                 <div className="loading">Loading live ladder standings...</div>
               ) : error ? (
                 <div className="error">{error}</div>
-              ) : rankedTeams.length === 0 ? (
+              ) : rankedTeams.every((team) => systemFilter !== "all" && team.platform !== systemFilter) ? (
                 <div className="empty">No teams have joined this ladder yet.</div>
               ) : (
                 <table className="standings">
@@ -674,6 +667,7 @@ export default function LadderRankingsPage() {
 
                   <tbody>
                     {rankedTeams.map((team, index) => {
+                      if (systemFilter !== "all" && team.platform !== systemFilter) return null;
                       const wins = Number(team.wins || 0);
                       const losses = Number(team.losses || 0);
                       const points = Number(team.rating_points || 100);
@@ -703,6 +697,7 @@ export default function LadderRankingsPage() {
 
                               <span className="team-name-wrap">
                                 <span className="team-name">{team.name || "Unnamed Team"}</span>
+                                <span className="team-tag">{ladderPlatformLabel(team.platform || "") || team.platform}</span>
                                 <span className="team-tag">{team.tag || "No Tag"}</span>
                                 {teamRosterIds[team.id]?.map((member) => (
                                   <span className="team-roster-ids" key={`${team.id}-${member.userId}`}>

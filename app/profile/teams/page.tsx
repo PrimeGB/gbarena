@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { ladderGameLabel, ladderPlatformLabel } from "../../../lib/ladderCatalog";
+import { rankedLadderTeams } from "../../../lib/ladderStandings";
 
 type TeamRow = {
   id: string;
@@ -39,6 +40,7 @@ export default function ProfileTeamsPage() {
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rankError, setRankError] = useState("");
 
   useEffect(() => {
     loadTeams();
@@ -98,23 +100,18 @@ export default function ProfileTeamsPage() {
       new Map(combinedTeams.map((team: TeamRow) => [team.id, team])).values()
     );
 
+    setRankError("");
     const withPlaces = await Promise.all(
       uniqueTeams.map(async (team: TeamRow) => {
         if (!team.platform || !team.category || !team.game || !team.ladder) return team;
-        const { data: ranked } = await supabase
-          .from("teams")
-          .select("id")
-          .eq("platform", team.platform)
-          .eq("category", team.category)
-          .eq("game", team.game)
-          .eq("ladder", team.ladder)
-          .or("wins.gt.0,losses.gt.0")
-          .order("rating_points", { ascending: false })
-          .order("wins", { ascending: false })
-          .order("losses", { ascending: true })
-          .order("created_at", { ascending: true });
-        const index = (ranked || []).findIndex((row: any) => String(row.id) === String(team.id));
-        return { ...team, place: index >= 0 ? index + 1 : null };
+        try {
+          const ranked = await rankedLadderTeams(team.category, team.game, team.ladder, team.platform);
+          const index = ranked.findIndex((row) => row.id === team.id);
+          return { ...team, place: index >= 0 ? index + 1 : null };
+        } catch (reason) {
+          setRankError(reason instanceof Error ? reason.message : "Could not load ladder rankings.");
+          return { ...team, place: null };
+        }
       }),
     );
 
@@ -203,7 +200,7 @@ export default function ProfileTeamsPage() {
         </div>
         <div className="team-stats">
           <div className="stat">
-            <div className="stat-value">{team.place ? `#${team.place}` : "Unranked"}</div>
+            <div className="stat-value">{team.place ? `#${team.place}` : rankError ? "Unavailable" : "Unranked"}</div>
             <div className="stat-label">Rank</div>
           </div>
           <div className="stat">
@@ -301,6 +298,7 @@ export default function ProfileTeamsPage() {
           <div className="box-title">Teams</div>
 
           <div className="box-body">
+            {rankError && <p role="alert">{rankError}</p>}
             {loading ? (
               <div className="loading">Loading teams...</div>
             ) : teams.length === 0 ? (

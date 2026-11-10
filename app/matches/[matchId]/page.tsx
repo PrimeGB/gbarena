@@ -8,6 +8,7 @@ import { useUser } from "../../../lib/useUser";
 import { getGameRules } from "../../../lib/matchRules";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 import { MatchJoinGuide, isBattlefield } from "../../components/MatchJoinGuide";
+import { rankedLadderTeams } from "../../../lib/ladderStandings";
 
 type MatchRow = {
   id: string;
@@ -122,6 +123,7 @@ type MatchParticipant = {
   team_name_at_match: string;
   username_at_match: string;
   account_id_at_match: string;
+  platform?: string | null;
 };
 
 function getMatchProofPath(proofUrl: string) {
@@ -391,7 +393,7 @@ export default function MatchDetailsPage() {
 
       const { data: participantRows, error: participantError } = await supabase
         .from("match_participants")
-        .select("id,team_id,team_name_at_match,username_at_match,account_id_at_match")
+        .select("id,team_id,team_name_at_match,username_at_match,account_id_at_match,platform")
         .eq("match_id", officialMatch.id)
         .order("username_at_match");
 
@@ -423,19 +425,14 @@ export default function MatchDetailsPage() {
 
         teams = (teamsData || []) as TeamRow[];
 
-        // Same ordering the team page uses to calculate a team's ladder place
-        const { data: rankedTeams } = await supabase
-          .from("teams")
-          .select("id")
-          .eq("platform", officialMatch.platform || "")
-          .eq("category", officialMatch.category || "")
-          .eq("game", officialMatch.game || "")
-          .eq("ladder", officialMatch.ladder || "")
-          .or("wins.gt.0,losses.gt.0")
-          .order("rating_points", { ascending: false })
-          .order("wins", { ascending: false })
-          .order("losses", { ascending: true })
-          .order("created_at", { ascending: true });
+        let rankedTeams;
+        try {
+          rankedTeams = await rankedLadderTeams(officialMatch.category || "", officialMatch.game || "", officialMatch.ladder || "", officialMatch.platform || "");
+        } catch (reason) {
+          setPageError(reason instanceof Error ? reason.message : "Could not load ladder rankings.");
+          setLoading(false);
+          return;
+        }
 
         const ranks: Record<string, number> = {};
         (rankedTeams || []).forEach((row: { id: string }, index: number) => {
@@ -601,7 +598,7 @@ export default function MatchDetailsPage() {
               ? "This is a duos match. Each side must play with its locked duo roster."
               : "Teams may play with 3, 4, 5 or 6 players. Players are not locked to a set team size.",
             "Only players listed in the Match Roster may play.",
-            `Every player must use the account shown in the roster${match.platform ? ` on ${prettyText(match.platform)}` : ""}.`,
+            "Every player must use the account and system shown in the roster.",
             match.crossplay && match.crossplay.toLowerCase() !== "off"
               ? `Cross-play is ${match.crossplay} for this match.`
               : "Cross-play is not allowed for this match.",
@@ -1793,7 +1790,7 @@ export default function MatchDetailsPage() {
                             </span>
                             <span className="roster-name">
                               {participant.username_at_match}
-                              <small>{participant.account_id_at_match}</small>
+                              <small>{participant.account_id_at_match}{participant.platform ? ` · ${prettyText(participant.platform)}` : ""}</small>
                             </span>
                           </div>
                         )) : (

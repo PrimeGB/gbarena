@@ -11,6 +11,7 @@ import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
 import TeamStreams from "../../components/TeamStreams";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
+import { rankedLadderTeams } from "../../../lib/ladderStandings";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -208,6 +209,7 @@ export default function TeamPage() {
   const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
+  const [teamRankError, setTeamRankError] = useState("");
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
   const [teamFollowers, setTeamFollowers] = useState<number | null>(null);
   const [teamFollowError, setTeamFollowError] = useState("");
@@ -252,7 +254,7 @@ export default function TeamPage() {
   const teamXp = hasPlayedMatch ? Number(team?.xp ?? 0) : 0;
   const teamRatingPoints = Number(team?.rating_points ?? 100);
   const teamLevel = Math.max(1, Math.floor(teamRatingPoints / 100));
-  const cleanTeamPlace = ordinal(teamPlace);
+  const cleanTeamPlace = teamRankError ? "Unavailable" : ordinal(teamPlace);
 
   const players: Player[] = [
     { id: 1, username: "Prime", rank: "Free Agent", record: "0-0" },
@@ -312,22 +314,16 @@ export default function TeamPage() {
         }
       }
 
-      const { data: rankedTeams } = await supabase
-        .from("teams")
-        .select("id, wins, losses, rating_points, created_at")
-        .eq("platform", teamData?.platform || "xbox")
-        .eq("category", teamData?.category || "call-of-duty")
-        .eq("game", teamData?.game || "modern-warfare-4")
-        .eq("ladder", teamData?.ladder || "team")
-        .or("wins.gt.0,losses.gt.0")
-        .order("rating_points", { ascending: false })
-        .order("wins", { ascending: false })
-        .order("losses", { ascending: true })
-        .order("created_at", { ascending: true });
-
-      if (rankedTeams) {
-        const placeIndex = rankedTeams.findIndex((rankedTeam: any) => String(rankedTeam.id) === String(teamId));
-        setTeamPlace(placeIndex >= 0 ? placeIndex + 1 : null);
+      if (teamData?.platform && teamData.category && teamData.game && teamData.ladder) {
+        try {
+          const rankedTeams = await rankedLadderTeams(teamData.category, teamData.game, teamData.ladder, teamData.platform);
+          const placeIndex = rankedTeams.findIndex((rankedTeam) => rankedTeam.id === teamId);
+          setTeamPlace(placeIndex >= 0 ? placeIndex + 1 : null);
+          setTeamRankError("");
+        } catch (reason) {
+          setTeamPlace(null);
+          setTeamRankError(reason instanceof Error ? reason.message : "Could not load ladder rank.");
+        }
       }
 
       const { data: memberRows } = await supabase
@@ -982,6 +978,7 @@ export default function TeamPage() {
                       <div className="team-line">
                         Team Rank: <span className="founder-name">{cleanTeamPlace}</span>
                       </div>
+                      {teamRankError && <div className="team-follow-error" role="alert">{teamRankError}</div>}
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (

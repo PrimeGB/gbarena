@@ -8,6 +8,7 @@ import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
+import { ladderPlatforms } from "../../../lib/ladderStandings";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -15,6 +16,7 @@ type MatchPost = {
   id: string;
   team_id: string;
   platform: string;
+  crossplay: boolean;
   category: string;
   game: string;
   ladder: string;
@@ -184,6 +186,7 @@ function MatchFinderContent() {
   const [acceptingRoster, setAcceptingRoster] = useState<EligibleMatchPlayer[]>([]);
   const [selectedAcceptingRoster, setSelectedAcceptingRoster] = useState<string[]>([]);
   const [loadingAcceptingRoster, setLoadingAcceptingRoster] = useState(false);
+  const [confirmCompatibility, setConfirmCompatibility] = useState(false);
   const [viewMatch, setViewMatch] = useState<MatchPost | null>(null);
   const [cancelMatch, setCancelMatch] = useState<MatchPost | null>(null);
   const [viewerRole, setViewerRole] = useState<TeamRole>("member");
@@ -199,6 +202,7 @@ function MatchFinderContent() {
     setNotice("");
     setAcceptingRoster([]);
     setSelectedAcceptingRoster([]);
+    setConfirmCompatibility(false);
     setLoadingAcceptingRoster(true);
     setConfirmMatch(match);
   }
@@ -238,7 +242,7 @@ function MatchFinderContent() {
             .from("gaming_accounts")
             .select("user_id,account_id")
             .in("user_id", memberIds)
-            .eq("platform", confirmMatch.platform)
+            .eq("platform", platform)
             .eq("category", confirmMatch.category)
             .eq("game", confirmMatch.game),
         ]);
@@ -275,7 +279,7 @@ function MatchFinderContent() {
     return () => {
       cancelled = true;
     };
-  }, [confirmMatch, viewerTeamId]);
+  }, [confirmMatch, viewerTeamId, platform]);
 
   const cleanAndFilterExpiredPosts = useCallback(async (posts: MatchPost[]): Promise<MatchPost[]> => {
     const expiredIds = posts.filter((post) => isPostPastTime(post)).map((post) => post.id);
@@ -298,10 +302,19 @@ function MatchFinderContent() {
   const loadMatches = useCallback(async () => {
     setPageError("");
 
+    let compatible: string[];
+    try {
+      compatible = await ladderPlatforms(category, game, platform);
+    } catch (reason) {
+      setPageError(reason instanceof Error ? reason.message : "Could not load compatible systems.");
+      setMatches([]);
+      setHasLoaded(true);
+      return;
+    }
     const { data, error } = await supabase
       .from("match_posts")
       .select("*")
-      .eq("platform", platform)
+      .in("platform", compatible)
       .eq("category", category)
       .eq("game", game)
       .eq("ladder", ladder)
@@ -315,7 +328,7 @@ function MatchFinderContent() {
       return;
     }
 
-    const allOpenPosts = (data || []) as MatchPost[];
+    const allOpenPosts = ((data || []) as MatchPost[]).filter((post) => post.platform === platform || post.crossplay);
     const nonExpiredPosts = await cleanAndFilterExpiredPosts(allOpenPosts);
 
     setMatches(nonExpiredPosts);
@@ -336,51 +349,7 @@ function MatchFinderContent() {
           schema: "public",
           table: "match_posts",
         },
-        (payload) => {
-          const oldRecord = payload.old as any;
-          const newRecord = payload.new as MatchPost;
-
-          // If a post status drops from open to something else (accepted, cancelled, expired), strip it immediately from view
-          if (payload.eventType === "UPDATE") {
-            if (newRecord.status !== "open") {
-              setMatches((prev) => prev.filter((m) => m.id !== newRecord.id));
-            } else {
-              // Ensure match matches the exact ladder filter configurations before parsing it on screen
-              if (
-                newRecord.platform === platform &&
-                newRecord.category === category &&
-                newRecord.game === game &&
-                newRecord.ladder === ladder &&
-                !isPostPastTime(newRecord)
-              ) {
-                setMatches((prev) => {
-                  const exists = prev.some((m) => m.id === newRecord.id);
-                  if (exists) {
-                    return prev.map((m) => (m.id === newRecord.id ? newRecord : m));
-                  }
-                  return [newRecord, ...prev];
-                });
-              }
-            }
-          }
-
-          if (payload.eventType === "INSERT") {
-            if (
-              newRecord.status === "open" &&
-              newRecord.platform === platform &&
-              newRecord.category === category &&
-              newRecord.game === game &&
-              newRecord.ladder === ladder &&
-              !isPostPastTime(newRecord)
-            ) {
-              setMatches((prev) => [newRecord, ...prev]);
-            }
-          }
-
-          if (payload.eventType === "DELETE") {
-            setMatches((prev) => prev.filter((m) => m.id !== oldRecord.id));
-          }
-        }
+        () => { void loadMatches(); }
       )
       .subscribe();
 
@@ -437,6 +406,10 @@ function MatchFinderContent() {
 
   async function acceptConfirmedMatch() {
     if (!confirmMatch) return;
+    if (confirmMatch.platform !== platform && !confirmCompatibility) {
+      setNotice("Confirm that your game versions can play together before accepting.");
+      return;
+    }
 
     setNotice("");
 
@@ -749,7 +722,7 @@ function MatchFinderContent() {
                         <div className="match-row" key={match.id}>
                           <div className="match-cell players">{match.players}</div>
                           <div className="match-cell mode">{match.game_mode}</div>
-                          <div className="match-cell rules-type">{match.preset || "GB Default"}</div>
+                          <div className="match-cell rules-type">{match.preset || "GB Default"}<br />{prettyText(match.platform)} · Cross Play {match.crossplay ? "On" : "Off"}</div>
                           <div className="match-cell time">{formatMatchTime(match)}</div>
                           <div className="match-cell">
                             <div className="actions">
@@ -805,10 +778,17 @@ function MatchFinderContent() {
                 <br />
                 Rules: {confirmMatch.preset || "GB Default"}
                 <br />
+                System: {prettyText(confirmMatch.platform)} · Cross Play {confirmMatch.crossplay ? "On" : "Off"}
+                <br />
                 Time: {formatMatchTime(confirmMatch)}
               </div>
+              {confirmMatch.platform !== platform && (
+                <label className="accept-roster-note">
+                  <input type="checkbox" checked={confirmCompatibility} onChange={(event) => setConfirmCompatibility(event.target.checked)} /> I confirmed that both teams&apos; game versions can play together.
+                </label>
+              )}
               <div className="accept-roster-note">
-                Select {requiredMatchPlayers(confirmMatch.players)} players with a saved ID for {prettyText(confirmMatch.platform)} / {prettyText(confirmMatch.game)}.
+                Select {requiredMatchPlayers(confirmMatch.players)} players with a saved ID for {prettyText(platform)} / {prettyText(confirmMatch.game)}.
               </div>
               {loadingAcceptingRoster ? (
                 <div className="accept-roster-note">Loading eligible team roster...</div>
@@ -852,6 +832,7 @@ function MatchFinderContent() {
                 disabled={
                   acceptingId === confirmMatch.id ||
                   loadingAcceptingRoster ||
+                  (confirmMatch.platform !== platform && !confirmCompatibility) ||
                   selectedAcceptingRoster.length !== requiredMatchPlayers(confirmMatch.players)
                 }
                 onClick={acceptConfirmedMatch}

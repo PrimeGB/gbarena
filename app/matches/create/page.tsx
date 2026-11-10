@@ -9,6 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import { GamingAccount, gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 import { getGameRules } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
+import { ladderPlatforms } from "../../../lib/ladderStandings";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -166,6 +167,8 @@ function CreateMatchContent() {
   const [redSecRulesOpen, setRedSecRulesOpen] = useState(false);
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState("");
+  const [crossplaySystems, setCrossplaySystems] = useState<string[] | null>(null);
+  const [crossplayError, setCrossplayError] = useState("");
   const [postSuccess, setPostSuccess] = useState("");
 
   const [perks, setPerks] = useState("On");
@@ -306,6 +309,16 @@ function CreateMatchContent() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    ladderPlatforms(category, game, platform).then((systems) => {
+      if (active) { setCrossplaySystems(systems); setCrossplayError(""); }
+    }).catch((reason) => {
+      if (active) { setCrossplaySystems(null); setCrossplayError(reason instanceof Error ? reason.message : "Could not load compatible systems."); }
+    });
+    return () => { active = false; };
+  }, [category, game, platform]);
+
   const presetText = isRedSec || isRapidRoyal
     ? `${killRaceName} settings are controlled by the GameBattles ${killRaceName} ruleset.`
     : gameRules
@@ -335,6 +348,10 @@ function CreateMatchContent() {
   async function handlePostMatch() {
     setPostError("");
     setPostSuccess("");
+    if (crossplay === "On" && (!crossplaySystems || crossplaySystems.length < 2)) {
+      setPostError(crossplayError || "Cross-play is not available for this game and system.");
+      return;
+    }
 
     if (!user?.id) {
       setPostError("You must be signed in to post a match.");
@@ -412,7 +429,7 @@ function CreateMatchContent() {
       match_time: scheduledIso,
       best_of: bestOf,
       preset: gameRules ? gameRules.presetName : rulesType,
-      crossplay,
+      crossplay: crossplay === "On",
       perks: slot("perks", perks),
       launchers: slot("launchers", launchers),
       killstreaks: slot("killstreaks", killstreaks),
@@ -718,13 +735,15 @@ function CreateMatchContent() {
                             onChange={(e) => setCrossplay(e.target.value as CrossPlayType)}
                           >
                             <option>Off</option>
-                            <option>On</option>
+                            <option disabled={!crossplaySystems || crossplaySystems.length < 2}>On</option>
                           </select>
 
                           <div className="small-note">
+                            {crossplayError && <span role="alert">{crossplayError}<br /></span>}
+                            {crossplaySystems?.length === 1 && <span>Cross-play with other systems is not available for this game.<br /></span>}
                             {crossplay === "Off"
                               ? `Cross Play Disabled: only ${platformName} teams on this exact game and ladder can accept.`
-                              : "Cross Play Enabled: teams from other platforms can accept as long as they are on this same game and ladder."}
+                              : "Cross Play Enabled: teams on compatible systems can accept. Confirm your game versions can play together before the match."}
                           </div>
                         </div>
                       </div>

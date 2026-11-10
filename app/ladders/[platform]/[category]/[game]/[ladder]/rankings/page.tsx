@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
+import { compareRankedTeams, ladderPlatforms } from "../../../../../../../lib/ladderStandings";
+import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
 import {
   ladderCategoryLabel,
   ladderGameLabel,
@@ -19,6 +21,8 @@ type TeamRow = {
   wins: number | null;
   losses: number | null;
   rating_points: number | null;
+  platform: string | null;
+  created_at: string | null;
 };
 
 type RosterIdentity = {
@@ -51,6 +55,8 @@ export default function LadderRankingsPage() {
   const [rostersByTeam, setRostersByTeam] = useState<Record<string, RosterIdentity[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [systems, setSystems] = useState<string[]>([]);
+  const [systemFilter, setSystemFilter] = useState("all");
 
   const platformName = ladderPlatformLabel(platform);
   const categoryName = ladderCategoryLabel(category);
@@ -59,14 +65,7 @@ export default function LadderRankingsPage() {
 
   const rankedTeams = useMemo(
     () =>
-      [...teams].sort((a, b) => {
-        const ratingDifference =
-          Number(b.rating_points || 100) - Number(a.rating_points || 100);
-        if (ratingDifference) return ratingDifference;
-        const winDifference = Number(b.wins || 0) - Number(a.wins || 0);
-        if (winDifference) return winDifference;
-        return Number(a.losses || 0) - Number(b.losses || 0);
-      }),
+      [...teams].sort(compareRankedTeams),
     [teams]
   );
 
@@ -83,10 +82,20 @@ export default function LadderRankingsPage() {
         return;
       }
 
+      let availableSystems: string[];
+      try {
+        availableSystems = await ladderPlatforms(category, game, platform);
+      } catch (reason) {
+        if (!cancelled) { setError(reason instanceof Error ? reason.message : "Could not load compatible systems."); setLoading(false); }
+        return;
+      }
+      if (cancelled) return;
+      setSystems(availableSystems);
+      setSystemFilter("all");
       const { data, error: queryError } = await supabase
         .from("teams")
-        .select("id,name,tag,logo_url,wins,losses,rating_points")
-        .eq("platform", platform)
+        .select("id,name,tag,logo_url,wins,losses,rating_points,platform,created_at")
+        .in("platform", availableSystems)
         .eq("category", category)
         .eq("game", game)
         .eq("ladder", ladder)
@@ -119,9 +128,9 @@ export default function LadderRankingsPage() {
                   supabase.from("profiles").select("id,username").in("id", memberIds),
                   supabase
                     .from("gaming_accounts")
-                    .select("user_id,account_id")
+                    .select("user_id,account_id,platform")
                     .in("user_id", memberIds)
-                    .eq("platform", platform)
+                    .in("platform", availableSystems)
                     .eq("category", category)
                     .eq("game", game),
                 ]);
@@ -137,12 +146,13 @@ export default function LadderRankingsPage() {
                   (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
                 );
                 const accountByUserId = new Map(
-                  (accounts || []).map((account) => [account.user_id, account.account_id]),
+                  (accounts || []).map((account) => [`${account.user_id}:${account.platform}`, account.account_id]),
                 );
+                const teamSystems = new Map(loadedTeams.map((team) => [team.id, team.platform]));
                 const rosterMap: Record<string, RosterIdentity[]> = {};
 
                 (members || []).forEach((member) => {
-                  const accountId = accountByUserId.get(member.user_id);
+                  const accountId = accountByUserId.get(`${member.user_id}:${teamSystems.get(member.team_id)}`);
                   if (!accountId) return;
                   rosterMap[member.team_id] ||= [];
                   rosterMap[member.team_id].push({
@@ -192,7 +202,7 @@ export default function LadderRankingsPage() {
         <header>
           <p>{categoryName} Ladder Rankings</p>
           <h1>{gameName} {ladderName}</h1>
-          <span className="system-label">System: {platformName}</span>
+          <RankingSystemFilter systems={systems} value={systemFilter} onChange={setSystemFilter} />
           <Link
             className="create-link"
             href={`/team-hub?platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`}
@@ -204,7 +214,7 @@ export default function LadderRankingsPage() {
           <p className="state">Loading standings…</p>
         ) : error ? (
           <p className="state error">{error}</p>
-        ) : rankedTeams.length === 0 ? (
+        ) : rankedTeams.every((team) => systemFilter !== "all" && team.platform !== systemFilter) ? (
           <p className="state">No ranked teams yet.</p>
         ) : (
           <div className="table-wrap">
@@ -220,7 +230,7 @@ export default function LadderRankingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rankedTeams.map((team, index) => (
+                {rankedTeams.map((team, index) => systemFilter !== "all" && team.platform !== systemFilter ? null : (
                   <tr key={team.id}>
                     <td>{index + 1}</td>
                     <td>
@@ -228,6 +238,7 @@ export default function LadderRankingsPage() {
                         {team.tag ? `[${team.tag}] ` : ""}
                         {team.name || "Unnamed Team"}
                       </Link>
+                      <div className="roster-identities">{ladderPlatformLabel(team.platform || "") || team.platform}</div>
                       <div className="roster-identities">
                         {(rostersByTeam[team.id] || []).map((member) => (
                           <span key={member.userId}>

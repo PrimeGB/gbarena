@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
+import { compareRankedTeams, ladderPlatforms } from "../../../../../../../lib/ladderStandings";
+import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
 
 type TeamRow = {
   id: string;
@@ -13,6 +15,8 @@ type TeamRow = {
   wins: number | null;
   losses: number | null;
   rating_points: number | null;
+  platform: string | null;
+  created_at: string | null;
 };
 
 type RosterIdentity = {
@@ -49,6 +53,8 @@ export default function BattlefieldRankingsPage() {
   const [rostersByTeam, setRostersByTeam] = useState<Record<string, RosterIdentity[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [systems, setSystems] = useState<string[]>([]);
+  const [systemFilter, setSystemFilter] = useState("all");
 
   const platformName = platformNames[platform];
   const gameName = battlefieldTitles[game];
@@ -67,14 +73,7 @@ export default function BattlefieldRankingsPage() {
 
   const rankedTeams = useMemo(
     () =>
-      [...teams].sort((a, b) => {
-        const ratingDifference =
-          Number(b.rating_points || 100) - Number(a.rating_points || 100);
-        if (ratingDifference) return ratingDifference;
-        const winDifference = Number(b.wins || 0) - Number(a.wins || 0);
-        if (winDifference) return winDifference;
-        return Number(a.losses || 0) - Number(b.losses || 0);
-      }),
+      [...teams].sort(compareRankedTeams),
     [teams]
   );
 
@@ -97,10 +96,20 @@ export default function BattlefieldRankingsPage() {
         return;
       }
 
+      let availableSystems: string[];
+      try {
+        availableSystems = await ladderPlatforms("battlefield", game, platform);
+      } catch (reason) {
+        if (!cancelled) { setError(reason instanceof Error ? reason.message : "Could not load compatible systems."); setLoading(false); }
+        return;
+      }
+      if (cancelled) return;
+      setSystems(availableSystems);
+      setSystemFilter("all");
       const { data, error: queryError } = await supabase
         .from("teams")
-        .select("id,name,tag,logo_url,wins,losses,rating_points")
-        .eq("platform", platform)
+        .select("id,name,tag,logo_url,wins,losses,rating_points,platform,created_at")
+        .in("platform", availableSystems)
         .eq("category", "battlefield")
         .eq("game", game)
         .eq("ladder", ladder)
@@ -133,9 +142,9 @@ export default function BattlefieldRankingsPage() {
                   supabase.from("profiles").select("id,username").in("id", memberIds),
                   supabase
                     .from("gaming_accounts")
-                    .select("user_id,account_id")
+                    .select("user_id,account_id,platform")
                     .in("user_id", memberIds)
-                    .eq("platform", platform)
+                    .in("platform", availableSystems)
                     .eq("category", "battlefield")
                     .eq("game", game),
                 ]);
@@ -151,12 +160,13 @@ export default function BattlefieldRankingsPage() {
                   (profiles || []).map((profile) => [profile.id, profile.username || "Player"]),
                 );
                 const accountByUserId = new Map(
-                  (accounts || []).map((account) => [account.user_id, account.account_id]),
+                  (accounts || []).map((account) => [`${account.user_id}:${account.platform}`, account.account_id]),
                 );
+                const teamSystems = new Map(loadedTeams.map((team) => [team.id, team.platform]));
                 const rosterMap: Record<string, RosterIdentity[]> = {};
 
                 (members || []).forEach((member) => {
-                  const accountId = accountByUserId.get(member.user_id);
+                  const accountId = accountByUserId.get(`${member.user_id}:${teamSystems.get(member.team_id)}`);
                   if (!accountId) return;
                   rosterMap[member.team_id] ||= [];
                   rosterMap[member.team_id].push({
@@ -206,7 +216,7 @@ export default function BattlefieldRankingsPage() {
         <header>
           <p>Battlefield Ladder Rankings</p>
           <h1>{gameName} {ladderName}</h1>
-          <span className="system-label">System: {platformName}</span>
+          <RankingSystemFilter systems={systems} value={systemFilter} onChange={setSystemFilter} />
           <Link
             className="create-link"
             href={`/team-hub?platform=${platform}&category=battlefield&game=${game}&ladder=${ladder}`}
@@ -218,7 +228,7 @@ export default function BattlefieldRankingsPage() {
           <p className="state">Loading standings…</p>
         ) : error ? (
           <p className="state error">{error}</p>
-        ) : rankedTeams.length === 0 ? (
+        ) : rankedTeams.every((team) => systemFilter !== "all" && team.platform !== systemFilter) ? (
           <p className="state">No ranked teams yet.</p>
         ) : (
           <div className="table-wrap">
@@ -234,7 +244,7 @@ export default function BattlefieldRankingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rankedTeams.map((team, index) => (
+                {rankedTeams.map((team, index) => systemFilter !== "all" && team.platform !== systemFilter ? null : (
                   <tr key={team.id}>
                     <td>{index + 1}</td>
                     <td>
@@ -242,6 +252,7 @@ export default function BattlefieldRankingsPage() {
                         {team.tag ? `[${team.tag}] ` : ""}
                         {team.name || "Unnamed Team"}
                       </Link>
+                      <div className="roster-identities">{platformNames[team.platform || ""] || team.platform}</div>
                       <div className="roster-identities">
                         {(rostersByTeam[team.id] || []).map((member) => (
                           <span key={member.userId}>
