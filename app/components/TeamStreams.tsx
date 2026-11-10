@@ -83,13 +83,13 @@ export default function TeamStreams({ teamId, userId, isMember }: {
     <div className="side-box team-streams">
       <div className="side-box-title team-streams-title">
         <span>Team Streams</span>
-        {isMember && <button type="button" onClick={() => {
+        {isMember && <button type="button" aria-label="Manage your stream" title="Manage your stream" onClick={() => {
           const own = streams.find((stream) => stream.user_id === userId);
           setUrl(own?.url || "");
           setLive(own?.is_live || false);
           setSaveError("");
           dialogRef.current?.showModal();
-        }}>Manage</button>}
+        }}><span aria-hidden="true">+</span></button>}
       </div>
       <div className="side-box-body team-streams-body">
         {!loaded && <p>Loading streams...</p>}
@@ -124,8 +124,10 @@ export default function TeamStreams({ teamId, userId, isMember }: {
       </div>
       <style>{`
         .side-box.team-streams{min-height:0}
-        .team-streams-title{position:relative}
-        .team-streams-title button{position:absolute;right:9px;border:0;background:none;color:#7fc7ff;font:bold 10px Tahoma;cursor:pointer}
+        .team-streams-title{position:relative;padding:0 40px}
+        .team-streams-title button{position:absolute;right:4px;top:0;width:30px;height:29px;display:grid;place-items:center;border:0;background:none;color:#7fc7ff;font:bold 19px/1 Tahoma;cursor:pointer}
+        .team-streams-title button:hover{color:#fff}
+        .team-streams-title button:focus-visible{outline:2px solid #7fc7ff;outline-offset:-3px}
         .team-streams .team-streams-body{padding:0;line-height:1.4}
         .team-streams-body > p{margin:0;padding:9px 10px;color:#a9bdcc;font-size:11px}
         .team-stream-list{max-height:144px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
