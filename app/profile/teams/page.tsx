@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabase";
 import { ladderGameLabel, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
+import { useUser } from "../../../lib/useUser";
 
 type TeamRow = {
   id: string;
@@ -37,28 +38,31 @@ function isMissingTableError(error: any) {
 }
 
 export default function ProfileTeamsPage() {
+  const { user, loading: authLoading } = useUser();
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [rankError, setRankError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const requestId = useRef(0);
 
-  useEffect(() => {
-    loadTeams();
-  }, []);
-
-  async function loadTeams() {
+  const loadTeams = useCallback(async (expectedUserId: string | null) => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!user?.id) {
+    if (currentRequest !== requestId.current) return;
+    if (!user?.id || user.id !== expectedUserId) {
       setTeams([]);
       setPendingInvites([]);
+      setLoadError(expectedUserId ? (authError?.message || "Could not verify your account. Please sign in again.") : "");
+      setLoadedUserId(expectedUserId);
       setLoading(false);
       return;
     }
+    setLoadError("");
 
     const { data: ownedTeams } = await supabase
       .from("teams")
@@ -100,6 +104,7 @@ export default function ProfileTeamsPage() {
       new Map(combinedTeams.map((team: TeamRow) => [team.id, team])).values()
     );
 
+    if (currentRequest !== requestId.current) return;
     setRankError("");
     const withPlaces = await Promise.all(
       uniqueTeams.map(async (team: TeamRow) => {
@@ -109,16 +114,32 @@ export default function ProfileTeamsPage() {
           const index = ranked.findIndex((row) => row.id === team.id);
           return { ...team, place: index >= 0 ? index + 1 : null };
         } catch (reason) {
-          setRankError(reason instanceof Error ? reason.message : "Could not load ladder rankings.");
+          if (currentRequest === requestId.current) {
+            setRankError(reason instanceof Error ? reason.message : "Could not load ladder rankings.");
+          }
           return { ...team, place: null };
         }
       }),
     );
 
+    if (currentRequest !== requestId.current) return;
     setTeams(withPlaces);
     setPendingInvites(pendingTeams);
+    setLoadedUserId(user.id);
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const requests = requestId;
+    queueMicrotask(() => {
+      if (active) void loadTeams(user?.id || null);
+    });
+    return () => {
+      active = false;
+      requests.current++;
+    };
+  }, [loadTeams, user?.id]);
 
   async function handleInviteResponse(teamId: string, accepted: boolean) {
     const {
@@ -167,7 +188,7 @@ export default function ProfileTeamsPage() {
       return;
     }
 
-    await loadTeams();
+    await loadTeams(user?.id || null);
   }
 
   function renderTeamHead(team: TeamRow) {
@@ -298,9 +319,15 @@ export default function ProfileTeamsPage() {
           <div className="box-title">Teams</div>
 
           <div className="box-body">
-            {rankError && <p role="alert">{rankError}</p>}
-            {loading ? (
+            {user && loadedUserId === user.id && rankError && <p role="alert">{rankError}</p>}
+            {authLoading || (user && (loading || loadedUserId !== user.id)) ? (
               <div className="loading">Loading teams...</div>
+            ) : !user ? (
+              <div className="empty-message">
+                <Link href="/login?next=%2Fprofile%2Fteams">Sign in</Link> to view your teams and invitations.
+              </div>
+            ) : loadError ? (
+              <div className="empty-message" role="alert">{loadError}</div>
             ) : teams.length === 0 ? (
               <div className="empty-message">
                 <strong>Looks lonely in here.</strong>
@@ -321,7 +348,7 @@ export default function ProfileTeamsPage() {
               </div>
             )}
 
-            {pendingInvites.length > 0 && (
+            {user && !loading && loadedUserId === user.id && pendingInvites.length > 0 && (
               <div className="box pending-box">
                 <div className="box-title">Pending Team Invites</div>
                 <div className="box-body">

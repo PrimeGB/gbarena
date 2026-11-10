@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { useUser } from "../../lib/useUser";
 
 type PostType = "Suggestion" | "Bug Report";
 
@@ -18,6 +19,7 @@ type CommunityPost = {
 };
 
 export default function SuggestionsPage() {
+  const { user, loading: authLoading } = useUser();
   const [selectedType, setSelectedType] = useState<PostType>("Suggestion");
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
@@ -25,7 +27,7 @@ export default function SuggestionsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [posts, setPosts] = useState<CommunityPost[]>([
+  const posts: CommunityPost[] = [
     {
       id: 1,
       type: "Suggestion",
@@ -53,9 +55,7 @@ export default function SuggestionsPage() {
       likes: 25,
       comments: 8,
     },
-  ]);
-
-  const filteredPosts = useMemo(() => posts, [posts]);
+  ];
 
   async function submitPost() {
     const cleanTitle = title.trim();
@@ -118,17 +118,6 @@ export default function SuggestionsPage() {
         return;
       }
 
-      const newPost: CommunityPost = {
-        id: Date.now(),
-        type: selectedType,
-        title: cleanTitle,
-        author: "You",
-        status: "Open",
-        likes: 0,
-        comments: 0,
-      };
-
-      setPosts([newPost, ...posts]);
       setTitle("");
       setDetails("");
       setSuccess(
@@ -157,22 +146,6 @@ export default function SuggestionsPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function likePost(id: number) {
-    setPosts((current) =>
-      current.map((post) =>
-        post.id === id ? { ...post, likes: post.likes + 1 } : post
-      )
-    );
-  }
-
-  function commentPost(id: number) {
-    setPosts((current) =>
-      current.map((post) =>
-        post.id === id ? { ...post, comments: post.comments + 1 } : post
-      )
-    );
   }
 
   return (
@@ -590,6 +563,11 @@ export default function SuggestionsPage() {
                   match help, score issues, or staff reports. Misusing this page
                   can lead to warnings or account consequences.
                 </div>
+                {!authLoading && !user && (
+                  <div className="warning-box">
+                    <Link href="/login?next=%2Fsuggestions">Sign in</Link> to submit a suggestion or report a bug.
+                  </div>
+                )}
                 {selectedType === "Bug Report" && (
                   <div className="warning-box">
                     Found a site issue? Include your GameBattles username, steps to
@@ -649,18 +627,18 @@ export default function SuggestionsPage() {
                   placeholder="Explain your idea or bug clearly..."
                 />
 
-                <button className="submit-btn" type="button" onClick={submitPost} disabled={submitting}>
+                <button className="submit-btn" type="button" onClick={submitPost} disabled={submitting || authLoading || !user}>
                   {submitting ? "Sending..." : `Submit ${selectedType}`}
                 </button>
               </div>
             </section>
 
             <section className="panel">
-              <div className="panel-header">Community Posts</div>
+              <div className="panel-header">Example Posts (Not Live)</div>
 
               <div className="panel-body">
                 <div className="post-list">
-                  {filteredPosts.map((post) => (
+                  {posts.map((post) => (
                     <article className="post-card" key={post.id}>
                       <div className="post-top">
                         <div className="post-type">{post.type}</div>
@@ -674,23 +652,6 @@ export default function SuggestionsPage() {
                           {post.comments} comments
                         </div>
 
-                        <div className="post-actions">
-                          <button
-                            className="mini-btn"
-                            type="button"
-                            onClick={() => likePost(post.id)}
-                          >
-                            Like
-                          </button>
-
-                          <button
-                            className="mini-btn"
-                            type="button"
-                            onClick={() => commentPost(post.id)}
-                          >
-                            Comment
-                          </button>
-                        </div>
                       </div>
                     </article>
                   ))}

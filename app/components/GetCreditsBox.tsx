@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CREDIT_PACKAGES } from "@/lib/creditPackages";
+import { useUser } from "@/lib/useUser";
+import Link from "next/link";
 
 type PayPalButtons = {
   Buttons: (config: Record<string, unknown>) => { render: (el: HTMLElement) => Promise<void>; close: () => void };
@@ -17,6 +19,8 @@ declare global {
 const CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
 export default function GetCreditsBox() {
+  const { user, loading: authLoading } = useUser();
+  const userId = user?.id;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string>(CREDIT_PACKAGES[1].key);
   const [agreed, setAgreed] = useState(false);
@@ -47,7 +51,7 @@ export default function GetCreditsBox() {
   }, [selected]);
 
   useEffect(() => {
-    if (!open || !CLIENT_ID || window.paypal) {
+    if (!open || !userId || !CLIENT_ID || window.paypal) {
       if (window.paypal) setSdkReady(true);
       return;
     }
@@ -56,7 +60,7 @@ export default function GetCreditsBox() {
     s.onload = () => setSdkReady(true);
     s.onerror = () => setError("Could not load PayPal.");
     document.body.appendChild(s);
-  }, [open]);
+  }, [open, userId]);
 
   async function finishPayment(orderId: string) {
     const { data } = await supabase.auth.getSession();
@@ -74,7 +78,7 @@ export default function GetCreditsBox() {
   }
 
   useEffect(() => {
-    if (!open || !sdkReady || !window.paypal || !holder.current) return;
+    if (!open || !userId || !sdkReady || !window.paypal || !holder.current) return;
     const el = holder.current;
     el.innerHTML = "";
     const buttons = window.paypal.Buttons({
@@ -124,7 +128,7 @@ export default function GetCreditsBox() {
         /* already closed */
       }
     };
-  }, [open, sdkReady]);
+  }, [open, sdkReady, userId]);
 
   return (
     <div className="gc-box" ref={boxRef}>
@@ -132,7 +136,7 @@ export default function GetCreditsBox() {
       {!open ? (
         <>
           <p>Use credits for tournament entry. Packs of 5 to 25.</p>
-          <button className="gc-btn" onClick={() => setOpen(true)}>Buy Credits</button>
+          <button className="gc-btn" onClick={() => setOpen(true)}>{user ? "Buy Credits" : "View Credit Packs"}</button>
         </>
       ) : (
         <>
@@ -155,6 +159,10 @@ export default function GetCreditsBox() {
           </label>
           {!CLIENT_ID ? (
             <div className="gc-note">Credit purchases are being set up and will open soon.</div>
+          ) : authLoading ? (
+            <div className="gc-note">Checking sign-in...</div>
+          ) : !user ? (
+            <div className="gc-note"><Link href="/login?next=%2Ftournaments">Sign in</Link> to buy credits.</div>
           ) : (
             <div ref={holder} className="gc-paypal" />
           )}

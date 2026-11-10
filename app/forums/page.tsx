@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
+import { useUser } from "../../lib/useUser";
 
 type ForumCategory =
   | "All"
@@ -68,7 +69,7 @@ export default function ForumsPage() {
 
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [search, setSearch] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { user, loading: authLoading } = useUser();
 
   function mapPost(p: any): ForumPost {
     return {
@@ -93,9 +94,6 @@ export default function ForumsPage() {
   useEffect(() => {
     let mounted = true;
     async function fetchPosts() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (mounted) setLoggedIn(!!sessionData.session);
-
       const { data, error } = await supabase
         .from("forum_posts")
         .select("*")
@@ -169,7 +167,7 @@ export default function ForumsPage() {
   async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!loggedIn) {
+    if (!user) {
       setError("Please log in to post.");
       return;
     }
@@ -358,7 +356,7 @@ export default function ForumsPage() {
               <h1>GameBattles Forums</h1>
               <p>Browse discussions, find teammates, and catch up on the latest posts.</p>
             </div>
-            <button
+            {authLoading ? null : user ? <button
               className="new-post-button"
               type="button"
               onClick={() => {
@@ -368,7 +366,9 @@ export default function ForumsPage() {
               }}
             >
               New Post
-            </button>
+            </button> : (
+              <Link className="new-post-button" href="/login?next=%2Fforums">Sign in to post</Link>
+            )}
           </div>
 
           <div className="forum-toolbar">

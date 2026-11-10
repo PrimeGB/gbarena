@@ -157,7 +157,7 @@ export default function MatchFinderPage() {
 function MatchFinderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser() as any;
+  const { user, loading: authLoading } = useUser();
 
   const platform = searchParams.get("platform") || "xbox";
   const category = searchParams.get("category") || "call-of-duty";
@@ -175,6 +175,7 @@ function MatchFinderContent() {
   const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;
   const viewTeamUrl = viewerTeamId ? `/teams/${viewerTeamId}` : "/profile/teams";
   const ladderUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;
+  const signInUrl = `/login?next=${encodeURIComponent(`/matches/finder?${searchParams.toString()}`)}`;
 
   const [matches, setMatches] = useState<MatchPost[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -682,7 +683,9 @@ function MatchFinderContent() {
                   </div>
 
                   <Link className="help-box" href="/matches/finder/help">How Match Finder Works</Link>
-                  {viewerCanManageMatches ? (
+                  {!authLoading && !user ? (
+                    <Link className="quick-create" href={signInUrl}>Sign in to create a match</Link>
+                  ) : viewerCanManageMatches ? (
                     <a className="quick-create" href={createUrl}>Create Match</a>
                   ) : (
                     <div className="quick-create disabled-create">Create Match Locked</div>
@@ -730,7 +733,9 @@ function MatchFinderContent() {
                                 View
                               </button>
 
-                              {isMyPost ? (
+                              {!authLoading && !user ? (
+                                <Link className="mini-btn gold" href={signInUrl}>Sign in to accept</Link>
+                              ) : isMyPost ? (
                                 viewerCanManageMatches ? (
                                   <button 
                                     className="mini-btn red-mini" 
@@ -741,14 +746,14 @@ function MatchFinderContent() {
                                     {cancellingId === match.id ? "..." : "Cancel"}
                                   </button>
                                 ) : (
-                                  <button className="mini-btn disabled" type="button">Cancel</button>
+                                  <button className="mini-btn disabled" type="button" disabled>Cancel</button>
                                 )
                               ) : user?.id && viewerCanManageMatches ? (
                                 <button className="mini-btn gold" type="button" onClick={() => beginMatchAcceptance(match)}>
                                   Accept
                                 </button>
                               ) : (
-                                <button className="mini-btn disabled" type="button">Accept</button>
+                                <button className="mini-btn disabled" type="button" disabled>Accept</button>
                               )}
                             </div>
                           </div>
