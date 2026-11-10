@@ -28,11 +28,21 @@ export function compareRankedTeams(a: RankedTeam, b: RankedTeam) {
     || a.id.localeCompare(b.id);
 }
 
+export function systemRankings<T extends RankedTeam>(teams: T[]): (T & { systemRank: number })[] {
+  const counts = new Map<string | null, number>();
+  return [...teams]
+    .sort((a, b) => String(a.platform ?? "").localeCompare(String(b.platform ?? "")) || compareRankedTeams(a, b))
+    .map((team) => {
+      const systemRank = (counts.get(team.platform) ?? 0) + 1;
+      counts.set(team.platform, systemRank);
+      return { ...team, systemRank };
+    });
+}
+
 export async function rankedLadderTeams(category: string, game: string, ladder: string, platform: string): Promise<RankedTeam[]> {
-  const platforms = await ladderPlatforms(category, game, platform);
   const { data, error } = await supabase.from("teams")
     .select("id,platform,rating_points,wins,losses,created_at")
-    .in("platform", platforms).eq("category", category).eq("game", game).eq("ladder", ladder)
+    .eq("platform", platform).eq("category", category).eq("game", game).eq("ladder", ladder)
     .or("wins.gt.0,losses.gt.0");
   if (error) throw new Error(`Could not load ladder rankings: ${error.message}`);
   return ((data || []) as RankedTeam[]).sort(compareRankedTeams);

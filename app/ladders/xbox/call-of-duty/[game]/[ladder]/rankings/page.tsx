@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
-import { compareRankedTeams, ladderPlatforms } from "../../../../../../../lib/ladderStandings";
+import { ladderPlatforms, systemRankings } from "../../../../../../../lib/ladderStandings";
 import { ladderPlatformLabel } from "../../../../../../../lib/ladderCatalog";
 import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
 
@@ -107,7 +107,7 @@ export default function LadderRankingsPage() {
   const ladderTitle = `${gameTitle} - ${prettyText(ladder)} Ladder`;
 
   const rankedTeams = useMemo(() => {
-    return [...teams].sort(compareRankedTeams);
+    return systemRankings(teams);
   }, [teams]);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function LadderRankingsPage() {
       setLoading(true);
       setError("");
 
-      const storageKey = `gb-ranks-pool-xbox-call-of-duty-${game}-${ladder}`;
+      const storageKey = `gb-ranks-by-system-call-of-duty-${game}-${ladder}`;
       let availableSystems: string[];
       try {
         availableSystems = await ladderPlatforms("call-of-duty", game, "xbox");
@@ -225,11 +225,9 @@ export default function LadderRankingsPage() {
         setTeamRosterIds({});
       }
 
-      const sortedNow = [...loadedTeams].sort(compareRankedTeams);
-
       const newRankSnapshot: Record<string, number> = {};
-      sortedNow.forEach((team, index) => {
-        newRankSnapshot[team.id] = index + 1;
+      systemRankings(loadedTeams).forEach((team) => {
+        newRankSnapshot[team.id] = team.systemRank;
       });
 
       if (typeof window !== "undefined") {
@@ -666,13 +664,13 @@ export default function LadderRankingsPage() {
                   </thead>
 
                   <tbody>
-                    {rankedTeams.map((team, index) => {
+                    {rankedTeams.map((team) => {
                       if (systemFilter !== "all" && team.platform !== systemFilter) return null;
                       const wins = Number(team.wins || 0);
                       const losses = Number(team.losses || 0);
                       const points = Number(team.rating_points || 100);
                       const streak = Number(team.streak || 0);
-                      const currentRank = index + 1;
+                      const currentRank = team.systemRank;
                       const move = movement(currentRank, previousRanks[team.id] || null);
 
                       return (

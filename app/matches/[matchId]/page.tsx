@@ -83,6 +83,7 @@ type MatchRow = {
 
 type TeamRow = {
   id: string;
+  platform: string | null;
   name: string | null;
   tag: string | null;
   logo_url: string | null;
@@ -359,8 +360,8 @@ export default function MatchDetailsPage() {
           reporting_status: "none",
           accepted_at: new Date().toISOString(),
         });
-        setPostingTeam({ id: "t1", name: "Nova Elite", tag: "NOVA", logo_url: null, avatar_url: null, wins: 57, losses: 12, streak: "8W", xp: 5180 });
-        setAcceptingTeam({ id: "t2", name: "Ghost Ops", tag: "GHST", logo_url: null, avatar_url: null, wins: 54, losses: 15, streak: "5W", xp: 5035 });
+        setPostingTeam({ id: "t1", platform: "xbox", name: "Nova Elite", tag: "NOVA", logo_url: null, avatar_url: null, wins: 57, losses: 12, streak: "8W", xp: 5180 });
+        setAcceptingTeam({ id: "t2", platform: "xbox", name: "Ghost Ops", tag: "GHST", logo_url: null, avatar_url: null, wins: 54, losses: 15, streak: "5W", xp: 5035 });
         setParticipants(
           ["Viper", "Hex", "Rook", "Blaze"].map((u, i) => ({ id: `a${i}`, team_id: "t1", team_name_at_match: "Nova Elite", username_at_match: u, account_id_at_match: `${u}#10${i}` }))
             .concat(["Ghost", "Raven", "Echo", "Drift"].map((u, i) => ({ id: `b${i}`, team_id: "t2", team_name_at_match: "Ghost Ops", username_at_match: u, account_id_at_match: `${u}#20${i}` })))
@@ -414,7 +415,7 @@ export default function MatchDetailsPage() {
       if (teamIds.length > 0) {
         const { data: teamsData, error: teamsError } = await supabase
           .from("teams")
-          .select("id,name,tag,logo_url,avatar_url,wins,losses,streak,xp,rating_points,owner_id")
+          .select("id,platform,name,tag,logo_url,avatar_url,wins,losses,streak,xp,rating_points,owner_id")
           .in("id", teamIds);
 
         if (teamsError) {
@@ -425,9 +426,17 @@ export default function MatchDetailsPage() {
 
         teams = (teamsData || []) as TeamRow[];
 
-        let rankedTeams;
+        if (teams.some((team) => !team.platform)) {
+          setPageError("A match team's system is missing; ladder rankings could not be loaded.");
+          setLoading(false);
+          return;
+        }
+        const teamPlatforms = [...new Set(teams.map((team) => team.platform).filter((platform): platform is string => !!platform))];
+        let rankingsBySystem;
         try {
-          rankedTeams = await rankedLadderTeams(officialMatch.category || "", officialMatch.game || "", officialMatch.ladder || "", officialMatch.platform || "");
+          rankingsBySystem = await Promise.all(teamPlatforms.map((platform) =>
+            rankedLadderTeams(officialMatch.category || "", officialMatch.game || "", officialMatch.ladder || "", platform)
+          ));
         } catch (reason) {
           setPageError(reason instanceof Error ? reason.message : "Could not load ladder rankings.");
           setLoading(false);
@@ -435,9 +444,9 @@ export default function MatchDetailsPage() {
         }
 
         const ranks: Record<string, number> = {};
-        (rankedTeams || []).forEach((row: { id: string }, index: number) => {
-          ranks[String(row.id)] = index + 1;
-        });
+        rankingsBySystem.forEach((rankedTeams) => rankedTeams.forEach((row, index) => {
+          ranks[row.id] = index + 1;
+        }));
         setTeamRanks(ranks);
 
         setPostingTeam(

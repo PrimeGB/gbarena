@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
-import { compareRankedTeams, ladderPlatforms } from "../../../../../../../lib/ladderStandings";
+import { ladderPlatforms, systemRankings } from "../../../../../../../lib/ladderStandings";
 import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
 
 type TeamRow = {
@@ -73,7 +73,7 @@ export default function BattlefieldRankingsPage() {
 
   const rankedTeams = useMemo(
     () =>
-      [...teams].sort(compareRankedTeams),
+      systemRankings(teams),
     [teams]
   );
 
@@ -244,9 +244,9 @@ export default function BattlefieldRankingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rankedTeams.map((team, index) => systemFilter !== "all" && team.platform !== systemFilter ? null : (
+                {rankedTeams.map((team) => systemFilter !== "all" && team.platform !== systemFilter ? null : (
                   <tr key={team.id}>
-                    <td>{index + 1}</td>
+                    <td>{team.systemRank}</td>
                     <td>
                       <Link href={`/teams/${team.id}`}>
                         {team.tag ? `[${team.tag}] ` : ""}

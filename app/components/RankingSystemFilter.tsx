@@ -14,6 +14,7 @@ export default function RankingSystemFilter({ systems, value, onChange }: {
         <option value="all">{systems.length > 1 ? "All Systems" : "All available systems"}</option>
         {systems.map((system) => <option key={system} value={system}>{ladderPlatformLabel(system) || system}</option>)}
       </select>
+      <span>Ranks are per system</span>
       <style>{`
         .ranking-filter{display:inline-flex;align-items:center;gap:6px;margin:6px 12px;color:#cfe2f2;font:11px Tahoma,sans-serif}
         .ranking-filter select{padding:5px;color:#eaf6ff;background:#071522;border:1px solid #315f88}
