@@ -1899,7 +1899,6 @@ function ProfilePageContent() {
                   <div className="box-body">
                     {isViewingOwnProfile ? (
                       <>
-                        <Link className="quick-link" href="/profile/edit">Account / Profile</Link>
                         <Link className="quick-link" href="/profile/teams">My Teams</Link>
                         <Link className="quick-link" href="/profile/friends">My Friends</Link>
                         <Link className="quick-link" href="/profile/awards">My Awards</Link>
