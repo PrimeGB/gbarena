@@ -73,6 +73,12 @@ export default function SuggestionsPage() {
     let bugReportSaved = false;
     let bugReportSaveError = "";
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (sessionError || !token) {
+        setError("Sign in to submit a suggestion or bug report.");
+        return;
+      }
       if (selectedType === "Bug Report") {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
@@ -89,7 +95,7 @@ export default function SuggestionsPage() {
 
       const response = await fetch("/api/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           type: selectedType,
           title: cleanTitle,
@@ -104,9 +110,9 @@ export default function SuggestionsPage() {
         }
         setError(
           bugReportSaved
-            ? `Your bug report is saved for staff review, but its email notification failed: ${result.error || "Please contact support."}`
+            ? `Your bug report is saved for staff review, but could not be sent to the owner: ${result.error || "Please contact support."}`
             : bugReportSaveError
-              ? `Your bug report could not be sent or saved for staff review: ${result.error || "Email delivery failed."} ${bugReportSaveError}`
+              ? `Your bug report could not be sent or saved for staff review: ${result.error || "Owner inbox delivery failed."} ${bugReportSaveError}`
               : result.error || "Your submission could not be sent. Please try again."
         );
         return;
@@ -127,11 +133,14 @@ export default function SuggestionsPage() {
       setDetails("");
       setSuccess(
         selectedType === "Bug Report" && bugReportSaved
-          ? "Your bug report was saved for staff review. Bug Finder awards are granted only after staff confirms the issue is fixed."
-          : "Thanks! Your submission was sent to the GameBattles owner."
+          ? "Your report was sent to the owner and saved for staff review. Bug Finder awards are granted only after staff confirms the issue is fixed."
+          : "Thanks! Your submission was sent to the GameBattles owner's inbox."
       );
+      if (!result.emailDelivered) {
+        setError("Your submission reached the owner's inbox, but the email notification could not be sent.");
+      }
       if (bugReportSaveError) {
-        setError(`Your report was emailed, but could not be added to Bug Finder review: ${bugReportSaveError}`);
+        setError(`${result.emailDelivered ? "" : "The email notification could not be sent. "}Your report reached the owner's inbox, but could not be added to Bug Finder review: ${bugReportSaveError}`);
       }
     } catch (submitError) {
       if (bugReportSaved) {
@@ -140,7 +149,7 @@ export default function SuggestionsPage() {
       }
       setError(
         bugReportSaved
-          ? `Your bug report is saved for staff review, but its email notification could not be sent: ${submitError instanceof Error ? submitError.message : "Please try again later."}`
+          ? `Your bug report is saved for staff review, but its owner notification could not be confirmed: ${submitError instanceof Error ? submitError.message : "Please try again later."}`
           : bugReportSaveError
             ? `Your report could not be emailed or added to Bug Finder review: ${bugReportSaveError}. ${submitError instanceof Error ? submitError.message : "Please try again later."}`
             : `Your submission could not be sent: ${submitError instanceof Error ? submitError.message : "Please check your connection and try again."}`
@@ -566,7 +575,8 @@ export default function SuggestionsPage() {
             <h1>Suggestions Box</h1>
             <p>
               Submit ideas for the site, request improvements, or report bugs.
-              This page is not for match disputes, score problems, or urgent match help.
+              Sign in to submit feedback. This page is not for match disputes,
+              score problems, or urgent match help.
             </p>
           </section>
 

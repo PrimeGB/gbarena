@@ -74,15 +74,14 @@ Additional titles may be added based on community demand.
 - Vercel
 
 ### Feedback email notifications
-To email the site owner when a suggestion or bug is submitted, configure these
-server-side environment variables in the deployment:
+Signed-in players' suggestions and bug reports are sent to the Prime owner inbox.
+To also email the owner, configure these server-side environment variables in the deployment:
 
-- `SITE_OWNER_EMAIL` — the site owner's notification address
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only key used to look up the Prime owner's account email
 - `RESEND_API_KEY` — a Resend API key
 - `EMAIL_FROM` — a sender address verified with Resend
 
-The submission endpoint reports an error instead of showing success when delivery
-is not configured or the email provider rejects the message.
+The page reports separately if inbox delivery or the email notification fails.
 
 ### Version Control
 - GitHub
