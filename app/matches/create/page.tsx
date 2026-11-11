@@ -496,52 +496,48 @@ function CreateMatchContent() {
         body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
         a{text-decoration:none;}
 
-        .page{min-height:100vh;background:radial-gradient(circle at top,rgba(45,100,150,.22),transparent 42%),linear-gradient(to bottom,#02060a,#000);padding:32px 22px;}
-        .wrap{max-width:1080px;margin:0 auto;background:#07111b;border:1px solid #315f88;box-shadow:0 0 28px rgba(0,80,140,.35), inset 0 0 22px rgba(0,0,0,.7);}
+        .page{min-height:100vh;background:radial-gradient(circle at top,rgba(45,100,150,.22),transparent 42%),linear-gradient(to bottom,#02060a,#000);padding:18px 16px;}
+        .wrap{max-width:1160px;margin:0 auto;background:#07111b;border:1px solid #315f88;box-shadow:0 0 28px rgba(0,80,140,.35), inset 0 0 22px rgba(0,0,0,.7);}
 
-        .header{min-height:104px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
-        .game-header{display:flex;align-items:center;gap:18px;}
-        .game-cover{width:126px;height:78px;border:1px solid #315f88;background:#050c14;overflow:hidden;}
+        .header{min-height:78px;background:linear-gradient(to bottom,#173956,#07111b);border-bottom:2px solid #315f88;display:flex;align-items:center;justify-content:space-between;padding:10px 18px;}
+        .game-header{display:flex;align-items:center;gap:14px;}
+        .game-cover{width:92px;height:58px;border:1px solid #315f88;background:#050c14;overflow:hidden;}
         .game-cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
-        .game-name{color:#f2c14e;font-size:15px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase;margin-bottom:8px;text-shadow:0 1px 2px #000;}
-        .ladder-name{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
-        .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:15px;font-weight:900;text-transform:uppercase;padding:14px 22px;text-shadow:0 2px 4px #000;}
+        .game-name{color:#f2c14e;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;text-shadow:0 1px 2px #000;}
+        .ladder-name{color:#fff;font-size:24px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 4px #000;}
+        .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:12px;font-weight:900;text-transform:uppercase;padding:10px 15px;text-shadow:0 2px 4px #000;}
         .header-badge:hover{border-color:#d7ad4a;color:#d7ad4a;}
 
         .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
         .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;}
         .nav a:hover{color:#d7ad4a;}
 
-        .title-bar{background:linear-gradient(to bottom,#1d496e,#0a1724);border-bottom:1px solid #315f88;padding:18px 24px;text-align:center;}
-        .title-bar h1{color:#d7ad4a;font-size:30px;text-transform:uppercase;text-shadow:0 1px 2px #000;}
-        .title-bar p{color:#cfe2f2;font-size:13px;margin-top:7px;}
+        .title-bar{background:linear-gradient(to bottom,#1d496e,#0a1724);border-bottom:1px solid #315f88;padding:10px 18px;text-align:center;}
+        .title-bar h1{color:#d7ad4a;font-size:23px;text-transform:uppercase;text-shadow:0 1px 2px #000;}
+        .title-bar p{color:#cfe2f2;font-size:11px;margin-top:4px;}
 
-        .content{padding:22px;}
-        .old-grid{display:grid;grid-template-columns:240px 1fr;gap:18px;}
+        .content{padding:14px;}
+        .old-grid{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;align-items:start;}
         .side-panel,.main-panel{background:#050b12;border:1px solid #244b70;box-shadow:inset 0 0 18px rgba(0,0,0,.75);}
-        .panel-header{min-height:38px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;padding:0 14px;color:#d7ad4a;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;}
+        .panel-header{min-height:32px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;padding:0 11px;color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
 
-        .side-body{padding:14px;}
-        .steps-box{border:1px solid #1f3d5a;background:linear-gradient(to bottom,#091724,#06101a);padding:14px;margin-bottom:14px;}
-        .steps-title{color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.09);padding-bottom:8px;}
-        .step-line{color:#cfe2f2;font-size:12px;line-height:22px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
-        .step-line:last-child{border-bottom:none;}
-        .step-arrow{color:#d7ad4a;font-weight:bold;margin-right:6px;}
+        .side-body{padding:10px;}
+        .match-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+        .match-info div{min-width:0;border:1px solid #1f3d5a;background:#081522;padding:7px;color:#cfe2f2;font-size:10px;line-height:14px;}
+        .match-info span{display:block;color:#8aa7c0;font-size:9px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px;}
+        .match-info strong{display:block;margin-top:2px;color:#f5f8ff;font-size:11px;overflow-wrap:anywhere;}
 
-        .match-info{border:1px solid #244b70;background:#081522;padding:12px;}
-        .match-info div{color:#cfe2f2;font-size:12px;line-height:23px;border-bottom:1px solid rgba(255,255,255,.055);}
-        .match-info div:last-child{border-bottom:none;}
+        .main-body{padding:12px;}
+        .form-section{border:1px solid #244b70;background:#07111b;margin-bottom:10px;box-shadow:inset 0 0 14px rgba(0,0,0,.35);}
+        .form-title{min-height:30px;display:flex;align-items:center;padding:6px 10px;background:linear-gradient(to bottom,#112b42,#07111b);border-bottom:1px solid #244b70;color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;}
+        .form-body{padding:11px;}
+        .match-details .form-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;}
 
-        .main-body{padding:18px;}
-        .form-section{border:1px solid #244b70;background:#07111b;margin-bottom:15px;box-shadow:inset 0 0 14px rgba(0,0,0,.35);}
-        .form-title{height:33px;display:flex;align-items:center;padding:0 12px;background:linear-gradient(to bottom,#112b42,#07111b);border-bottom:1px solid #244b70;color:#d7ad4a;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;}
-        .form-body{padding:15px;}
+        .row{display:grid;grid-template-columns:94px minmax(0,1fr);gap:8px;align-items:start;margin:0;min-width:0;}
+        .row-wide{grid-column:1/-1;}
 
-        .row{display:grid;grid-template-columns:145px 1fr;gap:12px;align-items:center;margin-bottom:12px;}
-        .row:last-child{margin-bottom:0;}
-
-        label{color:#cfe2f2;font-size:12px;font-weight:bold;text-transform:uppercase;}
-        input,select,textarea{width:100%;border:1px solid #315b7d;background:#02070c;color:#fff;font-size:13px;font-family:Tahoma,Verdana,Arial,sans-serif;padding:9px 10px;outline:none;}
+        label{color:#cfe2f2;font-size:10px;font-weight:bold;text-transform:uppercase;padding-top:8px;}
+        input,select,textarea{width:100%;border:1px solid #315b7d;background:#02070c;color:#fff;font-size:12px;font-family:Tahoma,Verdana,Arial,sans-serif;padding:7px 8px;outline:none;}
         input:focus,select:focus,textarea:focus{border-color:#6ba8d6;box-shadow:0 0 8px rgba(103,189,255,.28);}
         select{cursor:pointer;}
 
@@ -551,50 +547,56 @@ function CreateMatchContent() {
         .time-select{max-width:170px;}
         .locked-player-box{max-width:160px;border:1px solid #315b7d;background:#02070c;color:#d7ad4a;font-size:13px;font-weight:900;padding:9px 10px;text-transform:uppercase;}
 
-        .date-time-box{border:1px solid #315b7d;background:#02070c;padding:12px;display:grid;grid-template-columns:130px 180px;gap:12px;align-items:center;max-width:340px;}
+        .date-time-box{border:1px solid #315b7d;background:#02070c;padding:5px;display:grid;grid-template-columns:1fr;gap:0;align-items:center;max-width:220px;}
         .locked-day{height:38px;border:1px solid #244b70;background:#07111b;color:#d7ad4a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;text-transform:uppercase;}
 
-        .best-of-scroll{width:170px;height:78px;overflow-y:auto;border:1px solid #315b7d;background:#02070c;}
-        .best-of-option{width:100%;height:26px;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:#02070c;color:#cfe2f2;font-size:12px;font-weight:900;text-transform:uppercase;cursor:pointer;text-align:left;padding-left:10px;}
+        .best-of-scroll{display:flex;gap:4px;width:max-content;max-width:100%;height:auto;overflow:visible;border:0;background:transparent;}
+        .best-of-option{width:auto;min-width:64px;height:32px;border:1px solid #315b7d;background:#02070c;color:#cfe2f2;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;padding:0 9px;}
         .best-of-option:hover,.best-of-option.active{background:#10283d;color:#d7ad4a;}
 
-        .settings-summary{border:1px solid #315b7d;background:#02070c;padding:14px;}
-        .settings-title{color:#fff;font-size:14px;font-weight:900;text-transform:uppercase;margin-bottom:5px;}
-        .settings-copy{color:#8aa7c0;font-size:12px;line-height:18px;margin-bottom:12px;}
-        .settings-buttons{display:flex;flex-wrap:wrap;gap:10px;}
-        .settings-button{min-width:165px;height:38px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;}
+        .settings-summary{border:1px solid #315b7d;background:#02070c;padding:9px;}
+        .settings-title{color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;}
+        .settings-copy{color:#8aa7c0;font-size:10px;line-height:15px;margin-top:4px;}
+        .settings-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
+        .settings-button{min-width:0;height:30px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:9px;font-weight:900;text-transform:uppercase;cursor:pointer;padding:0 9px;}
         .settings-button:hover{color:#d7ad4a;border-color:#d7ad4a;}
         .settings-button.locked{opacity:.45;cursor:not-allowed;}
         .settings-button.locked:hover{color:#fff;border-color:#4b95d8;}
+        .settings-details summary{display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none;}
+        .settings-details summary::-webkit-details-marker,.rules-details summary::-webkit-details-marker{display:none;}
+        .settings-details summary .settings-copy{flex:1;margin:0;}
+        .settings-toggle{color:#8aa7c0;font-size:9px;font-weight:900;text-transform:uppercase;white-space:nowrap;}
+        .settings-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px;}
+        .setting-field{display:grid;grid-template-columns:minmax(88px,140px) minmax(0,1fr);align-items:center;gap:8px;color:#cfe2f2;font-size:11px;}
+        .setting-field .small-select{max-width:100%;}
+        .rules-details summary{justify-content:space-between;cursor:pointer;list-style:none;}
+        .rules-details .form-body{padding-top:10px;}
 
-        .disabled-settings{opacity:.42;filter:grayscale(.35);}
-        .disabled-settings .settings-button{cursor:not-allowed;}
-
-        .rules-box{border:1px solid #315b7d;background:#02070c;padding:13px;color:#cfe2f2;font-size:12px;line-height:22px;}
-        .crossplay-box{border:1px solid #315b7d;background:#02070c;padding:13px;max-width:410px;}
-        .small-note{color:#8aa7c0;font-size:11px;line-height:18px;margin-top:8px;}
+        .rules-box{border:1px solid #315b7d;background:#02070c;padding:8px;color:#cfe2f2;font-size:10px;line-height:16px;}
+        .crossplay-box{border:1px solid #315b7d;background:#02070c;padding:7px;max-width:410px;}
+        .small-note{color:#8aa7c0;font-size:10px;line-height:15px;margin-top:5px;}
         .error-note{color:#ff9d9d;}
-        .roster-picker{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;}
-        .roster-pill{padding:8px 12px;border:1px solid #315f88;background:#0b1c2d;color:#dfeaf7;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s ease;}
+        .roster-picker{display:flex;flex-wrap:wrap;gap:6px;padding-top:7px;}
+        .roster-pill{padding:6px 9px;border:1px solid #315f88;background:#0b1c2d;color:#dfeaf7;font-size:10px;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s ease;}
         .roster-pill.eligible{border-color:#36a968;}
         .roster-pill:hover{border-color:#f2c14e;color:#f2c14e;}
         .roster-pill.active{background:linear-gradient(to bottom,#1d496e,#0a1724);border-color:#f2c14e;color:#f2c14e;box-shadow:0 0 12px rgba(242,193,78,.25);}
         .roster-pill:disabled{border-color:#34404b;background:#101820;color:#778694;cursor:not-allowed;opacity:.65;}
         .roster-pill:disabled:hover{border-color:#34404b;color:#778694;}
 
-        .rules-link{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:38px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;}
+        .rules-link{display:inline-flex;align-items:center;justify-content:center;min-width:140px;height:32px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;padding:0 10px;}
         .rules-link:hover{color:#d7ad4a;border-color:#d7ad4a;}
 
-        .error-box{border:1px solid #923131;background:#210707;color:#ff9c9c;font-size:13px;font-weight:900;text-transform:uppercase;padding:12px;margin-bottom:14px;}
+        .error-box{border:1px solid #923131;background:#210707;color:#ff9c9c;font-size:11px;font-weight:900;text-transform:uppercase;padding:9px;margin-bottom:9px;}
 
-        .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;}
-        .action-btn{min-width:180px;height:44px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-shadow:0 1px 2px #000;cursor:pointer;}
+        .actions{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin:10px -12px -12px;padding:9px 12px;background:rgba(5,11,18,.96);border-top:1px solid #244b70;backdrop-filter:blur(8px);}
+        .action-btn{min-width:130px;height:36px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;text-shadow:0 1px 2px #000;cursor:pointer;padding:0 12px;}
         .action-btn.gold{background:linear-gradient(to bottom,#d6a943,#7b560e);border-color:#e8c46a;color:#07111b;text-shadow:none;}
         .action-btn.red{background:linear-gradient(to bottom,#bd1717,#5c0000);border-color:#e34242;}
         .action-btn:hover{filter:brightness(1.13);}
         .action-btn:disabled{opacity:.55;cursor:not-allowed;filter:none;}
 
-        .footer{height:36px;background:#07111b;border-top:1px solid #244b70;display:flex;justify-content:center;align-items:center;color:#a9c3db;font-size:11px;}
+        .footer{height:30px;background:#07111b;border-top:1px solid #244b70;display:flex;justify-content:center;align-items:center;color:#a9c3db;font-size:10px;}
 
         .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
         .settings-modal{width:820px;max-width:96vw;max-height:90vh;overflow:auto;border:1px solid #315f88;background:#050b12;box-shadow:0 0 30px rgba(0,80,140,.55);}
@@ -620,9 +622,29 @@ function CreateMatchContent() {
 
         @media(max-width:850px){
           .old-grid{grid-template-columns:1fr;}
-          .row,.settings-grid,.setting-row,.date-time-box{grid-template-columns:1fr;gap:8px;}
-          .header{flex-direction:column;justify-content:center;gap:12px;padding:18px;text-align:center;}
+          .side-panel .side-body{padding:8px;}
+          .match-info{grid-template-columns:repeat(4,minmax(0,1fr));}
+          .header{gap:12px;padding:12px 16px;}
           .nav{flex-wrap:wrap;height:auto;padding:10px;gap:14px;}
+        }
+        @media(max-width:620px){
+          .page{padding:8px;}
+          .content{padding:8px;}
+          .header{align-items:flex-start;}
+          .game-cover{width:66px;height:46px;}
+          .game-header{gap:9px;}
+          .ladder-name{font-size:18px;}
+          .header-badge{font-size:10px;padding:8px;}
+          .title-bar h1{font-size:19px;}
+          .match-info{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .match-details .form-body{grid-template-columns:1fr;gap:10px;}
+          .row{grid-template-columns:1fr;gap:4px;}
+          .row-wide{grid-column:auto;}
+          .row label{padding-top:0;}
+          .date-time-box{max-width:100%;}
+          .settings-grid,.setting-row{grid-template-columns:1fr;gap:8px;}
+          .actions{margin-left:-8px;margin-right:-8px;margin-bottom:-8px;padding:8px;}
+          .actions .action-btn{flex:1;min-width:0;}
         }
       `}</style>
 
@@ -663,28 +685,14 @@ function CreateMatchContent() {
           <section className="content">
             <div className="old-grid">
               <aside className="side-panel">
-                <div className="panel-header">Match Setup</div>
+                <div className="panel-header">Match Snapshot</div>
 
                 <div className="side-body">
-                  <div className="steps-box">
-                    <div className="steps-title">Create Match Steps</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Select Game Mode</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Review Map Notice</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Select Cross Play</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Select Rules</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Pick Match Time</div>
-                    <div className="step-line"><span className="step-arrow">►</span>Post Match</div>
-                  </div>
-
                   <div className="match-info">
-                    <div>Platform: {platformName}</div>
-                    <div>Game: {gameName}</div>
-                    <div>Ladder: {ladderName}</div>
-                    <div>Rules: {isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</div>
-                    <div>Cross Play: {crossplay}</div>
-                    <div>Players: {players}</div>
-                    <div>Team ID: {teamId ? "Loaded" : "Missing"}</div>
-                    <div>Status: Match Draft</div>
+                    <div><span>Platform</span><strong>{platformName}</strong></div>
+                    <div><span>Players</span><strong>{players}</strong></div>
+                    <div><span>Rules</span><strong>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</strong></div>
+                    <div><span>Cross Play</span><strong>{crossplay}</strong></div>
                   </div>
                 </div>
               </aside>
@@ -695,7 +703,7 @@ function CreateMatchContent() {
                 <div className="main-body">
                   {postError && <div className="error-box">{postError}</div>}
 
-                  <div className="form-section">
+                  <div className="form-section match-details">
                     <div className="form-title">Match Details</div>
 
                     <div className="form-body">
@@ -816,62 +824,46 @@ function CreateMatchContent() {
                         )}
                       </div>
 
-                      <div className="row">
+                      <div className="row row-wide">
                         <label>Settings</label>
 
                         {isRedSec || isRapidRoyal ? (
-                          <div className="settings-summary disabled-settings">
-                            <div className="settings-title">Match Settings</div>
+                          <div className="settings-summary">
+                            <div className="settings-title">{killRaceName} settings are locked</div>
                             <div className="settings-copy">
-                              {killRaceName} settings are controlled by the GameBattles {killRaceName} ruleset.
-                              These settings cannot be changed when posting a {killRaceName} match.
-                            </div>
-
-                            <div className="settings-buttons">
-                              <button
-                                className="settings-button locked"
-                                type="button"
-                                disabled
-                              >
-                                View Settings
-                              </button>
-
-                              <button
-                                className="settings-button locked"
-                                type="button"
-                                disabled
-                              >
-                                Edit Settings
-                              </button>
+                              Controlled by the GameBattles {killRaceName} ruleset.
                             </div>
                           </div>
                         ) : gameRules && currentMode ? (
-                          <div className="settings-summary">
-                            <div className="settings-title">{currentMode.value} Settings</div>
-                            <div className="settings-copy">
-                              Defaults follow the competitive standard for this mode. Adjust any value both teams agree on.
+                          <details className="settings-summary settings-details">
+                            <summary>
+                              <span className="settings-title">{currentMode.value} Settings</span>
+                              <span className="settings-copy">Competitive defaults · customize if both teams agree</span>
+                              <span className="settings-toggle">Customize</span>
+                            </summary>
+                            <div className="settings-fields">
+                              {currentMode.fields.map((item) => (
+                                <div key={item.slot} className="setting-field">
+                                  <span>{item.label}</span>
+                                  {item.options.length === 1 ? (
+                                    <strong>{item.options[0]}</strong>
+                                  ) : (
+                                    <select
+                                      className="small-select"
+                                      value={activeRuleValues[item.slot]}
+                                      onChange={(e) =>
+                                        setRuleValues((current) => ({ ...current, [item.slot]: e.target.value }))
+                                      }
+                                    >
+                                      {item.options.map((option) => (
+                                        <option key={option}>{option}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              ))}
                             </div>
-                            {currentMode.fields.map((item) => (
-                              <div key={item.slot} style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
-                                <span style={{ minWidth: 140 }}>{item.label}</span>
-                                {item.options.length === 1 ? (
-                                  <strong>{item.options[0]}</strong>
-                                ) : (
-                                  <select
-                                    className="small-select"
-                                    value={activeRuleValues[item.slot]}
-                                    onChange={(e) =>
-                                      setRuleValues((current) => ({ ...current, [item.slot]: e.target.value }))
-                                    }
-                                  >
-                                    {item.options.map((option) => (
-                                      <option key={option}>{option}</option>
-                                    ))}
-                                  </select>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                          </details>
                         ) : (
                           <div className="settings-summary">
                             <div className="settings-title">Match Settings</div>
@@ -894,14 +886,15 @@ function CreateMatchContent() {
                                 View CDL Settings
                               </button>
 
-                              <button
-                                className={rulesType === "Custom" ? "settings-button" : "settings-button locked"}
-                                type="button"
-                                disabled={rulesType !== "Custom"}
-                                onClick={() => setSettingsOpen(true)}
-                              >
-                                Edit Custom Settings
-                              </button>
+                              {rulesType === "Custom" && (
+                                <button
+                                  className="settings-button"
+                                  type="button"
+                                  onClick={() => setSettingsOpen(true)}
+                                >
+                                  Edit Custom Settings
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -941,7 +934,7 @@ function CreateMatchContent() {
                       </div>
 
                       {teamRoster.length > 0 && (
-                        <div className="row">
+                        <div className="row row-wide">
                           <label>Match Roster</label>
                           <div>
                             <div className="small-note">
@@ -970,7 +963,7 @@ function CreateMatchContent() {
                       )}
 
                       {teamRoster.length === 0 && (
-                        <div className="row">
+                        <div className="row row-wide">
                           <label>Match Roster</label>
                           <div className="small-note error-note">
                             This team does not have enough rostered players to post a {ladderName} match yet.
@@ -1018,8 +1011,11 @@ function CreateMatchContent() {
                     </div>
                   </div>
 
-                  <div className="form-section">
-                    <div className="form-title">Rules Reminder</div>
+                  <details className="form-section rules-details">
+                    <summary className="form-title">
+                      <span>Rules Reminder</span>
+                      <span className="settings-toggle">View match rules</span>
+                    </summary>
 
                     <div className="form-body">
                       {isRapidRoyal ? (
@@ -1111,7 +1107,7 @@ function CreateMatchContent() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </details>
 
                   <div className="actions">
                     <button
