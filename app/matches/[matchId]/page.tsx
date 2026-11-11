@@ -523,7 +523,7 @@ export default function MatchDetailsPage() {
   }, [matchId, currentUser?.id]);
 
   useEffect(() => {
-    if (matchId) loadComments();
+    if (matchId && !(process.env.NODE_ENV === "development" && matchId === "preview")) loadComments();
   }, [matchId]);
 
   const pageTitle = useMemo(() => {
@@ -584,7 +584,6 @@ export default function MatchDetailsPage() {
     ? [
         { label: "Match ID", value: staffMatchId(match.id) },
         { label: "Date & Time", value: formatMatchTime(match.match_time) },
-        { label: "Status", value: "", status: true },
         { label: "Game", value: gameTitle },
         { label: "Platform", value: prettyText(match.platform) },
         { label: "Match Type", value: ladderName(match.ladder) },
@@ -593,7 +592,7 @@ export default function MatchDetailsPage() {
         { label: "Game Mode", value: match.game_mode ? prettyText(match.game_mode) : "" },
         { label: "Gameplay", value: match.preset?.trim() || "" },
         ...featuredSettings.map((setting) => ({ label: setting.label, value: setting.value || "" })),
-      ].filter((row) => ("status" in row && row.status) || row.value)
+      ].filter((row) => row.value)
     : [];
   const requiredWins = bestOfNumber === 7 ? 4 : bestOfNumber === 5 ? 3 : bestOfNumber === 1 ? 1 : 2;
   const ladderRules = match
@@ -1442,12 +1441,13 @@ export default function MatchDetailsPage() {
 
         .comment-form{
           display:grid;
-          grid-template-columns:1fr 82px;
+          grid-template-columns:minmax(0,1fr) 82px;
           gap:10px;
           margin-top:12px;
         }
 
         .comment-input{
+          min-width:0;
           height:38px;
           border:1px solid #252525;
           background:#080808;
@@ -1553,8 +1553,54 @@ export default function MatchDetailsPage() {
         .roster-name{color:#fff;font-weight:900;font-size:14px;display:flex;flex-direction:column;line-height:1.2;}
         .roster-name small{color:#777;font-weight:400;font-size:11px;}
 
+        .match-shell{border-color:#244b70;background:#08121c;}
+        .top-bar,.section-title,.dark-title{background:linear-gradient(to bottom,#18344f,#091521);border-color:#244b70;color:#f2c14e;}
+        .top-title{color:#f2c14e;}
+        .top-right{color:#9db5c9;}
+        .team-grid{grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);background:#091521;border-color:#244b70;}
+        .team-card{min-height:120px;padding:14px;background:#0b1a28;min-width:0;}
+        .vs-box{min-height:120px;border-color:#244b70;background:#0a1724;color:#f2c14e;font-size:16px;}
+        .team-main{gap:12px;min-width:0;}
+        .team-logo{width:68px;height:68px;border-color:#315f88;background:#07111b;color:#f2c14e;font-size:18px;}
+        .team-logo-link:hover .team-logo{border-color:#e4bd5c;box-shadow:none;}
+        .team-copy{min-height:68px;min-width:0;justify-content:center;}
+        .team-name-block,.team-record{transform:none;}
+        .team-name{font-size:17px;color:#f2c14e;overflow-wrap:anywhere;}
+        .team-tag{color:#9bb4c9;font-size:10px;margin-top:3px;}
+        .team-record{margin-top:7px;color:#b8cbdc;font-size:12px;line-height:18px;}
+        .orange{color:#f2c14e;}
+        .match-info{border-color:#244b70;background:#0a1724;}
+        .participants-grid{gap:10px;padding:10px 12px;border-color:#244b70;background:#0a1724;}
+        .participants-team{min-width:0;border-color:#244b70;background:#081521;padding:10px;}
+        .roster-title{color:#a9c5db;font-size:12px;font-weight:bold;margin-bottom:8px;}
+        .roster-title::after{background:#244b70;}
+        .roster-player{gap:8px;margin-bottom:6px;}
+        .roster-player:last-child{margin-bottom:0;}
+        .roster-avatar{width:30px;height:30px;background:#193952;color:#d7eaff;font-size:10px;}
+        .roster-name{min-width:0;font-size:12px;overflow-wrap:anywhere;}
+        .roster-name small{color:#9cb4c8;overflow-wrap:anywhere;}
+        .match-status-bar{padding:8px 12px;background:#102b40;border-bottom:1px solid #244b70;color:#c7dceb;text-align:center;font-size:12px;font-weight:bold;}
+        .match-status-bar .status-pill{margin-left:6px;}
+        .detail-layout{grid-template-columns:minmax(0,1fr) 220px;gap:16px;padding:12px;align-items:start;}
+        .detail-row{grid-template-columns:125px minmax(0,1fr);gap:10px;min-height:25px;font-size:12px;}
+        .detail-label{color:#a9c0d3;}
+        .detail-value{color:#edf6ff;overflow-wrap:anywhere;}
+        .detail-actions{gap:8px;}
+        .blue-btn{padding:10px;border:1px solid #397ab0;background:linear-gradient(to bottom,#1c527e,#10304a);font-size:12px;cursor:pointer;}
+        .blue-btn:hover{background:#215d8a;}
+        .toggle-settings{width:calc(100% - 24px);margin:0 12px 12px;padding:8px;background:#091521;border-color:#397ab0;color:#9ed7ff;font-size:12px;}
+        .toggle-settings:hover{background:#102b40;}
+        .match-preview-notice{padding:8px 12px;background:#e4bd5c;color:#101820;font-size:12px;font-weight:bold;text-align:center;}
+
         @media (max-width:700px){
-          .detail-layout{grid-template-columns:1fr;}
+          .detail-layout{grid-template-columns:1fr;gap:10px;}
+          .detail-actions{grid-template-columns:1fr 1fr;}
+          .detail-row{grid-template-columns:105px minmax(0,1fr);}
+        }
+        @media (max-width:420px){
+          .detail-actions{grid-template-columns:1fr;}
+          .participants-grid{gap:6px;padding:8px;}
+          .participants-team{padding:8px;}
         }
 
         .modal-backdrop{
@@ -1639,29 +1685,19 @@ export default function MatchDetailsPage() {
         .error{color:#ff7777;}
 
         @media(max-width:760px){
-          .team-grid{
-            grid-template-columns:1fr;
-          }
-
-          .vs-box{
-            min-height:48px;
-            border-left:0;
-            border-right:0;
-            border-top:1px solid #242424;
-            border-bottom:1px solid #242424;
-          }
-
-          .team-card.left-card,
-          .team-card.right-card{
-            justify-content:center;
-          }
-
-          .team-main,
-          .right-card .team-main{
-            justify-content:center;
-            text-align:center;
-            flex-direction:column;
-          }
+          .page{padding:12px 10px 24px;}
+          .top-bar{height:auto;min-height:42px;gap:8px;padding:8px 10px;}
+          .top-title{min-width:0;overflow-wrap:anywhere;}
+          .top-right{flex-shrink:0;font-size:10px;}
+          .team-grid{grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);}
+          .team-card{min-height:0;padding:10px 7px;}
+          .vs-box{min-height:0;font-size:12px;}
+          .team-main,.right-card .team-main{flex-direction:column;justify-content:center;text-align:center;gap:6px;}
+          .right-card .team-main{flex-direction:column-reverse;}
+          .team-logo{width:48px;height:48px;font-size:13px;}
+          .team-copy{min-height:0;}
+          .team-name{font-size:13px;}
+          .team-record{font-size:11px;margin-top:4px;}
 
           .info-grid,.modal-body{
             grid-template-columns:1fr;
@@ -1677,6 +1713,9 @@ export default function MatchDetailsPage() {
 
       <main className="page">
         <div className="match-shell">
+          {process.env.NODE_ENV === "development" && matchId === "preview" && (
+            <div className="match-preview-notice">Sample preview — this is not a real match.</div>
+          )}
           <div className="top-bar">
             <div className="top-title">{pageTitle}</div>
             <div className="top-right">Match Details</div>
@@ -1813,19 +1852,17 @@ export default function MatchDetailsPage() {
 
               <section className="match-info">
                 <div className="section-title dark-title">Match Details</div>
+                <div className="match-status-bar">
+                  Status:
+                  <span className={`status-pill ${statusClass(displayStatus)}`}>{prettyStatus(displayStatus)}</span>
+                </div>
 
                 <div className="detail-layout">
                   <div className="detail-rows">
                     {detailRows.map((row) => (
                       <div className="detail-row" key={row.label}>
                         <span className="detail-label">{row.label}:</span>
-                        {"status" in row && row.status ? (
-                          <span className={`status-pill ${statusClass(displayStatus)}`}>
-                            {prettyStatus(displayStatus)}
-                          </span>
-                        ) : (
-                          <span className="detail-value">{row.value}</span>
-                        )}
+                        <span className="detail-value">{row.value}</span>
                       </div>
                     ))}
                   </div>
