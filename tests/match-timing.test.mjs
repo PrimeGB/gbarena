@@ -19,3 +19,12 @@ test("reporting and ticket windows are based on the scheduled match time", () =>
     assert.equal(exports.matchTicketDeadline(invalid), null);
   }
 });
+
+test("match list dates never treat legacy time-only values as dates", () => {
+  const scheduled = "2026-11-10T12:00:00Z";
+  const expected = new Date(scheduled).toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" });
+  assert.deepEqual(exports.matchListDate(scheduled, "2026-11-11T12:00:00Z"), { text: expected, completed: false });
+  assert.deepEqual(exports.matchListDate("10:00 AM", scheduled), { text: expected, completed: true });
+  assert.deepEqual(exports.matchListDate("10:00 AM", null), { text: "TBD", completed: false });
+  assert.deepEqual(exports.matchListDate(null, "invalid"), { text: "TBD", completed: false });
+});

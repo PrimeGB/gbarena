@@ -12,6 +12,7 @@ import FollowButton from "../../components/FollowButton";
 import TeamStreams from "../../components/TeamStreams";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
+import { matchListDate } from "../../../lib/matchTiming";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -53,6 +54,7 @@ type TeamMatch = {
   winning_team_id?: string | null;
   losing_team_id?: string | null;
   created_at: string | null;
+  completed_at: string | null;
 };
 
 type TeamNameMap = {
@@ -135,15 +137,6 @@ function resultClass(match: TeamMatch, teamId: string) {
   if (result === "Playing") return "result-playing";
 
   return "result-upcoming";
-}
-
-function shortDate(value: string | null) {
-  if (!value) return "TBD";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 function memberSince(value: string | null) {
@@ -414,7 +407,7 @@ export default function TeamPage() {
       const { data: matchesData, error: matchesError } = await supabase
         .from("matches")
         .select(
-          "id, posting_team_id, accepting_team_id, game_mode, players, match_time, best_of, status, winning_team_id, losing_team_id, created_at"
+          "id, posting_team_id, accepting_team_id, game_mode, players, match_time, best_of, status, winning_team_id, losing_team_id, created_at, completed_at"
         )
         .or(`posting_team_id.eq.${teamId},accepting_team_id.eq.${teamId}`)
         .order("created_at", { ascending: false })
@@ -693,7 +686,8 @@ export default function TeamPage() {
 
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
         .match-table{width:100%;border-collapse:collapse;font-size:12px;}
-        .match-table th{background:#050c14;color:#fff;padding:9px 10px;border-bottom:1px solid #244b70;text-align:left;font-size:11px;text-transform:uppercase;}
+        .match-scroll{max-height:166px;overflow:auto;-webkit-overflow-scrolling:touch;}
+        .match-table th{position:sticky;top:0;z-index:1;background:#050c14;color:#fff;padding:9px 10px;border-bottom:1px solid #244b70;text-align:left;font-size:11px;text-transform:uppercase;}
         .match-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#cfe2f2;}
         .match-table tr:nth-child(even){background:rgba(31,67,96,.12);}
         .match-table a{color:#7fc7ff;font-weight:900;text-decoration:none;}
@@ -1014,13 +1008,15 @@ export default function TeamPage() {
                     ) : visibleMatches.length === 0 ? (
                       <div className="empty-text">No matches have been played or scheduled.</div>
                     ) : (
-                      <div className="table-scroll" role="region" aria-label="Upcoming and recent matches" tabIndex={0}>
+                      <div className="match-scroll" role="region" aria-label="Upcoming and recent matches, scroll for more" tabIndex={0}>
                         <table className="match-table">
                           <thead><tr><th>Date</th><th>Time</th><th>Opponent</th><th>Result</th><th>Match Details</th></tr></thead>
                           <tbody>
-                        {visibleMatches.map((match) => (
+                        {visibleMatches.map((match) => {
+                          const date = matchListDate(match.match_time, match.completed_at);
+                          return (
                           <tr key={match.id}>
-                            <td>{shortDate(match.match_time || match.created_at)}</td>
+                            <td>{date.text}{date.completed && " (completed)"}</td>
                             <td>{match.match_time && !Number.isNaN(Date.parse(match.match_time)) ? new Date(match.match_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : match.match_time || "TBD"}</td>
                             <td>{getOpponentName(match)}</td>
                             <td className={resultClass(match, teamId)}>
@@ -1028,7 +1024,8 @@ export default function TeamPage() {
                             </td>
                             <td><Link href={`/matches/${match.id}`}>Details</Link></td>
                           </tr>
-                        ))}
+                          );
+                        })}
                           </tbody>
                         </table>
                       </div>

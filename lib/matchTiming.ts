@@ -16,3 +16,13 @@ export function matchTicketDeadline(matchTime: string | null | undefined): numbe
   const scheduled = scheduledTime(matchTime);
   return scheduled === null ? null : scheduled + MATCH_TICKET_WINDOW_MS;
 }
+
+export function matchListDate(matchTime: string | null, completedAt: string | null): { text: string; completed: boolean } {
+  const scheduled = scheduledTime(matchTime);
+  const completed = completedAt ? Date.parse(completedAt) : NaN;
+  const timestamp = scheduled ?? (Number.isFinite(completed) ? completed : null);
+  return {
+    text: timestamp === null ? "TBD" : new Date(timestamp).toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" }),
+    completed: scheduled === null && timestamp !== null,
+  };
+}
