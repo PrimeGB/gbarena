@@ -29,5 +29,8 @@ test("team page combines upcoming and recent matches into an accessible table", 
   assert.match(source, /className="match-table"/);
   assert.match(source, /\.match-scroll\{max-height:166px;overflow:auto/);
   assert.match(source, /matchListDate\(match\.match_time, match\.completed_at\)/);
+  assert.match(source, /\.match-table th:last-child,\.match-table td:last-child\{text-align:right;white-space:nowrap;/);
+  assert.match(source, />\{date\.text\}<\/td>/);
+  assert.doesNotMatch(source, /\(completed\)/);
   assert.match(source, /role="alert">\{matchesError\}/);
 });

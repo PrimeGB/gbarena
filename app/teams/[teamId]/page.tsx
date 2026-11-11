@@ -689,6 +689,7 @@ export default function TeamPage() {
         .match-scroll{max-height:166px;overflow:auto;-webkit-overflow-scrolling:touch;}
         .match-table th{position:sticky;top:0;z-index:1;background:#050c14;color:#fff;padding:9px 10px;border-bottom:1px solid #244b70;text-align:left;font-size:11px;text-transform:uppercase;}
         .match-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#cfe2f2;}
+        .match-table th:last-child,.match-table td:last-child{text-align:right;white-space:nowrap;}
         .match-table tr:nth-child(even){background:rgba(31,67,96,.12);}
         .match-table a{color:#7fc7ff;font-weight:900;text-decoration:none;}
         .match-table a:hover{color:#d7ad4a;}
@@ -1016,7 +1017,7 @@ export default function TeamPage() {
                           const date = matchListDate(match.match_time, match.completed_at);
                           return (
                           <tr key={match.id}>
-                            <td>{date.text}{date.completed && " (completed)"}</td>
+                            <td title={date.completed ? "Completion date; scheduled date unavailable" : undefined} aria-label={date.completed ? `${date.text}, completion date; scheduled date unavailable` : undefined}>{date.text}</td>
                             <td>{match.match_time && !Number.isNaN(Date.parse(match.match_time)) ? new Date(match.match_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : match.match_time || "TBD"}</td>
                             <td>{getOpponentName(match)}</td>
                             <td className={resultClass(match, teamId)}>
