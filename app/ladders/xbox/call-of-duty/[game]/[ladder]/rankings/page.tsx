@@ -21,7 +21,7 @@ type TeamRow = {
   ladder: string | null;
   wins: number | null;
   losses: number | null;
-  streak: number | null;
+  current_win_streak: number;
   xp: number | null;
   rating_points: number | null;
   created_at: string | null;
@@ -73,8 +73,8 @@ function streakText(streak: number) {
   return "-";
 }
 
-function movement(currentRank: number, previousRank: number | null) {
-  if (!previousRank || previousRank === currentRank) return "same";
+function movement(previousRank: number | null, currentRank: number | null) {
+  if (previousRank === null || currentRank === null || previousRank === currentRank) return "same";
   if (previousRank > currentRank) return "up";
   return "down";
 }
@@ -86,7 +86,7 @@ export default function LadderRankingsPage() {
 
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [teamRosterIds, setTeamRosterIds] = useState<Record<string, TeamRosterId[]>>({});
-  const [previousRanks, setPreviousRanks] = useState<Record<string, number>>({});
+  const [rankMovements, setRankMovements] = useState<Record<string, { previous: number | null; current: number | null }>>({});
   const [myTeamId, setMyTeamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [systems, setSystems] = useState<string[]>([]);
@@ -115,7 +115,6 @@ export default function LadderRankingsPage() {
       setLoading(true);
       setError("");
 
-      const storageKey = `gb-ranks-by-system-call-of-duty-${game}-${ladder}`;
       let availableSystems: string[];
       try {
         availableSystems = await ladderPlatforms("call-of-duty", game, "xbox");
@@ -127,21 +126,10 @@ export default function LadderRankingsPage() {
       setSystems(availableSystems);
       setSystemFilter("all");
 
-      if (typeof window !== "undefined") {
-        const savedRanks = window.localStorage.getItem(storageKey);
-        if (savedRanks) {
-          try {
-            setPreviousRanks(JSON.parse(savedRanks));
-          } catch {
-            setPreviousRanks({});
-          }
-        }
-      }
-
       const { data, error: teamsError } = await supabase
         .from("teams")
         .select(
-          "id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,streak,xp,rating_points,created_at"
+          "id,name,tag,logo_url,avatar_url,platform,category,game,ladder,wins,losses,current_win_streak,xp,rating_points,created_at"
         )
         .in("platform", availableSystems)
         .eq("category", "call-of-duty")
@@ -163,6 +151,18 @@ export default function LadderRankingsPage() {
 
       const teamIds = loadedTeams.map((team) => team.id);
       if (teamIds.length > 0) {
+        const { data: movements, error: movementError } = await supabase
+          .from("team_match_rank_movement")
+          .select("team_id,previous_place,current_place")
+          .in("team_id", teamIds);
+        if (movementError) {
+          setError("Rank movements could not be loaded: " + movementError.message);
+          setLoading(false);
+          return;
+        }
+        setRankMovements(Object.fromEntries((movements || []).map((row) => [
+          row.team_id, { previous: row.previous_place, current: row.current_place },
+        ])));
         const { data: members, error: membersError } = await supabase
           .from("team_members")
           .select("team_id,user_id")
@@ -222,16 +222,8 @@ export default function LadderRankingsPage() {
           setTeamRosterIds({});
         }
       } else {
+        setRankMovements({});
         setTeamRosterIds({});
-      }
-
-      const newRankSnapshot: Record<string, number> = {};
-      systemRankings(loadedTeams).forEach((team) => {
-        newRankSnapshot[team.id] = team.systemRank;
-      });
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(storageKey, JSON.stringify(newRankSnapshot));
       }
 
       const {
@@ -669,9 +661,10 @@ export default function LadderRankingsPage() {
                       const wins = Number(team.wins || 0);
                       const losses = Number(team.losses || 0);
                       const points = Number(team.rating_points || 100);
-                      const streak = Number(team.streak || 0);
+                      const streak = team.current_win_streak;
                       const currentRank = team.systemRank;
-                      const move = movement(currentRank, previousRanks[team.id] || null);
+                      const savedMovement = rankMovements[team.id];
+                      const move = movement(savedMovement?.previous ?? null, savedMovement?.current ?? null);
 
                       return (
                         <tr key={team.id}>

@@ -13,5 +13,19 @@ test("team header omits rank without shifting match actions; stats retain place 
   assert.match(header, /Create Match/);
   assert.match(header, /Match Finder/);
   assert.match(stats, /teamRankError/);
-  assert.match(stats, /<td>\{cleanTeamPlace\}<\/td>/);
+  assert.match(stats, /<td>\{cleanTeamPlace\}/);
+  assert.match(stats, /rankMovement > 0 \? "▲" : "▼"/);
+  assert.match(stats, /rankMovement !== null && rankMovement !== 0/);
+  assert.match(stats, /<td>\{teamStreak\}<\/td>\s*<td>\{teamBestStreak\}<\/td>/);
+});
+
+test("team page combines upcoming and recent matches into an accessible table", () => {
+  const source = readFileSync(new URL("../app/teams/[teamId]/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /Upcoming & Recent Matches/);
+  assert.doesNotMatch(source, /panel-title">Challenges/);
+  for (const heading of ["Date", "Time", "Opponent", "Result", "Match Details"]) {
+    assert.match(source, new RegExp(`<th>${heading}</th>`));
+  }
+  assert.match(source, /className="match-table"/);
+  assert.match(source, /role="alert">\{matchesError\}/);
 });

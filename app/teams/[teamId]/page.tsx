@@ -35,7 +35,8 @@ type TeamData = {
   avatar_url: string | null;
   wins: number | null;
   losses: number | null;
-  streak: number | null;
+  current_win_streak: number;
+  best_win_streak: number;
   xp: number | null;
   rating_points: number | null;
 };
@@ -208,8 +209,10 @@ export default function TeamPage() {
   const [playerSearch, setPlayerSearch] = useState("");
   const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
+  const [matchesError, setMatchesError] = useState("");
   const [teamPlace, setTeamPlace] = useState<number | null>(null);
   const [teamRankError, setTeamRankError] = useState("");
+  const [rankMovement, setRankMovement] = useState<number | null>(null);
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
   const [teamFollowers, setTeamFollowers] = useState<number | null>(null);
   const [teamFollowError, setTeamFollowError] = useState("");
@@ -243,13 +246,18 @@ export default function TeamPage() {
       const bStat = resultText(b, teamId);
       const aIsLive = aStat === "Upcoming" || aStat === "Playing" ? 1 : 0;
       const bIsLive = bStat === "Upcoming" || bStat === "Playing" ? 1 : 0;
-      return bIsLive - aIsLive;
+      if (aIsLive !== bIsLive) return bIsLive - aIsLive;
+      const aTime = getMatchTimeMs(a);
+      const bTime = getMatchTimeMs(b);
+      if (!aTime || !bTime) return bTime - aTime;
+      return aIsLive ? aTime - bTime : bTime - aTime;
     }).slice(0, 20);
   }, [teamMatches, teamId]);
 
   const teamWins = Number(team?.wins || 0);
   const teamLosses = Number(team?.losses || 0);
-  const teamStreak = Number(team?.streak || 0);
+  const teamStreak = team?.current_win_streak ?? 0;
+  const teamBestStreak = team?.best_win_streak ?? 0;
   const hasPlayedMatch = teamWins + teamLosses > 0;
   const teamXp = hasPlayedMatch ? Number(team?.xp ?? 0) : 0;
   const teamRatingPoints = Number(team?.rating_points ?? 100);
@@ -293,7 +301,7 @@ export default function TeamPage() {
       const { data: teamData } = await supabase
         .from("teams")
         .select(
-          "id, name, tag, platform, category, game, ladder, owner_id, logo_url, avatar_url, wins, losses, streak, xp, rating_points"
+          "id, name, tag, platform, category, game, ladder, owner_id, logo_url, avatar_url, wins, losses, current_win_streak, best_win_streak, xp, rating_points"
         )
         .eq("id", teamId)
         .single();
@@ -316,12 +324,20 @@ export default function TeamPage() {
 
       if (teamData?.platform && teamData.category && teamData.game && teamData.ladder) {
         try {
-          const rankedTeams = await rankedLadderTeams(teamData.category, teamData.game, teamData.ladder, teamData.platform);
+          const [rankedTeams, movement] = await Promise.all([
+            rankedLadderTeams(teamData.category, teamData.game, teamData.ladder, teamData.platform),
+            supabase.from("team_match_rank_movement").select("previous_place,current_place")
+              .eq("team_id", teamId).maybeSingle(),
+          ]);
+          if (movement.error) throw new Error("Could not load rank movement: " + movement.error.message);
           const placeIndex = rankedTeams.findIndex((rankedTeam) => rankedTeam.id === teamId);
           setTeamPlace(placeIndex >= 0 ? placeIndex + 1 : null);
+          setRankMovement(movement.data?.previous_place != null && movement.data?.current_place != null
+            ? movement.data.previous_place - movement.data.current_place : null);
           setTeamRankError("");
         } catch (reason) {
           setTeamPlace(null);
+          setRankMovement(null);
           setTeamRankError(reason instanceof Error ? reason.message : "Could not load ladder rank.");
         }
       }
@@ -405,6 +421,7 @@ export default function TeamPage() {
         .limit(20);
 
       if (!matchesError) {
+        setMatchesError("");
         const loadedMatches = (matchesData || []) as TeamMatch[];
         setTeamMatches(loadedMatches);
 
@@ -430,6 +447,9 @@ export default function TeamPage() {
 
           setTeamNames(nameMap);
         }
+      } else {
+        setTeamMatches([]);
+        setMatchesError("Matches could not be loaded: " + matchesError.message);
       }
 
       if ((user as any)?.id) {
@@ -671,70 +691,15 @@ export default function TeamPage() {
           background:transparent;border:0;color:#fff;font-weight:900;
         }
 
-        .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
-
-        .match-list-wrap{
-          max-height:150px;
-          overflow-y:auto;
-          overflow-x:hidden;
-          background:#02070c;
-          padding:5px 6px;
-          scrollbar-gutter:stable;
-        }
-
-        .match-list-row{
-          min-height:29px;
-          display:grid;
-          grid-template-columns:1fr 1fr 1fr 1fr;
-          align-items:center;
-          width:100%;
-          border-bottom:1px solid rgba(255,255,255,.14);
-          color:#cfe2f2;
-          font-size:11px;
-          line-height:29px;
-          background:#02070c;
-        }
-
-        .match-list-row:last-child{border-bottom:0;}
-
-        .match-list-date{
-          color:#8aa7c0;
-          font-weight:900;
-          text-align:center;
-          white-space:nowrap;
-        }
-
-        .match-list-opponent{
-          color:#fff;
-          font-weight:900;
-          text-align:center;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-          min-width:0;
-          padding:0 4px;
-        }
-
-        .match-list-details{text-align:center;white-space:nowrap;}
-
-        .match-list-details a{
-          color:#7fc7ff;
-          font-size:10px;
-          font-weight:900;
-          text-decoration:none;
-          text-transform:uppercase;
-        }
-
-        .match-list-details a:hover{color:#d7ad4a;}
-
-        .match-list-result{
-          text-align:center;
-          font-weight:900;
-          white-space:nowrap;
-          overflow:visible;
-          font-size:10px;
-        }
+        .match-table{width:100%;border-collapse:collapse;font-size:12px;}
+        .match-table th{background:#050c14;color:#fff;padding:9px 10px;border-bottom:1px solid #244b70;text-align:left;font-size:11px;text-transform:uppercase;}
+        .match-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#cfe2f2;}
+        .match-table tr:nth-child(even){background:rgba(31,67,96,.12);}
+        .match-table a{color:#7fc7ff;font-weight:900;text-decoration:none;}
+        .match-table a:hover{color:#d7ad4a;}
+        .rank-up{color:#36e86b;font-weight:900;}
+        .rank-down{color:#ff5555;font-weight:900;}
 
         .result-win{color:#36e86b !important;font-weight:900;}
         .result-loss{color:#ff5555 !important;font-weight:900;}
@@ -862,7 +827,6 @@ export default function TeamPage() {
           .team-name{font-size:clamp(26px,8vw,36px);overflow-wrap:anywhere;}
           .team-match-actions{gap:8px;}
           .team-action-btn{padding:0 6px;text-align:center;}
-          .mini-grid{grid-template-columns:minmax(0,1fr);}
           .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
           .stats-table,.roster-table{display:table;width:100%;max-width:none;min-width:600px;}
           .table-hint{display:block;color:#9bb4c9;font-size:11px;padding:8px 10px 0;}
@@ -1025,11 +989,13 @@ export default function TeamPage() {
                     <tbody>
                       <tr>
                         <td>Current</td>
-                        <td>{cleanTeamPlace}</td>
+                        <td>{cleanTeamPlace}{rankMovement !== null && rankMovement !== 0 && (
+                          <span className={rankMovement > 0 ? "rank-up" : "rank-down"} aria-label={` ${rankMovement > 0 ? "Up" : "Down"} ${Math.abs(rankMovement)} places after last match`}> {rankMovement > 0 ? "▲" : "▼"}</span>
+                        )}</td>
                         <td>{teamWins}</td>
                         <td>{teamLosses}</td>
                         <td>{teamStreak}</td>
-                        <td>{teamStreak}</td>
+                        <td>{teamBestStreak}</td>
                         <td className="xp-cell">{teamXp}</td>
                         <td className="level-cell">
                           <span className="level-pill">{teamLevel}</span>
@@ -1040,38 +1006,34 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                <div className="mini-grid">
                   <div className="panel" id="matches">
                     <div className="panel-title">Upcoming & Recent Matches</div>
 
-                    {visibleMatches.length === 0 ? (
+                    {matchesError ? (
+                      <div className="team-follow-error" role="alert">{matchesError}</div>
+                    ) : visibleMatches.length === 0 ? (
                       <div className="empty-text">No matches have been played or scheduled.</div>
                     ) : (
-                      <div className="match-list-wrap">
+                      <div className="table-scroll" role="region" aria-label="Upcoming and recent matches" tabIndex={0}>
+                        <table className="match-table">
+                          <thead><tr><th>Date</th><th>Time</th><th>Opponent</th><th>Result</th><th>Match Details</th></tr></thead>
+                          <tbody>
                         {visibleMatches.map((match) => (
-                          <div className="match-list-row" key={match.id}>
-                            <div className="match-list-date">{shortDate(match.match_time || match.created_at)}</div>
-
-                            <div className="match-list-opponent">{getOpponentName(match)}</div>
-
-                            <div className="match-list-details">
-                              <Link href={`/matches/${match.id}`}>Details</Link>
-                            </div>
-
-                            <div className={`match-list-result ${resultClass(match, teamId)}`}>
-                              {resultText(match, teamId)}
-                            </div>
-                          </div>
+                          <tr key={match.id}>
+                            <td>{shortDate(match.match_time || match.created_at)}</td>
+                            <td>{match.match_time && !Number.isNaN(Date.parse(match.match_time)) ? new Date(match.match_time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : match.match_time || "TBD"}</td>
+                            <td>{getOpponentName(match)}</td>
+                            <td className={resultClass(match, teamId)}>
+                              {resultText(match, teamId) === "W" ? "Win" : resultText(match, teamId) === "L" ? "Loss" : resultText(match, teamId)}
+                            </td>
+                            <td><Link href={`/matches/${match.id}`}>Details</Link></td>
+                          </tr>
                         ))}
+                          </tbody>
+                        </table>
                       </div>
                     )}
                   </div>
-
-                  <div className="panel">
-                    <div className="panel-title">Challenges</div>
-                    <div className="empty-text">No pending challenges.</div>
-                  </div>
-                </div>
 
                 <div className="panel" id="roster">
                   <div className="panel-title">Roster</div>
