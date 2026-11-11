@@ -260,7 +260,6 @@ export default function MatchDetailsPage() {
   const [teamRanks, setTeamRanks] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
@@ -579,7 +578,6 @@ export default function MatchDetailsPage() {
       )
     : [];
   const featuredSettings = allSettings.filter((setting) => "featured" in setting);
-  const matchSettings = allSettings.filter((setting) => !("featured" in setting));
   const detailRows = match
     ? [
         { label: "Match ID", value: staffMatchId(match.id) },
@@ -1512,21 +1510,6 @@ export default function MatchDetailsPage() {
           border-radius:3px;
         }
         .blue-btn:hover{background:#2a8cf0;}
-        .toggle-settings{
-          display:block;
-          width:calc(100% - 36px);
-          margin:0 18px 18px;
-          padding:10px;
-          background:#0b0b0b;
-          border:1px solid #0a78e0;
-          color:#3d9bff;
-          font-size:14px;
-          font-weight:900;
-          border-radius:3px;
-          cursor:pointer;
-        }
-        .toggle-settings:hover{background:#0d1a2a;}
-
         .roster-title{
           display:flex;
           align-items:center;
@@ -1588,8 +1571,6 @@ export default function MatchDetailsPage() {
         .detail-actions{gap:8px;}
         .blue-btn{padding:10px;border:1px solid #397ab0;background:linear-gradient(to bottom,#1c527e,#10304a);font-size:12px;cursor:pointer;}
         .blue-btn:hover{background:#215d8a;}
-        .toggle-settings{width:calc(100% - 24px);margin:0 12px 12px;padding:8px;background:#091521;border-color:#397ab0;color:#9ed7ff;font-size:12px;}
-        .toggle-settings:hover{background:#102b40;}
         .match-preview-notice{padding:8px 12px;background:#e4bd5c;color:#101820;font-size:12px;font-weight:bold;text-align:center;}
 
         @media (max-width:700px){
@@ -1655,13 +1636,6 @@ export default function MatchDetailsPage() {
         .rules-note a{color:#3d9bff;}
         .rules-settings{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;}
 
-        .modal-body{
-          padding:14px;
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:8px 14px;
-        }
-
         .setting-line{
           border-bottom:1px solid rgba(255,255,255,.06);
           color:#aaa;
@@ -1699,7 +1673,7 @@ export default function MatchDetailsPage() {
           .team-name{font-size:13px;}
           .team-record{font-size:11px;margin-top:4px;}
 
-          .info-grid,.modal-body{
+          .info-grid{
             grid-template-columns:1fr;
           }
 
@@ -1882,25 +1856,6 @@ export default function MatchDetailsPage() {
 
                 <MatchJoinGuide battlefield={isBattlefield(match.category, match.game)} compact />
 
-                {matchSettings.length > 0 && (
-                  <button
-                    className="toggle-settings"
-                    type="button"
-                    onClick={() => setSettingsOpen((open) => !open)}
-                  >
-                    {settingsOpen ? "Hide All Settings" : "Show All Settings"}
-                  </button>
-                )}
-
-                {settingsOpen && matchSettings.length > 0 && (
-                  <div className="modal-body">
-                    {matchSettings.map((setting) => (
-                      <div className="setting-line" key={setting.label}>
-                        {setting.label}: <span>{setting.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </section>
 
               <section className="score-section">
@@ -2168,7 +2123,7 @@ export default function MatchDetailsPage() {
                   </ul>
                 </div>
               ))}
-              {allSettings.length > 0 && (
+              {(allSettings.length > 0 || !!match.preset?.trim()) && (
                 <div className="rules-section">
                   <h3>Required Match Settings</h3>
                   <p className="rules-note">Both teams must play with exactly these settings.</p>
