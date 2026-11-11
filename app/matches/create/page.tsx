@@ -719,9 +719,9 @@ function CreateMatchContent() {
                           </div>
                         ) : (
                           <div className="rules-box">
-                            Automatic map selection is not available yet.
+                            Where a game and mode has a supported map pool, maps are randomly assigned when the match is accepted.
                             <br />
-                            Follow the game&apos;s match rules when choosing maps.
+                            Otherwise, follow the game&apos;s match rules when choosing maps.
                           </div>
                         )}
                       </div>

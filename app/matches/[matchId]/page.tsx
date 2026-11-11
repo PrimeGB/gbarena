@@ -81,6 +81,7 @@ type MatchRow = {
   winning_user_ids?: string[] | null;
   losing_user_ids?: string[] | null;
   host_team_ids?: string[] | null;
+  map_names?: string[] | null;
 };
 
 type TeamRow = {
@@ -370,6 +371,7 @@ export default function MatchDetailsPage() {
           reporting_status: "none",
           accepted_at: new Date().toISOString(),
           host_team_ids: ["t1", "t2", "t1"],
+          map_names: ["Hacienda", "Protocol", "Red Card"],
         });
         setPostingTeam({ id: "t1", platform: "xbox", name: "Nova Elite", tag: "NOVA", logo_url: null, avatar_url: null, wins: 57, losses: 12, streak: "8W", xp: 5180 });
         setAcceptingTeam({ id: "t2", platform: "xbox", name: "Ghost Ops", tag: "GHST", logo_url: null, avatar_url: null, wins: 54, losses: 15, streak: "5W", xp: 5035 });
@@ -629,6 +631,8 @@ export default function MatchDetailsPage() {
             match.game_mode
               ? `Each game is played on ${prettyText(match.game_mode)}.`
               : "Game mode is agreed in the match lobby.",
+            ...(match.host_team_ids?.length ? ["The higher-ranked team hosts first; teams alternate hosts. Ties and matches between two unranked teams start with the posting team. Rankings are compared within each team's own system ladder at acceptance."] : []),
+            ...(match.map_names?.length ? ["Play the assigned maps in the order shown on the match page."] : []),
             isBombMode
               ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
               : "A game ends when the score limit or time limit in the settings below is reached.",
@@ -1909,7 +1913,13 @@ export default function MatchDetailsPage() {
                 <div className="detail-rows" style={{ padding: "0 18px 16px" }}>
                   <div className="detail-row">
                     <span className="detail-label">Maps:</span>
-                    <span className="detail-value">Automatic map selection is not available yet. Follow the game&apos;s match rules.</span>
+                    <span className="detail-value">
+                      {match.map_names?.length
+                        ? match.map_names.map((name, index) => `Game ${index + 1}: ${name}`).join(" · ")
+                        : ["uno", "clash-of-clans", "clash-royale"].includes(match.category || "")
+                          ? "No fixed map assignment is required for this game."
+                          : "No automatic map pool is available for this game and mode yet; follow the match rules."}
+                    </span>
                   </div>
                   <div className="detail-row">
                     <span className="detail-label">Lobby organizers:</span>
