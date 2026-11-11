@@ -6,7 +6,13 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
-import { GamingAccount, gamingCategoryLabel, gamingGameLabel, resolveGamingAccountId } from "../../../lib/gamingAccounts";
+import {
+  GamingAccount,
+  gamingCategoryLabel,
+  gamingGameLabel,
+  isMatchEligibleGamingId,
+  resolveGamingAccountId,
+} from "../../../lib/gamingAccounts";
 import { getGameRules } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
@@ -157,6 +163,10 @@ function CreateMatchContent() {
     { id: string; username: string; gaming_id: string | null }[]
   >([]);
   const [selectedRosterPlayers, setSelectedRosterPlayers] = useState<string[]>([]);
+  const eligibleTeamRoster = useMemo(
+    () => teamRoster.filter((player) => isMatchEligibleGamingId(player.gaming_id)),
+    [teamRoster],
+  );
   const [matchDateTime, setMatchDateTime] = useState(() =>
     toLocalDateTimeValue(getNextQuarterHour(new Date()))
   );
@@ -288,7 +298,13 @@ function CreateMatchContent() {
       }));
 
       setTeamRoster(roster);
-      setSelectedRosterPlayers((current) => current.filter((id) => roster.some((player) => player.id === id)));
+      setSelectedRosterPlayers((current) =>
+        current.filter((id) =>
+          roster.some(
+            (player) => player.id === id && isMatchEligibleGamingId(player.gaming_id),
+          ),
+        ),
+      );
     }
 
     loadTeamRoster();
@@ -378,10 +394,9 @@ function CreateMatchContent() {
       return;
     }
 
-    const eligibleRoster = teamRoster.filter((player) => player.gaming_id);
-    if (eligibleRoster.length < rosterLimit) {
+    if (eligibleTeamRoster.length < rosterLimit) {
       setPostError(
-        `This ${ladderName} match requires ${rosterLimit} rostered players with a saved ${platformName} ID for ${gameName}.`,
+        `This ${ladderName} match requires ${rosterLimit} eligible (green) rostered players with a ${platformName} ID.`,
       );
       return;
     }
@@ -391,8 +406,8 @@ function CreateMatchContent() {
       return;
     }
 
-    if (selectedRosterPlayers.some((id) => !eligibleRoster.some((player) => player.id === id))) {
-      setPostError("Every selected player must have a saved gaming ID for this game and platform.");
+    if (selectedRosterPlayers.some((id) => !eligibleTeamRoster.some((player) => player.id === id))) {
+      setPostError("Only eligible (green) rostered players with a linked platform ID can be selected.");
       return;
     }
 
@@ -561,8 +576,11 @@ function CreateMatchContent() {
         .error-note{color:#ff9d9d;}
         .roster-picker{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;}
         .roster-pill{padding:8px 12px;border:1px solid #315f88;background:#0b1c2d;color:#dfeaf7;font-weight:bold;text-transform:uppercase;cursor:pointer;transition:all .15s ease;}
+        .roster-pill.eligible{border-color:#36a968;}
         .roster-pill:hover{border-color:#f2c14e;color:#f2c14e;}
         .roster-pill.active{background:linear-gradient(to bottom,#1d496e,#0a1724);border-color:#f2c14e;color:#f2c14e;box-shadow:0 0 12px rgba(242,193,78,.25);}
+        .roster-pill:disabled{border-color:#34404b;background:#101820;color:#778694;cursor:not-allowed;opacity:.65;}
+        .roster-pill:disabled:hover{border-color:#34404b;color:#778694;}
 
         .rules-link{display:inline-flex;align-items:center;justify-content:center;min-width:170px;height:38px;border:1px solid #4b95d8;background:linear-gradient(to bottom,#1c4b72,#0a1724);color:#fff;font-size:11px;font-weight:900;text-transform:uppercase;cursor:pointer;}
         .rules-link:hover{color:#d7ad4a;border-color:#d7ad4a;}
@@ -927,21 +945,22 @@ function CreateMatchContent() {
                           <label>Match Roster</label>
                           <div>
                             <div className="small-note">
-                              Select exactly {rosterLimit} rostered players with a saved {platformName} ID for {gameName}.
+                              Select exactly {rosterLimit} eligible (green) players. Only team members with a linked {platformName} ID can be selected.
                             </div>
                             <div className="roster-picker">
                               {teamRoster.map((player) => {
                                 const isSelected = selectedRosterPlayers.includes(player.id);
+                                const isEligible = isMatchEligibleGamingId(player.gaming_id);
 
                                 return (
                                   <button
                                     key={player.id}
                                     type="button"
-                                    className={isSelected ? "roster-pill active" : "roster-pill"}
-                                    disabled={!player.gaming_id}
+                                    className={`roster-pill${isEligible ? " eligible" : ""}${isSelected ? " active" : ""}`}
+                                    disabled={!isEligible}
                                     onClick={() => toggleRosterPlayer(player.id)}
                                   >
-                                    {player.username} — {player.gaming_id || "ID required"}
+                                    {player.username} — {player.gaming_id || "Not eligible"}
                                   </button>
                                 );
                               })}

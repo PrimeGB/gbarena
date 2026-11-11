@@ -130,3 +130,7 @@ export function resolveGamingAccountId(
 ) {
   return gameSpecificId?.trim() || profilePlatformAccountId(profile, platform);
 }
+
+export function isMatchEligibleGamingId(gamingId: string | null | undefined) {
+  return typeof gamingId === "string" && gamingId.trim().length > 0;
+}

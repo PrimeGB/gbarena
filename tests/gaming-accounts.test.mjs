@@ -42,3 +42,9 @@ test("unknown platforms and blank IDs remain unlinked", () => {
     null,
   );
 });
+
+test("only players with a non-blank linked platform ID are match eligible", () => {
+  assert.equal(gamingAccounts.isMatchEligibleGamingId("PlayerOne"), true);
+  assert.equal(gamingAccounts.isMatchEligibleGamingId("  "), false);
+  assert.equal(gamingAccounts.isMatchEligibleGamingId(null), false);
+});
