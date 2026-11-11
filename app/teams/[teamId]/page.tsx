@@ -602,7 +602,7 @@ export default function TeamPage() {
         }
 
         .team-title-block{
-          min-height:90px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;
+          min-height:115px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;
           transform:translateY(-12px);
         }
 
@@ -625,6 +625,7 @@ export default function TeamPage() {
         .team-follow-error{margin-top:5px;color:#ffb3b3;font-size:11px;}
 
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
+        .team-achievements{margin-top:23px;}
         .founder-name{color:#d7ad4a;font-weight:bold;}
 
         .team-match-actions{
@@ -857,7 +858,7 @@ export default function TeamPage() {
           .team-head{grid-template-columns:minmax(0,1fr);padding:10px;gap:10px;}
           .team-logo-box{width:100%;height:auto;min-height:0;aspect-ratio:16/9;margin:0;border-radius:12px;}
           .team-info{min-height:0;padding:20px 16px;}
-          .team-title-block{min-height:0;transform:none;margin-bottom:14px;gap:8px;}
+          .team-title-block{min-height:106px;transform:none;margin-bottom:14px;gap:8px;}
           .team-name{font-size:clamp(26px,8vw,36px);overflow-wrap:anywhere;}
           .team-match-actions{gap:8px;}
           .team-action-btn{padding:0 6px;text-align:center;}
@@ -977,7 +978,7 @@ export default function TeamPage() {
                         Team Rank: <span className="founder-name">{cleanTeamPlace}</span>
                       </div>
                       {teamRankError && <div className="team-follow-error" role="alert">{teamRankError}</div>}
-                      <div className="team-line">Achievements: None</div>
+                      <div className="team-line team-achievements">Achievements: None</div>
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (
