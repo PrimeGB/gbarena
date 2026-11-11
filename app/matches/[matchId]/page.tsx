@@ -9,6 +9,7 @@ import { getGameRules } from "../../../lib/matchRules";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
 import { MatchJoinGuide, isBattlefield } from "../../components/MatchJoinGuide";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
+import { matchReportingOpensAt } from "../../../lib/matchTiming";
 
 type MatchRow = {
   id: string;
@@ -79,6 +80,7 @@ type MatchRow = {
   locked_accepting_roster?: string[] | null;
   winning_user_ids?: string[] | null;
   losing_user_ids?: string[] | null;
+  host_team_ids?: string[] | null;
 };
 
 type TeamRow = {
@@ -116,10 +118,12 @@ type MatchCommentRow = {
   created_at: string | null;
   profiles?: { username?: string | null } | null;
   username?: string | null;
+  hidden?: boolean;
 };
 
 type MatchParticipant = {
   id: string;
+  user_id?: string;
   team_id: string;
   team_name_at_match: string;
   username_at_match: string;
@@ -275,11 +279,18 @@ export default function MatchDetailsPage() {
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
+  const [commentAccess, setCommentAccess] = useState<{ team_id: string | null; staff: boolean; has_comment: boolean } | null>(null);
+  const [clock, setClock] = useState(() => Date.now());
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
   const [h2h, setH2h] = useState<{ a_wins: number; b_wins: number; total: number } | null>(null);
   const [proofs, setProofs] = useState<{ id: string; proof_url: string; team_id: string }[]>([]);
   const [proofRefreshKey, setProofRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!match?.posting_team_id || !match?.accepting_team_id || match.id === "preview") return;
@@ -358,6 +369,7 @@ export default function MatchDetailsPage() {
           status: "upcoming",
           reporting_status: "none",
           accepted_at: new Date().toISOString(),
+          host_team_ids: ["t1", "t2", "t1"],
         });
         setPostingTeam({ id: "t1", platform: "xbox", name: "Nova Elite", tag: "NOVA", logo_url: null, avatar_url: null, wins: 57, losses: 12, streak: "8W", xp: 5180 });
         setAcceptingTeam({ id: "t2", platform: "xbox", name: "Ghost Ops", tag: "GHST", logo_url: null, avatar_url: null, wins: 54, losses: 15, streak: "5W", xp: 5035 });
@@ -393,7 +405,7 @@ export default function MatchDetailsPage() {
 
       const { data: participantRows, error: participantError } = await supabase
         .from("match_participants")
-        .select("id,team_id,team_name_at_match,username_at_match,account_id_at_match,platform")
+        .select("id,user_id,team_id,team_name_at_match,username_at_match,account_id_at_match,platform")
         .eq("match_id", officialMatch.id)
         .order("username_at_match");
 
@@ -523,7 +535,7 @@ export default function MatchDetailsPage() {
 
   useEffect(() => {
     if (matchId && !(process.env.NODE_ENV === "development" && matchId === "preview")) loadComments();
-  }, [matchId]);
+  }, [matchId, currentUser?.id]);
 
   const pageTitle = useMemo(() => {
     if (!match) return "Match Details";
@@ -627,7 +639,7 @@ export default function MatchDetailsPage() {
         {
           title: "Reporting Results",
           items: [
-            "After the scheduled time, a team leader, co-leader or captain reports the series score.",
+            "Starting 15 minutes after the scheduled match time, a team leader, co-leader or captain reports the series score.",
             "The opposing team confirms the score, or disputes it. If a result is disputed because of a no-show, choose \"No-show\" as the reason.",
             "Both teams have 2 hours from match time to submit a ticket with an explanation and proof. Staff only see the case once both teams have submitted, or once the 2 hours have ended.",
           ],
@@ -638,7 +650,8 @@ export default function MatchDetailsPage() {
   const rawStatus = String(match?.status || "upcoming").toLowerCase();
   const displayStatus =
     rawStatus === "upcoming" && matchTimePassed ? "playing" : rawStatus;
-  const canReportScore = matchTimePassed || rawStatus === "playing" || rawStatus === "completed";
+  const reportOpensAt = matchReportingOpensAt(match?.match_time);
+  const canReportScore = reportOpensAt !== null && clock >= reportOpensAt;
   const isDisputed = rawStatus === "disputed";
   const isCompleted = rawStatus === "completed";
   const reportingStatus = String(match?.reporting_status || "none").toLowerCase();
@@ -664,15 +677,14 @@ export default function MatchDetailsPage() {
     userMustConfirm &&
     !isFinalized &&
     reportingStatus === "awaiting_confirmation";
-  const canDisputeScore = canConfirmScore;
+  const canDisputeScore = canConfirmScore && canReportScore;
   const confirmationTeamName =
     match?.confirmation_team_id === postingTeam?.id
       ? postingTeam?.name || "Posting Team"
       : match?.confirmation_team_id === acceptingTeam?.id
       ? acceptingTeam?.name || "Accepting Team"
       : "Opponent";
-  const commentsUnlocked = isCompleted || isFinalized || reportingStatus === "completed";
-  const userAlreadyCommented = !!currentUser?.id && comments.some((item) => item.user_id === currentUser.id);
+  const userAlreadyCommented = !!commentAccess?.has_comment && !commentAccess.staff;
 
   async function reloadMatch() {
     if (!matchId) return;
@@ -720,6 +732,20 @@ export default function MatchDetailsPage() {
       }));
 
     setComments(rows);
+
+    if (!currentUser?.id) {
+      setCommentAccess(null);
+      return;
+    }
+    const { data: access, error: accessError } = await supabase.rpc("get_match_comment_access", {
+      match_uuid: matchId,
+    });
+    if (accessError) {
+      setCommentAccess(null);
+      setCommentMessage("Comment permissions could not be checked: " + accessError.message);
+      return;
+    }
+    setCommentAccess(access as { team_id: string | null; staff: boolean; has_comment: boolean });
   }
 
   async function getTeamMemberUserIds(teamId: string) {
@@ -734,18 +760,17 @@ export default function MatchDetailsPage() {
   }
 
   async function handlePostComment() {
-    if (!match || !commentsUnlocked || commentLoading) return;
+    if (!match || commentLoading) return;
 
     const text = commentText.trim();
     if (!text) return;
 
-    const verifiedUserTeamId = await verifyCurrentUserMatchTeam();
-    if (!verifiedUserTeamId || !currentUser?.id) {
+    if (!currentUser?.id || !commentAccess || (!commentAccess.staff && !commentAccess.team_id)) {
       setCommentMessage("Only players from this match can post a comment.");
       return;
     }
 
-    const alreadyPosted = comments.some((item) => item.user_id === currentUser.id);
+    const alreadyPosted = userAlreadyCommented;
     if (alreadyPosted) {
       setCommentMessage("You already posted your one match comment.");
       return;
@@ -757,7 +782,7 @@ export default function MatchDetailsPage() {
     const { data, error } = await supabase.rpc("post_match_comment", {
       match_uuid: match.id,
       poster_user_uuid: currentUser.id,
-      poster_team_uuid: verifiedUserTeamId,
+      poster_team_uuid: commentAccess.team_id,
       body_text: text,
     });
 
@@ -777,6 +802,21 @@ export default function MatchDetailsPage() {
 
     setCommentText("");
     setCommentMessage("Comment posted.");
+    await loadComments();
+  }
+
+  async function moderateComment(commentId: string, action: "hide" | "unhide" | "remove") {
+    setCommentLoading(true);
+    const { data, error } = await supabase.rpc("moderate_match_comment", {
+      comment_uuid: commentId,
+      moderation_action: action,
+    });
+    setCommentLoading(false);
+    if (error || data?.ok !== true) {
+      setCommentMessage("Comment moderation failed: " + (error?.message || data?.message || "Unknown error"));
+      return;
+    }
+    setCommentMessage(action === "remove" ? "Comment removed." : `Comment ${action === "hide" ? "hidden" : "restored"}.`);
     await loadComments();
   }
 
@@ -1845,17 +1885,43 @@ export default function MatchDetailsPage() {
                     <button className="blue-btn" type="button" onClick={() => setRulesOpen(true)}>
                       Match Rules
                     </button>
-                    <Link
-                      className="blue-btn"
-                      href={`/support/dispute-ticket?matchId=${encodeURIComponent(match.id)}`}
-                    >
-                      Submit a ticket for this match
-                    </Link>
+                    {canReportScore && isDisputed ? (
+                      <Link
+                        className="blue-btn"
+                        href={`/support/dispute-ticket?matchId=${encodeURIComponent(match.id)}`}
+                      >
+                        Submit a ticket for this match
+                      </Link>
+                    ) : (
+                      <div className="score-note">
+                        {!canReportScore
+                          ? reportOpensAt === null
+                            ? "A complete scheduled match date and time is required for reporting and tickets. Contact staff."
+                            : "Reporting and dispute tickets open 15 minutes after match time."
+                          : "A dispute ticket can be submitted after a score is disputed."}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <MatchJoinGuide battlefield={isBattlefield(match.category, match.game)} compact />
 
+                <div className="detail-rows" style={{ padding: "0 18px 16px" }}>
+                  <div className="detail-row">
+                    <span className="detail-label">Maps:</span>
+                    <span className="detail-value">Automatic map selection is not available yet. Follow the game&apos;s match rules.</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Lobby organizers:</span>
+                    <span className="detail-value">
+                      {match.host_team_ids?.length
+                        ? match.host_team_ids.map((teamId, index) =>
+                            `Game ${index + 1}: ${teamId === postingTeam?.id ? postingTeam.name : teamId === acceptingTeam?.id ? acceptingTeam.name : "Unknown team"}`
+                          ).join(" · ")
+                        : "Not assigned for this older match."}
+                    </span>
+                  </div>
+                </div>
               </section>
 
               <section className="score-section">
@@ -1979,7 +2045,9 @@ export default function MatchDetailsPage() {
 
                   {!canReportScore && (
                     <div className="score-note">
-                      Score reporting unlocks after the scheduled match time.
+                      {reportOpensAt === null
+                        ? "A complete scheduled match date and time is required for reporting. Contact staff."
+                        : "Reporting and disputes unlock 15 minutes after the scheduled match time."}
                     </div>
                   )}
 
@@ -2000,7 +2068,7 @@ export default function MatchDetailsPage() {
                       Match is disputed. Both teams have 2 hours from match time to submit a
                       ticket with their story and proof. Staff only see the case once both teams
                       submit, or once the 2 hours have ended.
-                      {userIsMatchTeam && (
+                      {userIsMatchTeam && canReportScore && (
                         <>
                           {" "}
                           <Link
@@ -2031,8 +2099,6 @@ export default function MatchDetailsPage() {
 
                 <div className="comment-body">
                   <div className="comment-box">
-                    {commentsUnlocked ? (
-                      <>
                         {comments.length > 0 ? (
                           comments.map((item) => (
                             <div className="comment" key={item.id}>
@@ -2040,22 +2106,31 @@ export default function MatchDetailsPage() {
                                 {item.created_at ? new Date(item.created_at).toLocaleString() : "After Match"}
                               </span>
                               <strong>{item.username || "Player"}</strong> {item.comment}
+                              {item.hidden && <span> (Hidden)</span>}
+                              {commentAccess?.staff && (
+                                <span>
+                                  {" "}<button type="button" disabled={commentLoading} onClick={() => moderateComment(item.id, item.hidden ? "unhide" : "hide")}>
+                                    {item.hidden ? "Restore" : "Hide"}
+                                  </button>
+                                  {" "}<button type="button" disabled={commentLoading} onClick={() => moderateComment(item.id, "remove")}>Remove</button>
+                                </span>
+                              )}
                             </div>
                           ))
                         ) : (
                           <div className="comment">
-                            <span className="comment-time">After Match</span>
+                            <span className="comment-time">Match</span>
                             <strong>GameBattles</strong> No comments yet.
                           </div>
                         )}
 
-                        <div className="comment-form">
+                        {currentUser && commentAccess && (commentAccess.staff || commentAccess.team_id) ? <div className="comment-form">
                           <input
                             className="comment-input"
                             type="text"
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
-                            placeholder={userAlreadyCommented ? "You already posted your one match comment" : "Leave your one match comment..."}
+                            placeholder={userAlreadyCommented ? "You already posted your one match comment" : commentAccess.staff ? "Post a staff comment..." : "Leave your one match comment..."}
                             disabled={commentLoading || userAlreadyCommented}
                           />
                           <button
@@ -2066,29 +2141,10 @@ export default function MatchDetailsPage() {
                           >
                             Post
                           </button>
-                        </div>
-
+                        </div> : <div className="comment-locked">
+                          {currentUser ? "Only match players and staff can post comments." : "Sign in to post if you are a match player or staff member."}
+                        </div>}
                         {commentMessage && <div className="action-message">{commentMessage}</div>}
-                      </>
-                    ) : (
-                      <>
-                        <div className="comment-locked">
-                          Match comments unlock after the match is complete.
-                        </div>
-
-                        <div className="comment-form">
-                          <input
-                            className="comment-input"
-                            type="text"
-                            placeholder="Comments locked until match completion"
-                            disabled
-                          />
-                          <button className="post-btn" type="button" disabled>
-                            Post
-                          </button>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               </section>

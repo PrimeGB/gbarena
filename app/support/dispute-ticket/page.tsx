@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
+import { matchReportingOpensAt, matchTicketDeadline } from "../../../lib/matchTiming";
 
 type MatchRow = {
   id: string;
@@ -105,6 +106,12 @@ function DisputeTicketPageContent() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [clock, setClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const bestOf = bestOfNumber(match?.best_of);
 
@@ -146,13 +153,11 @@ function DisputeTicketPageContent() {
 
   const acceptingReport = match?.accepting_team_reported_score || "Pending";
 
-  // Mirrors dispute_ticket_window_ends_at() in the database
-  const windowStart = match?.started_at || match?.accepted_at || match?.created_at;
-  const windowEndsAt = windowStart
-    ? new Date(new Date(windowStart).getTime() + 2 * 60 * 60 * 1000)
-    : null;
-  const windowClosed = !!windowEndsAt && Date.now() >= windowEndsAt.getTime();
-  const windowEndText = windowEndsAt ? formatMatchTime(windowEndsAt.toISOString()) : "";
+  const opensAt = matchReportingOpensAt(match?.match_time);
+  const deadline = matchTicketDeadline(match?.match_time);
+  const windowClosed = deadline === null || clock >= deadline;
+  const windowOpen = opensAt !== null && clock >= opensAt && !windowClosed;
+  const windowEndText = deadline !== null ? formatMatchTime(new Date(deadline).toISOString()) : "";
 
   useEffect(() => {
     async function loadTicketInfo() {
@@ -300,6 +305,12 @@ function DisputeTicketPageContent() {
 
     if (!match?.id) {
       setMessage("Match could not be verified.");
+      return;
+    }
+
+    const currentTime = Date.now();
+    if (opensAt === null || deadline === null || currentTime < opensAt || currentTime >= deadline) {
+      setMessage("Tickets are available from 15 minutes until 2 hours after the scheduled match time.");
       return;
     }
 
@@ -868,7 +879,7 @@ function DisputeTicketPageContent() {
                             ? windowClosed
                               ? `Closed (${windowEndText})`
                               : windowEndText
-                            : "2 hours after the dispute opens"}
+                            : "Match time unavailable"}
                         </span>
                       </div>
 
@@ -946,8 +957,8 @@ function DisputeTicketPageContent() {
                     <div className="section-title">Explain What Happened</div>
                     <div className="section-body">
                       <div className="guide">
-                        <strong>Filing window:</strong> both teams have 2 hours from match time
-                        to file. Staff only see a case once both teams have filed, or once the
+                        <strong>Filing window:</strong> tickets open 15 minutes after match time and close 2 hours after match time.
+                        Staff only see a case once both teams have filed, or once the
                         window has ended.
                       </div>
 
@@ -960,7 +971,7 @@ function DisputeTicketPageContent() {
                         className="textarea"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        disabled={submitting || submitted}
+                        disabled={submitting || submitted || !windowOpen}
                         placeholder="Explain the dispute clearly..."
                       />
 
@@ -994,6 +1005,7 @@ function DisputeTicketPageContent() {
                     {submitting ? "Submitting Case..." : "Submit Dispute Case"}
                   </button>
 
+                  {!windowOpen && <div className="message">Tickets are available from 15 minutes until 2 hours after the scheduled match time.</div>}
                   {message && (
                     <div className={submitted ? "message good" : "message"}>
                       {message}

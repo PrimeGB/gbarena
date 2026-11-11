@@ -719,9 +719,9 @@ function CreateMatchContent() {
                           </div>
                         ) : (
                           <div className="rules-box">
-                            Maps will be generated once this match is accepted.
+                            Automatic map selection is not available yet.
                             <br />
-                            The map pool will be based on the selected game, ladder, mode, ruleset, and Best Of.
+                            Follow the game&apos;s match rules when choosing maps.
                           </div>
                         )}
                       </div>
