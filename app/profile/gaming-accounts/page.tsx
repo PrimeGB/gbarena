@@ -129,7 +129,7 @@ function GamingAccountsContent() {
               <section className="ga-section">
                 <h2>Profile System IDs</h2>
                 <div className="ga-body">
-                  <p className="ga-note">General IDs saved on the profile. Game-specific accounts are listed separately below.</p>
+                  <p className="ga-note">A system ID linked on your profile works across games on that system. Game-specific accounts below are optional overrides.</p>
                   <div className="ga-grid">
                     {generalIds.map((entry) => (
                       <div className="ga-card" key={entry.platform}>

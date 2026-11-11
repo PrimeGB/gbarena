@@ -1400,7 +1400,7 @@ function EditProfileContent() {
                     <div className="notice">
                       {gamingAccountPlatform === "ea"
                         ? "Enter the EA ID shown in your EA account, then save it here. Signing in on EA does not automatically share your ID with GameBattles. IDs used for an open or active match cannot be changed until that commitment ends."
-                        : "Save one platform ID for each game you compete in. IDs used for an open or active match cannot be changed until that commitment ends."}
+                        : "Your profile ID works across games on this platform. Save a game-specific ID only if a title uses a different one; IDs used for an open or active match cannot be changed until that commitment ends."}
                     </div>
                     <div className="form-row">
                       <label>Platform</label>
@@ -1515,7 +1515,7 @@ function EditProfileContent() {
                         ))}
                       </div>
                     ) : (
-                      <div className="field-note">No game-specific accounts saved yet.</div>
+                      <div className="field-note">No game-specific overrides saved. Your profile system ID works across games on that platform.</div>
                     )}
                   </div>
                 </div>

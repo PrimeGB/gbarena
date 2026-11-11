@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
-import { GamingAccount, gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
+import { GamingAccount, gamingCategoryLabel, gamingGameLabel, resolveGamingAccountId } from "../../../lib/gamingAccounts";
 import { getGameRules } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
@@ -246,7 +246,12 @@ function CreateMatchContent() {
 
       const [{ data: profiles, error: profileError }, { data: accounts, error: accountError }] =
         await Promise.all([
-          supabase.from("profiles").select("id, username").in("id", memberIds),
+          supabase
+            .from("profiles")
+            .select(
+              "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt"
+            )
+            .in("id", memberIds),
           supabase
             .from("gaming_accounts")
             .select("id,user_id,platform,game,account_id")
@@ -275,7 +280,11 @@ function CreateMatchContent() {
       const roster = (profiles || []).map((profile: any) => ({
         id: profile.id,
         username: profile.username || "Player",
-        gaming_id: accountsByUserId.get(profile.id) || null,
+        gaming_id: resolveGamingAccountId(
+          accountsByUserId.get(profile.id),
+          profile,
+          platform,
+        ),
       }));
 
       setTeamRoster(roster);

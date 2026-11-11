@@ -13,6 +13,7 @@ import TeamStreams from "../../components/TeamStreams";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchListDate } from "../../../lib/matchTiming";
+import { profilePlatformAccountId } from "../../../lib/gamingAccounts";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -350,7 +351,9 @@ export default function TeamPage() {
       if (memberUserIds.length > 0) {
         const { data: memberProfiles } = await supabase
           .from("profiles")
-          .select("id, username, gb_rank_points, gb_wins, gb_losses")
+          .select(
+            "id, username, gt_xbox, xbox_gt, gt_playstation, psn_gt, gt_nintendo, nintendo_gt, gt_pc, pc_gt, gb_rank_points, gb_wins, gb_losses"
+          )
           .in("id", memberUserIds);
 
         (memberProfiles || []).forEach((profile: any) => {
@@ -388,6 +391,9 @@ export default function TeamPage() {
       const loadedRoster = (memberRows || []).map((member: any) => {
         const profile = profileMap[member.user_id] || {};
         const username = profile.username || "Player";
+        const hasGamingId =
+          linkedAccountIds.has(String(member.user_id)) ||
+          Boolean(profilePlatformAccountId(profile, teamData?.platform || "xbox"));
 
         return {
           user_id: member.user_id,
@@ -398,7 +404,7 @@ export default function TeamPage() {
           gb_wins: Number(profile.gb_wins || 0),
           gb_losses: Number(profile.gb_losses || 0),
           gb_place: rankMap[member.user_id] || null,
-          eligibility: eligibilityStatus(member, linkedAccountIds.has(String(member.user_id))),
+          eligibility: eligibilityStatus(member, hasGamingId),
         } as RosterMember;
       });
 
@@ -1051,7 +1057,7 @@ export default function TeamPage() {
                             <span className="eligibility-help">
                               <button className="help-button" type="button">?</button>
                               <span className="help-popup">
-                                Green means eligible to play. Yellow means awaiting eligibility. Purple means no gaming ID linked. Red means ineligible.
+                                Green means eligible to play. Yellow means awaiting eligibility. Purple means no gaming ID linked for this system. Red means ineligible.
                               </span>
                             </span>
                           </span>

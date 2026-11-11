@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
-import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
+import { gamingCategoryLabel, gamingGameLabel, resolveGamingAccountId } from "../../../lib/gamingAccounts";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 
@@ -243,7 +243,12 @@ function MatchFinderContent() {
 
       const [{ data: profiles, error: profilesError }, { data: accounts, error: accountsError }] =
         await Promise.all([
-          supabase.from("profiles").select("id,username").in("id", memberIds),
+          supabase
+            .from("profiles")
+            .select(
+              "id,username,gt_xbox,xbox_gt,gt_playstation,psn_gt,gt_nintendo,nintendo_gt,gt_pc,pc_gt"
+            )
+            .in("id", memberIds),
           supabase
             .from("gaming_accounts")
             .select("user_id,account_id")
@@ -271,7 +276,12 @@ function MatchFinderContent() {
         .map((profile) => ({
           id: profile.id,
           username: profile.username || "Player",
-          gamingId: accountByUserId.get(profile.id) || "",
+          gamingId:
+            resolveGamingAccountId(
+              accountByUserId.get(profile.id),
+              profile,
+              platform,
+            ) || "",
         }))
         .filter((player) => player.gamingId);
 

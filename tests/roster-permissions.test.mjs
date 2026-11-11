@@ -81,6 +81,7 @@ function harness({ role = "member", owner = "owner", roleError = null, delayedTe
     if (name.endsWith("/useUser")) return { useUser: () => auth };
     if (name.endsWith("/supabase")) return { supabase };
     if (name.endsWith("/ladderCatalog")) return { ladderPlatformLabel: () => "" };
+    if (name.endsWith("/gamingAccounts")) return { resolveGamingAccountId: () => null };
     if (name.endsWith("/SiteNav") || name.endsWith("/TeamTabs")) return { __esModule: true, default: () => null };
     return require(name);
   };

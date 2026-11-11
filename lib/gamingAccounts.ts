@@ -105,3 +105,28 @@ export function findGamingAccount(
       (!userId || account.user_id === userId),
   );
 }
+
+export function profilePlatformAccountId(
+  profile: Record<string, unknown> | null | undefined,
+  platform: string,
+) {
+  const fields: Record<string, string[]> = {
+    xbox: ["gt_xbox", "xbox_gt"],
+    playstation: ["gt_playstation", "psn_gt"],
+    nintendo: ["gt_nintendo", "nintendo_gt"],
+    pc: ["gt_pc", "pc_gt"],
+  };
+  const value = (fields[platform.toLowerCase()] || [])
+    .map((field) => profile?.[field])
+    .find((candidate) => typeof candidate === "string" && candidate.trim());
+
+  return typeof value === "string" ? value.trim() : null;
+}
+
+export function resolveGamingAccountId(
+  gameSpecificId: string | null | undefined,
+  profile: Record<string, unknown> | null | undefined,
+  platform: string,
+) {
+  return gameSpecificId?.trim() || profilePlatformAccountId(profile, platform);
+}

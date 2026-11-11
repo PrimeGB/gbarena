@@ -7,6 +7,7 @@ import { supabase } from "../../../../lib/supabase";
 import SiteNav from "../../../components/SiteNav";
 import TeamTabs from "../../../components/TeamTabs";
 import { ladderPlatformLabel } from "../../../../lib/ladderCatalog";
+import { resolveGamingAccountId } from "../../../../lib/gamingAccounts";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -27,7 +28,6 @@ type RosterMember = {
   username: string;
   display_gt: string;
   gaming_id: string | null;
-  profile_gt: string | null;
   gb_rank_points: number;
   gb_wins: number;
   gb_losses: number;
@@ -91,21 +91,6 @@ function roleLabel(role: TeamRole) {
   if (role === "leader") return "Leader";
   if (role === "captain") return "Captain";
   return "Member";
-}
-
-function profileLinkedGt(profile: any, platform: string | null) {
-  const p = String(platform || "").toLowerCase();
-  const value =
-    p === "xbox"
-      ? profile?.gt_xbox || profile?.xbox_gt
-      : p === "playstation"
-        ? profile?.gt_playstation || profile?.psn_gt
-        : p === "nintendo"
-          ? profile?.gt_nintendo || profile?.nintendo_gt
-          : p === "pc"
-            ? profile?.gt_pc || profile?.pc_gt
-            : null;
-  return value ? String(value) : null;
 }
 
 function profileGamertag(profile: any, platform: string | null) {
@@ -206,7 +191,7 @@ function eligibilityStatus(member: any, hasGamingId: boolean): Eligibility {
 const ELIGIBILITY_LABEL: Record<Eligibility, string> = {
   green: "Eligible to play in matches",
   yellow: "Awaiting eligibility",
-  purple: "Ineligible - no gaming ID linked for this game",
+  purple: "Ineligible - no gaming ID linked for this platform",
   red: "Ineligible - other",
 };
 
@@ -399,6 +384,11 @@ export default function EditRosterPage() {
 
     const loadedRoster = (memberRows || []).map((member: any) => {
       const profile = profileMap[String(member.user_id)] || {};
+      const gamingId = resolveGamingAccountId(
+        gamingIdMap[String(member.user_id)],
+        profile,
+        teamData.platform || "xbox",
+      );
 
       return {
         user_id: String(member.user_id),
@@ -408,15 +398,14 @@ export default function EditRosterPage() {
           profile,
           teamData.platform
         ),
-        gaming_id: gamingIdMap[String(member.user_id)] || null,
-        profile_gt: profileLinkedGt(profile, teamData.platform),
+        gaming_id: gamingId || null,
         gb_rank_points: Number(profile.gb_rank_points || 0),
         gb_wins: Number(profile.gb_wins || 0),
         gb_losses: Number(profile.gb_losses || 0),
         gb_place: rankMap[String(member.user_id)] || null,
         eligibility: eligibilityStatus(
           member,
-          Boolean(gamingIdMap[String(member.user_id)])
+          Boolean(gamingId)
         ),
       } as RosterMember;
     });
@@ -1095,13 +1084,6 @@ export default function EditRosterPage() {
                         <td className="gamertag">
                           {member.gaming_id ? (
                             member.gaming_id
-                          ) : member.profile_gt ? (
-                            <>
-                              {member.profile_gt}
-                              <span className="no-id" title="Linked on their profile, but not saved for this specific game. Matches need it saved for this game.">
-                                {" "}(not saved for this game)
-                              </span>
-                            </>
                           ) : (
                             <span className="no-id">Gaming ID not linked</span>
                           )}
@@ -1199,7 +1181,7 @@ export default function EditRosterPage() {
                 </div>
                 <div className="legend-item">
                   <span className="orb purple" />
-                  Ineligible - no gaming ID linked for this game
+                  Ineligible - no gaming ID linked for this platform
                 </div>
                 <div className="legend-item">
                   <span className="orb red" />
