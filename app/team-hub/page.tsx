@@ -571,20 +571,6 @@ function TeamHubContent() {
       return;
     }
 
-    const { error: memberError } = await supabase.from("team_members").insert({
-      team_id: newTeam.id,
-      user_id: currentUser.id,
-      role: "leader",
-    });
-
-    if (memberError) {
-      setCreateError(
-        "Team was created, but leader could not be added: " + memberError.message
-      );
-      setCreatingTeam(false);
-      return;
-    }
-
     router.push(`/teams/${newTeam.id}`);
   } catch (error: any) {
     setCreateError(error?.message || "Team could not be created.");
