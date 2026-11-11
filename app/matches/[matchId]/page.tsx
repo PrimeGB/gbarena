@@ -10,6 +10,7 @@ import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccount
 import { MatchJoinGuide, isBattlefield } from "../../components/MatchJoinGuide";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
+import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
 
 type MatchRow = {
   id: string;
@@ -43,6 +44,7 @@ type MatchRow = {
   plant_time?: string | null;
   defuse_time?: string | null;
   attachments?: string | null;
+  additional_rules?: AdditionalMatchRules | null;
   status?: string | null;
   winning_team_id?: string | null;
   losing_team_id?: string | null;
@@ -555,41 +557,16 @@ export default function MatchDetailsPage() {
       ? `${gamingCategoryLabel(match.category || "")}: ${gamingGameLabel(match.category || "", match.game || "")}`
       : prettyText(match.game)
     : "";
-  const allSettings = match && modeDef
+  const allSettings = match
     ? [
         { label: "Cross Play", value: match.crossplay, featured: true },
-        ...modeDef.fields.map((item, index) => ({
-          label: item.label,
-          value: (match as Record<string, any>)[item.slot] as string | null | undefined,
-          ...(index < 3 ? { featured: true } : {}),
+        ...postedRuleSettings(match).map((setting, index) => ({
+          ...setting,
+          featured: modeDef
+            ? index < 3
+            : ["Score Limit", "Round Length", ...(isBombMode ? ["Bomb Timer"] : [])].includes(setting.label),
         })),
       ].filter((setting) => !!setting.value?.trim() && setting.value !== "TBD")
-    : match
-    ? [
-        { label: "Cross Play", value: match.crossplay, featured: true },
-        { label: "Score Limit", value: match.score_limit, featured: true },
-        { label: "Round Length", value: match.round_length, featured: true },
-        { label: "Bomb Timer", value: match.bomb_timer, featured: true, bomb: true },
-        { label: "Plant Time", value: match.plant_time, bomb: true },
-        { label: "Defuse Time", value: match.defuse_time, bomb: true },
-        { label: "Perks", value: match.perks },
-        { label: "Launchers", value: match.launchers },
-        { label: "Killstreaks", value: match.killstreaks },
-        { label: "Field Upgrades", value: match.field_upgrades },
-        { label: "Hardcore", value: match.hardcore },
-        { label: "Friendly Fire", value: match.friendly_fire },
-        { label: "Radar", value: match.radar },
-        { label: "Spectating", value: match.spectating },
-        { label: "Third Person", value: match.third_person },
-        { label: "Health", value: match.health },
-        { label: "Respawn Delay", value: match.respawn_delay },
-        { label: "Attachments", value: match.attachments },
-      ].filter(
-        (setting) =>
-          !!setting.value?.trim() &&
-          setting.value !== "TBD" &&
-          (!("bomb" in setting) || isBombMode)
-      )
     : [];
   const featuredSettings = allSettings.filter((setting) => "featured" in setting);
   const detailRows = match
@@ -2197,7 +2174,7 @@ export default function MatchDetailsPage() {
                     {[{ label: "Gameplay", value: match.preset }, ...allSettings]
                       .filter((setting) => !!setting.value?.trim())
                       .map((setting) => (
-                        <div className="setting-line" key={setting.label}>
+                        <div className="setting-line" key={`${setting.label}:${setting.value}`}>
                           {setting.label}: <span>{setting.value}</span>
                         </div>
                       ))}

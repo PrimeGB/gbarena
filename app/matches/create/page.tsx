@@ -16,6 +16,7 @@ import {
 import { getGameRules } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
+import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -100,6 +101,11 @@ function getScheduledTimeMs(matchTime: string, createdAt: string | null) {
 
 type RulesType = "GB Variant" | "CDL" | "Custom";
 type CrossPlayType = "Off" | "On";
+type RestrictionDraft = {
+  category: "Equipment" | "Perk";
+  item: string;
+  status: "Not specified" | "Allowed" | "Banned";
+};
 
 export default function CreateMatchPage() {
   return (
@@ -208,6 +214,14 @@ function CreateMatchContent() {
   const [forceRespawn, setForceRespawn] = useState("On");
   const [waveSpawnDelay, setWaveSpawnDelay] = useState("None");
   const [lives, setLives] = useState("1 Life");
+  const [restrictions, setRestrictions] = useState<RestrictionDraft[]>(
+    category === "call-of-duty" && game === "mw2"
+      ? [
+          { category: "Equipment", item: "C4", status: "Not specified" },
+          { category: "Equipment", item: "Claymore", status: "Not specified" },
+        ]
+      : [],
+  );
 
   useEffect(() => {
     setPlayers(playerOptions[0]);
@@ -411,6 +425,25 @@ function CreateMatchContent() {
       return;
     }
 
+    if (rulesType === "Custom" && !gameRules && restrictions.some(
+      (item) => item.status !== "Not specified" && !item.item.trim(),
+    )) {
+      setPostError("Enter a name for each equipment or perk rule before posting.");
+      return;
+    }
+    if (rulesType === "Custom" && !gameRules) {
+      const specified = restrictions.filter((item) => item.status !== "Not specified");
+      const keys = specified.map((item) => `${item.category}:${item.item.trim().toLowerCase()}`);
+      if (new Set(keys).size !== keys.length) {
+        setPostError("List each equipment or perk only once.");
+        return;
+      }
+      if (perks === "Off" && specified.some((item) => item.category === "Perk" && item.status === "Allowed")) {
+        setPostError("Perks are off. Turn perks on before allowing an individual perk.");
+        return;
+      }
+    }
+
     setPosting(true);
     const scheduledIso = scheduledTime.toISOString();
     const { data: existingPosts, error: existingPostError } = await supabase
@@ -439,8 +472,30 @@ function CreateMatchContent() {
     }
 
     const cod = !gameRules;
+    const presetDefaults: Record<string, string> = {
+      perks: "On", launchers: "Off", killstreaks: "Off", field_upgrades: "On",
+      hardcore: "Off", friendly_fire: "On", radar: "Normal", spectating: "Team Only",
+      third_person: "Off", round_length: "1.5 Minutes", score_limit: "Default",
+      health: "Normal", respawn_delay: "None", bomb_timer: "45 Seconds",
+      plant_time: "5 Seconds", defuse_time: "7.5 Seconds", attachments: "On",
+    };
     const slot = (name: string, codValue: string) =>
-      cod ? codValue : activeRuleValues[name] ?? null;
+      cod ? (rulesType === "Custom" || isRedSec || isRapidRoyal ? codValue : presetDefaults[name]) : activeRuleValues[name] ?? null;
+    const additionalRules: AdditionalMatchRules | null = cod && rulesType === "Custom" && !isRedSec && !isRapidRoyal
+      ? {
+          settings: {
+            "Mini Map": miniMap, "Headshots Only": headshotsOnly, "Time Limit": timeLimit,
+            "Lives": lives, "Wave Spawn Delay": waveSpawnDelay, "Force Respawn": forceRespawn,
+            "Spawn Camera": spawnCamera, "Team Assignment": teamAssignment,
+            "Join In Progress": joinInProgress, "Revenge Voice": revengeVoice,
+          },
+          restrictions: restrictions.flatMap((item) =>
+            item.status === "Not specified" || !item.item.trim()
+              ? []
+              : [{ category: item.category, item: item.item.trim(), status: item.status }],
+          ),
+        }
+      : null;
 
     const { error } = await supabase.from("match_posts").insert({
       team_id: teamId,
@@ -452,7 +507,7 @@ function CreateMatchContent() {
       players,
       match_time: scheduledIso,
       best_of: bestOf,
-      preset: gameRules ? gameRules.presetName : rulesType,
+      preset: isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules ? gameRules.presetName : rulesType,
       crossplay: crossplay === "On",
       perks: slot("perks", perks),
       launchers: slot("launchers", launchers),
@@ -471,6 +526,7 @@ function CreateMatchContent() {
       plant_time: slot("plant_time", plantTime),
       defuse_time: slot("defuse_time", defuseTime),
       attachments: slot("attachments", attachments),
+      additional_rules: additionalRules,
       status: "open",
       posting_roster: selectedRosterPlayers,
     });
@@ -606,6 +662,9 @@ function CreateMatchContent() {
         .modal-body{padding:15px;}
         .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .setting-row{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;border:1px solid #1f3d5a;background:#07111b;padding:10px;}
+        .restriction-list{display:grid;gap:8px;margin-top:12px;}
+        .restriction-row{display:grid;grid-template-columns:100px minmax(0,1fr) 135px auto;gap:8px;align-items:center;}
+        .restriction-row button,.restriction-add{border:1px solid #315f88;background:#10283d;color:#fff;padding:8px;cursor:pointer;font-size:11px;}
         .preset-list{border:1px solid #1f3d5a;background:#07111b;padding:16px;color:#cfe2f2;font-size:12px;line-height:22px;}
         .preset-list div{border-bottom:1px solid rgba(255,255,255,.06);padding:7px 0;}
         .preset-list div:last-child{border-bottom:none;}
@@ -643,6 +702,7 @@ function CreateMatchContent() {
           .row label{padding-top:0;}
           .date-time-box{max-width:100%;}
           .settings-grid,.setting-row{grid-template-columns:1fr;gap:8px;}
+          .restriction-row{grid-template-columns:1fr 1fr;}
           .actions{margin-left:-8px;margin-right:-8px;margin-bottom:-8px;padding:8px;}
           .actions .action-btn{flex:1;min-width:0;}
         }
@@ -1391,26 +1451,29 @@ function CreateMatchContent() {
                   <div>Attachments: On</div>
                   <div>Friendly Fire: On</div>
                   <div>Spectating: Team Only</div>
-                  <div>Search and Destroy: 1 life, 45 second bomb timer, 5 second plant, 7.5 second defuse</div>
+                  <div>Round Length: 1.5 Minutes · Score Limit: Default · Health: Normal</div>
+                  <div>Respawn Delay: None · Bomb Timer: 45 Seconds · Plant Time: 5 Seconds · Defuse Time: 7.5 Seconds</div>
+                  <div>Field Upgrades: On</div>
                 </div>
               )}
 
               {viewPresetOpen === "CDL" && (
                 <div className="preset-list">
                   <div>Ruleset: CDL competitive-style preset</div>
-                  <div>Modes: Search and Destroy, Hardpoint, Control</div>
-                  <div>Players: Competitive team format</div>
+                  <div>Mode and Players: Host selected</div>
                   <div>Cross Play: Host selected</div>
                   <div>Maps: Generated once accepted</div>
                   <div>Radar: Normal</div>
                   <div>Hardcore: Off</div>
                   <div>Third Person: Off</div>
                   <div>Killstreaks: Off</div>
-                  <div>Launchers: Restricted/Off</div>
+                  <div>Launchers: Off</div>
+                  <div>Perks: On · Attachments: On · Field Upgrades: On</div>
                   <div>Friendly Fire: On</div>
                   <div>Spectating: Team Only</div>
-                  <div>Join In Progress: Not Allowed</div>
-                  <div>Game rules follow CDL-style competitive restrictions and map/mode settings.</div>
+                  <div>Round Length: 1.5 Minutes · Score Limit: Default · Health: Normal</div>
+                  <div>Respawn Delay: None · Bomb Timer: 45 Seconds · Plant Time: 5 Seconds · Defuse Time: 7.5 Seconds</div>
+                  <div>This is a site CDL-style preset, not a live official CDL restricted-item list.</div>
                 </div>
               )}
 
@@ -1473,21 +1536,41 @@ function CreateMatchContent() {
                 <div className="setting-row"><label>Revenge Voice</label><select value={revengeVoice} onChange={(e) => setRevengeVoice(e.target.value)}><option>Off</option><option>On</option></select></div>
               </div>
 
+              <div className="restriction-list">
+                <div className="settings-title">Equipment &amp; perk rules</div>
+                <p className="small-note">Choose allowed or banned for individual items available in this game. Items left unspecified have no individual rule.</p>
+                {restrictions.map((item, index) => (
+                  <div className="restriction-row" key={index}>
+                    <select aria-label={`Rule ${index + 1} category`} value={item.category} onChange={(event) => setRestrictions((current) => current.map((row, i) => i === index ? { ...row, category: event.target.value as RestrictionDraft["category"] } : row))}>
+                      <option>Equipment</option><option>Perk</option>
+                    </select>
+                    <input aria-label={`Rule ${index + 1} item`} list={game === "mw2" && category === "call-of-duty" ? `mw2-${item.category.toLowerCase()}-items` : undefined} maxLength={80} placeholder="Item or perk name" value={item.item} onChange={(event) => setRestrictions((current) => current.map((row, i) => i === index ? { ...row, item: event.target.value } : row))} />
+                    <select aria-label={`Rule ${index + 1} status`} value={item.status} onChange={(event) => setRestrictions((current) => current.map((row, i) => i === index ? { ...row, status: event.target.value as RestrictionDraft["status"] } : row))}>
+                      <option>Not specified</option><option>Allowed</option><option>Banned</option>
+                    </select>
+                    <button type="button" aria-label={`Remove rule ${index + 1}`} onClick={() => setRestrictions((current) => current.filter((_, i) => i !== index))}>Remove</button>
+                  </div>
+                ))}
+                {game === "mw2" && category === "call-of-duty" && (
+                  <>
+                    <datalist id="mw2-equipment-items">
+                      {["Frag Grenade", "Semtex", "Throwing Knife", "Tactical Insertion", "Blast Shield", "Claymore", "C4"].map((item) => <option key={item} value={item} />)}
+                    </datalist>
+                    <datalist id="mw2-perk-items">
+                      {["Marathon", "Sleight of Hand", "Scavenger", "Bling", "One Man Army", "Stopping Power", "Lightweight", "Hardline", "Cold-Blooded", "Danger Close", "Commando", "Steady Aim", "Scrambler", "Ninja"].map((item) => <option key={item} value={item} />)}
+                    </datalist>
+                  </>
+                )}
+                <button className="restriction-add" type="button" disabled={restrictions.length >= 50} onClick={() => setRestrictions((current) => [...current, { category: "Equipment", item: "", status: "Not specified" }])}>Add equipment or perk rule</button>
+              </div>
+
               <div className="modal-actions">
                 <button
                   className="action-btn"
                   type="button"
                   onClick={() => setSettingsOpen(false)}
                 >
-                  Save Settings
-                </button>
-
-                <button
-                  className="action-btn red"
-                  type="button"
-                  onClick={() => setSettingsOpen(false)}
-                >
-                  Cancel
+                  Done
                 </button>
               </div>
             </div>

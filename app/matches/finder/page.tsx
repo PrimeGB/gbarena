@@ -10,6 +10,8 @@ import { supabase } from "../../../lib/supabase";
 import { gamingCategoryLabel, gamingGameLabel, resolveGamingAccountId } from "../../../lib/gamingAccounts";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
+import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
+import { getGameRules } from "../../../lib/matchRules";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -43,6 +45,7 @@ type MatchPost = {
   plant_time: string | null;
   defuse_time: string | null;
   attachments: string | null;
+  additional_rules: AdditionalMatchRules | null;
   status: string;
   created_at: string;
 };
@@ -644,12 +647,61 @@ function MatchFinderContent() {
         .accept-btn.red{border-color:#e34242;background:linear-gradient(to bottom,#bd1717,#5c0000);color:#fff;}
         .accept-btn:disabled{opacity:.55;cursor:not-allowed;}
 
+        .page{padding:18px 16px;background:radial-gradient(circle at top,rgba(45,100,150,.22),transparent 42%),#02060a;}
+        .wrap{max-width:1160px;box-shadow:0 0 28px rgba(0,80,140,.25);}
+        .header{min-height:78px;padding:10px 18px;}
+        .game-header{gap:14px;}
+        .game-cover{width:92px;height:58px;}
+        .game-name{font-size:12px;letter-spacing:1px;margin-bottom:4px;}
+        .ladder-name{font-size:24px;}
+        .header-badge{font-size:12px;padding:10px 15px;}
+        .title-bar{padding:10px 18px;}
+        .title-bar h1{font-size:23px;}
+        .title-bar p{font-size:11px;margin-top:4px;}
+        .content{padding:14px;}
+        .finder-layout{grid-template-columns:190px minmax(0,1fr);gap:12px;align-items:start;}
+        .panel-header{justify-content:flex-start;min-height:32px;font-size:11px;}
+        .side-body{padding:10px;}
+        .ladder-card{padding:9px;margin-bottom:8px;}
+        .ladder-line{font-size:11px;line-height:20px;overflow-wrap:anywhere;}
+        .help-box,.quick-create{height:34px;font-size:10px;margin-top:7px;}
+        .board-head,.match-row{grid-template-columns:80px minmax(135px,1.3fr) minmax(140px,1fr) minmax(140px,1fr) 155px;}
+        .board-head div{padding:8px;font-size:10px;}
+        .match-cell{padding:9px 7px;font-size:11px;}
+        .players{font-size:13px;}
+        .mode{flex-direction:column;gap:4px;}
+        .mode-preset{font-size:10px;color:#d7ad4a;text-transform:uppercase;}
+        .rules-type{flex-direction:column;gap:4px;}
+        .rules-meta{font-size:10px;color:#a9c3db;text-transform:none;font-weight:normal;}
+        .mini-btn.red-mini{background:#39161a;border-color:#873d45;}
+        .accept-modal{max-height:90vh;overflow-y:auto;}
+        .posted-rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px;}
+        .posted-rule{padding:7px 9px;border:1px solid #244b70;background:#050c14;overflow-wrap:anywhere;}
+        .posted-rule span{display:block;color:#8aa7c0;font-size:10px;text-transform:uppercase;}
+        .posted-rule strong{color:#fff;font-size:12px;}
+        .view-rules-link{border:0;background:none;color:#80c8ff;text-decoration:underline;cursor:pointer;font:inherit;}
+
         @media(max-width:980px){
           .finder-layout{grid-template-columns:1fr;}
-          .board{overflow-x:auto;}
-          .board-head,.match-row{min-width:760px;}
-          .header{flex-direction:column;justify-content:center;gap:12px;padding:18px;text-align:center;}
+          .board-head,.match-row{min-width:0;}
           .nav{height:auto;padding:10px;flex-wrap:wrap;gap:14px;}
+        }
+        @media(max-width:700px){
+          .page{padding:8px;}
+          .content{padding:8px;}
+          .header{gap:12px;}
+          .game-header{gap:9px;}
+          .game-cover{width:66px;height:46px;flex:none;}
+          .ladder-name{font-size:18px;}
+          .header-badge{font-size:10px;padding:8px;}
+          .title-bar h1{font-size:19px;}
+          .board-head{display:none;}
+          .match-row{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:8px;}
+          .match-cell{border:0;justify-content:flex-start;text-align:left;}
+          .match-cell.actions-cell{grid-column:1/-1;}
+          .actions{justify-content:flex-start;}
+          .posted-rules{grid-template-columns:1fr;}
+          .accept-actions{flex-wrap:wrap;}
         }
       `}</style>
 
@@ -722,7 +774,7 @@ function MatchFinderContent() {
                     <div className="board-head">
                       <div>Players</div>
                       <div>Mode</div>
-                      <div>Rules</div>
+                      <div>Format</div>
                       <div>Time</div>
                       <div>Actions</div>
                     </div>
@@ -743,10 +795,10 @@ function MatchFinderContent() {
                       return (
                         <div className="match-row" key={match.id}>
                           <div className="match-cell players">{match.players}</div>
-                          <div className="match-cell mode">{match.game_mode}</div>
-                          <div className="match-cell rules-type">{match.preset || "GB Default"}<br />{prettyText(match.platform)} · Cross Play {match.crossplay ? "On" : "Off"}</div>
+                          <div className="match-cell mode">{match.game_mode}<span className="mode-preset">{match.preset || "Rules not specified"}</span></div>
+                          <div className="match-cell rules-type">{match.best_of}<span className="rules-meta">{prettyText(match.platform)} · Cross Play {match.crossplay ? "On" : "Off"}</span></div>
                           <div className="match-cell time">{formatMatchTime(match)}</div>
-                          <div className="match-cell">
+                          <div className="match-cell actions-cell">
                             <div className="actions">
                               <button className="mini-btn" type="button" onClick={() => setViewMatch(match)}>
                                 View
@@ -800,12 +852,13 @@ function MatchFinderContent() {
                 <br />
                 Mode: {confirmMatch.game_mode}
                 <br />
-                Rules: {confirmMatch.preset || "GB Default"}
+                Rules: {confirmMatch.preset || "Not specified"}
                 <br />
                 System: {prettyText(confirmMatch.platform)} · Cross Play {confirmMatch.crossplay ? "On" : "Off"}
                 <br />
                 Time: {formatMatchTime(confirmMatch)}
               </div>
+              <button className="view-rules-link" type="button" onClick={() => setViewMatch(confirmMatch)}>View all posted rules before accepting</button>
               {confirmMatch.platform !== platform && (
                 <label className="accept-roster-note">
                   <input type="checkbox" checked={confirmCompatibility} onChange={(event) => setConfirmCompatibility(event.target.checked)} /> I confirmed that both teams&apos; game versions can play together.
@@ -886,10 +939,40 @@ function MatchFinderContent() {
                 <br />
                 Mode: {viewMatch.game_mode}
                 <br />
-                Rules: {viewMatch.preset || "GB Default"}
+                Rules: {viewMatch.preset || "Not specified"}
+                <br />
+                Format: {viewMatch.best_of}
+                <br />
+                System: {prettyText(viewMatch.platform)} · Cross Play {viewMatch.crossplay ? "On" : "Off"}
                 <br />
                 Time: {formatMatchTime(viewMatch)}
               </div>
+              <strong>Posted settings</strong>
+              {postedRuleSettings(viewMatch).length ? (
+                <div className="posted-rules">
+                  {postedRuleSettings(viewMatch).map((setting, index) => (
+                    <div className="posted-rule" key={`${setting.label}-${index}`}>
+                      <span>{setting.label}</span><strong>{setting.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No individual settings were recorded for this post.</p>
+              )}
+              {viewMatch.preset === "Custom" && !viewMatch.additional_rules && (
+                <p className="accept-roster-note">This older post did not record additional custom settings or individual equipment and perk rules.</p>
+              )}
+              {getGameRules(viewMatch.category, viewMatch.game)?.modes
+                .find((mode) => mode.value === viewMatch.game_mode)?.rules.map((rule) => (
+                  <p key={rule}>• {rule}</p>
+                ))}
+              {viewMatch.ladder === "rapid-royal-duos" && (
+                <p>Teams may roster up to 3 players; 2 play each round. Each team plays its round with an enemy spectator, and the duo with the most kills before dying or winning takes the round. Proof is required for disputes.</p>
+              )}
+              {(viewMatch.game === "redsec" || viewMatch.ladder === "redsec") && (
+                <p>RedSec uses Lyndon Oil Works and the locked GameBattles RedSec kill-race rules.</p>
+              )}
+              <p><Link href={`/ladders/${viewMatch.platform}/${viewMatch.category}/${viewMatch.game}/${viewMatch.ladder}/rules`}>View full ladder rules</Link> · <Link href="/rules">Site rules</Link></p>
             </div>
             <div className="accept-actions">
               <button className="accept-btn red" type="button" onClick={() => setViewMatch(null)}>
