@@ -12,6 +12,7 @@ import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
 import { getGameRules } from "../../../lib/matchRules";
+import { initialAcceptanceRoster, toggleAcceptancePlayer } from "../../../lib/matchAcceptanceRoster";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -195,7 +196,7 @@ function MatchFinderContent() {
   const [acceptingRoster, setAcceptingRoster] = useState<EligibleMatchPlayer[]>([]);
   const [selectedAcceptingRoster, setSelectedAcceptingRoster] = useState<string[]>([]);
   const [loadingAcceptingRoster, setLoadingAcceptingRoster] = useState(false);
-  const [confirmCompatibility, setConfirmCompatibility] = useState(false);
+  const [acceptanceError, setAcceptanceError] = useState("");
   const [viewMatch, setViewMatch] = useState<MatchPost | null>(null);
   const [cancelMatch, setCancelMatch] = useState<MatchPost | null>(null);
   const [viewerRole, setViewerRole] = useState<TeamRole>("member");
@@ -211,7 +212,7 @@ function MatchFinderContent() {
     setNotice("");
     setAcceptingRoster([]);
     setSelectedAcceptingRoster([]);
-    setConfirmCompatibility(false);
+    setAcceptanceError("");
     setLoadingAcceptingRoster(true);
     setConfirmMatch(match);
   }
@@ -232,7 +233,7 @@ function MatchFinderContent() {
 
       if (membersError) {
         if (!cancelled) {
-          setNotice("Could not load your team roster: " + membersError.message);
+          setAcceptanceError("Could not load your team roster: " + membersError.message);
           setLoadingAcceptingRoster(false);
         }
         return;
@@ -263,7 +264,7 @@ function MatchFinderContent() {
 
       if (profilesError || accountsError) {
         if (!cancelled) {
-          setNotice(
+          setAcceptanceError(
             "Could not load required gaming IDs: " +
               (profilesError?.message || accountsError?.message),
           );
@@ -290,6 +291,9 @@ function MatchFinderContent() {
 
       if (!cancelled) {
         setAcceptingRoster(eligible);
+        setSelectedAcceptingRoster(
+          initialAcceptanceRoster(eligible.map((player) => player.id), requiredMatchPlayers(confirmMatch.players)),
+        );
         setLoadingAcceptingRoster(false);
       }
     }
@@ -417,46 +421,37 @@ function MatchFinderContent() {
 
   async function acceptConfirmedMatch() {
     if (!confirmMatch) return;
-    if (confirmMatch.platform !== platform && !confirmCompatibility) {
-      setNotice("Confirm that your game versions can play together before accepting.");
-      return;
-    }
-
+    setAcceptanceError("");
     setNotice("");
 
     if (!user?.id) {
-      setNotice("You must be signed in to accept this match.");
+      setAcceptanceError("You must be signed in to accept this match.");
       return;
     }
 
     if (!viewerTeamId) {
-      setNotice("Missing your team ID. Go back to your team page and open Match Finder from there.");
+      setAcceptanceError("Missing your team ID. Go back to your team page and open Match Finder from there.");
       return;
     }
 
     if (!viewerCanManageMatches) {
-      setNotice("Only team leaders, co-leaders, and captains can accept matches.");
-      setConfirmMatch(null);
+      setAcceptanceError("Only team leaders, co-leaders, and captains can accept matches.");
       return;
     }
 
     if (String(confirmMatch.team_id) === String(viewerTeamId)) {
-      setNotice("You cannot accept your own match post.");
-      setConfirmMatch(null);
+      setAcceptanceError("You cannot accept your own match post.");
       return;
     }
 
     const requiredPlayers = requiredMatchPlayers(confirmMatch.players);
     if (selectedAcceptingRoster.length !== requiredPlayers) {
-      setNotice(`Select exactly ${requiredPlayers} rostered players with the required gaming ID.`);
+      setAcceptanceError(`Select exactly ${requiredPlayers} rostered players with the required gaming ID.`);
       return;
     }
 
     const matchPostId = confirmMatch.id;
     setAcceptingId(matchPostId);
-
-    // Filter local array instantly so the current client session has crisp layout behavior
-    await loadMatches();
 
     const { error: acceptError } = await supabase.rpc("accept_match_post", {
       post_id: matchPostId,
@@ -466,8 +461,7 @@ function MatchFinderContent() {
 
     if (acceptError) {
       setAcceptingId(null);
-      setNotice("Could not accept match: " + acceptError.message);
-      setConfirmMatch(null);
+      setAcceptanceError("Could not accept match: " + acceptError.message);
       await loadMatches();
       return;
     }
@@ -831,12 +825,12 @@ function MatchFinderContent() {
               </div>
               <button className="view-rules-link" type="button" onClick={() => setViewMatch(confirmMatch)}>View all posted rules before accepting</button>
               {confirmMatch.platform !== platform && (
-                <label className="accept-roster-note">
-                  <input type="checkbox" checked={confirmCompatibility} onChange={(event) => setConfirmCompatibility(event.target.checked)} /> I confirmed that both teams&apos; game versions can play together.
-                </label>
+                <p className="accept-roster-note">Cross-play match: make sure both teams&apos; game versions can play together.</p>
               )}
               <div className="accept-roster-note">
-                Select {requiredMatchPlayers(confirmMatch.players)} players with a saved ID for {prettyText(platform)} / {prettyText(confirmMatch.game)}.
+                {requiredMatchPlayers(confirmMatch.players) === 1 && acceptingRoster.length === 1
+                  ? "Your eligible player is selected automatically."
+                  : `Select ${requiredMatchPlayers(confirmMatch.players)} eligible ${requiredMatchPlayers(confirmMatch.players) === 1 ? "player" : "players"} for your match lineup.`}
               </div>
               {loadingAcceptingRoster ? (
                 <div className="accept-roster-note">Loading eligible team roster...</div>
@@ -849,29 +843,25 @@ function MatchFinderContent() {
                         className={selected ? "accept-roster-option active" : "accept-roster-option"}
                         type="button"
                         key={player.id}
+                        aria-pressed={selected}
+                        disabled={acceptingRoster.length === 1 && requiredMatchPlayers(confirmMatch.players) === 1}
                         onClick={() =>
-                          setSelectedAcceptingRoster((current) => {
-                            if (current.includes(player.id)) {
-                              return current.filter((id) => id !== player.id);
-                            }
-                            if (current.length >= requiredMatchPlayers(confirmMatch.players)) {
-                              return current;
-                            }
-                            return [...current, player.id];
-                          })
+                          setSelectedAcceptingRoster((current) =>
+                            toggleAcceptancePlayer(current, player.id, requiredMatchPlayers(confirmMatch.players)),
+                          )
                         }
                       >
-                        <input type="checkbox" checked={selected} readOnly />
-                        {player.username} — {player.gamingId}
+                        {player.username} — {player.gamingId}{selected ? " (selected)" : ""}
                       </button>
                     );
                   })}
                 </div>
               ) : (
                 <div className="accept-roster-note">
-                  No eligible players have a saved ID for this game/platform. Add the required ID from Profile → Edit Profile.
+                  No eligible players have an ID linked for {prettyText(platform)}. Add an ID in Profile → Edit Profile.
                 </div>
               )}
+              {acceptanceError && <p className="accept-roster-note" role="alert">{acceptanceError}</p>}
             </div>
             <div className="accept-actions">
               <button
@@ -880,7 +870,6 @@ function MatchFinderContent() {
                 disabled={
                   acceptingId === confirmMatch.id ||
                   loadingAcceptingRoster ||
-                  (confirmMatch.platform !== platform && !confirmCompatibility) ||
                   selectedAcceptingRoster.length !== requiredMatchPlayers(confirmMatch.players)
                 }
                 onClick={acceptConfirmedMatch}
