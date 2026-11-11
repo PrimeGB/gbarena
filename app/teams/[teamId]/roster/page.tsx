@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "../../../../lib/useUser";
 import { supabase } from "../../../../lib/supabase";
@@ -213,7 +213,8 @@ const ELIGIBILITY_LABEL: Record<Eligibility, string> = {
 export default function EditRosterPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading: authLoading } = useUser();
+  const viewerId = user?.id;
 
   const teamId = String(params?.teamId || "");
 
@@ -227,6 +228,8 @@ export default function EditRosterPage() {
   const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [loadedFor, setLoadedFor] = useState("");
+  const rosterRequest = useRef(0);
   const [updating, setUpdating] = useState(false);
   const [editIds, setEditIds] = useState<Set<string>>(new Set());
   const [removeIds, setRemoveIds] = useState<Set<string>>(new Set());
@@ -246,9 +249,16 @@ export default function EditRosterPage() {
     [roster]
   );
 
-  const loadRoster = async () => {
+  const loadRoster = useCallback(async () => {
     if (!teamId) return;
 
+    const request = ++rosterRequest.current;
+    const isCurrent = () => request === rosterRequest.current;
+    const finish = () => {
+      if (!isCurrent()) return;
+      setLoadedFor(`${teamId}:${viewerId || ""}`);
+      setLoading(false);
+    };
     setLoading(true);
     setError("");
 
@@ -260,15 +270,18 @@ export default function EditRosterPage() {
       .eq("id", teamId)
       .maybeSingle();
 
+    if (!isCurrent()) return;
     if (teamError) {
+      setTeam(null);
       setError(teamError.message);
-      setLoading(false);
+      finish();
       return;
     }
 
     if (!teamData) {
+      setTeam(null);
       setError("Team not found.");
-      setLoading(false);
+      finish();
       return;
     }
 
@@ -276,13 +289,21 @@ export default function EditRosterPage() {
 
     let currentViewerRole: TeamRole = "member";
 
-    if (user?.id) {
-      const { data: viewerMember } = await supabase
+    if (viewerId) {
+      const { data: viewerMember, error: viewerError } = await supabase
         .from("team_members")
         .select("role")
         .eq("team_id", teamId)
-        .eq("user_id", user.id)
+        .eq("user_id", viewerId)
         .maybeSingle();
+
+      if (!isCurrent()) return;
+      if (viewerError) {
+        setTeam(null);
+        setError("Could not check roster permissions: " + viewerError.message);
+        finish();
+        return;
+      }
 
       if (viewerMember?.role) {
         currentViewerRole = normalizeRole(viewerMember.role);
@@ -290,7 +311,7 @@ export default function EditRosterPage() {
 
       if (
         teamData.owner_id &&
-        String(teamData.owner_id) === String(user.id)
+        String(teamData.owner_id) === String(viewerId)
       ) {
         currentViewerRole = "leader";
       }
@@ -302,7 +323,7 @@ export default function EditRosterPage() {
       currentViewerRole !== "leader" &&
       currentViewerRole !== "co-leader"
     ) {
-      setLoading(false);
+      finish();
       return;
     }
 
@@ -311,9 +332,10 @@ export default function EditRosterPage() {
       .select("*")
       .eq("team_id", teamId);
 
+    if (!isCurrent()) return;
     if (memberError) {
       setError(memberError.message);
-      setLoading(false);
+      finish();
       return;
     }
 
@@ -323,7 +345,7 @@ export default function EditRosterPage() {
 
     if (memberUserIds.length === 0) {
       setRoster([]);
-      setLoading(false);
+      finish();
       return;
     }
 
@@ -334,6 +356,7 @@ export default function EditRosterPage() {
       )
       .in("id", memberUserIds);
 
+    if (!isCurrent()) return;
     const { data: accountRows, error: accountError } = await supabase
       .from("gaming_accounts")
       .select("user_id,account_id")
@@ -342,9 +365,10 @@ export default function EditRosterPage() {
       .eq("category", teamData.category || "call-of-duty")
       .eq("game", teamData.game || "modern-warfare-4");
 
+    if (!isCurrent()) return;
     if (accountError) {
       setError("Gaming IDs could not be loaded: " + accountError.message);
-      setLoading(false);
+      finish();
       return;
     }
 
@@ -366,6 +390,7 @@ export default function EditRosterPage() {
       .order("gb_wins", { ascending: false })
       .order("gb_losses", { ascending: true });
 
+    if (!isCurrent()) return;
     const rankMap: Record<string, number> = {};
 
     (rankedProfiles || []).forEach((profile: any, index: number) => {
@@ -408,12 +433,20 @@ export default function EditRosterPage() {
     });
 
     setRoster(loadedRoster);
-    setLoading(false);
-  };
+    finish();
+  }, [teamId, viewerId]);
 
   useEffect(() => {
-    loadRoster();
-  }, [teamId, user?.id]);
+    let active = true;
+    const requests = rosterRequest;
+    if (!authLoading) queueMicrotask(() => {
+      if (active) void loadRoster();
+    });
+    return () => {
+      active = false;
+      requests.current++;
+    };
+  }, [loadRoster, authLoading]);
 
   useEffect(() => {
     if (search.trim().length < 2) return;
@@ -687,7 +720,7 @@ export default function EditRosterPage() {
     setUpdating(false);
   };
 
-  if (loading) {
+  if (authLoading || loading || loadedFor !== `${teamId}:${user?.id || ""}`) {
     return (
       <main className="page">
         <div className="loading">Loading roster...</div>
