@@ -625,8 +625,8 @@ export default function TeamPage() {
         .team-follow-error{margin-top:5px;color:#ffb3b3;font-size:11px;}
 
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
+        .team-header-spacer{height:23px;}
         .team-achievements{margin-top:23px;}
-        .founder-name{color:#d7ad4a;font-weight:bold;}
 
         .team-match-actions{
           margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
@@ -974,10 +974,7 @@ export default function TeamPage() {
                         </div>
                       </div>
 
-                      <div className="team-line">
-                        Team Rank: <span className="founder-name">{cleanTeamPlace}</span>
-                      </div>
-                      {teamRankError && <div className="team-follow-error" role="alert">{teamRankError}</div>}
+                      <div className="team-header-spacer" aria-hidden="true" />
                       <div className="team-line team-achievements">Achievements: None</div>
 
                       <div className="team-match-actions">
@@ -1007,6 +1004,7 @@ export default function TeamPage() {
 
                 <div className="panel">
                   <div className="panel-title">Team Stats</div>
+                  {teamRankError && <div className="team-follow-error" role="alert">{teamRankError}</div>}
 
                   <p className="table-hint">Swipe to see all stats →</p>
                   <div className="table-scroll" role="region" aria-label="Team stats, scroll horizontally for more columns" tabIndex={0}>
