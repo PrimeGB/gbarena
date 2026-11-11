@@ -132,8 +132,8 @@ function EditProfileContent() {
         account.game === gamingAccountGame,
     );
     setGamingAccountId(
-      existingAccount?.account_id ||
-        (gamingAccountPlatform === "pc" ? steamPrefill : "") ||
+      (gamingAccountPlatform === "pc" ? steamPrefill : "") ||
+        existingAccount?.account_id ||
         "",
     );
   }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame, steamPrefill]);
@@ -307,6 +307,7 @@ function EditProfileContent() {
         ),
         data as GamingAccount,
       ]);
+      setSteamPrefill("");
       setGamingAccountId("");
     }
 
@@ -316,7 +317,6 @@ function EditProfileContent() {
   const steamLinked = Boolean(steamPrefill) || gamingAccounts.some((account) => account.platform === "pc");
 
   function linkWithSteam() {
-    if (steamLinked) return;
     sessionStorage.setItem(
       "gb_steam_game",
       JSON.stringify({ category: gamingAccountCategory, game: gamingAccountGame }),
@@ -1368,10 +1368,8 @@ function EditProfileContent() {
                         className="save-button"
                         type="button"
                         onClick={linkWithSteam}
-                        disabled={steamLinked}
-                        style={steamLinked ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                       >
-                        {steamLinked ? "Steam Linked" : "Link with Steam"}
+                        {steamLinked ? "Relink with Steam" : "Link with Steam"}
                       </button>
                       <div className="field-note">Provide platform-specific IDs so friends and teams can find you. Steam players: use Link with Steam to sign in through Steam and pick up your ID automatically.</div>
                     </div>
@@ -1465,10 +1463,8 @@ function EditProfileContent() {
                             className="save-button"
                             type="button"
                             onClick={linkWithSteam}
-                            disabled={steamLinked}
-                            style={steamLinked ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                           >
-                            {steamLinked ? "Steam Linked" : "Link with Steam"}
+                            {steamLinked ? "Relink with Steam" : "Link with Steam"}
                           </button>
                           <div className="field-note">
                             Sign in through Steam to fill in your Steam ID automatically. GameBattles never sees your Steam password. Playing through Battle.net, Epic or EA instead? Type that ID above.
@@ -1487,7 +1483,7 @@ function EditProfileContent() {
                       </button>
                     </div>
                     <div className="field-note">
-                      Once saved, a gaming ID is locked to your account for 30 days and cannot be changed, removed, or used on another account.
+                      The 30-day gaming ID change and removal cooldown is paused for testing. A game-specific ID cannot be used on another account, and IDs used in an open or active match remain locked until it ends.
                     </div>
                     {gamingAccountError && <div className="error-text">{gamingAccountError}</div>}
                     {gamingAccounts.length > 0 ? (
@@ -1497,16 +1493,10 @@ function EditProfileContent() {
                             <div>
                               <strong>{gamingPlatformLabel(account.platform)}</strong>
                               <div className="field-note">{account.category} / {account.game}: {account.account_id}</div>
-                              {account.locked_until && new Date(account.locked_until) > new Date() && (
-                                <div className="field-note">
-                                  🔒 Locked until {new Date(account.locked_until).toLocaleDateString()}
-                                </div>
-                              )}
                             </div>
                             <button
                               className="edit-button"
                               type="button"
-                              disabled={!!account.locked_until && new Date(account.locked_until) > new Date()}
                               onClick={() => void removeGamingAccount(account)}
                             >
                               Remove

@@ -300,26 +300,16 @@ function MatchFinderContent() {
     };
   }, [confirmMatch, viewerTeamId, platform]);
 
-  const cleanAndFilterExpiredPosts = useCallback(async (posts: MatchPost[]): Promise<MatchPost[]> => {
-    const expiredIds = posts.filter((post) => isPostPastTime(post)).map((post) => post.id);
-
-    if (expiredIds.length > 0) {
-      const { error } = await supabase
-        .from("match_posts")
-        .update({ status: "expired" })
-        .in("id", expiredIds)
-        .eq("status", "open");
-
-      if (error) {
-        setNotice("Expired match posts were hidden but could not be marked expired: " + error.message);
-      }
-    }
-
-    return posts.filter((post) => !isPostPastTime(post));
-  }, []);
-
   const loadMatches = useCallback(async () => {
     setPageError("");
+
+    const { error: expiryError } = await supabase.rpc("gb_expire_open_match_posts");
+    if (expiryError) {
+      setPageError("Could not check for expired match posts: " + expiryError.message);
+      setMatches([]);
+      setHasLoaded(true);
+      return;
+    }
 
     let compatible: string[];
     try {
@@ -348,11 +338,9 @@ function MatchFinderContent() {
     }
 
     const allOpenPosts = ((data || []) as MatchPost[]).filter((post) => post.platform === platform || post.crossplay);
-    const nonExpiredPosts = await cleanAndFilterExpiredPosts(allOpenPosts);
-
-    setMatches(nonExpiredPosts);
+    setMatches(allOpenPosts.filter((post) => !isPostPastTime(post)));
     setHasLoaded(true);
-  }, [platform, category, game, ladder, cleanAndFilterExpiredPosts]);
+  }, [platform, category, game, ladder]);
 
   // Effect 1: Handles Initial Load & Sets up the Realtime Database Listener
   useEffect(() => {
@@ -461,23 +449,6 @@ function MatchFinderContent() {
     const requiredPlayers = requiredMatchPlayers(confirmMatch.players);
     if (selectedAcceptingRoster.length !== requiredPlayers) {
       setNotice(`Select exactly ${requiredPlayers} rostered players with the required gaming ID.`);
-      return;
-    }
-
-    if (isPostPastTime(confirmMatch)) {
-      const { error } = await supabase
-        .from("match_posts")
-        .update({ status: "expired" })
-        .eq("id", confirmMatch.id)
-        .eq("status", "open");
-
-      setNotice(
-        error
-          ? "This match post has passed its scheduled time and was hidden, but could not be marked expired: " + error.message
-          : "This match post has passed its scheduled time and expired."
-      );
-      setConfirmMatch(null);
-      await loadMatches();
       return;
     }
 
