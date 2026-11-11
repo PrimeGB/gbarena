@@ -685,11 +685,11 @@ export default function TeamPage() {
         }
 
         .empty-text{color:#cfe2f2;font-size:13px;text-align:center;padding:36px 10px;}
-        .match-table{width:100%;border-collapse:collapse;font-size:12px;}
+        .match-table{width:100%;min-width:620px;table-layout:fixed;border-collapse:collapse;font-size:12px;}
         .match-scroll{max-height:166px;overflow:auto;-webkit-overflow-scrolling:touch;}
         .match-table th{position:sticky;top:0;z-index:1;background:#050c14;color:#fff;padding:9px 10px;border-bottom:1px solid #244b70;text-align:left;font-size:11px;text-transform:uppercase;}
         .match-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#cfe2f2;}
-        .match-table th:last-child,.match-table td:last-child{text-align:right;white-space:nowrap;}
+        .match-table th,.match-table td{width:20%;overflow-wrap:anywhere;}
         .match-table tr:nth-child(even){background:rgba(31,67,96,.12);}
         .match-table a{color:#7fc7ff;font-weight:900;text-decoration:none;}
         .match-table a:hover{color:#d7ad4a;}
