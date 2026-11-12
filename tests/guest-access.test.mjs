@@ -30,6 +30,7 @@ function renderPage(path, signedIn) {
     if (name.endsWith("/ladderCatalog")) return {};
     if (name.endsWith("/ladderStandings")) return {};
     if (name.endsWith("/rapidRoyal")) return { rapidRoyalDisplayName: (value) => value };
+    if (name === "next/navigation") return { useSearchParams: () => new URLSearchParams() };
     if (name === "../../lib/feedbackOptions") return feedbackOptions;
     if (name === "../components/CompactTopBar") return { __esModule: true, default: () => null };
     return require(name);

@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
 }).outputText;
 
-function harness({ preview = false, inboxError = null, actionError = null } = {}) {
+function harness({ preview = false, inboxError = null, actionError = null, recipient = "", recipientError = null } = {}) {
   const states = [];
   const effects = [];
   const calls = [];
@@ -33,7 +33,7 @@ function harness({ preview = false, inboxError = null, actionError = null } = {}
         effects[position] = { deps, cleanup: fn() };
       }
     },
-    useSyncExternalStore() { return preview; },
+    useSyncExternalStore(_subscribe, getSnapshot) { return getSnapshot.name === "getPreview" ? preview : recipient; },
   };
   const incoming = [
     { id: "1", sender_id: "alex", recipient_id: "me", sender_type: "player", subject: "First", body: "First body", is_read: false, is_saved: false, created_at: new Date().toISOString() },
@@ -57,7 +57,7 @@ function harness({ preview = false, inboxError = null, actionError = null } = {}
         ilike(key, value) { query.filters[key] = value; return builder; },
         in() { return builder; },
         order() { return builder; },
-        maybeSingle() { calls.push(query); return Promise.resolve({ data: { id: "alex", username: "Alex" }, error: null }); },
+        maybeSingle() { calls.push(query); return Promise.resolve({ data: recipientError ? null : { id: "alex", username: "Alex" }, error: recipientError }); },
         single() { calls.push(query); return Promise.resolve({ data: { ...query.values, id: "saved-reply", created_at: "2026-01-03T00:00:00Z" }, error: null }); },
         then(resolve, reject) {
           calls.push(query);
@@ -149,6 +149,29 @@ test("composing sends to the resolved player and opens Sent", async () => {
   assert.equal(sent.values.body, "Good game!");
   assert.match(renderToStaticMarkup(page.render()), /Message sent\./);
   assert.equal(button(page.render(), "Sent").props["aria-pressed"], true);
+});
+
+test("a profile message link opens a message addressed to that player", async () => {
+  const page = harness({ recipient: "alex" });
+  page.render();
+  await flush();
+  const view = page.render();
+  assert.equal(find(view, (element) => element.props?.placeholder === "Enter the recipient's username").props.value, "Alex");
+  assert.equal(page.calls.find((call) => call.table === "profiles" && call.filters?.id)?.filters.id, "alex");
+  find(view, (element) => element.props?.placeholder === "Message subject").props.onChange({ target: { value: "Hello" } });
+  find(view, (element) => element.props?.placeholder === "Write your message...").props.onChange({ target: { value: "Good game!" } });
+  find(page.render(), (element) => element.type === "form").props.onSubmit({ preventDefault() {} });
+  await flush();
+  assert.equal(page.calls.find((call) => call.action === "insert").values.recipient_id, "alex");
+});
+
+test("a failed profile recipient lookup is visible and allows manual entry", async () => {
+  const page = harness({ recipient: "alex", recipientError: { message: "Lookup failed" } });
+  page.render();
+  await flush();
+  const view = page.render();
+  assert.match(renderToStaticMarkup(view), /Recipient could not be loaded: Lookup failed/);
+  assert.equal(find(view, (element) => element.props?.placeholder === "Enter the recipient's username").props.value, "");
 });
 
 test("saved messages can be found and read messages deleted without changing sent messages", async () => {

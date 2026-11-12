@@ -55,6 +55,8 @@ function canReply(message: MessageRow | null) {
 const subscribePreview = () => () => {};
 const getPreview = () => process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "1";
 const getServerPreview = () => false;
+const getComposeRecipient = () => new URLSearchParams(window.location.search).get("recipient") || "";
+const getServerComposeRecipient = () => "";
 const previewUser: AppUser = { id: "preview-user" };
 const previewNames = { "preview-player": "Alex", "preview-staff": "Jordan" };
 const previewInbox: MessageRow[] = [
@@ -69,6 +71,7 @@ const previewSent: MessageRow[] = [
 export default function InboxPage() {
   const { user, loading } = useUser();
   const preview = useSyncExternalStore(subscribePreview, getPreview, getServerPreview);
+  const composeRecipient = useSyncExternalStore(subscribePreview, getComposeRecipient, getServerComposeRecipient);
   const currentUser = preview ? previewUser : user as AppUser | null;
 
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -90,6 +93,27 @@ export default function InboxPage() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [managingMessage, setManagingMessage] = useState(false);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!composeRecipient || !currentUser?.id || preview) return;
+    let active = true;
+    async function prepareMessage() {
+      const { data: recipient, error: recipientError } = await supabase
+        .from("profiles").select("id,username").eq("id", composeRecipient).maybeSingle();
+      if (!active) return;
+      setComposeOpen(true);
+      setSelected(null);
+      if (recipientError || !recipient?.username) {
+        setRecipientUsername("");
+        setNotice(recipientError ? `Recipient could not be loaded: ${recipientError.message}` : "Recipient could not be found. Enter a username to send a message.");
+        return;
+      }
+      setRecipientUsername(recipient.username);
+      setNotice("");
+    }
+    void prepareMessage();
+    return () => { active = false; };
+  }, [composeRecipient, currentUser?.id, preview]);
 
   useEffect(() => {
     let active = true;
@@ -395,7 +419,8 @@ export default function InboxPage() {
   }
 
   if (!currentUser) {
-    return <div className="inbox-loading">You must be logged in to view inbox.</div>;
+    const next = composeRecipient ? `/profile/inbox?recipient=${encodeURIComponent(composeRecipient)}` : "/profile/inbox";
+    return <div className="inbox-loading">You must be logged in to view inbox. <a href={`/login?next=${encodeURIComponent(next)}`}>Sign in</a></div>;
   }
 
   const visibleMessages = folder === "sent" ? sentMessages : folder === "saved" ? messages.filter((message) => message.is_saved) : messages;

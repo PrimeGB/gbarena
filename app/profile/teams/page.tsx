@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { ladderGameLabel, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
@@ -19,6 +20,7 @@ type TeamRow = {
   ladder: string | null;
   created_at: string | null;
   logo_url?: string | null;
+  avatar_url?: string | null;
   wins?: number | null;
   losses?: number | null;
   rating_points?: number | null;
@@ -39,68 +41,83 @@ function isMissingTableError(error: { message?: string; code?: string }) {
   return error?.code === "42P01" || msg.includes("does not exist") || (msg.includes("relation") && msg.includes("does not exist"));
 }
 
-export default function ProfileTeamsPage() {
+function ProfileTeamsContent() {
   const { user, loading: authLoading } = useUser();
+  const searchParams = useSearchParams();
+  const requestedUserId = searchParams.get("userId") || "";
+  const viewedUserId = requestedUserId || user?.id || "";
+  const isOwn = !!user?.id && user.id === viewedUserId;
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<TeamRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [rankError, setRankError] = useState("");
   const [loadError, setLoadError] = useState("");
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [playerName, setPlayerName] = useState("");
   const requestId = useRef(0);
 
-  const loadTeams = useCallback(async (expectedUserId: string | null) => {
+  const loadTeams = useCallback(async (targetUserId: string, viewerUserId: string | null) => {
     const currentRequest = ++requestId.current;
     setLoading(true);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (currentRequest !== requestId.current) return;
-    if (!user?.id || user.id !== expectedUserId) {
-      setTeams([]);
-      setPendingInvites([]);
-      setLoadError(expectedUserId ? (authError?.message || "Could not verify your account. Please sign in again.") : "");
-      setLoadedUserId(expectedUserId);
-      setLoading(false);
-      return;
+    const viewingOwnTeams = targetUserId === viewerUserId;
+    if (viewingOwnTeams) {
+      const { data: { user: verifiedUser }, error: authError } = await supabase.auth.getUser();
+      if (currentRequest !== requestId.current) return;
+      if (!verifiedUser?.id || verifiedUser.id !== viewerUserId) {
+        setPlayerName("");
+        setRankError("");
+        setLoadError(authError?.message || "Could not verify your account. Please sign in again.");
+        setLoadedUserId(targetUserId);
+        setLoading(false);
+        return;
+      }
     }
     setLoadError("");
 
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles").select("username").eq("id", targetUserId).maybeSingle();
+
     const { data: ownedTeams, error: ownedError } = await supabase
       .from("teams")
-      .select("id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points")
-      .eq("owner_id", user.id)
+      .select("id, name, tag, platform, category, game, ladder, created_at, logo_url, avatar_url, wins, losses, rating_points")
+      .eq("owner_id", targetUserId)
       .returns<TeamRow[]>();
 
     const { data: memberRows, error: memberError } = await supabase
       .from("team_members")
-      .select("team_id, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points)")
-      .eq("user_id", user.id)
-      .returns<{ teams: TeamRow | null }[]>();
+      .select("team_id, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, avatar_url, wins, losses, rating_points)")
+      .eq("user_id", targetUserId)
+      .returns<{ teams: TeamRow | TeamRow[] | null }[]>();
 
-    const { data: invitedRows, error: inviteError } = await supabase
-      .from("team_invites")
-      .select("id, team_id, status, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, wins, losses, rating_points)")
-      .eq("user_id", user.id)
-      .eq("status", "pending")
-      .returns<{ teams: TeamRow | null }[]>();
+    let pendingTeams: TeamRow[] = [];
+    let inviteError: { message: string } | null = null;
+    if (viewingOwnTeams) {
+      const result = await supabase
+        .from("team_invites")
+        .select("id, team_id, status, teams(id, name, tag, platform, category, game, ladder, created_at, logo_url, avatar_url, wins, losses, rating_points)")
+        .eq("user_id", targetUserId)
+        .eq("status", "pending")
+        .returns<{ teams: TeamRow | TeamRow[] | null }[]>();
+      inviteError = result.error;
+      pendingTeams = (result.data || []).flatMap((row) => row.teams ? (Array.isArray(row.teams) ? row.teams : [row.teams]) : []);
+    }
 
     if (currentRequest !== requestId.current) return;
-    const queryError = ownedError || memberError || inviteError;
-    if (queryError) {
+    const queryError = profileError || ownedError || memberError || inviteError;
+    if (queryError || !profile) {
       setTeams([]);
       setPendingInvites([]);
-      setLoadError("Could not load your teams or invitations: " + queryError.message);
-      setLoadedUserId(user.id);
+      setPlayerName("");
+      setRankError("");
+      setLoadError(queryError ? "Could not load teams: " + queryError.message : "Player profile not found.");
+      setLoadedUserId(targetUserId);
       setLoading(false);
       return;
     }
 
     const memberTeams =
-      memberRows?.map((row) => row.teams).filter((team): team is TeamRow => team !== null) || [];
-
-    const pendingTeams =
-      invitedRows?.map((row) => row.teams).filter((team): team is TeamRow => team !== null) || [];
+      (memberRows || []).flatMap((row) => row.teams ? (Array.isArray(row.teams) ? row.teams : [row.teams]) : []);
 
     const combinedTeams = [...(ownedTeams || []), ...memberTeams];
 
@@ -129,28 +146,33 @@ export default function ProfileTeamsPage() {
     if (currentRequest !== requestId.current) return;
     setTeams(withPlaces);
     setPendingInvites(pendingTeams);
-    setLoadedUserId(user.id);
+    setPlayerName(profile.username || "Player");
+    setLoadedUserId(targetUserId);
     setLoading(false);
   }, []);
 
   useEffect(() => {
+    if (authLoading || !viewedUserId) return;
     let active = true;
     const requests = requestId;
     queueMicrotask(() => {
-      if (active) void loadTeams(user?.id || null);
+      if (active) void loadTeams(viewedUserId, user?.id || null);
     });
     return () => {
       active = false;
       requests.current++;
     };
-  }, [loadTeams, user?.id]);
+  }, [authLoading, loadTeams, user?.id, viewedUserId]);
 
   async function handleInviteResponse(teamId: string, accepted: boolean) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.id) return;
+    if (!user?.id || user.id !== viewedUserId) {
+      alert("Could not verify your account. Please sign in again.");
+      return;
+    }
 
     if (accepted) {
       const { data: existingMember } = await supabase
@@ -192,7 +214,7 @@ export default function ProfileTeamsPage() {
       return;
     }
 
-    await loadTeams(user?.id || null);
+    await loadTeams(viewedUserId, user.id);
   }
 
   function renderTeamHead(team: TeamRow) {
@@ -205,9 +227,9 @@ export default function ProfileTeamsPage() {
         </div>
         <div className="team-head">
           <div className="team-logo">
-            {team.logo_url ? (
+            {team.logo_url || team.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img loading="lazy" decoding="async" src={team.logo_url} alt={team.name || "Team logo"} />
+              <img loading="lazy" decoding="async" src={team.logo_url || team.avatar_url || ""} alt={team.name || "Team logo"} />
             ) : (
               label
             )}
@@ -246,82 +268,70 @@ export default function ProfileTeamsPage() {
   return (
     <>
       <style>{`
-        body{margin:0;background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
-        a{text-decoration:none;}
-        .wrapper{width:1040px;margin:0 auto;}
-        .top-strip{height:22px;background:linear-gradient(to bottom,#c40000,#6a0000);border-bottom:1px solid #140000;display:flex;justify-content:flex-end;align-items:center;padding:0 12px;}
-        .top-strip a{color:#fff;font-size:10px;font-weight:bold;margin-left:12px;}
-        .header{height:86px;background:#0a1622;border-left:1px solid #3b7fc2;border-right:1px solid #3b7fc2;border-bottom:2px solid #4f93d6;display:flex;align-items:center;padding:0 14px;}
-        .logo-main{font-size:28px;font-weight:bold;color:#eaf5ff;}
-        .logo-sub{color:#f2c14e;font-size:10px;text-transform:uppercase;margin-top:4px;}
-        .title-bar{margin-top:8px;height:34px;background:linear-gradient(to bottom,#1f4c73,#0b2438);border:1px solid #3b7fc2;display:flex;align-items:center;padding-left:10px;color:#f2c14e;font-size:15px;font-weight:bold;text-transform:uppercase;}
-        .tabs{height:28px;background:#07111b;border-left:1px solid #3b7fc2;border-right:1px solid #3b7fc2;border-bottom:1px solid #3b7fc2;display:flex;align-items:flex-end;padding-left:8px;}
-        .tab{height:22px;padding:5px 12px 0;background:#0f2a40;border:1px solid #3b7fc2;border-bottom:none;color:#d7eaff;font-size:10px;margin-right:4px;}
-        .tab.active{background:#173b59;color:#fff;font-weight:bold;}
-        .box{background:#07111b;border:1px solid #3b7fc2;margin-top:8px;}
-        .box-title{height:23px;background:linear-gradient(to bottom,#1f4c73,#0b2438);border-bottom:1px solid #3b7fc2;color:#f2c14e;font-weight:bold;font-size:10px;text-transform:uppercase;display:flex;align-items:center;padding-left:8px;}
-        .box-body{padding:18px;}
-        .loading,.empty-message{text-align:center;padding:30px;color:#d7eaff;font-size:13px;}
-        .empty-message strong{display:block;color:#f2c14e;font-size:16px;margin-bottom:8px;}
-        .team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
-        .team-card{border:1px solid #244b70;background:linear-gradient(to bottom,#0b1b2b,#050c14);border-radius:12px;display:flex;flex-direction:column;gap:14px;padding:16px;transition:border-color .15s,transform .15s;}
-        .team-card:hover{border-color:#f2c14e;transform:translateY(-2px);}
-        .team-head{display:flex;align-items:center;gap:14px;}
-        .team-logo{position:relative;width:64px;height:64px;flex:none;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%);border:2px solid #3b86c4;display:flex;align-items:center;justify-content:center;color:#f2c14e;font-weight:bold;font-size:18px;}
+        .teams-page{min-height:100vh;padding:32px 18px 64px;background:#050b12;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
+        .teams-page *{box-sizing:border-box;}
+        .wrapper{max-width:1120px;margin:0 auto;}
+        .back-link{color:#91c9ef;font-size:13px;text-decoration:none;}
+        .back-link:hover{text-decoration:underline;}
+        .title-bar{padding:22px 0 18px;border-bottom:2px solid #9a1f27;}
+        .title-bar h1{margin:0;color:#fff;font-size:30px;line-height:1.2;text-transform:uppercase;overflow-wrap:anywhere;}
+        .title-bar p{margin:8px 0 0;color:#9fb3c5;font-size:13px;}
+        .tabs{display:flex;gap:22px;flex-wrap:wrap;border-bottom:1px solid #253a4a;}
+        .tab{padding:13px 0;color:#a8bed0;text-decoration:none;font-size:12px;font-weight:bold;text-transform:uppercase;}
+        .tab.active{color:#fff;border-bottom:2px solid #cf3038;}
+        .box{margin-top:24px;}
+        .box-title{padding:0 0 12px;border-bottom:1px solid #35516a;color:#fff;font-size:14px;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;}
+        .loading,.empty-message{padding:28px 0;color:#adc2d2;font-size:14px;line-height:1.6;}
+        .empty-message strong{display:block;color:#fff;font-size:16px;margin-bottom:5px;}
+        .empty-message a{color:#91c9ef;}
+        .team-list{display:flex;flex-direction:column;}
+        .team-card{display:grid;grid-template-columns:minmax(210px,1.3fr) minmax(145px,1fr) minmax(240px,1.2fr) auto;grid-template-areas:"head details stats action" "head system stats action";align-items:center;gap:5px 20px;min-width:0;padding:18px 12px;border-bottom:1px solid #233849;background:#0b1722;}
+        .team-card:nth-child(even){background:#09131d;}
+        .team-head{grid-area:head;display:flex;align-items:center;gap:14px;min-width:0;}
+        .team-logo{width:60px;height:60px;flex:none;overflow:hidden;background:#162d40;border:1px solid #3b6584;display:flex;align-items:center;justify-content:center;color:#d7eaff;font-weight:bold;font-size:18px;}
         .team-logo img{width:100%;height:100%;object-fit:cover;}
-        .team-name{color:#fff;font-size:17px;font-weight:bold;text-transform:uppercase;line-height:1.2;overflow-wrap:anywhere;}
-        .team-tag{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:999px;background:rgba(242,193,78,.12);border:1px solid #f2c14e;color:#f2c14e;font-size:11px;font-weight:bold;}
-        .team-identifiers{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
-        .team-system{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 11px;border:1px solid #52677c;border-left:4px solid #8aa7c0;border-radius:6px;background:#102131;color:#e3edf6;}
-        .team-system span{font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;opacity:.85;}
-        .team-system strong{font-size:14px;letter-spacing:.3px;text-align:right;overflow-wrap:anywhere;}
-        .team-system[data-platform="xbox"]{border-color:#408757;border-left-color:#62d77b;background:#103222;color:#b8f5c2;}
-        .team-system[data-platform="playstation"]{border-color:#497ec1;border-left-color:#70aaff;background:#112b50;color:#d0e4ff;}
-        .team-system[data-platform="pc"]{border-color:#8068b5;border-left-color:#c3a1ff;background:#281e43;color:#e3d6ff;}
-        .team-system[data-platform="nintendo"]{border-color:#ad5555;border-left-color:#ff8585;background:#3c191f;color:#ffd2d2;}
-        .team-system[data-platform="mobile"]{border-color:#9c803a;border-left-color:#f2c14e;background:#342b13;color:#ffebae;}
-        .team-chips{display:flex;flex-wrap:wrap;gap:6px;}
-        .chip{padding:4px 10px;border-radius:999px;background:#0f2a40;border:1px solid #244b70;color:#d7eaff;font-size:11px;}
-        .team-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-        .stat{background:#050c14;border:1px solid #244b70;border-radius:8px;padding:8px 4px;text-align:center;}
-        .stat-value{color:#f2c14e;font-size:16px;font-weight:bold;}
-        .stat-value .w{color:#00ff88;}
-        .stat-value .l{color:#ff7777;}
-        .stat-label{color:#8aa7c0;font-size:10px;text-transform:uppercase;margin-top:2px;}
-        .team-actions{display:flex;gap:8px;margin-top:auto;}
-        .team-actions .view-btn{flex:1;}
-        .view-btn{height:36px;border-radius:8px;background:linear-gradient(to bottom,#1d5d90,#0a1f33);border:1px solid #4daeff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;text-transform:uppercase;cursor:pointer;}
-        .view-btn:hover{border-color:#f2c14e;color:#f2c14e;}
-        .reject-btn{background:linear-gradient(to bottom,#5b1f1f,#2a1010);border-color:#9e4b4b;}
-        .pending-box{margin-top:18px;}
-        @media (max-width:1060px){.wrapper{width:100%;}}
+        .team-name{color:#fff;font-size:16px;font-weight:bold;line-height:1.25;overflow-wrap:anywhere;}
+        .team-tag{display:inline-block;margin-top:5px;color:#8aa8bd;font-size:11px;font-weight:bold;letter-spacing:.05em;}
+        .team-system{grid-area:system;display:flex;gap:7px;align-items:baseline;color:#adc6d8;font-size:12px;}
+        .team-system span{color:#788fa1;font-size:10px;font-weight:bold;text-transform:uppercase;}
+        .team-system strong{overflow-wrap:anywhere;}
+        .team-chips{grid-area:details;display:flex;flex-wrap:wrap;gap:4px 9px;color:#dce9f2;font-size:12px;line-height:1.4;}
+        .chip + .chip:before{content:"/";color:#71889a;margin-right:9px;}
+        .team-stats{grid-area:stats;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+        .stat-value{color:#fff;font-size:16px;font-weight:bold;overflow-wrap:anywhere;}
+        .stat-value .w{color:#79d6a0;}.stat-value .l{color:#e89595;}
+        .stat-label{color:#829caf;font-size:10px;text-transform:uppercase;margin-top:4px;letter-spacing:.05em;}
+        .team-actions{grid-area:action;display:flex;gap:8px;flex-wrap:wrap;}
+        .view-btn{min-height:36px;padding:9px 14px;border:1px solid #547792;background:#142b3c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;text-decoration:none;text-transform:uppercase;cursor:pointer;}
+        .view-btn:hover,.view-btn:focus-visible{background:#21435b;border-color:#a4d8ff;}
+        .reject-btn{border-color:#915253;background:#4a2225;}
+        .pending-box{margin-top:32px;}
+        @media(max-width:850px){.team-card{grid-template-columns:minmax(180px,1fr) minmax(160px,1fr) auto;grid-template-areas:"head details action" "head system action" "stats stats stats";row-gap:12px;}.team-stats{max-width:360px;}}
+        @media(max-width:500px){.teams-page{padding:22px 12px 50px;}.title-bar h1{font-size:24px;}.team-card{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"head head" "details system" "stats stats" "action action";gap:12px;padding:16px 10px;}.team-logo{width:52px;height:52px;}.team-actions .view-btn{flex:1;}}
       `}</style>
 
-      <div className="wrapper">
-        <header className="header">
-          <Link href="/home">
-            <div className="logo-main">GameBattles</div>
-            <div className="logo-sub">Where Gaming Finds Its Edge</div>
-          </Link>
-        </header>
+      <main className="teams-page"><div className="wrapper">
+        <Link className="back-link" href={requestedUserId ? `/profile?userId=${encodeURIComponent(requestedUserId)}` : "/profile"}>← Back to profile</Link>
+        <div className="title-bar">
+          <h1>{isOwn ? "My Teams" : loadedUserId === viewedUserId && playerName ? `${playerName}'s Teams` : "Player Teams"}</h1>
+          <p>Teams, records and ladder standings.</p>
+        </div>
 
-        <div className="title-bar">My Teams</div>
-
-        <div className="tabs">
+        {isOwn && <div className="tabs">
           <Link className="tab" href="/profile">Profile</Link>
           <Link className="tab active" href="/profile/teams">Teams</Link>
           <Link className="tab" href="/profile/matches">Matches</Link>
           <Link className="tab" href="/profile/friends">Friends</Link>
-        </div>
+        </div>}
 
         <div className="box">
           <div className="box-title">Teams</div>
 
           <div className="box-body">
-            {user && loadedUserId === user.id && rankError && <p role="alert">{rankError}</p>}
-            {authLoading || (user && (loading || loadedUserId !== user.id)) ? (
+            {loadedUserId === viewedUserId && rankError && <p role="alert">{rankError}</p>}
+            {authLoading || (viewedUserId && (loading || loadedUserId !== viewedUserId)) ? (
               <div className="loading">Loading teams...</div>
-            ) : !user ? (
+            ) : !viewedUserId ? (
               <div className="empty-message">
                 <Link href="/login?next=%2Fprofile%2Fteams">Sign in</Link> to view your teams and invitations.
               </div>
@@ -329,8 +339,8 @@ export default function ProfileTeamsPage() {
               <div className="empty-message" role="alert">{loadError}</div>
             ) : teams.length === 0 ? (
               <div className="empty-message">
-                <strong>Looks lonely in here.</strong>
-                Create or join a team to get started.
+                <strong>{isOwn ? "Looks lonely in here." : "No teams yet."}</strong>
+                {isOwn ? "Create or join a team to get started." : "This player has not joined a team yet."}
               </div>
             ) : (
               <div className="team-list">
@@ -347,7 +357,7 @@ export default function ProfileTeamsPage() {
               </div>
             )}
 
-            {user && !loading && loadedUserId === user.id && pendingInvites.length > 0 && (
+            {isOwn && !loading && loadedUserId === viewedUserId && pendingInvites.length > 0 && (
               <div className="box pending-box">
                 <div className="box-title">Pending Team Invites</div>
                 <div className="box-body">
@@ -371,7 +381,11 @@ export default function ProfileTeamsPage() {
             )}
           </div>
         </div>
-      </div>
+      </div></main>
     </>
   );
+}
+
+export default function ProfileTeamsPage() {
+  return <Suspense fallback={<div>Loading teams...</div>}><ProfileTeamsContent /></Suspense>;
 }

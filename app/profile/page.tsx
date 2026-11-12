@@ -1957,9 +1957,9 @@ function ProfilePageContent() {
   Add Friend
 </a>
 
-  <a className="quick-link" href="#">
+  <Link className="quick-link" href={`/profile/inbox?recipient=${encodeURIComponent(viewedUserId)}`}>
     Message Player
-  </a>
+  </Link>
 
   <a className="quick-link" href={`/profile/awards?userId=${viewedUserId}`}>
     View Player Awards
