@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CompactTopBar from "../components/CompactTopBar";
 import { newsCategories } from "./categoryData";
 
 export default function LatestNewsPage() {
@@ -26,17 +27,6 @@ export default function LatestNewsPage() {
           margin:0 auto;
         }
 
-        .top-strip{
-          height:22px;
-          background:linear-gradient(to bottom,#c40000,#6a0000);
-          border-bottom:1px solid #140000;
-          color:#fff;
-          font-size:10px;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
-        }
-
         .header{
           height:92px;
           background:#0a1622;
@@ -59,28 +49,6 @@ export default function LatestNewsPage() {
           font-size:10px;
           text-transform:uppercase;
           margin-top:5px;
-        }
-
-        .nav{
-          height:32px;
-          background:#0a1622;
-          border-left:1px solid #3b7fc2;
-          border-right:1px solid #3b7fc2;
-          border-bottom:1px solid #3b7fc2;
-          display:flex;
-          align-items:center;
-          padding:0 10px;
-          gap:14px;
-        }
-
-        .nav a{
-          font-size:10px;
-          color:#e3f1ff;
-          text-transform:uppercase;
-        }
-
-        .nav a:hover{
-          color:#f2c14e;
         }
 
         .layout{
@@ -196,12 +164,6 @@ export default function LatestNewsPage() {
             width:100%;
             grid-template-columns:minmax(0,1fr);
           }
-          .nav{
-            height:auto;
-            flex-wrap:wrap;
-            gap:8px 12px;
-            padding:10px;
-          }
           .news-head{
             flex-wrap:wrap;
             gap:6px;
@@ -210,26 +172,14 @@ export default function LatestNewsPage() {
         }
       `}</style>
 
-      <div className="top-strip">
-        GameBattles News Center - Latest Updates, Ladders, Tournaments, Suggestions
-      </div>
-
       <div className="wrapper">
+        <CompactTopBar />
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>
             <div className="logo-sub">Latest News & Community Updates</div>
           </div>
         </header>
-
-        <nav className="nav">
-          <Link href="/">Home</Link>
-          <Link href="/forums">Forums</Link>
-          <Link href="/members">Members</Link>
-          <Link href="/profile">Profile</Link>
-          <Link href="/rules">Rules</Link>
-          <Link href="/support">Support</Link>
-        </nav>
 
         <div className="layout news-layout">
           <aside className="panel">

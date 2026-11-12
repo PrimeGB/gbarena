@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
+import CompactTopBar from "../../components/CompactTopBar";
 
 type Board = "overall" | "week" | "month" | "season";
 type RankingKind = "players" | "teams";
@@ -227,9 +228,6 @@ export default function TopPlayersPage() {
         .top-players-page{min-height:100vh;background:radial-gradient(ellipse at 50% 0,#10263b 0,#02070d 48%,#000 100%);padding:32px 22px 56px;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
         .top-players-page *{box-sizing:border-box;}
         .tp-wrap{max-width:1060px;margin:0 auto;background:#07111b;border:1px solid #315f88;box-shadow:0 12px 40px #000b;}
-        .tp-strip{min-height:30px;background:linear-gradient(to bottom,#8b0000,#3b0000);border-bottom:1px solid #b32222;display:flex;align-items:center;justify-content:flex-end;gap:18px;padding:5px 14px;}
-        .tp-strip a{color:#fff;font-size:12px;font-weight:bold;text-transform:uppercase;text-decoration:none;}
-        .tp-strip a:hover,.tp-strip a:focus-visible{color:#ffdc81;}
         .tp-header{position:relative;overflow:hidden;padding:24px 24px 25px;background:radial-gradient(ellipse at 87% 20%,#26577b 0,transparent 46%),linear-gradient(115deg,#173b58,#07111b 78%);border-bottom:1px solid #3b719d;}
         .tp-header:after{content:"";position:absolute;right:-30px;top:-95px;width:280px;height:280px;border:1px solid #7bbbe01c;transform:rotate(35deg);pointer-events:none;}
         .tp-eyebrow{color:#f2c14e;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1.6px;margin:0 0 8px;}
@@ -292,11 +290,7 @@ export default function TopPlayersPage() {
 
       <main className="top-players-page">
         <div className="tp-wrap">
-          <div className="tp-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
+          <CompactTopBar />
           <header className="tp-header">
             <div className="tp-eyebrow">GameBattles / Leaderboards</div>
             <h1>Top {isTeams ? "Teams" : "Players"}</h1>
