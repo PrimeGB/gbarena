@@ -1,5 +1,4 @@
 import Link from "next/link";
-import CompactTopBar from "../components/CompactTopBar";
 import { newsMenuCategories } from "./categoryData";
 
 export default function LatestNewsPage() {
@@ -173,7 +172,6 @@ export default function LatestNewsPage() {
       `}</style>
 
       <div className="wrapper">
-        <CompactTopBar />
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>

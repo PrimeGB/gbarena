@@ -1314,12 +1314,6 @@ function TeamHubContent() {
 
       <main className="page team-hub-page">
         <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
-
           <header className="header">
             <Link className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>
@@ -1330,7 +1324,6 @@ function TeamHubContent() {
           </header>
 
           <nav className="nav">
-            <Link href="/home">Home</Link>
             <Link href="/members">Members</Link>
             <Link href="/forums">Forums</Link>
             <Link href="/teams/top">Top Teams</Link>

@@ -685,7 +685,6 @@ function CreateMatchContent() {
           </header>
 
           <nav className="nav">
-            <Link href="/home">Home</Link>
             <Link href="/profile/teams">My Teams</Link>
             <Link href="/members">Members</Link>
             <Link href="/forums">Forums</Link>

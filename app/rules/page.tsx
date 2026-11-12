@@ -1,4 +1,3 @@
-import CompactTopBar from "../components/CompactTopBar";
 
 export default function RulesPage() {
   return (
@@ -23,7 +22,6 @@ export default function RulesPage() {
       `}</style>
 
       <div className="wrapper">
-        <CompactTopBar />
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>

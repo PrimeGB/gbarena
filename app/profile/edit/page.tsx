@@ -1252,11 +1252,6 @@ function EditProfileContent() {
       `}</style>
 
       <div className="page">
-        <div className="top-strip">
-          <Link href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</Link>
-          <Link href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Back to Profile</Link>
-        </div>
-
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">
@@ -1281,7 +1276,6 @@ function EditProfileContent() {
           </div>
 
           <nav className="nav">
-            <Link href="/home" onClick={(event) => handleNavClick(event, "/home")}>Home</Link>
             <Link href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Profile</Link>
             <button className={activeTab === "main" ? "active" : ""} onClick={() => handleTabChange("main")}>Main Edit</button>
             <button className={activeTab === "awards" ? "active" : ""} onClick={() => handleTabChange("awards")}>Awards</button>

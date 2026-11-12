@@ -1,5 +1,4 @@
 import Link from "next/link";
-import CompactTopBar from "../components/CompactTopBar";
 import NewsCategoriesNav from "./NewsCategoriesNav";
 import type { NewsCategory } from "./categoryData";
 
@@ -33,7 +32,6 @@ export default function NewsCategoryContent({ category }: { category: NewsCatego
         @media(max-width:768px){.updates-layout{grid-template-columns:minmax(0,1fr)}.updates-content{padding:16px}.updates-heading h1{font-size:23px}}
       `}</style>
       <div className="updates-page">
-        <CompactTopBar />
         <header className="updates-header">
           <div>
             <div className="updates-brand">GameBattles</div>

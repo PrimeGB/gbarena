@@ -80,11 +80,6 @@ function ChooseTeamLadder() {
         @media(max-width:600px){.choose-team-page{padding:10px}.choose-team-logo{font-size:clamp(25px,8vw,38px)}.choose-team-content,.choose-team-panel,.choose-team-title{padding:16px}.choose-team-fields{grid-template-columns:1fr}}
       `}</style>
       <div className="choose-team-wrap">
-        <nav className="choose-team-top" aria-label="Quick links">
-          <Link href="/home">Home</Link>
-          <Link href="/profile">My Profile</Link>
-          <Link href="/forums">Forums</Link>
-        </nav>
         <header className="choose-team-header">
           <Link className="choose-team-logo" href="/home">GameBattles</Link>
         </header>
@@ -466,12 +461,6 @@ function CreateTeamContent() {
 
       <main className="page team-create-page">
         <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
-
           <header className="header">
             <Link className="logo-link" href="/home">
               <div className="logo-main">GameBattles</div>

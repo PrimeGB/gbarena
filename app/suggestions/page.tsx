@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
 import { bugAreas, bugBrowsers, bugDevices, maxBugDetailsLength } from "../../lib/feedbackOptions";
-import CompactTopBar from "../components/CompactTopBar";
 
 type PostType = "Suggestion" | "Bug Report";
 
@@ -132,7 +131,6 @@ export default function SuggestionsPage() {
         @media(max-width:450px){.feedback-type-options,.feedback-context{grid-template-columns:1fr}.feedback-type button{min-height:0}.feedback-context-area{grid-column:auto}}
       `}</style>
       <div className="feedback-page">
-        <CompactTopBar />
         <header className="feedback-header">
           <div className="feedback-brand">GameBattles</div>
           <div className="feedback-subtitle">Community Feedback</div>

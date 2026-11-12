@@ -1,5 +1,4 @@
 import Link from "next/link";
-import CompactTopBar from "../components/CompactTopBar";
 import { acceptedSuggestions } from "./categoryData";
 import NewsCategoriesNav from "./NewsCategoriesNav";
 
@@ -39,7 +38,6 @@ export default function AcceptedSuggestions() {
         @media(max-width:700px){.accepted-header{padding:18px}.accepted-content{padding:22px 16px 32px}.accepted-heading{align-items:flex-start;flex-direction:column}.accepted-heading h1{font-size:24px}.accepted-details{grid-template-columns:1fr;gap:16px}.accepted-details .accepted-author{grid-column:auto}.accepted-card-head{align-items:flex-start;flex-direction:column}}
       `}</style>
       <div className="accepted-page">
-        <CompactTopBar />
         <header className="accepted-header">
           <div className="accepted-brand">GameBattles</div>
           <div className="accepted-brand-sub">Latest News &amp; Community Updates</div>

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import CompactTopBar from "../components/CompactTopBar";
 
 export default function AboutPage() {
   return (
@@ -132,7 +131,6 @@ export default function AboutPage() {
       `}</style>
 
       <div className="wrapper">
-        <CompactTopBar />
 
         <header className="header">
 

@@ -315,7 +315,6 @@ export default function TopTeamsPage() {
         </header>
 
         <nav className="nav">
-          <Link href="/">Home</Link>
           <Link href="/latest-news">Latest News</Link>
           <Link href="/players/top">Top Players</Link>
           <Link href="/forums">Forums</Link>

@@ -261,12 +261,6 @@ export default function XboxBattlefieldPage() {
 
       <main className="page">
         <div className="wrapper">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
-
           <header className="header">
             <div>
               <div className="logo-main">GameBattles</div>
@@ -277,7 +271,6 @@ export default function XboxBattlefieldPage() {
           </header>
 
           <nav className="nav">
-            <Link href="/home">Home</Link>
             <Link href="/members">Members</Link>
             <Link href="/forums">Forums</Link>
             <Link href="/teams/top">Top Teams</Link>

@@ -12,7 +12,6 @@ export default function SiteNav({
   profileFriendsHref,
 }: SiteNavProps) {
   const links = profileFriendsHref ? [
-    { label: "Home", href: "/home" },
     { label: "Profile", href: "/profile", current: true },
     { label: "Teams", href: "/profile/teams" },
     { label: "Tournaments", href: tournamentHref },
@@ -24,7 +23,6 @@ export default function SiteNav({
     { label: "Recruit", href: "/recruit" },
     { label: "Support", href: "/support" },
   ] : [
-    { label: "Home", href: "/home" },
     ...(showLadders ? [{ label: "Ladders", href: ladderHref }] : []),
     { label: "Tournaments", href: tournamentHref },
     { label: "Create a Team", href: "/teams/create" },

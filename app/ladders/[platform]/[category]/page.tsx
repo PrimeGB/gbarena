@@ -27,11 +27,6 @@ export default function LadderCategoryPage() {
   return (
     <main className="page">
       <div className="wrapper">
-        <div className="top-strip">
-          <Link href="/home">Home</Link>
-          <Link href="/profile">My Profile</Link>
-          <Link href="/forums">Forums</Link>
-        </div>
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>
@@ -40,7 +35,6 @@ export default function LadderCategoryPage() {
           <div className="platform-mark">{platformName}</div>
         </header>
         <nav className="nav" aria-label="Main navigation">
-          <Link href="/home">Home</Link>
           <Link href={`/ladders/${platform}`}>{platformName} Ladders</Link>
           <Link href="/members">Members</Link>
           <Link href="/forums">Forums</Link>

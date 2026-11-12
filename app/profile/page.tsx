@@ -1689,11 +1689,6 @@ function ProfilePageContent() {
       `}</style>
 
       <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}`}>
-        <div className="top-strip">
-          <Link href="/">Home</Link>
-          <Link href="/profile">My Profile</Link>
-        </div>
-
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">

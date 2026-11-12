@@ -347,17 +347,11 @@ function SearchPageInner() {
 
       <main className="page">
         <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
-
           <header className="header">
             <div className="title-block">
               <h1>Search</h1>
               <p>Find players and teams on GameBattles</p>
+              <p><Link href="/members">Browse Members</Link></p>
             </div>
 
             <Link className="home-btn" href="/home">

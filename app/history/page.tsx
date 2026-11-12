@@ -32,8 +32,8 @@ export default function HistoryPage() {
 
         .top-strip{
           height:30px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
+          background:#0a1622;
+          border-bottom:1px solid #244b70;
           display:flex;
           align-items:center;
           justify-content:flex-end;
@@ -224,13 +224,6 @@ export default function HistoryPage() {
 
       <main className="page-bg">
         <div className="wrapper">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/about">About Us</Link>
-            <Link href="/rules">Rules</Link>
-            <Link href="/support">Support</Link>
-          </div>
-
           <header className="header">
             <div>
               <div className="logo-main">GameBattles</div>
@@ -239,6 +232,11 @@ export default function HistoryPage() {
 
             <div className="header-badge">History</div>
           </header>
+          <nav className="top-strip" aria-label="Information">
+            <Link href="/about">About Us</Link>
+            <Link href="/rules">Rules</Link>
+            <Link href="/support">Support</Link>
+          </nav>
 
           <section className="page-title">
             <h1>The History of Competitive Ladders</h1>

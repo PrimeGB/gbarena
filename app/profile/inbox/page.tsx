@@ -3,7 +3,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
-import CompactTopBar from "../../components/CompactTopBar";
 import "./inbox.css";
 
 type AppUser = {
@@ -766,7 +765,6 @@ export default function InboxPage() {
 
       <main className="page inbox-page">
         <div className="wrap">
-          <CompactTopBar />
 
           <header className="header">
             <div className="title">

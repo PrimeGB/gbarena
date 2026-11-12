@@ -5,7 +5,6 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
 import { hasNewTrophy } from "./NewTrophyArt";
-import CompactTopBar from "../components/CompactTopBar";
 
 type PublicAward = {
   name: string;
@@ -49,7 +48,6 @@ export default function AwardsPage() {
     <main style={styles.page}>
       <style>{AWARD_CSS}</style>
       <section style={styles.shell}>
-        <CompactTopBar />
         <header style={styles.header}>
           <p style={styles.eyebrow}>GAMEBATTLES AWARDS</p>
           <h1 style={styles.title}>Awards &amp; Achievements</h1>

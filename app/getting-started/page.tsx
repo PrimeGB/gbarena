@@ -6,7 +6,7 @@ export default function GettingStartedPage() {
         body{margin:0;background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
         a{text-decoration:none;}
         .wrapper{width:1100px;margin:0 auto;}
-        .top-strip{height:22px;background:linear-gradient(to bottom,#c40000,#6a0000);border-bottom:1px solid #140000;display:flex;align-items:center;padding:0 12px;}
+        .top-strip{min-height:32px;background:#0a1622;border:1px solid #3b7fc2;border-top:0;display:flex;flex-wrap:wrap;align-items:center;padding:4px 12px;}
         .top-strip a{color:#fff;font-size:10px;margin-right:14px;font-weight:bold;}
         .header{height:92px;background:#0a1622;border-left:1px solid #3b7fc2;border-right:1px solid #3b7fc2;border-bottom:2px solid #4f93d6;display:flex;align-items:center;padding:0 16px;}
         .logo-main{font-size:30px;font-weight:bold;color:#eaf5ff;line-height:1;}
@@ -28,13 +28,6 @@ export default function GettingStartedPage() {
         .footer{margin-top:8px;height:26px;background:#0a1622;border:1px solid #3b7fc2;display:flex;align-items:center;justify-content:center;color:#a9c3db;font-size:10px;}
       `}</style>
 
-      <div className="top-strip">
-        <Link href="/">Home</Link>
-        <Link href="/general-info">General Info</Link>
-        <Link href="/rules">Rules</Link>
-        <Link href="/support">Support</Link>
-      </div>
-
       <div className="wrapper">
         <header className="header">
           <div>
@@ -42,6 +35,11 @@ export default function GettingStartedPage() {
             <div className="logo-sub">Where Gaming Finds Its Edge</div>
           </div>
         </header>
+        <nav className="top-strip" aria-label="Getting started">
+          <Link href="/general-info">General Info</Link>
+          <Link href="/rules">Rules</Link>
+          <Link href="/support">Support</Link>
+        </nav>
 
         <div className="page">
           <div className="page-title">Getting Started</div>

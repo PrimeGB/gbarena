@@ -57,7 +57,6 @@ export default async function NewsCategoryPage({
         <span>News & Community Updates</span>
       </header>
       <nav className="nc-nav" aria-label="Main">
-        <Link href="/home">Home</Link>
         <Link href="/latest-news">Latest News</Link>
         <Link href="/forums">Forums</Link>
         <Link href="/profile">Profile</Link>

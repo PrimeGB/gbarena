@@ -295,11 +295,6 @@ export default function ProfileTeamsPage() {
         @media (max-width:1060px){.wrapper{width:100%;}}
       `}</style>
 
-      <div className="top-strip">
-        <Link href="/home">Home</Link>
-        <Link href="/profile">My Profile</Link>
-      </div>
-
       <div className="wrapper">
         <header className="header">
           <Link href="/home">

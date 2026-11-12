@@ -225,11 +225,6 @@ export default function ProfileMatchesPage() {
         }
       `}</style>
 
-      <div className="top-strip">
-        <Link href="/">Home</Link>
-        <Link href="/profile">My Profile</Link>
-      </div>
-
       <div className="wrapper">
         <header className="header">
           <div>

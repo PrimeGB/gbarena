@@ -236,7 +236,6 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
             </span>
           </Link>
           <nav className="members-nav" aria-label="Member navigation">
-            <Link href="/home">Home</Link>
             <Link href="/profile">My Profile</Link>
           </nav>
         </div>

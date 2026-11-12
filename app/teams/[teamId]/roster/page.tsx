@@ -772,8 +772,6 @@ export default function EditRosterPage() {
     return (
       <main className="page">
         <div className="wrap">
-          <div className="top-strip" />
-
           <div className="header">
             <div className="logo-text">GAMEBATTLES</div>
             <div className="header-title">TEAM ROSTER</div>
@@ -867,8 +865,6 @@ export default function EditRosterPage() {
   return (
     <main className="page">
       <div className="wrap">
-        <div className="top-strip" />
-
         <div className="header">
           <div className="logo-text">GAMEBATTLES</div>
 

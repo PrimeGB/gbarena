@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
-import CompactTopBar from "../../components/CompactTopBar";
 
 type Board = "overall" | "week" | "month" | "season";
 type RankingKind = "players" | "teams";
@@ -290,7 +289,6 @@ export default function TopPlayersPage() {
 
       <main className="top-players-page">
         <div className="tp-wrap">
-          <CompactTopBar />
           <header className="tp-header">
             <div className="tp-eyebrow">GameBattles / Leaderboards</div>
             <h1>Top {isTeams ? "Teams" : "Players"}</h1>

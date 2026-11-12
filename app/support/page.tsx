@@ -33,8 +33,8 @@ export default function SupportPage() {
 
         .top-strip{
           height:30px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
+          background:#0a1622;
+          border-bottom:1px solid #244b70;
           display:flex;
           align-items:center;
           justify-content:flex-end;
@@ -230,12 +230,6 @@ export default function SupportPage() {
 
       <main className="page-bg">
         <div className="wrapper">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/contact">Contact</Link>
-            <Link href="/suggestions">Suggestions</Link>
-          </div>
-
           <header className="header">
             <div>
               <div className="logo-main">GameBattles</div>
@@ -244,6 +238,10 @@ export default function SupportPage() {
 
             <div className="header-badge">Support</div>
           </header>
+          <nav className="top-strip" aria-label="Support links">
+            <Link href="/contact">Contact</Link>
+            <Link href="/suggestions">Suggestions</Link>
+          </nav>
 
           <section className="title-bar">
             <h1>Support Center</h1>

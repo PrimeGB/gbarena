@@ -25,11 +25,6 @@ export default function LadderPlatformPage() {
   return (
     <main className="page">
       <section className="panel">
-        <div className="top-strip">
-          <Link href="/home">Home</Link>
-          <Link href="/profile">My Profile</Link>
-          <Link href="/forums">Forums</Link>
-        </div>
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>
@@ -38,7 +33,6 @@ export default function LadderPlatformPage() {
           <div className="platform-mark">{platformName}</div>
         </header>
         <nav className="nav" aria-label="Main navigation">
-          <Link href="/home">Home</Link>
           <Link href="/members">Members</Link>
           <Link href="/forums">Forums</Link>
           <Link href="/teams/top">Top Teams</Link>
