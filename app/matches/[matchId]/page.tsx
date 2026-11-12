@@ -309,7 +309,7 @@ export default function MatchDetailsPage() {
     async function refreshCancellation() {
       const [requestResult, matchResult] = await Promise.all([
         supabase.from("match_cancellation_requests").select("requesting_team_id,status").eq("match_id", matchId).maybeSingle(),
-        supabase.from("matches").select("status,reporting_status,finalized").eq("id", matchId).maybeSingle(),
+        supabase.from("matches").select("*").eq("id", matchId).maybeSingle(),
       ]);
       if (!active) return;
       if (requestResult.error || matchResult.error) {
@@ -319,7 +319,7 @@ export default function MatchDetailsPage() {
       setCancellationError("");
       setCancellation(requestResult.data as CancellationRequest | null);
       if (matchResult.data) {
-        setMatch((current) => current && current.id === matchId ? { ...current, ...matchResult.data } : current);
+        setMatch((current) => current && current.id === matchId ? matchResult.data as MatchRow : current);
       }
     }
     void refreshCancellation();
@@ -381,6 +381,7 @@ export default function MatchDetailsPage() {
 
       if (process.env.NODE_ENV === "development" && matchId === "preview") {
         const previewStart = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const awaiting = new URLSearchParams(window.location.search).get("state") === "awaiting";
         setMatch({
           id: "preview",
           posting_team_id: "t1",
@@ -401,8 +402,11 @@ export default function MatchDetailsPage() {
           round_length: "2:00",
           score_limit: "6",
           bomb_timer: "45s",
-          status: "upcoming",
-          reporting_status: "none",
+          status: awaiting ? "awaiting_confirmation" : "upcoming",
+          reporting_status: awaiting ? "awaiting_confirmation" : "none",
+          confirmation_team_id: awaiting ? "t2" : null,
+          posting_team_score: awaiting ? 2 : null,
+          accepting_team_score: awaiting ? 1 : null,
           accepted_at: new Date().toISOString(),
           host_team_ids: ["t1", "t2", "t1"],
           map_names: ["Hacienda", "Protocol", "Red Card"],
@@ -414,7 +418,7 @@ export default function MatchDetailsPage() {
             .concat(["Ghost", "Raven", "Echo", "Drift"].map((u, i) => ({ id: `b${i}`, team_id: "t2", team_name_at_match: "Ghost Ops", username_at_match: u, account_id_at_match: `${u}#20${i}` })))
         );
         setTeamRanks({ t1: 2, t2: 3 });
-        setUserTeamId("t1");
+        setUserTeamId(awaiting ? "t2" : "t1");
         setCanManageMatch(true);
         setLoading(false);
         return;
@@ -675,6 +679,11 @@ export default function MatchDetailsPage() {
   const userIsPostingTeam = userTeamId && userTeamId === match?.posting_team_id;
   const userIsAcceptingTeam = userTeamId && userTeamId === match?.accepting_team_id;
   const userIsMatchTeam = !!userIsPostingTeam || !!userIsAcceptingTeam;
+  const disputeTicketHref = match
+    ? `/support/dispute-ticket?matchId=${encodeURIComponent(match.id)}${
+        process.env.NODE_ENV === "development" && match.id === "preview" ? `&team=${encodeURIComponent(userTeamId)}` : ""
+      }`
+    : "";
   const userMustConfirm =
     reportingStatus === "awaiting_confirmation" &&
     !!match?.confirmation_team_id &&
@@ -1012,7 +1021,7 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    setActionMessage("Result confirmed. Match completed and rankings updated.");
+    setActionMessage(result?.message || "Result confirmed.");
     await reloadMatch();
     await loadComments();
   }
@@ -1028,6 +1037,13 @@ export default function MatchDetailsPage() {
         : "";
     if (!reason) {
       setActionMessage("Choose a dispute reason.");
+      return;
+    }
+
+    if (process.env.NODE_ENV === "development" && match.id === "preview") {
+      setMatch({ ...match, status: "disputed", reporting_status: "disputed" });
+      setDisputeOpen(false);
+      setActionMessage("Sample dispute opened. Submit a ticket with your proof.");
       return;
     }
 
@@ -1047,27 +1063,8 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    setActionMessage("Dispute opened. Staff must resolve this match.");
-
-    if (proofFile && currentUser?.id) {
-      const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${match.id}/${currentUser.id}/${match.id}-dispute-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
-      if (uploadError) {
-        setActionMessage("The dispute was opened, but its proof image could not be uploaded.");
-      } else {
-        const { error: proofInsertError } = await supabase.from("match_proofs").insert([
-          { match_id: match.id, team_id: userTeamId, user_id: currentUser.id, proof_url: path, proof_note: "Dispute proof" },
-        ]);
-        if (proofInsertError) {
-          setActionMessage(`The dispute was opened, but its proof could not be saved: ${proofInsertError.message}`);
-        } else {
-          setProofRefreshKey((key) => key + 1);
-        }
-      }
-      setProofFile(null);
-    }
-
+    setDisputeOpen(false);
+    setActionMessage("Dispute opened. Submit your ticket and proof for staff review.");
     await reloadMatch();
   }
 
@@ -2023,14 +2020,14 @@ export default function MatchDetailsPage() {
                     {reportingStatus === "awaiting_confirmation" && (
                       <div className="score-note">Score reported. {canConfirmScore ? "Open Report Score to confirm or dispute it." : `Awaiting confirmation from ${confirmationTeamName}.`}</div>
                     )}
-                    {canReportScore && isDisputed ? (
+                    {canReportScore && isDisputed && userIsMatchTeam ? (
                       <Link
                         className="blue-btn"
-                        href={`/support/dispute-ticket?matchId=${encodeURIComponent(match.id)}`}
+                        href={disputeTicketHref}
                       >
-                        Submit a ticket for this match
+                        Submit Dispute Ticket
                       </Link>
-                    ) : (
+                    ) : !isDisputed && (
                       <div className="score-note">
                         {!canReportScore
                           ? reportOpensAt === null
@@ -2084,7 +2081,7 @@ export default function MatchDetailsPage() {
                     <input
                       className="score-input"
                       type="text"
-                      value={postingScore}
+                      value={scoreAlreadyReported ? String(match.posting_team_score ?? "") : postingScore}
                       onChange={(e) => setPostingScore(e.target.value)}
                       disabled={!canSubmitScore}
                     />
@@ -2097,7 +2094,7 @@ export default function MatchDetailsPage() {
                     <input
                       className="score-input"
                       type="text"
-                      value={acceptingScore}
+                      value={scoreAlreadyReported ? String(match.accepting_team_score ?? "") : acceptingScore}
                       onChange={(e) => setAcceptingScore(e.target.value)}
                       disabled={!canSubmitScore}
                     />
@@ -2178,11 +2175,7 @@ export default function MatchDetailsPage() {
                             onChange={(e) => setDisputeDetails(e.target.value)}
                             placeholder="Optional details"
                           />{" "}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                          />{" "}
+                          <div>Upload your screenshots or videos on the ticket form after opening the dispute.</div>
                           <button
                             className="dispute-btn"
                             type="button"
@@ -2228,11 +2221,9 @@ export default function MatchDetailsPage() {
                           {" "}
                           <Link
                             className="dispute-ticket-link"
-                            href={`/support/dispute-ticket?matchId=${encodeURIComponent(
-                              match.id
-                            )}`}
+                            href={disputeTicketHref}
                           >
-                            Submit your team&apos;s dispute ticket
+                            Submit Dispute Ticket
                           </Link>
                         </>
                       )}

@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
@@ -65,12 +65,6 @@ function shortMatchId(id: string) {
   return id.replace(/-/g, "").slice(0, 8).toLowerCase();
 }
 
-function bestOfNumber(value: string | null | undefined) {
-  const found = String(value || "").match(/\d+/);
-  if (!found) return 3;
-  return Number(found[0]) || 3;
-}
-
 function formatMatchTime(value: string | null | undefined) {
   if (!value) return "TBD";
   const date = new Date(value);
@@ -89,6 +83,7 @@ function formatMatchTime(value: string | null | undefined) {
 function DisputeTicketPageContent() {
   const searchParams = useSearchParams();
   const matchId = searchParams.get("matchId") || "";
+  const previewTeam = searchParams.get("team");
   const { user } = useUser() as { user: User | null };
 
   const [match, setMatch] = useState<MatchRow | null>(null);
@@ -102,7 +97,7 @@ function DisputeTicketPageContent() {
   const [otherReason, setOtherReason] = useState("");
   const [description, setDescription] = useState("");
   const [proofLinks, setProofLinks] = useState("");
-  const [evidenceFiles, setEvidenceFiles] = useState<(File | null)[]>([]);
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -112,12 +107,6 @@ function DisputeTicketPageContent() {
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const bestOf = bestOfNumber(match?.best_of);
-
-  const evidenceSlots = useMemo(() => {
-    return Array.from({ length: bestOf }, (_, i) => i + 1);
-  }, [bestOf]);
 
   const opponentTeamId =
     viewerTeamId && match?.posting_team_id === viewerTeamId
@@ -192,7 +181,7 @@ function DisputeTicketPageContent() {
         });
         setPostingTeam({ id: "t1", name: "Nova Elite", tag: "NOVA" });
         setAcceptingTeam({ id: "t2", name: "Ghost Ops", tag: "GHST" });
-        setViewerTeamId("t1");
+        setViewerTeamId(previewTeam === "t2" ? "t2" : "t1");
         setLoading(false);
         return;
       }
@@ -297,7 +286,7 @@ function DisputeTicketPageContent() {
     }
 
     loadTicketInfo();
-  }, [matchId, user?.id]);
+  }, [matchId, previewTeam, user?.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -334,9 +323,7 @@ function DisputeTicketPageContent() {
       return;
     }
 
-    const selectedEvidence = evidenceFiles.filter(
-      (file): file is File => file !== null
-    );
+    const selectedEvidence = evidenceFiles;
 
     if (selectedEvidence.length === 0) {
       setMessage("Attach at least one screenshot or video as proof.");
@@ -661,7 +648,7 @@ function DisputeTicketPageContent() {
 
         .textarea{
           width:100%;
-          min-height:320px;
+          min-height:140px;
           border:1px solid #333;
           background:#080808;
           color:#fff;
@@ -922,33 +909,25 @@ function DisputeTicketPageContent() {
                   <div className="section">
                     <div className="section-title">Evidence</div>
                     <div className="section-body">
-                      <div className="evidence-grid">
-                        {evidenceSlots.map((slot) => (
-                          <div className="evidence-card" key={slot}>
-                            <div>
-                              <div className="evidence-title">Evidence Slot #{slot}</div>
-                              <div className="evidence-copy">Screenshot or video proof.</div>
-                            </div>
-                            <input
-                              className="evidence-file"
-                              type="file"
-                              accept="image/*,video/*"
-                              disabled={submitting || submitted}
-                              onChange={(event) =>
-                                setEvidenceFiles((current) => {
-                                  const next = [...current];
-                                  next[slot - 1] = event.target.files?.[0] || null;
-                                  return next;
-                                })
-                              }
-                            />
-                            {evidenceFiles[slot - 1] && (
-                              <div className="evidence-copy">
-                                Selected: {evidenceFiles[slot - 1]?.name}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                      <div className="evidence-card">
+                        <div>
+                          <label className="evidence-title" htmlFor="dispute-evidence">Add proof</label>
+                          <div className="evidence-copy">Select one or more screenshots or videos. Each file can be up to 50 MB.</div>
+                        </div>
+                        <div>
+                          <input
+                            id="dispute-evidence"
+                            className="evidence-file"
+                            type="file"
+                            accept="image/*,video/*"
+                            multiple
+                            disabled={submitting || submitted}
+                            onChange={(event) => setEvidenceFiles(Array.from(event.target.files || []))}
+                          />
+                          {evidenceFiles.map((file, index) => (
+                            <div className="evidence-copy" key={`${file.name}-${index}`}>Selected: {file.name}</div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1007,7 +986,7 @@ function DisputeTicketPageContent() {
 
                   {!windowOpen && <div className="message">Tickets are available from the scheduled match time until 2 hours afterward.</div>}
                   {message && (
-                    <div className={submitted ? "message good" : "message"}>
+                    <div className={submitted ? "message good" : "message"} role={submitted ? "status" : "alert"}>
                       {message}
                     </div>
                   )}
