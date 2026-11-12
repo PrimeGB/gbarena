@@ -1763,6 +1763,60 @@ export default function MatchDetailsPage() {
           }
 
         }
+
+        .page{padding:18px 14px 28px;}
+        .match-shell{max-width:1120px;}
+        .top-bar{min-height:38px;height:auto;padding:8px 14px;}
+        .team-card,.vs-box{min-height:88px;}
+        .team-card{padding:10px 14px;}
+        .team-logo{width:54px;height:54px;font-size:15px;}
+        .team-copy{min-height:54px;}
+        .team-record{margin-top:4px;line-height:16px;}
+        .participants-grid{padding:8px 12px;gap:8px;}
+        .participants-team{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;padding:8px 10px;}
+        .roster-title{grid-column:1 / -1;margin:0;}
+        .roster-player{min-width:0;margin:0;}
+        .participant-line{grid-column:1 / -1;}
+        .section-title{min-height:34px;height:auto;gap:8px;padding:7px 14px;}
+        .details-heading{justify-content:space-between;}
+        .match-status-bar{padding:0;background:none;border:0;text-align:right;white-space:nowrap;}
+        .detail-layout{grid-template-columns:minmax(0,1fr) 205px;gap:12px;padding:10px 12px;}
+        .detail-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;min-width:0;}
+        .detail-row{grid-template-columns:105px minmax(0,1fr);align-items:start;gap:8px;padding:5px 0;min-height:0;line-height:1.35;}
+        .detail-label{text-align:left;}
+        .detail-actions{gap:7px;}
+        .blue-btn{padding:9px 10px;}
+        .detail-actions .score-note,.score-note{color:#a7bac9;font-weight:600;line-height:1.45;text-transform:none;}
+        .match-map-details{padding:0 12px 10px;}
+        .match-map-details .detail-row{grid-template-columns:95px minmax(0,1fr);}
+        .score-section,.comments{background:#0a1724;border-color:#244b70;}
+        .score-row{padding:12px;gap:8px 10px;}
+        .dispute-row{padding:0 12px 10px;}
+        .comment-body{padding:10px 12px;}
+        .comment-box{min-height:0;padding:10px;border-color:#244b70;background:#081521;}
+        .comment-locked{padding:8px 0 0;text-align:left;text-transform:none;font-weight:400;}
+        .comments{padding-bottom:2px;}
+        @media(max-width:760px){
+          .page{padding:10px 8px 20px;}
+          .team-card{padding:8px 6px;}
+          .team-logo{width:42px;height:42px;}
+          .team-copy{min-height:0;}
+          .participants-team{grid-template-columns:1fr;gap:6px;padding:8px;}
+          .detail-layout{grid-template-columns:1fr;}
+          .detail-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .detail-actions .score-note{grid-column:1 / -1;}
+          .detail-rows{gap:0 10px;}
+          .detail-row{grid-template-columns:1fr;gap:2px;padding:5px 0;}
+          .match-map-details .detail-row{grid-template-columns:1fr;}
+          .score-row,.dispute-row{flex-direction:row;align-items:center;}
+        }
+        @media(max-width:420px){
+          .top-right{display:none;}
+          .team-grid{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);}
+          .participants-grid{gap:6px;padding:6px;}
+          .detail-actions{grid-template-columns:1fr 1fr;}
+          .blue-btn{font-size:11px;}
+        }
       `}</style>
 
       <main className="page">
@@ -1905,10 +1959,12 @@ export default function MatchDetailsPage() {
               </section>
 
               <section className="match-info">
-                <div className="section-title dark-title">Match Details</div>
-                <div className="match-status-bar">
-                  Status:
-                  <span className={`status-pill ${statusClass(displayStatus)}`}>{prettyStatus(displayStatus)}</span>
+                <div className="section-title dark-title details-heading">
+                  <span>Match Details</span>
+                  <span className="match-status-bar">
+                    Status:
+                    <span className={`status-pill ${statusClass(displayStatus)}`}>{prettyStatus(displayStatus)}</span>
+                  </span>
                 </div>
 
                 <div className="detail-layout">
@@ -1967,7 +2023,7 @@ export default function MatchDetailsPage() {
 
                 <MatchJoinGuide battlefield={isBattlefield(match.category, match.game)} compact />
 
-                <div className="detail-rows" style={{ padding: "0 18px 16px" }}>
+                <div className="detail-rows match-map-details">
                   <div className="detail-row">
                     <span className="detail-label">Maps:</span>
                     <span className="detail-value">
