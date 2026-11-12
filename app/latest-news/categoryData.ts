@@ -12,6 +12,18 @@ export type NewsCategory = {
   }[];
 };
 
+export const acceptedSuggestions = [
+  {
+    title: "Top Clips community section",
+    suggestion: "Create a community space for sharing clips and standout moments.",
+    suggestedBy: "Not recorded",
+    implementation: "A dedicated Top Clips category is available in the forums.",
+    status: "Available now",
+    link: "/forums#top-clips",
+    linkLabel: "Visit Top Clips",
+  },
+];
+
 export const newsCategories: NewsCategory[] = [
   {
     slug: "upcoming-updates",
@@ -52,22 +64,7 @@ export const newsCategories: NewsCategory[] = [
     slug: "accepted-suggestions",
     title: "Accepted Suggestions",
     intro: "Community ideas selected for GameBattles improvements.",
-    items: [
-      {
-        label: "Accepted",
-        title: "Top Clips community section",
-        description: "A dedicated forum category is available for sharing clips and standout moments.",
-        link: "/forums#top-clips",
-        linkLabel: "Visit Top Clips",
-      },
-      {
-        label: "Have an idea?",
-        title: "Send a suggestion",
-        description: "Share an improvement idea for the GameBattles team to review.",
-        link: "/suggestions",
-        linkLabel: "Submit a suggestion",
-      },
-    ],
+    items: [],
   },
   {
     slug: "new-ladders",
