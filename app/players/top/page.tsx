@@ -5,12 +5,23 @@ import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 
 type Board = "overall" | "week" | "month" | "season";
+type RankingKind = "players" | "teams";
 type PlayerRow = {
   id: string;
   username: string | null;
   gb_wins: number | null;
   gb_losses: number | null;
   gb_rank_points: number | null;
+};
+type TeamRow = {
+  id: string;
+  name: string | null;
+  game: string | null;
+  ladder: string | null;
+  wins: number | null;
+  losses: number | null;
+  current_win_streak: number | null;
+  rating_points: number | null;
 };
 type Standing = { id: string; name: string | null; wins: number; losses: number; rank: number };
 type Season = { id: string; name: string; starts_at: string; ends_at: string };
@@ -27,6 +38,11 @@ const previewStandings: Standing[] = [
   { id: "preview-1", name: "Player One", wins: 12, losses: 2, rank: 1 },
   { id: "preview-2", name: "Player Two", wins: 9, losses: 3, rank: 2 },
   { id: "preview-3", name: "Player Three", wins: 6, losses: 4, rank: 3 },
+];
+const previewTeams: TeamRow[] = [
+  { id: "preview-team-1", name: "Team One", game: "example-game", ladder: "singles", wins: 12, losses: 2, current_win_streak: 4, rating_points: 400 },
+  { id: "preview-team-2", name: "Team Two", game: "example-game", ladder: "doubles", wins: 9, losses: 3, current_win_streak: 2, rating_points: 325 },
+  { id: "preview-team-3", name: "Team Three", game: "example-game", ladder: "singles", wins: 6, losses: 4, current_win_streak: 0, rating_points: 250 },
 ];
 
 function prettyText(value: string | null | undefined) {
@@ -47,7 +63,9 @@ function ordinal(value: number) {
 
 export default function TopPlayersPage() {
   const [board, setBoard] = useState<Board>("overall");
+  const [kind, setKind] = useState<RankingKind>("players");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [teams, setTeams] = useState<TeamRow[]>([]);
   const [playerContexts, setPlayerContexts] = useState<Record<string, PlayerContext>>({});
   const [standings, setStandings] = useState<Standing[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -107,14 +125,35 @@ export default function TopPlayersPage() {
 
       if (board !== "overall") {
         const result = board === "season"
-          ? await supabase.rpc("gb_season_standings", { p_season: seasonId, p_kind: "players", p_limit: 100 })
-          : await supabase.rpc("gb_leaderboard", { p_period: board, p_kind: "players", p_limit: 100 });
+          ? await supabase.rpc("gb_season_standings", { p_season: seasonId, p_kind: kind, p_limit: 100 })
+          : await supabase.rpc("gb_leaderboard", { p_period: board, p_kind: kind, p_limit: 100 });
         if (cancelled) return;
         if (result.error) {
           setError(result.error.message);
           setStandings([]);
         } else {
           setStandings((result.data || []) as Standing[]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (kind === "teams") {
+        const { data, error: teamsError } = await supabase
+          .from("teams")
+          .select("id,name,game,ladder,wins,losses,current_win_streak,rating_points")
+          .or("wins.gt.0,losses.gt.0")
+          .order("rating_points", { ascending: false, nullsFirst: false })
+          .order("wins", { ascending: false, nullsFirst: false })
+          .order("losses", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .limit(100);
+        if (cancelled) return;
+        if (teamsError) {
+          setError(teamsError.message);
+        } else {
+          setTeams((data || []) as TeamRow[]);
         }
         setLoading(false);
         return;
@@ -171,11 +210,16 @@ export default function TopPlayersPage() {
     }
     loadBoard();
     return () => { cancelled = true; };
-  }, [board, seasonId, seasonLoading, seasonError]);
+  }, [board, kind, seasonId, seasonLoading, seasonError]);
 
   const selectedBoard = boards.find((item) => item.id === board)!;
   const selectedSeason = seasons.find((season) => season.id === seasonId);
-  const periodRows = showPreview ? previewStandings : standings;
+  const isTeams = kind === "teams";
+  const subject = isTeams ? "Team" : "Player";
+  const periodRows = showPreview
+    ? previewStandings.map((standing) => ({ ...standing, name: standing.name?.replace("Player", isTeams ? "Team" : "Player") ?? null }))
+    : standings;
+  const overallTeams = showPreview ? previewTeams : teams;
 
   return (
     <>
@@ -192,11 +236,16 @@ export default function TopPlayersPage() {
         .tp-header h1{color:#fff;font-size:32px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;text-shadow:0 2px 6px #000;margin:0;}
         .tp-header p{color:#b4cadb;font-size:13px;margin:8px 0 0;line-height:1.5;}
         .tp-content{padding:18px 16px 20px;}
+        .tp-kind-switch{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+        .tp-kind-label{color:#a8c0d3;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;margin-right:4px;}
+        .tp-kind-button{min-width:100px;padding:9px 16px;border:1px solid #416987;background:#0b1c2a;color:#c5d8e7;font:700 12px Tahoma,Verdana,Arial,sans-serif;cursor:pointer;text-transform:uppercase;}
+        .tp-kind-button:hover{background:#173852;}
+        .tp-kind-button[aria-pressed="true"]{background:#25516e;border-color:#76b9e8;color:#fff;box-shadow:inset 0 -2px #f2c14e;}
         .tp-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px;}
         .tp-tab{min-width:0;text-align:left;background:linear-gradient(#122b40,#091826);border:1px solid #294e6c;border-top:2px solid #355f7d;color:#d7eaff;padding:11px 13px;cursor:pointer;font:inherit;}
         .tp-tab:hover{background:#173852;border-color:#6292b5;}
         .tp-tab[aria-pressed="true"]{background:linear-gradient(#274e69,#10273a);border-color:#5c9dcc;border-top-color:#f2c14e;box-shadow:inset 0 -2px 0 #f2c14e;}
-        .tp-tab:focus-visible,.tp-preview-button:focus-visible,.tp-select:focus-visible,.tp-member:focus-visible{outline:2px solid #f2c14e;outline-offset:2px;}
+        .tp-tab:focus-visible,.tp-kind-button:focus-visible,.tp-preview-button:focus-visible,.tp-select:focus-visible,.tp-member:focus-visible{outline:2px solid #f2c14e;outline-offset:2px;}
         .tp-tab strong{display:block;color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.35px;}
         .tp-tab span{display:block;color:#aac0d1;font-size:11px;margin-top:5px;}
         .tp-panel{border:1px solid #2b5476;background:#050d16;}
@@ -250,15 +299,20 @@ export default function TopPlayersPage() {
           </div>
           <header className="tp-header">
             <div className="tp-eyebrow">GameBattles / Leaderboards</div>
-            <h1>Top Players</h1>
+            <h1>Top {isTeams ? "Teams" : "Players"}</h1>
             <p>See who is climbing the ranks across GameBattles.</p>
           </header>
 
           <div className="tp-content">
-            <div className="tp-tabs" role="group" aria-label="Player leaderboard">
+            <div className="tp-kind-switch" role="group" aria-label="Leaderboard type">
+              <span className="tp-kind-label">View</span>
+              <button type="button" className="tp-kind-button" aria-pressed={!isTeams} onClick={() => setKind("players")}>Players</button>
+              <button type="button" className="tp-kind-button" aria-pressed={isTeams} onClick={() => setKind("teams")}>Teams</button>
+            </div>
+            <div className="tp-tabs" role="group" aria-label={`${subject} leaderboard`}>
               {boards.map((item) => (
                 <button key={item.id} type="button" className="tp-tab" aria-pressed={board === item.id} onClick={() => setBoard(item.id)}>
-                  <strong>{item.label}</strong><span>{item.detail}</span>
+                  <strong>{item.label}</strong><span>{item.id === "overall" && isTeams ? "Team rating" : item.detail}</span>
                 </button>
               ))}
             </div>
@@ -266,9 +320,11 @@ export default function TopPlayersPage() {
             <section className="tp-panel" aria-labelledby="tp-board-title" aria-busy={loading}>
               <div className="tp-panel-header">
                 <div>
-                  <h2 id="tp-board-title">{selectedBoard.label} Player Rankings</h2>
+                  <h2 id="tp-board-title">{selectedBoard.label} {subject} Rankings</h2>
                   <p>{board === "overall"
-                    ? "Ranked by all-time GB points, then wins and losses. Game and ladder show a player's team."
+                    ? isTeams
+                      ? "Teams with a recorded match are ranked across all ladders by rating, then wins and losses. Unrated teams appear last."
+                      : "Ranked by all-time GB points, then wins and losses. Game and ladder show a player's team."
                     : board === "season"
                       ? "Ranked by wins, then fewer losses. Seasons run for one calendar month."
                       : `Ranked by wins, then fewer losses, from completed matches ${board === "week" ? "this week" : "this month"}.`}</p>
@@ -284,17 +340,42 @@ export default function TopPlayersPage() {
               </div>
 
               {loading ? (
-                <div className="tp-status" role="status">Loading player rankings...</div>
+                <div className="tp-status" role="status">Loading {subject.toLowerCase()} rankings...</div>
               ) : error ? (
-                <div className="tp-status tp-error" role="alert">Unable to load player rankings: {error}</div>
-              ) : board === "overall" && players.length === 0 ? (
+                <div className="tp-status tp-error" role="alert">Unable to load {subject.toLowerCase()} rankings: {error}</div>
+              ) : board === "overall" && !isTeams && players.length === 0 ? (
                 <div className="tp-status"><strong>No players ranked yet.</strong>Rankings will appear as players join.</div>
+              ) : board === "overall" && isTeams && teams.length === 0 && !showPreview ? (
+                <div className="tp-status">
+                  <strong>No teams ranked yet.</strong>
+                  Teams appear when they have a recorded match.
+                  <div><button type="button" className="tp-preview-button" onClick={() => setShowPreview(true)}>See sample standings</button></div>
+                </div>
               ) : board !== "overall" && standings.length === 0 && !showPreview ? (
                 <div className="tp-status">
                   <strong>No results yet{selectedSeason && board === "season" ? ` for ${selectedSeason.name}` : ""}.</strong>
                   Standings appear when matches are completed.
                   <div><button type="button" className="tp-preview-button" onClick={() => setShowPreview(true)}>See sample standings</button></div>
                 </div>
+              ) : board === "overall" && isTeams ? (
+                <>
+                  {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example teams, not actual rankings. Real results will appear when matches are completed.</div>}
+                  <div className="tp-table-scroll">
+                    <table className="tp-table tp-overall-table">
+                      <thead><tr><th scope="col">Place</th><th scope="col">Team</th><th scope="col">Game</th><th scope="col">Ladder</th><th scope="col">W</th><th scope="col">L</th><th scope="col">Win streak</th><th scope="col">Rating</th></tr></thead>
+                      <tbody>{overallTeams.map((team, index) => (
+                        <tr key={team.id}>
+                          <td className="tp-place">{ordinal(index + 1)}</td>
+                          <td>{showPreview ? team.name : <Link className="tp-member" href={`/teams/${encodeURIComponent(team.id)}`}>{team.name || "Team"}</Link>}</td>
+                          <td>{prettyText(team.game)}</td><td>{prettyText(team.ladder)}</td>
+                          <td className="tp-win">{team.wins ?? 0}</td><td className="tp-loss">{team.losses ?? 0}</td>
+                          <td>{team.current_win_streak ? `${team.current_win_streak}W` : "—"}</td>
+                          <td className="tp-points">{team.rating_points?.toLocaleString() ?? "—"}</td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                </>
               ) : board === "overall" ? (
                 <div className="tp-table-scroll">
                   <table className="tp-table tp-overall-table">
@@ -313,14 +394,14 @@ export default function TopPlayersPage() {
                 </div>
               ) : (
                 <>
-                  {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example players, not actual rankings. Real results will appear when matches are completed.</div>}
+                  {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example {kind}, not actual rankings. Real results will appear when matches are completed.</div>}
                   <div className="tp-table-scroll">
                     <table className="tp-table">
-                      <thead><tr><th scope="col">Place</th><th scope="col">Member</th><th scope="col">Wins</th><th scope="col">Losses</th><th scope="col">Win rate</th></tr></thead>
+                      <thead><tr><th scope="col">Place</th><th scope="col">{isTeams ? "Team" : "Member"}</th><th scope="col">Wins</th><th scope="col">Losses</th><th scope="col">Win rate</th></tr></thead>
                       <tbody>{periodRows.map((player) => (
                         <tr key={player.id}>
                           <td className="tp-place">{ordinal(player.rank)}</td>
-                          <td>{showPreview ? player.name : <Link className="tp-member" href={`/profile?userId=${encodeURIComponent(player.id)}`}>{player.name || "Player"}</Link>}</td>
+                          <td>{showPreview ? player.name : <Link className="tp-member" href={isTeams ? `/teams/${encodeURIComponent(player.id)}` : `/profile?userId=${encodeURIComponent(player.id)}`}>{player.name || subject}</Link>}</td>
                           <td className="tp-win">{player.wins}</td><td className="tp-loss">{player.losses}</td>
                           <td>{player.wins + player.losses > 0 ? `${Math.round(100 * player.wins / (player.wins + player.losses))}%` : "—"}</td>
                         </tr>
