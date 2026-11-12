@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
@@ -272,6 +272,7 @@ export default function MatchDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [rulesOpen, setRulesOpen] = useState(false);
+  const scoreDialogRef = useRef<HTMLDialogElement>(null);
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
   const [userTeamId, setUserTeamId] = useState("");
@@ -379,7 +380,7 @@ export default function MatchDetailsPage() {
       setCanManageMatch(false);
 
       if (process.env.NODE_ENV === "development" && matchId === "preview") {
-        const soon = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+        const previewStart = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         setMatch({
           id: "preview",
           posting_team_id: "t1",
@@ -389,7 +390,7 @@ export default function MatchDetailsPage() {
           game_mode: "search-and-destroy",
           ladder: "teams",
           players: "4v4",
-          match_time: soon,
+          match_time: previewStart,
           best_of: "Best of 3",
           preset: "GameBattles Standard",
           crossplay: "Off",
@@ -903,6 +904,11 @@ export default function MatchDetailsPage() {
 
   async function handleSubmitScore() {
     if (!match || actionLoading) return;
+
+    if (process.env.NODE_ENV === "development" && match.id === "preview") {
+      setActionMessage("This is a sample preview; no score was submitted.");
+      return;
+    }
 
     setActionMessage("");
 
@@ -1789,6 +1795,16 @@ export default function MatchDetailsPage() {
         .match-map-details{padding:0 12px 10px;}
         .match-map-details .detail-row{grid-template-columns:95px minmax(0,1fr);}
         .score-section,.comments{background:#0a1724;border-color:#244b70;}
+        .score-dialog{width:min(560px,calc(100% - 24px));max-height:85vh;margin:auto;padding:0;border:1px solid #39709b;background:#0a1724;color:#edf6ff;box-shadow:0 12px 40px rgba(0,0,0,.8);}
+        .score-dialog::backdrop{background:rgba(0,0,0,.78);}
+        .score-dialog .score-section{border:0;}
+        .score-dialog-title{display:flex;justify-content:space-between;}
+        .score-dialog-title .modal-close{flex-shrink:0;}
+        .score-dialog .score-row{align-items:flex-end;}
+        .score-field{display:flex;flex:1 1 140px;flex-direction:column;gap:6px;min-width:0;}
+        .score-field .score-team{overflow-wrap:anywhere;}
+        .score-field .score-input{width:100%;max-width:180px;}
+        .score-dialog .score-note input,.score-dialog .score-note select{max-width:100%;}
         .score-row{padding:12px;gap:8px 10px;}
         .dispute-row{padding:0 12px 10px;}
         .comment-body{padding:10px 12px;}
@@ -1980,6 +1996,9 @@ export default function MatchDetailsPage() {
                     <button className="blue-btn" type="button" onClick={() => setRulesOpen(true)}>
                       Match Rules
                     </button>
+                    <button className="blue-btn" type="button" onClick={() => scoreDialogRef.current?.showModal()}>
+                      Report Score
+                    </button>
                     {isCancelled ? (
                       <div className="score-note">This match has been cancelled.</div>
                     ) : viewerCanManageMatch && userIsMatchTeam && !scoreAlreadyReported && !isFinalized && !isDisputed && !isCompleted && (
@@ -2001,6 +2020,9 @@ export default function MatchDetailsPage() {
                       )
                     )}
                     {cancellationError && <div className="score-note" role="alert">{cancellationError}</div>}
+                    {reportingStatus === "awaiting_confirmation" && (
+                      <div className="score-note">Score reported. {canConfirmScore ? "Open Report Score to confirm or dispute it." : `Awaiting confirmation from ${confirmationTeamName}.`}</div>
+                    )}
                     {canReportScore && isDisputed ? (
                       <Link
                         className="blue-btn"
@@ -2044,31 +2066,42 @@ export default function MatchDetailsPage() {
                 </div>
               </section>
 
+              <dialog className="score-dialog" ref={scoreDialogRef} aria-labelledby="score-dialog-title">
               <section className="score-section">
-                <div className="section-title">Report Score</div>
+                <div className="section-title score-dialog-title">
+                  <span id="score-dialog-title">Report Score</span>
+                  <button className="modal-close" type="button" aria-label="Close score reporting" onClick={() => scoreDialogRef.current?.close()}>X</button>
+                </div>
 
                 <div className="score-row">
-                  <span className="score-team">
-                    {postingTeam?.name || "Posting Team"}:
-                  </span>
-                  <input
-                    className="score-input"
-                    type="text"
-                    value={postingScore}
-                    onChange={(e) => setPostingScore(e.target.value)}
-                    disabled={!canSubmitScore}
-                  />
+                  {process.env.NODE_ENV === "development" && matchId === "preview" && (
+                    <div className="score-note">Sample preview only. Scores cannot be submitted for this match.</div>
+                  )}
+                  <label className="score-field">
+                    <span className="score-team">
+                      {postingTeam?.name || "Posting Team"}:
+                    </span>
+                    <input
+                      className="score-input"
+                      type="text"
+                      value={postingScore}
+                      onChange={(e) => setPostingScore(e.target.value)}
+                      disabled={!canSubmitScore}
+                    />
+                  </label>
 
-                  <span className="score-team">
-                    {acceptingTeam?.name || "Accepting Team"}:
-                  </span>
-                  <input
-                    className="score-input"
-                    type="text"
-                    value={acceptingScore}
-                    onChange={(e) => setAcceptingScore(e.target.value)}
-                    disabled={!canSubmitScore}
-                  />
+                  <label className="score-field">
+                    <span className="score-team">
+                      {acceptingTeam?.name || "Accepting Team"}:
+                    </span>
+                    <input
+                      className="score-input"
+                      type="text"
+                      value={acceptingScore}
+                      onChange={(e) => setAcceptingScore(e.target.value)}
+                      disabled={!canSubmitScore}
+                    />
+                  </label>
 
                   <button
                     className="submit-btn"
@@ -2171,6 +2204,8 @@ export default function MatchDetailsPage() {
                     </div>
                   )}
 
+                  {isCancelled && <div className="score-note">This match has been cancelled.</div>}
+
                   {canReportScore && !viewerCanManageMatch && (
                     <div className="score-note">
                       Team leaders, co-leaders, and captains can report the match.
@@ -2213,6 +2248,7 @@ export default function MatchDetailsPage() {
                   </div>
                 </div>
               </section>
+              </dialog>
 
               <section className="comments">
                 <div className="section-title">Match Comments</div>
