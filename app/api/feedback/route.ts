@@ -61,13 +61,13 @@ export async function POST(request: Request) {
   if (userError || !userData.user) {
     return Response.json({ error: "Sign in to submit feedback." }, { status: 401 });
   }
-  const { error: inboxError } = await client.rpc("gb_submit_owner_feedback", {
+  const { error: inboxError } = await client.rpc("gb_submit_community_feedback", {
     p_type: type,
     p_title: title,
     p_details: details,
   });
   if (inboxError) {
-    console.error("Feedback inbox delivery failed:", inboxError.message);
+    console.error("Feedback submission failed:", inboxError.message);
     return Response.json({ error: inboxError.message }, { status: 400 });
   }
 

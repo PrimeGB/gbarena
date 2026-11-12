@@ -74,14 +74,18 @@ Additional titles may be added based on community demand.
 - Vercel
 
 ### Feedback email notifications
-Signed-in players' suggestions and bug reports are sent to the Prime owner inbox.
+Signed-in players' suggestions and bug reports are saved for staff review in
+`/staff/feedback` and sent to the Prime owner inbox. Bug reports require a
+verified account email and remain eligible for review in the Bug Finder queue
+under `/staff/awards`. Staff can mark suggestions reviewed; that does not
+automatically publish them as accepted suggestions.
 To also email the owner, configure these server-side environment variables in the deployment:
 
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only key used to look up the Prime owner's account email
 - `RESEND_API_KEY` — a Resend API key
 - `EMAIL_FROM` — a sender address verified with Resend
 
-The page reports separately if inbox delivery or the email notification fails.
+The page reports separately if saving feedback or the email notification fails.
 
 ### Version Control
 - GitHub

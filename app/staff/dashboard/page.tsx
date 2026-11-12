@@ -149,6 +149,7 @@ export default function StaffDashboardPage() {
   const tiles: Tile[] = [
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
+    can("staff_reports") && { key: "community_feedback", title: "Community feedback", description: "Review suggestions and site bug reports from players.", cta: "Open feedback", href: "/staff/feedback" },
     can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
     can("team_enforcement") && { key: "team_names", title: "Team name requests", description: "Review requests and apply approved team name changes.", cta: "Open requests", href: "/staff/team-names" },
     can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Create tournaments, set prizes and rules, and manage events.", cta: "Open work area", href: "/staff/tournaments" },
@@ -409,6 +410,7 @@ export default function StaffDashboardPage() {
               )}
               {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
+              {(isOwner || permissions.includes("staff_reports")) && <Link href="/staff/feedback">Feedback</Link>}
               {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
           {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/moderation">Moderation</Link>}
           {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/forum-reports">Forum Reports</Link>}

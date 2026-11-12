@@ -1,22 +1,12 @@
 "use client";
 
 import Link from "next/link";
-
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import CompactTopBar from "../components/CompactTopBar";
 
 type PostType = "Suggestion" | "Bug Report";
-
-type CommunityPost = {
-  id: number;
-  type: PostType;
-  title: string;
-  author: string;
-  status: string;
-  likes: number;
-  comments: number;
-};
 
 export default function SuggestionsPage() {
   const { user, loading: authLoading } = useUser();
@@ -27,40 +17,11 @@ export default function SuggestionsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const posts: CommunityPost[] = [
-    {
-      id: 1,
-      type: "Suggestion",
-      title: "Add a Hall of Fame page for retired champions",
-      author: "Prime",
-      status: "Under Review",
-      likes: 18,
-      comments: 4,
-    },
-    {
-      id: 2,
-      type: "Bug Report",
-      title: "Profile photos sometimes do not refresh after upload",
-      author: "RetroSniper",
-      status: "Open",
-      likes: 7,
-      comments: 2,
-    },
-    {
-      id: 3,
-      type: "Suggestion",
-      title: "Add founder badge preview on profiles",
-      author: "GBLegend",
-      status: "Planned",
-      likes: 25,
-      comments: 8,
-    },
-  ];
-
-  async function submitPost() {
+  async function submitPost(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
     const cleanTitle = title.trim();
     const cleanDetails = details.trim();
-
     if (cleanTitle.length < 4 || cleanDetails.length < 10) {
       setError("Enter a title of at least 4 characters and details of at least 10 characters.");
       return;
@@ -69,9 +30,6 @@ export default function SuggestionsPage() {
     setSubmitting(true);
     setError("");
     setSuccess("");
-
-    let bugReportSaved = false;
-    let bugReportSaveError = "";
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
@@ -79,70 +37,30 @@ export default function SuggestionsPage() {
         setError("Sign in to submit a suggestion or bug report.");
         return;
       }
-      if (selectedType === "Bug Report") {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          bugReportSaveError = userError.message;
-        } else if (userData.user) {
-          const { error: reportError } = await supabase.rpc("gb_submit_bug_finder_report", {
-            p_title: cleanTitle,
-            p_details: cleanDetails,
-          });
-          if (reportError) bugReportSaveError = reportError.message;
-          else bugReportSaved = true;
-        }
-      }
 
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          type: selectedType,
-          title: cleanTitle,
-          details: cleanDetails,
-        }),
+        body: JSON.stringify({ type: selectedType, title: cleanTitle, details: cleanDetails }),
       });
-      const result = await response.json();
+      const result: { error?: string; emailDelivered?: boolean } = await response.json();
       if (!response.ok) {
-        if (bugReportSaved) {
-          setTitle("");
-          setDetails("");
-        }
-        setError(
-          bugReportSaved
-            ? `Your bug report is saved for staff review, but could not be sent to the owner: ${result.error || "Please contact support."}`
-            : bugReportSaveError
-              ? `Your bug report could not be sent or saved for staff review: ${result.error || "Owner inbox delivery failed."} ${bugReportSaveError}`
-              : result.error || "Your submission could not be sent. Please try again."
-        );
+        setError(result.error || "Your submission could not be sent. Please try again.");
         return;
       }
 
       setTitle("");
       setDetails("");
       setSuccess(
-        selectedType === "Bug Report" && bugReportSaved
-          ? "Your report was sent to the owner and saved for staff review. Bug Finder awards are granted only after staff confirms the issue is fixed."
-          : "Thanks! Your submission was sent to the GameBattles owner's inbox."
+        selectedType === "Bug Report"
+          ? "Your bug report is saved for staff review and in the owner's inbox. Bug Finder awards require staff to confirm the issue is fixed."
+          : "Your suggestion is saved for staff review and in the owner's inbox."
       );
-      if (!result.emailDelivered) {
-        setError("Your submission reached the owner's inbox, but the email notification could not be sent.");
-      }
-      if (bugReportSaveError) {
-        setError(`${result.emailDelivered ? "" : "The email notification could not be sent. "}Your report reached the owner's inbox, but could not be added to Bug Finder review: ${bugReportSaveError}`);
+      if (result.emailDelivered !== true) {
+        setError("Your submission was saved, but the owner email notification could not be sent.");
       }
     } catch (submitError) {
-      if (bugReportSaved) {
-        setTitle("");
-        setDetails("");
-      }
-      setError(
-        bugReportSaved
-          ? `Your bug report is saved for staff review, but its owner notification could not be confirmed: ${submitError instanceof Error ? submitError.message : "Please try again later."}`
-          : bugReportSaveError
-            ? `Your report could not be emailed or added to Bug Finder review: ${bugReportSaveError}. ${submitError instanceof Error ? submitError.message : "Please try again later."}`
-            : `Your submission could not be sent: ${submitError instanceof Error ? submitError.message : "Please check your connection and try again."}`
-      );
+      setError(`Delivery could not be confirmed: ${submitError instanceof Error ? submitError.message : "Please check your connection."} Contact support before resubmitting to avoid duplicates.`);
     } finally {
       setSubmitting(false);
     }
@@ -151,518 +69,92 @@ export default function SuggestionsPage() {
   return (
     <>
       <style>{`
-        *{margin:0;padding:0;box-sizing:border-box;}
-
-        body{
-          background:#000;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-          color:#d7e2ee;
-        }
-
-        a{text-decoration:none;}
-
-        button,input,textarea{
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-        }
-
-        .page{
-          min-height:100vh;
-          background:
-            radial-gradient(circle at top,rgba(45,100,150,.28),transparent 42%),
-            linear-gradient(to bottom,#02060a,#000);
-          padding:32px 22px;
-        }
-
-        .wrap{
-          max-width:1080px;
-          margin:0 auto;
-          background:#07111b;
-          border:1px solid #315f88;
-          box-shadow:0 0 28px rgba(0,80,140,.38), inset 0 0 22px rgba(0,0,0,.72);
-        }
-
-        .top-strip{
-          height:30px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          gap:18px;
-          padding:0 14px;
-        }
-
-        .top-strip a{
-          color:#fff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .header{
-          min-height:104px;
-          background:
-            linear-gradient(to right,rgba(0,0,0,.55),rgba(0,0,0,.08)),
-            linear-gradient(to bottom,#173956,#07111b);
-          border-bottom:2px solid #315f88;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          padding:0 24px;
-        }
-
-        .brand-main{
-          color:#fff;
-          font-size:32px;
-          font-weight:900;
-          text-transform:uppercase;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .brand-sub{
-          color:#f2c14e;
-          font-size:13px;
-          font-weight:900;
-          letter-spacing:2px;
-          text-transform:uppercase;
-          margin-top:6px;
-        }
-
-        .header-badge{
-          border:1px solid #6ba8d6;
-          background:linear-gradient(to bottom,#214765,#0b1c2d);
-          color:#f5f8ff;
-          font-size:15px;
-          font-weight:900;
-          text-transform:uppercase;
-          padding:14px 22px;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .nav{
-          height:36px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          gap:28px;
-        }
-
-        .nav a{
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .nav a:hover{color:#d7ad4a;}
-
-        .title-bar{
-          background:linear-gradient(to bottom,#1d496e,#0a1724);
-          border-bottom:1px solid #315f88;
-          padding:18px 24px;
-          text-align:center;
-        }
-
-        .title-bar h1{
-          color:#d7ad4a;
-          font-size:30px;
-          text-transform:uppercase;
-          text-shadow:0 1px 2px #000;
-        }
-
-        .title-bar p{
-          margin-top:8px;
-          color:#cfe2f2;
-          font-size:13px;
-          line-height:20px;
-        }
-
-        .content{
-          padding:18px;
-          display:grid;
-          grid-template-columns:330px 1fr;
-          gap:14px;
-        }
-
-        .panel{
-          background:#050b12;
-          border:1px solid #244b70;
-          box-shadow:inset 0 0 18px rgba(0,0,0,.75);
-        }
-
-        .panel-header{
-          min-height:36px;
-          background:linear-gradient(to bottom,#18344f,#091521);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#d7ad4a;
-          font-size:12px;
-          font-weight:900;
-          text-transform:uppercase;
-          letter-spacing:1px;
-        }
-
-        .panel-body{
-          padding:14px;
-        }
-
-        .warning-box{
-          border:1px solid #7c1e1e;
-          background:linear-gradient(to bottom,#2a0808,#100303);
-          color:#ffd1d1;
-          font-size:12px;
-          line-height:19px;
-          padding:12px;
-          margin-bottom:14px;
-        }
-
-        .warning-box strong{
-          color:#ff7777;
-          text-transform:uppercase;
-        }
-
-        .success-box{
-          border:1px solid #2c7a59;
-          background:linear-gradient(to bottom,#092519,#06150f);
-          color:#c8f2d8;
-          font-size:12px;
-          line-height:19px;
-          padding:12px;
-          margin-bottom:14px;
-        }
-
-        .type-row{
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:10px;
-          margin-bottom:14px;
-        }
-
-        .type-btn{
-          height:42px;
-          border:1px solid #4b95d8;
-          background:linear-gradient(to bottom,#1c4b72,#0a1724);
-          color:#fff;
-          font-size:12px;
-          font-weight:900;
-          text-transform:uppercase;
-          cursor:pointer;
-        }
-
-        .type-btn.active{
-          border-color:#e8c46a;
-          background:linear-gradient(to bottom,#d6a943,#7b560e);
-          color:#07111b;
-        }
-
-        .label{
-          color:#d7ad4a;
-          font-size:12px;
-          font-weight:900;
-          text-transform:uppercase;
-          margin-bottom:7px;
-        }
-
-        .input,
-        .textarea{
-          width:100%;
-          border:1px solid #315b7d;
-          background:#02070c;
-          color:#fff;
-          font-size:13px;
-          padding:10px;
-          outline:none;
-          margin-bottom:12px;
-        }
-
-        .input{
-          height:40px;
-        }
-
-        .textarea{
-          height:118px;
-          resize:none;
-          line-height:18px;
-        }
-
-        .input:focus,
-        .textarea:focus{
-          border-color:#6ba8d6;
-          box-shadow:0 0 8px rgba(103,189,255,.28);
-        }
-
-        .submit-btn{
-          width:100%;
-          height:42px;
-          border:1px solid #e8c46a;
-          background:linear-gradient(to bottom,#d6a943,#7b560e);
-          color:#07111b;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          cursor:pointer;
-        }
-
-        .submit-btn:hover{
-          filter:brightness(1.12);
-        }
-
-        .post-list{
-          display:flex;
-          flex-direction:column;
-          gap:10px;
-        }
-
-        .post-card{
-          border:1px solid #244b70;
-          background:linear-gradient(to bottom,#07111b,#040b12);
-        }
-
-        .post-top{
-          min-height:34px;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:12px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          padding:0 12px;
-        }
-
-        .post-type{
-          color:#d7ad4a;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .post-status{
-          color:#7fc7ff;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .post-body{
-          padding:12px;
-        }
-
-        .post-title{
-          color:#fff;
-          font-size:15px;
-          font-weight:900;
-          margin-bottom:6px;
-        }
-
-        .post-meta{
-          color:#8aa7c0;
-          font-size:11px;
-          margin-bottom:10px;
-        }
-
-        .post-actions{
-          display:flex;
-          gap:8px;
-        }
-
-        .mini-btn{
-          min-width:88px;
-          height:28px;
-          border:1px solid #4b95d8;
-          background:linear-gradient(to bottom,#1c4b72,#0a1724);
-          color:#fff;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-          cursor:pointer;
-        }
-
-        .mini-btn:hover{
-          border-color:#d7ad4a;
-          color:#d7ad4a;
-        }
-
-        .footer{
-          height:36px;
-          background:#07111b;
-          border-top:1px solid #244b70;
-          display:flex;
-          justify-content:center;
-          align-items:center;
-          color:#a9c3db;
-          font-size:11px;
-        }
-
-        @media(max-width:850px){
-          .content{
-            grid-template-columns:1fr;
-          }
-
-          .header{
-            flex-direction:column;
-            justify-content:center;
-            gap:12px;
-            padding:18px;
-            text-align:center;
-          }
-
-          .nav{
-            height:auto;
-            padding:10px;
-            flex-wrap:wrap;
-            gap:14px;
-          }
-        }
+        *{box-sizing:border-box}
+        body{margin:0;background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif}
+        .feedback-page{max-width:1240px;min-height:100vh;margin:0 auto;background:#07111b;border:1px solid #315f88}
+        .feedback-header{padding:22px 24px;background:linear-gradient(110deg,#173956,#07111b);border-bottom:2px solid #315f88}
+        .feedback-brand{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase}
+        .feedback-subtitle{margin-top:5px;color:#f2c14e;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase}
+        .feedback-content{padding:24px}
+        .feedback-back{color:#9bc9ec;font-size:12px;font-weight:bold;text-decoration:none}
+        .feedback-heading{margin:22px 0}
+        .feedback-heading h1{margin:0;color:#f2c14e;font-size:28px}
+        .feedback-heading p{margin:8px 0 0;color:#b9cddd;font-size:13px;line-height:1.6}
+        .feedback-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:14px;align-items:start}
+        .feedback-panel{min-width:0;background:#0a1622;border:1px solid #315f88}
+        .feedback-panel-title{margin:0;padding:12px 16px;background:#0f2a40;border-bottom:1px solid #315f88;color:#f2c14e;font-size:12px;font-weight:bold;text-transform:uppercase}
+        .feedback-form,.feedback-guide{padding:18px}
+        .feedback-type{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+        .feedback-type button{padding:12px;border:1px solid #315f88;background:#10283d;color:#d7eaff;font:inherit;font-size:12px;font-weight:bold;cursor:pointer}
+        .feedback-type button[aria-pressed="true"]{border-color:#e8c46a;background:linear-gradient(to bottom,#d6a943,#8a6218);color:#07111b}
+        .feedback-label{display:block;margin:0 0 7px;color:#f2c14e;font-size:12px;font-weight:bold}
+        .feedback-input,.feedback-textarea{display:block;width:100%;margin-bottom:16px;padding:12px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit;font-size:14px}
+        .feedback-textarea{min-height:180px;resize:vertical;line-height:1.5}
+        .feedback-input:focus,.feedback-textarea:focus{outline:2px solid #8dcaff;outline-offset:1px}
+        .feedback-submit{padding:12px 20px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#8a6218);color:#07111b;font:inherit;font-size:12px;font-weight:bold;text-transform:uppercase;cursor:pointer}
+        .feedback-submit:disabled{opacity:.55;cursor:not-allowed}
+        .feedback-message{margin:0 0 16px;padding:12px;border:1px solid #a34a4a;background:#2a1010;color:#ffd1d1;font-size:13px;line-height:1.5}
+        .feedback-success{border-color:#387854;background:#102e21;color:#b8ebc8}
+        .feedback-guide h3{margin:0 0 7px;color:#fff;font-size:14px}
+        .feedback-guide p,.feedback-guide li{color:#c8d8e8;font-size:13px;line-height:1.6}
+        .feedback-guide p{margin:0 0 16px}
+        .feedback-guide ul{margin:0 0 18px;padding-left:20px}
+        .feedback-guide a,.feedback-message a{color:#8dcaff}
+        @media(max-width:768px){.feedback-content{padding:18px 14px}.feedback-header{padding:18px}.feedback-grid{grid-template-columns:minmax(0,1fr)}.feedback-heading h1{font-size:24px}}
       `}</style>
-
-      <main className="page">
-        <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/forums">Forums</Link>
+      <div className="feedback-page">
+        <CompactTopBar />
+        <header className="feedback-header">
+          <div className="feedback-brand">GameBattles</div>
+          <div className="feedback-subtitle">Community Feedback</div>
+        </header>
+        <main className="feedback-content">
+          <Link className="feedback-back" href="/latest-news/accepted-suggestions">← Back to Accepted Suggestions</Link>
+          <div className="feedback-heading">
+            <h1>Suggestions &amp; Bug Reports</h1>
+            <p>Share an idea or let us know when something is not working.</p>
           </div>
-
-          <header className="header">
-            <div>
-              <div className="brand-main">GameBattles</div>
-              <div className="brand-sub">Community Feedback</div>
-            </div>
-
-            <div className="header-badge">Suggestions Box</div>
-          </header>
-
-          <nav className="nav">
-            <Link href="/home">Home</Link>
-            <Link href="/profile/teams">My Teams</Link>
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-            <Link href="/teams/top">Top Teams</Link>
-          </nav>
-
-          <section className="title-bar">
-            <h1>Suggestions Box</h1>
-            <p>
-              Submit ideas for the site, request improvements, or report bugs.
-              Sign in to submit feedback. This page is not for match disputes,
-              score problems, or urgent match help.
-            </p>
-          </section>
-
-          <section className="content">
-            <section className="panel">
-              <div className="panel-header">Submit Feedback</div>
-
-              <div className="panel-body">
-                <div className="warning-box">
-                  <strong>Important:</strong> Do not use this page for disputes,
-                  match help, score issues, or staff reports. Misusing this page
-                  can lead to warnings or account consequences.
-                </div>
+          <div className="feedback-grid">
+            <section className="feedback-panel">
+              <h2 className="feedback-panel-title">Submit feedback</h2>
+              <form className="feedback-form" onSubmit={submitPost}>
                 {!authLoading && !user && (
-                  <div className="warning-box">
-                    <Link href="/login?next=%2Fsuggestions">Sign in</Link> to submit a suggestion or report a bug.
-                  </div>
+                  <p className="feedback-message"><Link href="/login?next=%2Fsuggestions">Sign in</Link> to submit feedback.</p>
                 )}
-                {selectedType === "Bug Report" && (
-                  <div className="warning-box">
-                    Found a site issue? Include your GameBattles username, steps to
-                    reproduce it, and any useful evidence in the details. Staff
-                    review reports and award tiers require a unique issue confirmed
-                    and fixed by staff. Submit while signed in for Bug Finder
-                    consideration.
-                  </div>
-                )}
-
-                {error && <p role="alert" className="warning-box">{error}</p>}
-                {success && <p role="status" className="success-box">{success}</p>}
-
-                <div className="type-row">
-                  <button
-                    className={
-                      selectedType === "Suggestion"
-                        ? "type-btn active"
-                        : "type-btn"
-                    }
-                    type="button"
-                    onClick={() => setSelectedType("Suggestion")}
-                  >
-                    Suggestion
-                  </button>
-
-                  <button
-                    className={
-                      selectedType === "Bug Report"
-                        ? "type-btn active"
-                        : "type-btn"
-                    }
-                    type="button"
-                    onClick={() => setSelectedType("Bug Report")}
-                  >
-                    Report a Bug
-                  </button>
+                {error && <p role="alert" className="feedback-message">{error}</p>}
+                {success && <p role="status" className="feedback-message feedback-success">{success}</p>}
+                <div className="feedback-type" aria-label="Feedback type">
+                  <button type="button" aria-pressed={selectedType === "Suggestion"} onClick={() => setSelectedType("Suggestion")}>Suggestion</button>
+                  <button type="button" aria-pressed={selectedType === "Bug Report"} onClick={() => setSelectedType("Bug Report")}>Report a Bug</button>
                 </div>
-
-                <div className="label">Title</div>
-                <input
-                  className="input"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  maxLength={160}
-                  required
-                  placeholder="Short title..."
-                />
-
-                <div className="label">Details</div>
-                <textarea
-                  className="textarea"
-                  value={details}
-                  onChange={(event) => setDetails(event.target.value)}
-                  maxLength={5000}
-                  required
-                  placeholder="Explain your idea or bug clearly..."
-                />
-
-                <button className="submit-btn" type="button" onClick={submitPost} disabled={submitting || authLoading || !user}>
+                <label className="feedback-label" htmlFor="feedback-title">Title</label>
+                <input id="feedback-title" className="feedback-input" value={title} onChange={(event) => setTitle(event.target.value)} minLength={4} maxLength={160} required placeholder={selectedType === "Suggestion" ? "What is your idea?" : "What is not working?"} />
+                <label className="feedback-label" htmlFor="feedback-details">Details</label>
+                <textarea id="feedback-details" className="feedback-textarea" value={details} onChange={(event) => setDetails(event.target.value)} minLength={10} maxLength={5000} required placeholder={selectedType === "Suggestion" ? "Describe your idea and how it would help." : "Describe what happened and how to reproduce it."} />
+                <button className="feedback-submit" type="submit" disabled={submitting || authLoading || !user}>
                   {submitting ? "Sending..." : `Submit ${selectedType}`}
                 </button>
-              </div>
+              </form>
             </section>
-
-            <section className="panel">
-              <div className="panel-header">Example Posts (Not Live)</div>
-
-              <div className="panel-body">
-                <div className="post-list">
-                  {posts.map((post) => (
-                    <article className="post-card" key={post.id}>
-                      <div className="post-top">
-                        <div className="post-type">{post.type}</div>
-                        <div className="post-status">{post.status}</div>
-                      </div>
-
-                      <div className="post-body">
-                        <div className="post-title">{post.title}</div>
-                        <div className="post-meta">
-                          Posted by {post.author} · {post.likes} likes ·{" "}
-                          {post.comments} comments
-                        </div>
-
-                      </div>
-                    </article>
-                  ))}
-                </div>
+            <aside className="feedback-panel">
+              <h2 className="feedback-panel-title">Before you send</h2>
+              <div className="feedback-guide">
+                <h3>{selectedType === "Suggestion" ? "Share a clear idea" : "Help us reproduce the bug"}</h3>
+                {selectedType === "Suggestion" ? (
+                  <ul><li>Explain what you would like to see.</li><li>Tell us how it would help players.</li></ul>
+                ) : (
+                  <ul><li>Include the page and steps to reproduce it.</li><li>Describe what happened and what you expected.</li><li>Verify your account email before submitting a bug report.</li></ul>
+                )}
+                <h3>What happens next?</h3>
+                <p>Feedback is sent to staff for review and to the owner&apos;s inbox. We also send an email notification to the owner.</p>
+                <h3>Need match help?</h3>
+                <p>For disputes, score issues, or urgent match help, visit <Link href="/support">Support</Link> instead.</p>
+                <Link href="/latest-news/accepted-suggestions">See accepted suggestions →</Link>
               </div>
-            </section>
-          </section>
-
-          <footer className="footer">© 2026 Competitive Gaming Network</footer>
-        </div>
-      </main>
+            </aside>
+          </div>
+        </main>
+      </div>
     </>
   );
 }
