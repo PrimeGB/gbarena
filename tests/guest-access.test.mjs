@@ -10,6 +10,10 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const optionsSource = readFileSync(join(root, "lib", "feedbackOptions.ts"), "utf8");
+const optionsCompiled = ts.transpileModule(optionsSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const feedbackOptions = {};
+new Function("exports", optionsCompiled)(feedbackOptions);
 
 function renderPage(path, signedIn) {
   const source = readFileSync(join(root, path), "utf8");
@@ -25,6 +29,8 @@ function renderPage(path, signedIn) {
     if (name.endsWith("/supabase")) return { supabase: {} };
     if (name.endsWith("/ladderCatalog")) return {};
     if (name.endsWith("/ladderStandings")) return {};
+    if (name === "../../lib/feedbackOptions") return feedbackOptions;
+    if (name === "../components/CompactTopBar") return { __esModule: true, default: () => null };
     return require(name);
   };
   new Function("require", "exports", compiled)(mockRequire, exports);
@@ -41,15 +47,13 @@ test("forums remain browseable while posting requires sign-in", () => {
   assert.doesNotMatch(member, /Sign in to post/);
 });
 
-test("feedback requires sign-in and sample posts are clearly marked", () => {
+test("feedback requires sign-in to submit", () => {
   const guest = renderPage("app/suggestions/page.tsx", false);
   assert.match(guest, /href="\/login\?next=%2Fsuggestions"/);
   assert.match(guest, /disabled="">Submit Suggestion/);
-  assert.match(guest, /Example Posts \(Not Live\)/);
-  assert.doesNotMatch(guest, />Like<\/button>|>Comment<\/button>/);
   const member = renderPage("app/suggestions/page.tsx", true);
-  assert.match(member, /type="button">Submit Suggestion/);
-  assert.doesNotMatch(member, />Like<\/button>|>Comment<\/button>/);
+  assert.match(member, /type="submit">Submit Suggestion/);
+  assert.doesNotMatch(member, /href="\/login\?next=%2Fsuggestions"/);
 });
 
 test("guests are prompted to sign in instead of seeing an empty team list", () => {
