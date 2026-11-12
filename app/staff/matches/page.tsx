@@ -304,7 +304,7 @@ export default function StaffMatchReviewPage() {
                       </section>
                       <section className="ticket-detail-section">
                         <h3>Team statements &amp; evidence</h3>
-                        <p className="ticket-help">Evidence has not been scanned. Check the source before opening files or links.</p>
+                        <p className="ticket-help">Evidence files and links have not been scanned for malware. Check the source before opening files or links.</p>
                         {selected.ticket_submissions.length === 0 ? <div className="ticket-statement"><h4>{selected.dispute_reason || "Dispute"}</h4><p>{selected.dispute_description || "No team statements were submitted."}</p></div> : selected.ticket_submissions.map((submission) => (
                           <div className="ticket-statement" key={submission.team_id}>
                             <h4>{submission.team_name || "Team"} <span>{submission.dispute_reason || "Dispute"}</span></h4>
