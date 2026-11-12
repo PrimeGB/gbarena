@@ -13,13 +13,13 @@ type RosterEntry = {
   position: string;
 };
 
-type Tier = "owner" | "admin" | "senior_staff" | "staff" | "referee";
+type Tier = "owner" | "admin" | "staff" | "referee";
 
 const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duties: string[] }[] = [
   {
     tier: "owner",
-    label: "Owner",
-    plural: "Owner",
+    label: "Founder / Owner",
+    plural: "Founders / Owners",
     blurb: "Founds and runs GameBattles. Has final say on every decision.",
     duties: ["Full access to every staff tool", "Assigns and removes staff ranks", "Final ruling on appeals and escalations"],
   },
@@ -31,24 +31,23 @@ const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duti
     duties: ["Finalizes disputed match results", "Handles player reports and team enforcement", "Manages awards and reviews the audit log"],
   },
   {
-    tier: "senior_staff",
-    label: "Senior Staff",
-    plural: "Senior Staff",
-    blurb: "Experienced moderators who handle the tougher cases.",
-    duties: ["Reviews escalated reports", "Checks moderator decisions", "Handles basic moderation"],
+    tier: "staff",
+    label: "Moderator",
+    plural: "Moderators",
+    blurb: "Helps keep the community safe and welcoming.",
+    duties: ["Reviews reports and moderates content", "Can issue mutes up to 24 hours", "Escalates serious cases"],
   },
   {
-    tier: "staff",
-    label: "Staff",
-    plural: "Staff",
-    blurb: "The front line. Keeps the community safe and the matches running.",
-    duties: ["Reviews new player reports", "Issues basic moderation actions", "Escalates serious cases to Senior Staff"],
+    tier: "referee",
+    label: "Referee",
+    plural: "Referees",
+    blurb: "Keeps competition fair by reviewing match disputes.",
+    duties: ["Reviews match evidence", "Decides eligible disputes", "Recommends awards for review"],
   },
 ];
 
 function tierFor(entry: RosterEntry): Tier {
-  if (entry.role === "owner") return (entry.username || "").toLowerCase() === "prime" ? "owner" : "staff";
-  if (entry.role === "admin" || entry.role === "senior_staff" || entry.role === "referee") return entry.role;
+  if (entry.role === "owner" || entry.role === "admin" || entry.role === "referee") return entry.role;
   return "staff";
 }
 
@@ -90,7 +89,7 @@ export default function StaffInfoPage() {
     };
   }, [authLoading, userId]);
 
-  const grouped = (["owner", "admin", "senior_staff", "staff", "referee"] as Tier[])
+  const grouped = (["owner", "admin", "staff", "referee"] as Tier[])
     .map((tier) => ({ tier, members: roster.filter((entry) => tierFor(entry) === tier) }))
     .filter((group) => group.members.length > 0);
 
@@ -201,7 +200,7 @@ export default function StaffInfoPage() {
                 </span>
                 <span>
                   <div className="si-name">{member.username || "Unnamed"}</div>
-                  <div className="si-role">{member.position || labelFor(group.tier)}</div>
+                  <div className="si-role">{labelFor(group.tier)}</div>
                 </span>
               </Link>
             ))}

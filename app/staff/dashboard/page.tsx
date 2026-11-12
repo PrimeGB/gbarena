@@ -13,43 +13,22 @@ import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import "../staff-responsive.css";
 
-const workAreas = [
-  {
-    key: "match_review",
-    title: "Disputed match tickets",
-    description: "Review submitted disputes and finalize official match results.",
-    href: "/staff/matches",
-  },
-  {
-    key: "staff_reports",
-    title: "Player reports and enforcement",
-    description: "Review new cases, manage evidence, and record decisions.",
-    href: "#reports-inbox",
-  },
-  {
-    key: "awards",
-    title: "Awards management",
-    description: "Work with community and competition awards.",
-    href: "/staff/awards",
-  },
-  {
-    key: "staff_directory",
-    title: "Staff roles and oversight",
-    description: "Review staff positions, duties, and rank assignments.",
-    href: null,
-  },
-] as const;
-
 type PermissionKey =
-  | (typeof workAreas)[number]["key"]
+  | "match_review"
+  | "staff_reports"
+  | "awards"
+  | "staff_directory"
   | "basic_moderation"
   | "escalated_reports"
   | "moderation_review"
   | "staff_access"
   | "audit_log"
-  | "team_enforcement";
+  | "team_enforcement"
+  | "manage_staff"
+  | "credit_management"
+  | "award_recommendation";
 
-type StaffRank = "member" | "staff" | "senior_staff" | "admin";
+type StaffRank = "member" | "staff" | "referee" | "admin";
 
 type DashboardView = "home" | "reports" | "audit" | "access" | "roster";
 
@@ -87,13 +66,6 @@ const rankNames: Record<string, string> = {
   staff: "Moderator",
   referee: "Referee",
   member: "User",
-};
-
-const rankPermissions: Record<string, PermissionKey[]> = {
-  owner: workAreas.map((area) => area.key),
-  admin: ["match_review", "staff_reports", "awards", "staff_directory", "team_enforcement", "audit_log"],
-  senior_staff: ["staff_reports", "basic_moderation", "escalated_reports", "moderation_review"],
-  staff: ["staff_reports", "basic_moderation"],
 };
 
 type DashboardOverview = {
@@ -147,10 +119,6 @@ type ProfileRow = {
   role: string;
 };
 
-type PermissionRow = {
-  permission_key: PermissionKey;
-};
-
 export default function StaffDashboardPage() {
   const { user, loading: authLoading } = useUser();
   const [role, setRole] = useState("");
@@ -167,13 +135,17 @@ export default function StaffDashboardPage() {
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [username, setUsername] = useState("");
-  const [position, setPosition] = useState("");
   const [duties, setDuties] = useState("");
   const [staffRank, setStaffRank] = useState<StaffRank>("staff");
   const [rankReason, setRankReason] = useState("");
+  const [creditUsername, setCreditUsername] = useState("");
+  const [creditReason, setCreditReason] = useState("");
+  const [creditGrants, setCreditGrants] = useState<string[]>([]);
 
   const isOwner = role === "owner";
   const canEditDirectory = isOwner || permissions.includes("staff_directory");
+  const canManageStaffMember = (member: StaffDirectoryEntry) =>
+    !member.is_owner && (isOwner || member.position !== "Administrator");
 
   type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: DashboardView };
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
@@ -183,10 +155,13 @@ export default function StaffDashboardPage() {
     can("staff_reports") && { key: "community_feedback", title: "Community feedback", description: "Review suggestions and site bug reports from players.", cta: "Open feedback", href: "/staff/feedback" },
     can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
     can("team_enforcement") && { key: "team_names", title: "Team name requests", description: "Review requests and apply approved team name changes.", cta: "Open requests", href: "/staff/team-names" },
-    can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Create tournaments, set prizes and rules, and manage events.", cta: "Open work area", href: "/staff/tournaments" },
-    can("staff_access") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
-    isOwner && { key: "access", title: "Assign staff access", description: "Promote or remove staff ranks. Every change is recorded.", cta: "Open work area", view: "access" },
+    can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only an Owner sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
+    can("credit_management") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
+    can("manage_staff") && { key: "access", title: "Assign staff access", description: "Manage the roles within your authority. Every change is recorded.", cta: "Open work area", view: "access" },
     can("staff_directory") && { key: "staff_directory", title: "Trusted staff roster", description: "Review staff positions, duties, and rank assignments.", cta: "Manage directory details", view: "roster" },
+    can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
+    can("staff_access") && { key: "site_requests", title: "Site change requests", description: "Propose site changes for Owner review.", cta: "Open requests", href: "/staff/site-requests" },
+    { key: "role_guide", title: "Staff roles and access", description: "See the full role and permission breakdown.", cta: "View the breakdown", href: "/staff/role-guide" },
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
   ].filter(Boolean) as Tile[];
   const hasPortalAccess = emailAllowed;
@@ -224,10 +199,7 @@ export default function StaffDashboardPage() {
     const [{ data: profile, error: profileError }, { data: grants, error: grantsError }] =
       await Promise.all([
         supabase.from("profiles").select("role").eq("id", userId).maybeSingle(),
-        supabase
-          .from("staff_access_grants")
-          .select("permission_key")
-          .eq("user_id", userId),
+        supabase.rpc("staff_my_permissions"),
       ]);
 
     setError("");
@@ -246,9 +218,7 @@ export default function StaffDashboardPage() {
     }
 
     const profileRow = profile as ProfileRow | null;
-    const permissionRows = (grants || []) as PermissionRow[];
-    const userPermissions = rankPermissions[profileRow?.role || ""] ||
-      permissionRows.map((grant) => grant.permission_key);
+    const userPermissions = (grants || []) as PermissionKey[];
     setRole(profileRow?.role || "");
     setPermissions(userPermissions);
 
@@ -278,6 +248,18 @@ export default function StaffDashboardPage() {
     setStaff((directory || []) as StaffDirectoryEntry[]);
     setOverview(overviewData as DashboardOverview);
     setCases((caseData || []) as StaffCase[]);
+    if (profileRow?.role === "owner") {
+      const { data: creditAccess, error: creditAccessError } = await supabase
+        .from("staff_credit_grants").select("user_id");
+      if (creditAccessError) {
+        setError(`Credit access could not be loaded: ${creditAccessError.message}`);
+        setCreditGrants([]);
+      } else {
+        setCreditGrants((creditAccess || []).map((grant: { user_id: string }) => grant.user_id));
+      }
+    } else {
+      setCreditGrants([]);
+    }
     setLoadedUserIdentity(userIdentity);
     setLoading(false);
   }, []);
@@ -300,8 +282,8 @@ export default function StaffDashboardPage() {
       setError("Enter an existing account username.");
       return;
     }
-    if (staffRank !== "member" && (!position.trim() || !duties.trim())) {
-      setError("Enter a staff position and duty description.");
+    if (staffRank !== "member" && !duties.trim()) {
+      setError("Enter a duty description.");
       return;
     }
     if (rankReason.trim().length < 10) {
@@ -313,7 +295,7 @@ export default function StaffDashboardPage() {
     const { error: assignError } = await supabase.rpc("staff_set_rank", {
       target_username: username.trim(),
       target_role: staffRank,
-      staff_position: staffRank === "member" ? "" : position.trim(),
+      staff_position: staffRank === "member" ? "" : rankNames[staffRank],
       staff_duties: staffRank === "member" ? "" : duties.trim(),
       decision_reason: rankReason.trim(),
     });
@@ -325,12 +307,42 @@ export default function StaffDashboardPage() {
     }
 
     setUsername("");
-    setPosition("");
     setDuties("");
     setRankReason("");
     setStaffRank("staff");
     setNotice("Staff rank and audit entry saved.");
     if (user) await loadDashboard(user.id, user.email || "");
+  }
+
+  async function setCreditAccess(allowAccess: boolean) {
+    setError("");
+    setNotice("");
+    if (!creditUsername.trim() || creditReason.trim().length < 10) {
+      setError("Enter an Administrator username and a reason of at least 10 characters.");
+      return;
+    }
+    const { error: grantError } = await supabase.rpc("staff_set_credit_access", {
+      target_username: creditUsername.trim(),
+      allow_access: allowAccess,
+      decision_reason: creditReason.trim(),
+    });
+    if (grantError) {
+      setError(`Credit access could not be changed: ${grantError.message}`);
+      return;
+    }
+    setNotice(`Credit access ${allowAccess ? "granted" : "removed"} for ${creditUsername.trim()}.`);
+    setCreditUsername("");
+    setCreditReason("");
+    if (user) await loadDashboard(user.id, user.email || "");
+  }
+
+  async function signOut() {
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      setError(`Sign out failed: ${signOutError.message}`);
+      return;
+    }
+    window.location.assign("/home");
   }
 
   async function removeStaffMember(memberUsername: string) {
@@ -433,9 +445,10 @@ export default function StaffDashboardPage() {
           </div>
         </header>
         <nav className="staff-mobile-nav" style={styles.nav}>
-          <Link href="/home">Back to GameBattles</Link>
+          <Link href="/home">Leave staff area</Link>
           {user && hasPortalAccess && (
             <>
+              <button type="button" onClick={signOut}>Sign out</button>
               {permissions.includes("staff_reports") && (
                 <a href={viewHashes.reports}>Reports</a>
               )}
@@ -443,8 +456,8 @@ export default function StaffDashboardPage() {
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
               {(isOwner || permissions.includes("staff_reports")) && <Link href="/staff/feedback">Feedback</Link>}
               {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
-          {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/moderation">Moderation</Link>}
-          {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
+              {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/moderation">Moderation</Link>}
+              {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
               {(isOwner || permissions.includes("staff_directory")) && (
                 <a href={viewHashes.roster}>Staff roster</a>
               )}
@@ -637,12 +650,12 @@ export default function StaffDashboardPage() {
               )}
             </section>
             )}
-            {view === "access" && isOwner && (
+            {view === "access" && can("manage_staff") && (
               <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
-                  Founder — Prime is the only rank that can grant or remove staff
-                  ranks. Every change requires a reason and is recorded.
+                  Owners manage Administrators. Administrators may manage Moderators and Referees only.
+                  Every change requires a reason and is recorded.
                 </p>
                 <form className="staff-mobile-form" onSubmit={assignStaffMember} style={styles.form}>
                   <label style={styles.label}>
@@ -660,16 +673,12 @@ export default function StaffDashboardPage() {
                     <select value={staffRank} onChange={(event) => setStaffRank(event.target.value as StaffRank)} style={styles.input}>
                       <option value="member">User — remove staff access</option>
                       <option value="staff">Moderator</option>
-                      <option value="senior_staff">Senior Staff</option>
-                      <option value="admin">Administrator</option>
+                      <option value="referee">Referee</option>
+                      {isOwner && <option value="admin">Administrator</option>}
                     </select>
                   </label>
                   {staffRank !== "member" && (
                     <>
-                      <label style={styles.label}>
-                        Position
-                        <input maxLength={60} value={position} onChange={(event) => setPosition(event.target.value)} style={styles.input} required />
-                      </label>
                       <label style={styles.label}>
                         Duties
                         <textarea maxLength={400} value={duties} onChange={(event) => setDuties(event.target.value)} style={styles.input} rows={3} required />
@@ -684,6 +693,23 @@ export default function StaffDashboardPage() {
                     {saving ? "Saving..." : "Save rank change"}
                   </button>
                 </form>
+                {isOwner && (
+                  <div style={styles.form}>
+                    <h3 style={styles.cardTitle}>Administrator credit access</h3>
+                    <p style={styles.help}>Only an Owner can grant or remove this ongoing access. It permits manual credit changes and tournament prize payouts.</p>
+                    <p style={styles.help}>Currently authorized: {staff.filter((member) => creditGrants.includes(member.user_id)).map((member) => member.username).join(", ") || "None"}</p>
+                    <label style={styles.label}>Administrator username
+                      <input value={creditUsername} onChange={(event) => setCreditUsername(event.target.value)} style={styles.input} />
+                    </label>
+                    <label style={styles.label}>Reason for credit access change
+                      <textarea value={creditReason} onChange={(event) => setCreditReason(event.target.value)} maxLength={1000} rows={2} style={styles.input} />
+                    </label>
+                    <div>
+                      <button type="button" onClick={() => setCreditAccess(true)} style={styles.secondaryButton}>Grant credit access</button>{" "}
+                      <button type="button" onClick={() => setCreditAccess(false)} style={styles.removeButton}>Remove credit access</button>
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -696,7 +722,7 @@ export default function StaffDashboardPage() {
                 <div className="staff-mobile-list" style={styles.staffList}>
                   {staff.map((member) => (
                     <article key={member.user_id} style={styles.staffCard}>
-                      {canEditDirectory ? (
+                      {canEditDirectory && canManageStaffMember(member) ? (
                         <form
                           onSubmit={(event) =>
                             updateDirectoryEntry(event, member.username)
@@ -709,8 +735,8 @@ export default function StaffDashboardPage() {
                             Position
                             <input
                               name="position"
-                              defaultValue={member.position}
-                              maxLength={60}
+                              value={member.position}
+                              readOnly
                               style={styles.input}
                               required
                             />
@@ -749,7 +775,7 @@ export default function StaffDashboardPage() {
                           <p style={styles.cardText}>{member.duties}</p>
                         </>
                       )}
-                      {isOwner && !member.is_owner && (
+                      {can("manage_staff") && canManageStaffMember(member) && (
                         <button
                           type="button"
                           onClick={() => removeStaffMember(member.username)}

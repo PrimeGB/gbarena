@@ -1,17 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function HeroSlideshow({ images }: { images: string[] }) {
   const [active, setActive] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<ReadonlySet<string>>(() => new Set());
+  const loadedImagesRef = useRef<ReadonlySet<string>>(new Set());
+
+  useEffect(() => {
+    let mounted = true;
+    const preloads = images.map((src) => {
+      const image = new window.Image();
+      const markLoaded = () => {
+        if (!mounted || image.naturalWidth === 0 || loadedImagesRef.current.has(src)) return;
+        const next = new Set(loadedImagesRef.current);
+        next.add(src);
+        loadedImagesRef.current = next;
+        setLoadedImages(next);
+      };
+
+      image.onload = markLoaded;
+      image.src = src;
+      return image;
+    });
+
+    return () => {
+      mounted = false;
+      preloads.forEach((image) => { image.onload = null; });
+    };
+  }, [images]);
 
   useEffect(() => {
     if (images.length < 2) return;
     const timer = window.setInterval(() => {
-      setActive((current) => (current + 1) % images.length);
+      setActive((current) => {
+        for (let offset = 1; offset <= images.length; offset += 1) {
+          const next = (current + offset) % images.length;
+          if (loadedImagesRef.current.has(images[next])) return next;
+        }
+        return current;
+      });
     }, 7000);
     return () => window.clearInterval(timer);
-  }, [images.length]);
+  }, [images]);
 
   return (
     <>
@@ -24,7 +55,7 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
           background-repeat:no-repeat;
           opacity:0;
           transform:scale(1.03);
-          transition:opacity 1.2s ease, transform 8s ease-out;
+          transition:opacity 1.35s ease-in-out, transform 8s ease-out;
         }
         .hero-expanded .hs-slide.active{opacity:1;transform:scale(1);}
         .hero-expanded .hs-slide.retro-slide{filter:brightness(.84) saturate(.78);}
@@ -37,7 +68,7 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
           key={src}
           className={[
             "hs-slide",
-            index === active ? "active" : "",
+            index === active && loadedImages.has(src) ? "active" : "",
             src === "/retro-systems/retro-lan-room.png" ? "retro-slide" : "",
           ].filter(Boolean).join(" ")}
           style={{

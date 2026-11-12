@@ -91,6 +91,8 @@ const emptyForm = {
 export default function StaffTournamentsPage() {
   const { user, loading: authLoading } = useUser();
   const [allowed, setAllowed] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [canPay, setCanPay] = useState(false);
   const [checking, setChecking] = useState(true);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [form, setForm] = useState(emptyForm);
@@ -106,19 +108,40 @@ export default function StaffTournamentsPage() {
 
   const load = useCallback(async () => {
     if (!user) return;
-    const { data: permission } = await supabase.rpc("has_staff_permission", {
-      permission_key: "staff_access",
-    });
-    if (permission !== true) {
+    const [permission, creditPermission, profile] = await Promise.all([
+      supabase.rpc("has_staff_permission", { permission_key: "staff_access" }),
+      supabase.rpc("has_staff_permission", { permission_key: "credit_management" }),
+      supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+    ]);
+    if (permission.error || creditPermission.error || profile.error) {
+      setError(`Tournament access could not be checked: ${permission.error?.message || creditPermission.error?.message || profile.error?.message}`);
+      setAllowed(false);
+      setChecking(false);
+      return;
+    }
+    if (permission.data !== true) {
       setAllowed(false);
       setChecking(false);
       return;
     }
     setAllowed(true);
-    const { data } = await supabase
+    const owner = profile.data?.role === "owner";
+    setIsOwner(owner);
+    setCanPay(creditPermission.data === true);
+    if (!owner) {
+      setForm((current) => current.competition_type === "weekly_cup" ? {
+        ...current, competition_type: "standard", title: "", entry_fee_credits: "0", prize_credits: "0", prize: "",
+      } : current);
+    }
+    const { data, error: tournamentsError } = await supabase
       .from("tournaments")
       .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits,competition_type")
       .order("starts_at", { ascending: true });
+    if (tournamentsError) {
+      setError(`Tournaments could not be loaded: ${tournamentsError.message}`);
+      setChecking(false);
+      return;
+    }
     setTournaments((data as Tournament[]) || []);
     setChecking(false);
   }, [user]);
@@ -237,7 +260,7 @@ export default function StaffTournamentsPage() {
       p_tournament_id: t.id,
       p_team_id: payTeam,
       p_placement: Number(payPlace) || 1,
-      p_total_credits: payAmount ? Number(payAmount) : null,
+      p_total_credits: isOwner && payAmount ? Number(payAmount) : null,
     });
     if (rpcError) {
       setError(rpcError.message);
@@ -322,7 +345,7 @@ export default function StaffTournamentsPage() {
           </div>
         ) : !allowed ? (
           <div className="st-panel">
-            <div className="st-body">This account cannot manage tournaments.</div>
+            <div className="st-body">{error || "This account cannot manage tournaments."}</div>
           </div>
         ) : (
           <>
@@ -333,11 +356,11 @@ export default function StaffTournamentsPage() {
               <div className="st-title">Monthly Championship</div>
               <div className="st-body">
                 The previous full month&apos;s top team on the official team leaderboard receives 25 credits per player and the Monthly Team Champion award.
-                <div style={{ marginTop: 10 }}>
+                {canPay && <div style={{ marginTop: 10 }}>
                   <button className="st-btn" disabled={rewardBusy} onClick={() => awardChampion("monthly")}>
                     {rewardBusy ? "Awarding..." : "Award monthly champion"}
                   </button>
-                </div>
+                </div>}
               </div>
             </div>
 
@@ -366,7 +389,7 @@ export default function StaffTournamentsPage() {
                       }));
                     }}
                   >
-                    <option value="weekly_cup">Weekly Free Cup</option>
+                    {isOwner && <option value="weekly_cup">Weekly Free Cup</option>}
                     <option value="standard">Standard tournament</option>
                   </select>
                 </label>
@@ -407,15 +430,15 @@ export default function StaffTournamentsPage() {
                 </label>
                 <label>
                   Entry fee (credits, weekly cups are free)
-                  <input type="number" min={0} step="1" value={form.entry_fee_credits} disabled={form.competition_type === "weekly_cup"} onChange={(e) => set("entry_fee_credits", e.target.value)} />
+                  <input type="number" min={0} step="1" value={form.entry_fee_credits} disabled={!isOwner || form.competition_type === "weekly_cup"} onChange={(e) => set("entry_fee_credits", e.target.value)} />
                 </label>
                 <label>
                   Prize (credits per winner)
-                  <input type="number" min={0} step="1" value={form.prize_credits} disabled={form.competition_type === "weekly_cup"} onChange={(e) => set("prize_credits", e.target.value)} />
+                  <input type="number" min={0} step="1" value={form.prize_credits} disabled={!isOwner || form.competition_type === "weekly_cup"} onChange={(e) => set("prize_credits", e.target.value)} />
                 </label>
                 <label className="wide">
                   Prizes (display text)
-                  <input value={form.prize} onChange={(e) => set("prize", e.target.value)} placeholder="e.g. 1st: 500 credits" />
+                  <input value={form.prize} disabled={!isOwner} onChange={(e) => set("prize", e.target.value)} placeholder="e.g. 1st: 500 credits" />
                 </label>
                 <label className="wide">
                   Rules
@@ -448,7 +471,7 @@ export default function StaffTournamentsPage() {
                       <Link className="st-btn" href={`/tournaments/${t.id}`}>
                         Bracket
                       </Link>
-                      {t.competition_type === "weekly_cup" ? (
+                      {canPay && (t.competition_type === "weekly_cup" ? (
                         <button
                           className="st-btn"
                           disabled={t.status !== "completed" || rewardBusy}
@@ -457,10 +480,10 @@ export default function StaffTournamentsPage() {
                           {rewardBusy ? "Awarding..." : "Award Cup Winner (5 credits + badge)"}
                         </button>
                       ) : (
-                        <button className="st-btn" onClick={() => openPay(t)}>
+                        <button className="st-btn" disabled={t.status !== "completed"} onClick={() => openPay(t)}>
                           Pay Prize
                         </button>
-                      )}
+                      ))}
                       {t.status !== "live" && (
                         <button className="st-btn" onClick={() => setStatus(t.id, "live")}>
                           Go Live
@@ -476,7 +499,7 @@ export default function StaffTournamentsPage() {
                           Cancel
                         </button>
                       )}
-                      {t.competition_type !== "weekly_cup" && (
+                      {t.competition_type !== "weekly_cup" && (isOwner || (!t.prize_credits && !t.entry_fee_credits && !t.entry_fee)) && (
                         <button className="st-btn red" onClick={() => remove(t.id)}>
                           Delete
                         </button>
@@ -490,8 +513,8 @@ export default function StaffTournamentsPage() {
                             <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
                         </select>
-                        <input type="number" min={1} style={{ width: 80 }} value={payPlace} onChange={(e) => setPayPlace(e.target.value)} title="Placement" />
-                        <input type="number" min={1} style={{ width: 120 }} value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder={`Credits (${t.prize_credits})`} />
+                        {isOwner ? <input type="number" min={1} style={{ width: 80 }} value={payPlace} onChange={(e) => setPayPlace(e.target.value)} title="Placement" /> : <span>First place</span>}
+                        {isOwner && <input type="number" min={1} style={{ width: 120 }} value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder={`Credits (${t.prize_credits})`} />}
                         <button className="st-btn" onClick={() => payPrize(t)}>Pay out</button>
                       </div>
                     )}

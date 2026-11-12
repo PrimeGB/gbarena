@@ -6,14 +6,37 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
+type ForumPost = {
+  id: number;
+  user_id: string;
+  author: string;
+  category: string;
+  system: string;
+  game: string;
+  subject: string;
+  message: string;
+  pinned: boolean;
+  locked: boolean;
+  hidden: boolean;
+};
+
+type ForumReply = {
+  id: number;
+  user_id: string;
+  author: string;
+  message: string;
+  hidden: boolean;
+};
+
 export default function ForumThreadPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
-  const [post, setPost] = useState<any | null>(null);
-  const [replies, setReplies] = useState<any[]>([]);
+  const [post, setPost] = useState<ForumPost | null>(null);
+  const [replies, setReplies] = useState<ForumReply[]>([]);
   const [replyText, setReplyText] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaff, setIsStaff] = useState(false);
+  const [canManageThreads, setCanManageThreads] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -24,8 +47,15 @@ export default function ForumThreadPage() {
     setUserId(uid);
 
     if (uid) {
-      const { data: allowed } = await supabase.rpc("has_staff_permission", { permission_key: "basic_moderation" });
-      setIsStaff(allowed === true);
+      const [moderation, administration] = await Promise.all([
+        supabase.rpc("has_staff_permission", { permission_key: "basic_moderation" }),
+        supabase.rpc("has_staff_permission", { permission_key: "staff_access" }),
+      ]);
+      if (moderation.error || administration.error) {
+        setMessage(`Staff permissions could not be checked: ${moderation.error?.message || administration.error?.message}`);
+      }
+      setIsStaff(moderation.data === true);
+      setCanManageThreads(administration.data === true);
     }
 
     const { data: p } = await supabase.from("forum_posts").select("*").eq("id", id).maybeSingle();
@@ -41,7 +71,7 @@ export default function ForumThreadPage() {
   }, [id]);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
     if (id) supabase.rpc("gb_forum_view", { p_post: Number(id) }).then(() => undefined);
   }, [id, load]);
 
@@ -87,6 +117,14 @@ export default function ForumThreadPage() {
     else load();
   }
 
+  async function deleteThread() {
+    if (!id || !window.confirm("Delete this entire thread and its replies?")) return;
+    const { data, error } = await supabase.from("forum_posts").delete().eq("id", id).select("id");
+    if (error) setMessage(error.message);
+    else if (!data?.length) setMessage("The thread was not deleted. Check your permissions and try again.");
+    else window.location.assign("/forums");
+  }
+
   const linkBtn = { background: "none", border: "none", color: "#8193a1", cursor: "pointer", fontSize: 11, marginLeft: 10, padding: 0 } as const;
 
   if (!post) {
@@ -124,16 +162,19 @@ export default function ForumThreadPage() {
         )}
         {isStaff && (
           <>
-            <button type="button" style={linkBtn} onClick={() => updatePost({ pinned: !post.pinned })}>
+            {canManageThreads && <button type="button" style={linkBtn} onClick={() => updatePost({ pinned: !post.pinned })}>
               {post.pinned ? "Unpin" : "Pin"}
-            </button>
-            <button type="button" style={linkBtn} onClick={() => updatePost({ locked: !post.locked })}>
+            </button>}
+            {canManageThreads && <button type="button" style={linkBtn} onClick={() => updatePost({ locked: !post.locked })}>
               {post.locked ? "Unlock" : "Lock"}
-            </button>
+            </button>}
             <button type="button" style={linkBtn} onClick={() => updatePost({ hidden: !post.hidden })}>
               {post.hidden ? "Unhide" : "Hide"}
             </button>
           </>
+        )}
+        {userId && (canManageThreads || post.user_id === userId) && (
+          <button type="button" style={linkBtn} onClick={deleteThread}>Delete thread</button>
         )}
       </div>
 
@@ -142,7 +183,7 @@ export default function ForumThreadPage() {
       <div style={{ marginTop: 18 }}>
         <h3 style={{ color: "#f2c14e" }}>Replies</h3>
         {replies.length === 0 && <div style={{ color: "#a9c3db" }}>No replies yet.</div>}
-        {replies.map((r: any) => (
+        {replies.map((r) => (
           <div key={r.id} style={{ borderTop: "1px solid #13293d", padding: 10, opacity: r.hidden ? 0.5 : 1 }}>
             <div style={{ color: "#7fc0ff", fontWeight: 700 }}>
               {r.author}

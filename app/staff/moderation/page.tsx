@@ -27,6 +27,7 @@ type AuditRow = {
 export default function StaffModerationPage() {
   const { user, loading: authLoading } = useUser();
   const [allowed, setAllowed] = useState(false);
+  const [canSuspend, setCanSuspend] = useState(false);
   const [checking, setChecking] = useState(true);
   const [sanctions, setSanctions] = useState<Sanction[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
@@ -41,17 +42,34 @@ export default function StaffModerationPage() {
 
   const load = useCallback(async () => {
     if (!user) return;
-    const { data: permission } = await supabase.rpc("has_staff_permission", { permission_key: "staff_access" });
-    if (permission !== true) {
+    const [moderation, administration] = await Promise.all([
+      supabase.rpc("has_staff_permission", { permission_key: "basic_moderation" }),
+      supabase.rpc("has_staff_permission", { permission_key: "staff_access" }),
+    ]);
+    if (moderation.error || administration.error) {
+      setError(`Moderation access could not be checked: ${moderation.error?.message || administration.error?.message}`);
       setAllowed(false);
       setChecking(false);
       return;
     }
+    if (moderation.data !== true) {
+      setAllowed(false);
+      setChecking(false);
+      return;
+    }
+    setCanSuspend(administration.data === true);
     setAllowed(true);
-    const [{ data: s }, { data: a }] = await Promise.all([
+    const [{ data: s, error: sanctionsError }, { data: a, error: auditError }] = await Promise.all([
       supabase.from("user_sanctions").select("*").order("created_at", { ascending: false }).limit(100),
-      supabase.from("staff_audit_log").select("*").order("created_at", { ascending: false }).limit(100),
+      administration.data === true
+        ? supabase.from("staff_audit_log").select("*").order("created_at", { ascending: false }).limit(100)
+        : Promise.resolve({ data: [], error: null }),
     ]);
+    if (sanctionsError || auditError) {
+      setError(`Moderation data could not be loaded: ${sanctionsError?.message || auditError?.message}`);
+      setChecking(false);
+      return;
+    }
     const sanctionRows = (s || []) as Sanction[];
     const auditRows = (a || []) as AuditRow[];
     const ids = Array.from(
@@ -90,6 +108,11 @@ export default function StaffModerationPage() {
     }
     setSaving(true);
     const hoursNumber = Number(hours);
+    if (!canSuspend && (!Number.isInteger(hoursNumber) || hoursNumber < 1 || hoursNumber > 24)) {
+      setSaving(false);
+      setError("Moderators can issue mutes lasting 1 to 24 hours.");
+      return;
+    }
     const { error: rpcError } = await supabase.rpc("staff_issue_sanction", {
       p_username: username.trim(),
       p_kind: kind,
@@ -154,7 +177,7 @@ export default function StaffModerationPage() {
         ) : !user ? (
           <div className="st-panel"><div className="st-body">Please sign in.</div></div>
         ) : !allowed ? (
-          <div className="st-panel"><div className="st-body">This account cannot moderate players.</div></div>
+          <div className="st-panel"><div className="st-body">{error || "This account cannot moderate players."}</div></div>
         ) : (
           <>
             {error && <div className="st-msg err">{error}</div>}
@@ -171,12 +194,12 @@ export default function StaffModerationPage() {
                   Action
                   <select value={kind} onChange={(e) => setKind(e.target.value as "mute" | "suspend")}>
                     <option value="mute">Mute (no comments or messages)</option>
-                    <option value="suspend">Suspend (also no matches)</option>
+                    {canSuspend && <option value="suspend">Suspend (also no matches)</option>}
                   </select>
                 </label>
                 <label>
-                  Hours (0 = until lifted)
-                  <input type="number" min={0} value={hours} onChange={(e) => setHours(e.target.value)} />
+                  {canSuspend ? "Hours (0 = until lifted)" : "Hours (1–24)"}
+                  <input type="number" min={canSuspend ? 0 : 1} max={canSuspend ? undefined : 24} value={hours} onChange={(e) => setHours(e.target.value)} />
                 </label>
                 <label className="wide">
                   Reason (sent to the player)
@@ -202,13 +225,15 @@ export default function StaffModerationPage() {
                         {s.reason} - {s.expires_at ? `until ${new Date(s.expires_at).toLocaleString()}` : "until lifted"}
                       </small>
                     </div>
-                    <button className="st-btn" onClick={() => revoke(s.id)}>Lift</button>
+                    {(canSuspend || (s.kind === "mute" && s.expires_at && new Date(s.expires_at).getTime() <= new Date(s.created_at).getTime() + 24 * 60 * 60 * 1000)) && (
+                      <button className="st-btn" onClick={() => revoke(s.id)}>Lift</button>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
-            <div className="st-panel">
+            {canSuspend && <div className="st-panel">
               <div className="st-title">Audit Log</div>
               {audit.length === 0 ? (
                 <div className="st-body">Nothing logged yet.</div>
@@ -227,7 +252,7 @@ export default function StaffModerationPage() {
                   </div>
                 ))
               )}
-            </div>
+            </div>}
           </>
         )}
       </div>

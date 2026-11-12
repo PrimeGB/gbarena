@@ -325,6 +325,17 @@ export default function SupportPage() {
               </div>
             </section>
 
+            <section className="panel full">
+              <div className="panel-header">GameBattles Staff Roles</div>
+              <div className="panel-body">
+                <p><span className="highlight">Founder / Owner:</span> Oversees GameBattles and has final authority over the site and staff.</p>
+                <p><span className="highlight">Administrator:</span> Manages day-to-day operations, reports, competitions, and staff under their authority.</p>
+                <p><span className="highlight">Moderator:</span> Looks after the community, reviews reports, and addresses inappropriate behavior.</p>
+                <p><span className="highlight">Referee:</span> Reviews match evidence and makes decisions on disputes.</p>
+                <Link className="button blue" href="/staff">Meet the Staff</Link>
+              </div>
+            </section>
+
             <div className="warning full">
               <p>
                 <strong>Important:</strong> Support is for real help requests.

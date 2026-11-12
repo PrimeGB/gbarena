@@ -20,27 +20,43 @@ export default function ForumReportsPage() {
   const [checking, setChecking] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
   const [postIds, setPostIds] = useState<Record<string, number>>({});
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const { data: permission } = await supabase.rpc("has_staff_permission", { permission_key: "basic_moderation" });
+    const { data: permission, error: permissionError } = await supabase.rpc("has_staff_permission", { permission_key: "basic_moderation" });
+    if (permissionError) {
+      setError(`Moderation access could not be checked: ${permissionError.message}`);
+      setChecking(false);
+      return;
+    }
     if (permission !== true) {
       setChecking(false);
       return;
     }
     setAllowed(true);
-    const { data } = await supabase
+    const { data, error: reportError } = await supabase
       .from("forum_reports")
       .select("*")
       .order("resolved", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(100);
+    if (reportError) {
+      setError(`Reports could not be loaded: ${reportError.message}`);
+      setChecking(false);
+      return;
+    }
     const rows = (data || []) as Report[];
     setReports(rows);
 
     const replyIds = rows.filter((r) => r.target_type === "reply").map((r) => r.target_id);
     if (replyIds.length) {
-      const { data: replies } = await supabase.from("forum_replies").select("id,post_id").in("id", replyIds);
-      setPostIds(Object.fromEntries((replies || []).map((r: any) => [`reply-${r.id}`, r.post_id])));
+      const { data: replies, error: replyError } = await supabase.from("forum_replies").select("id,post_id").in("id", replyIds);
+      if (replyError) {
+        setError(`Reported replies could not be loaded: ${replyError.message}`);
+        setChecking(false);
+        return;
+      }
+      setPostIds(Object.fromEntries((replies || []).map((r: { id: number; post_id: number }) => [`reply-${r.id}`, r.post_id])));
     }
     setChecking(false);
   }, []);
@@ -55,17 +71,23 @@ export default function ForumReportsPage() {
   }, [authLoading, user, load]);
 
   async function resolve(id: number) {
-    await supabase.from("forum_reports").update({ resolved: true }).eq("id", id);
-    load();
+    setError("");
+    const { error: updateError } = await supabase.from("forum_reports").update({ resolved: true }).eq("id", id);
+    if (updateError) {
+      setError(`Report could not be resolved: ${updateError.message}`);
+      return;
+    }
+    await load();
   }
 
   if (checking || authLoading) return <div style={{ padding: 24, color: "#d7e2ee", background: "#000", minHeight: "100vh" }}>Loading...</div>;
-  if (!allowed) return <div style={{ padding: 24, color: "#d7e2ee", background: "#000", minHeight: "100vh" }}>Staff access required.</div>;
+  if (!allowed) return <div style={{ padding: 24, color: "#d7e2ee", background: "#000", minHeight: "100vh" }}>{error || "Staff access required."}</div>;
 
   return (
     <div style={{ background: "#000", color: "#d7e2ee", minHeight: "100vh", fontFamily: "Tahoma,Verdana,Arial,sans-serif" }}>
       <div style={{ width: "min(900px,100%)", margin: "0 auto", padding: "24px 18px" }}>
         <h1 style={{ color: "#f2c14e", fontSize: 20, textTransform: "uppercase", marginBottom: 14 }}>Forum Reports</h1>
+        {error && <p role="alert" style={{ color: "#ffaaaa" }}>{error}</p>}
         <div style={{ background: "#0a1119", border: "1px solid #263b4d" }}>
           {reports.length === 0 && <div style={{ padding: 18, color: "#9aabba" }}>No reports.</div>}
           {reports.map((r) => {
