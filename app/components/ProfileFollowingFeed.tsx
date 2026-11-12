@@ -135,7 +135,7 @@ export default function ProfileFollowingFeed() {
         .pf-follow-feed-error{color:#ffb3b3}
         .pf-follow-feed-more{color:#7fc0ff;font-size:10px;font-weight:bold;letter-spacing:0;text-decoration:none;text-transform:none;white-space:nowrap}
         .pf-follow-feed-more:hover{color:#fff;text-decoration:underline}
-        .pf-follow-feed-list:focus-visible,.pf-follow-feed-more:focus-visible,.pf-follow-feed-name:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #f2c14e;outline-offset:-2px}
+        .pf-follow-feed-list:focus-visible,.pf-follow-feed-more:focus-visible,.pf-follow-feed-name:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #7fc0ff;outline-offset:-2px}
       `}</style>
     </section>
   );
