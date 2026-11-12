@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type FormEvent,
 } from "react";
@@ -49,6 +50,35 @@ type PermissionKey =
   | "team_enforcement";
 
 type StaffRank = "member" | "staff" | "senior_staff" | "admin";
+
+type DashboardView = "home" | "reports" | "audit" | "access" | "roster";
+
+const viewHashes: Record<DashboardView, string> = {
+  home: "#staff-work-areas",
+  reports: "#reports-inbox",
+  audit: "#staff-audit",
+  access: "#staff-access",
+  roster: "#staff-directory",
+};
+
+function subscribeToHashChange(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
+function getLocationHash() {
+  return window.location.hash;
+}
+
+function getServerHash() {
+  return "";
+}
+
+function viewForHash(hash: string): DashboardView {
+  return (Object.keys(viewHashes) as DashboardView[]).find(
+    (view) => viewHashes[view] === hash
+  ) || "home";
+}
 
 const rankNames: Record<string, string> = {
   owner: "Founder — Prime",
@@ -124,7 +154,8 @@ type PermissionRow = {
 export default function StaffDashboardPage() {
   const { user, loading: authLoading } = useUser();
   const [role, setRole] = useState("");
-  const [view, setView] = useState<"home" | "reports" | "audit" | "access" | "roster">("home");
+  const hash = useSyncExternalStore(subscribeToHashChange, getLocationHash, getServerHash);
+  const view = viewForHash(hash);
   const [permissions, setPermissions] = useState<PermissionKey[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -144,7 +175,7 @@ export default function StaffDashboardPage() {
   const isOwner = role === "owner";
   const canEditDirectory = isOwner || permissions.includes("staff_directory");
 
-  type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: typeof view };
+  type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: DashboardView };
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
   const tiles: Tile[] = [
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
@@ -406,7 +437,7 @@ export default function StaffDashboardPage() {
           {user && hasPortalAccess && (
             <>
               {permissions.includes("staff_reports") && (
-                <a href="#reports-inbox" onClick={(e) => { e.preventDefault(); setView("reports"); }}>Reports</a>
+                <a href={viewHashes.reports}>Reports</a>
               )}
               {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
               {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
@@ -415,7 +446,7 @@ export default function StaffDashboardPage() {
           {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/moderation">Moderation</Link>}
           {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
               {(isOwner || permissions.includes("staff_directory")) && (
-                <a href="#staff-directory" onClick={(e) => { e.preventDefault(); setView("roster"); }}>Staff roster</a>
+                <a href={viewHashes.roster}>Staff roster</a>
               )}
             </>
           )}
@@ -446,9 +477,9 @@ export default function StaffDashboardPage() {
             {notice && <p style={styles.notice} role="status">{notice}</p>}
 
             {view !== "home" && (
-              <button type="button" onClick={() => setView("home")} style={styles.backButton}>
+              <a href={viewHashes.home} style={styles.backButton}>
                 &larr; Back to work areas
-              </button>
+              </a>
             )}
 
             {view === "reports" && permissions.includes("staff_reports") && (
@@ -585,19 +616,15 @@ export default function StaffDashboardPage() {
                           <Link href={tile.href} className={linkClass} style={styles.cardLink}>
                             {tile.cta}
                           </Link>
-                        ) : (
+                        ) : tile.view ? (
                           <a
-                            href="#"
+                            href={viewHashes[tile.view]}
                             className={linkClass}
                             style={styles.cardLink}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setView(tile.view!);
-                            }}
                           >
                             {tile.cta}
                           </a>
-                        )}
+                        ) : null}
                       </article>
                     );
                   })}
@@ -811,6 +838,7 @@ const styles: Record<string, CSSProperties> = {
   },
   cards: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 },
   backButton: {
+    display: "inline-block",
     margin: "0 0 14px",
     padding: "8px 14px",
     border: "1px solid #315f88",
@@ -818,6 +846,7 @@ const styles: Record<string, CSSProperties> = {
     color: "#f2c14e",
     fontSize: 13,
     fontWeight: 700,
+    textDecoration: "none",
     cursor: "pointer",
   },
   card: {

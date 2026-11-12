@@ -87,7 +87,7 @@ export default function ForumReportsPage() {
           })}
         </div>
         <div style={{ marginTop: 12 }}>
-          <Link href="/staff" style={{ color: "#cfeefe" }}>Back to staff</Link>
+          <Link href="/staff/dashboard" style={{ color: "#cfeefe" }}>Back to staff dashboard</Link>
         </div>
       </div>
     </div>
