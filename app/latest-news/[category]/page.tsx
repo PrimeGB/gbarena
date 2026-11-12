@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { newsCategories } from "../categoryData";
+import { newsCategories, newsMenuCategories } from "../categoryData";
 
 export function generateStaticParams() {
   return newsCategories.map(({ slug }) => ({ category: slug }));
@@ -62,7 +62,7 @@ export default async function NewsCategoryPage({
         <aside className="nc-panel">
           <div className="nc-panel-title">News Categories</div>
           <div className="nc-category-list">
-            {newsCategories.map((item) => (
+            {newsMenuCategories.map((item) => (
               <Link
                 className="nc-category-link"
                 href={`/latest-news/${item.slug}`}

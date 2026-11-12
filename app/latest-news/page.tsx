@@ -1,6 +1,6 @@
 import Link from "next/link";
 import CompactTopBar from "../components/CompactTopBar";
-import { newsCategories } from "./categoryData";
+import { newsMenuCategories } from "./categoryData";
 
 export default function LatestNewsPage() {
   return (
@@ -184,7 +184,7 @@ export default function LatestNewsPage() {
         <div className="layout news-layout">
           <aside className="panel">
             <div className="panel-title">News Categories</div>
-            {newsCategories.map((category) => (
+            {newsMenuCategories.map((category) => (
               <Link
                 className="side-link"
                 href={`/latest-news/${category.slug}`}

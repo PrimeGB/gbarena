@@ -2,6 +2,7 @@ export type NewsCategory = {
   slug: string;
   title: string;
   intro: string;
+  showInMenu?: boolean;
   items: {
     label: string;
     title: string;
@@ -71,6 +72,7 @@ export const newsCategories: NewsCategory[] = [
   {
     slug: "new-ladders",
     title: "New Ladders",
+    showInMenu: false,
     intro: "Ladder availability and competition updates across supported platforms.",
     items: [
       {
@@ -90,6 +92,7 @@ export const newsCategories: NewsCategory[] = [
   {
     slug: "tournaments",
     title: "Tournaments",
+    showInMenu: false,
     intro: "Tournament announcements and entry points for GameBattles events.",
     items: [
       {
@@ -109,6 +112,7 @@ export const newsCategories: NewsCategory[] = [
   {
     slug: "top-clips",
     title: "Top Clips",
+    showInMenu: false,
     intro: "Community clips and standout competitive moments.",
     items: [
       {
@@ -140,3 +144,5 @@ export const newsCategories: NewsCategory[] = [
     ],
   },
 ];
+
+export const newsMenuCategories = newsCategories.filter((category) => category.showInMenu !== false);
