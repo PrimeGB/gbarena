@@ -104,7 +104,7 @@ test("administrators grant awards directly while other staff can recommend them"
   const owner = renderDashboard("").markup;
   assert.match(owner, /Recommended awards/);
   assert.match(owner, /Review site changes proposed by staff/);
-  assert.doesNotMatch(owner, /Recommend an award|Propose site changes for Owner review/);
+  assert.doesNotMatch(owner, /Recommend an award|Propose site changes for Founder review/);
   const admin = renderDashboard("", "admin", ["awards", "award_recommendation"]).markup;
   assert.match(admin, /Awards management/);
   assert.doesNotMatch(admin, /Recommend an award/);

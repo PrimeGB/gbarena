@@ -68,6 +68,7 @@ type AwardHistoryEntry = {
   reason: string;
   granted_at: string;
   granted_by: string | null;
+  revoked_at: string | null;
 };
 
 type TopTeam = {
@@ -285,7 +286,7 @@ function ProfilePageContent() {
             console.error("Player award history could not be loaded:", awardsError);
             setEarnedAwards([]);
           } else {
-            setEarnedAwards((awardRows || []) as AwardHistoryEntry[]);
+            setEarnedAwards(((awardRows || []) as AwardHistoryEntry[]).filter((award) => !award.revoked_at));
           }
         } else {
           setEarnedAwards([]);
@@ -477,12 +478,9 @@ function ProfilePageContent() {
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
   const rawRole = (profile?.role || "").toLowerCase();
-  const playerRole =
-    rawRole === "owner" && (profile?.username || "").toLowerCase() !== "prime"
-      ? "Staff"
-      : rawRole
-        ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1)
-        : "Member";
+  const playerRole = rawRole === "owner"
+    ? ((profile?.username || "").toLowerCase() === "prime" ? "Founder" : "Staff")
+    : rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : "Member";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
   const xboxGT = profile?.gt_xbox || profile?.xbox_gt || "";
@@ -491,9 +489,9 @@ function ProfilePageContent() {
   const pcGT = profile?.gt_pc || profile?.pc_gt || "";
   const eaGT =
     gamingAccounts.find((account) => account.platform === "ea")?.account_id || "";
-  const displayAwards = Array.isArray(profile?.display_awards) ? profile?.display_awards || [] : [];
+  const displayAwards = Array.isArray(profile?.display_awards) ? profile.display_awards : null;
   const chosenAwards: (AwardHistoryEntry | undefined)[] =
-    displayAwards.length > 0
+    displayAwards !== null
       ? displayAwards.slice(0, 6).map((entry) =>
           earnedAwards.find((award) => String(award.id) === entry) ||
           earnedAwards.find((award) => award.name === entry),

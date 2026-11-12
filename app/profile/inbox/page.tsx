@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import CompactTopBar from "../../components/CompactTopBar";
+import "./inbox.css";
 
 type AppUser = {
   id: string;
@@ -29,7 +31,7 @@ type MessageFolder = "inbox" | "sent";
 
 function senderName(message: MessageRow, profileNames: Record<string, string>) {
   if (message.sender_type === "system") return "GameBattles";
-  if (message.sender_type === "staff") return "Staff";
+  if (message.sender_type === "staff") return message.sender_id && profileNames[message.sender_id] ? `${profileNames[message.sender_id]} (Staff)` : "Staff";
   return (message.sender_id && profileNames[message.sender_id]) || "Player";
 }
 
@@ -37,10 +39,11 @@ function recipientName(message: MessageRow, profileNames: Record<string, string>
   return profileNames[message.recipient_id] || "Player";
 }
 
-function senderClass(message: MessageRow) {
-  if (message.sender_type === "system") return "sender-system";
-  if (message.sender_type === "staff") return "sender-staff";
-  return "sender-user";
+function messageDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString(undefined, {
+    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+  });
 }
 
 function canReply(message: MessageRow | null) {
@@ -50,9 +53,24 @@ function canReply(message: MessageRow | null) {
   return true;
 }
 
+const subscribePreview = () => () => {};
+const getPreview = () => process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "1";
+const getServerPreview = () => false;
+const previewUser: AppUser = { id: "preview-user" };
+const previewNames = { "preview-player": "Alex", "preview-staff": "Jordan" };
+const previewInbox: MessageRow[] = [
+  { id: "preview-1", sender_id: "preview-player", recipient_id: "preview-user", sender_type: "player", subject: "Great games last night", body: "Hey! Those matches were a lot of fun. Let me know if your team is up for another series this weekend.", message_type: "player", is_read: false, is_archived: false, created_at: "2026-11-12T18:20:00Z" },
+  { id: "preview-2", sender_id: "preview-staff", recipient_id: "preview-user", sender_type: "staff", subject: "Your match ticket", body: "Thanks for sending in the details. We've reviewed the evidence and recorded a decision on your ticket.", message_type: "staff", is_read: true, is_archived: false, created_at: "2026-11-11T15:00:00Z" },
+  { id: "preview-3", sender_id: null, recipient_id: "preview-user", sender_type: "system", subject: "You earned an award", body: "Congratulations! A new award was added to your profile.", message_type: "system", is_read: true, is_archived: false, created_at: "2026-11-10T12:00:00Z" },
+];
+const previewSent: MessageRow[] = [
+  { id: "preview-4", sender_id: "preview-user", recipient_id: "preview-player", sender_type: "player", subject: "Ready for the next match?", body: "Let's find a time that works for both teams.", message_type: "player", is_read: true, is_archived: false, created_at: "2026-11-09T12:00:00Z" },
+];
+
 export default function InboxPage() {
   const { user, loading } = useUser();
-  const currentUser = user as AppUser | null;
+  const preview = useSyncExternalStore(subscribePreview, getPreview, getServerPreview);
+  const currentUser = preview ? previewUser : user as AppUser | null;
 
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [sentMessages, setSentMessages] = useState<MessageRow[]>([]);
@@ -62,6 +80,7 @@ export default function InboxPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState("");
   const [sentError, setSentError] = useState("");
+  const [nameError, setNameError] = useState("");
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
@@ -76,11 +95,22 @@ export default function InboxPage() {
     let active = true;
 
     async function loadMessages() {
+      if (preview) {
+        setMessages(previewInbox);
+        setSentMessages(previewSent);
+        setProfileNames(previewNames);
+        setError("");
+        setSentError("");
+        setNameError("");
+        setPageLoading(false);
+        return;
+      }
       if (!currentUser?.id) {
         setMessages([]);
         setSentMessages([]);
         setProfileNames({});
         setSentError("");
+        setNameError("");
         setSelected(null);
         setPageLoading(false);
         return;
@@ -89,6 +119,7 @@ export default function InboxPage() {
       setPageLoading(true);
       setError("");
       setSentError("");
+      setNameError("");
 
       const [inboxResult, sentResult] = await Promise.all([
         supabase
@@ -101,22 +132,14 @@ export default function InboxPage() {
           .from("messages")
           .select("*")
           .eq("sender_id", currentUser.id)
-          .eq("is_archived", false)
           .order("created_at", { ascending: false }),
       ]);
 
       if (!active) return;
 
-      if (inboxResult.error) {
-        setError(inboxResult.error.message);
-        setMessages([]);
-        setSentMessages([]);
-        setPageLoading(false);
-        return;
-      }
-
       const inboxMessages = (inboxResult.data || []) as MessageRow[];
       const outgoingMessages = (sentResult.data || []) as MessageRow[];
+      setError(inboxResult.error?.message || "");
       setSentError(sentResult.error?.message || "");
       setMessages(inboxMessages);
       setSentMessages(outgoingMessages);
@@ -134,7 +157,7 @@ export default function InboxPage() {
 
         if (!active) return;
         if (profilesError) {
-          setError(profilesError.message);
+          setNameError(profilesError.message);
           setPageLoading(false);
           return;
         }
@@ -151,11 +174,11 @@ export default function InboxPage() {
       setPageLoading(false);
     }
 
-    if (!loading) void loadMessages();
+    if (preview || !loading) void loadMessages();
     return () => {
       active = false;
     };
-  }, [loading, currentUser?.id]);
+  }, [loading, currentUser?.id, preview]);
 
   async function openMessage(message: MessageRow) {
     setSelected(message);
@@ -165,6 +188,12 @@ export default function InboxPage() {
     setNotice("");
 
     if (folder === "inbox" && !message.is_read && currentUser?.id) {
+      if (preview) {
+        const updatedMessage = { ...message, is_read: true };
+        setMessages((old) => old.map((item) => item.id === message.id ? updatedMessage : item));
+        setSelected(updatedMessage);
+        return;
+      }
       const { error: readError } = await supabase
         .from("messages")
         .update({ is_read: true })
@@ -178,12 +207,13 @@ export default function InboxPage() {
 
       const updatedMessage = { ...message, is_read: true };
       setMessages((old) => old.map((item) => item.id === message.id ? updatedMessage : item));
-      setSelected(updatedMessage);
+      setSelected((current) => current?.id === message.id ? updatedMessage : current);
     }
   }
 
   async function sendNewMessage() {
     if (!currentUser?.id || sendingMessage) return;
+    if (preview) { setNotice("Preview only: no message was sent."); return; }
 
     const trimmedUsername = recipientUsername.trim();
     const trimmedSubject = composeSubject.trim();
@@ -247,7 +277,6 @@ export default function InboxPage() {
       .from("messages")
       .select("*")
       .eq("sender_id", currentUser.id)
-      .eq("is_archived", false)
       .order("created_at", { ascending: false });
     if (refreshError) {
       setNotice(`Message sent, but the sent folder could not be refreshed: ${refreshError.message}`);
@@ -257,21 +286,24 @@ export default function InboxPage() {
   }
 
   async function sendReply() {
-    if (!currentUser?.id || !selected?.sender_id || !replyBody.trim()) return;
+    if (!currentUser?.id || !selected?.sender_id || !replyBody.trim() || sendingReply) return;
+    if (preview) { setNotice("Preview only: no reply was sent."); return; }
 
     setSendingReply(true);
     setNotice("");
 
-    const { error } = await supabase.from("messages").insert({
+    const recipientId = selected.sender_id;
+    const subject = /^re:\s/i.test(selected.subject) ? selected.subject : `Re: ${selected.subject}`;
+    const { data: sentReply, error } = await supabase.from("messages").insert({
       sender_id: currentUser.id,
-      recipient_id: selected.sender_id,
+      recipient_id: recipientId,
       sender_type: "player",
-      subject: `RE: ${selected.subject}`,
+      subject,
       body: replyBody.trim(),
       message_type: "player",
       is_read: false,
       is_archived: false,
-    });
+    }).select("*").single();
 
     setSendingReply(false);
 
@@ -280,18 +312,7 @@ export default function InboxPage() {
       return;
     }
 
-    setSentMessages((old) => [{
-      id: `local-${Date.now()}`,
-      sender_id: currentUser.id,
-      recipient_id: selected.sender_id as string,
-      sender_type: "player",
-      subject: `RE: ${selected.subject}`,
-      body: replyBody.trim(),
-      message_type: "player",
-      is_read: false,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-    }, ...old]);
+    setSentMessages((old) => [sentReply as MessageRow, ...old]);
     setReplyBody("");
     setReplyOpen(false);
     setNotice("Reply sent.");
@@ -299,6 +320,7 @@ export default function InboxPage() {
 
   async function respondToFriendRequest(status: "accepted" | "declined") {
     if (!currentUser?.id || !selected?.related_id) return;
+    if (preview) { setNotice("Preview only: no request was changed."); return; }
 
     setNotice("");
 
@@ -316,18 +338,22 @@ export default function InboxPage() {
       return;
     }
 
-    await supabase
+    const { error: archiveError } = await supabase
       .from("messages")
       .update({ is_archived: true })
       .eq("id", selected.id)
       .eq("recipient_id", currentUser.id);
 
+    if (archiveError) {
+      setNotice(`Friend request ${status}, but the message could not be archived: ${archiveError.message}`);
+      return;
+    }
     setMessages((old) => old.filter((message) => message.id !== selected.id));
     setSelected(null);
     setNotice(status === "accepted" ? "Friend request accepted." : "Friend request declined.");
   }
 
-  if (loading || pageLoading) {
+  if ((!preview && loading) || pageLoading) {
     return <div className="inbox-loading">Loading inbox...</div>;
   }
 
@@ -700,23 +726,20 @@ export default function InboxPage() {
         }
       `}</style>
 
-      <main className="page">
+      <main className="page inbox-page">
         <div className="wrap">
-          <div className="top-strip">
-            <Link href="/home">Home</Link>
-            <Link href="/profile">My Profile</Link>
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-          </div>
+          <CompactTopBar />
 
           <header className="header">
             <div className="title">
+              <span className="inbox-eyebrow">YOUR GAMEBATTLES MESSAGES</span>
               <h1>Inbox</h1>
-              <p>Messages, friend requests, staff notices, and site alerts</p>
+              <p>Your conversations, requests and updates, all in one place.</p>
+              {preview && <p className="inbox-preview-label">Preview only — no messages or requests are changed.</p>}
             </div>
 
             <div className="badge">
-              {messages.filter((message) => !message.is_read).length} Unread
+              <strong>{messages.filter((message) => !message.is_read).length}</strong><span>Unread</span>
             </div>
           </header>
 
@@ -729,19 +752,19 @@ export default function InboxPage() {
             <Link className="active" href="/profile/inbox">Inbox</Link>
           </nav>
 
-          {error ? (
-            <div className="error">{error}</div>
-          ) : (
+          {nameError && <div className="inbox-status" role="alert">Player names could not be loaded: {nameError}</div>}
+          {notice && <div className="inbox-status" role="status">{notice}</div>}
             <section className="content">
               <div className="panel">
                 <div className="panel-title">
-                  {folder === "inbox" ? "Inbox" : "Sent Messages"}
+                  <span>MESSAGES</span><span>{visibleMessages.length} {visibleMessages.length === 1 ? "message" : "messages"}</span>
                 </div>
 
-                <div className="folder-tabs">
+                <div className="folder-tabs" role="group" aria-label="Message folders">
                   <button
                     className={`folder-tab ${folder === "inbox" ? "active" : ""}`}
                     type="button"
+                    aria-pressed={folder === "inbox"}
                     onClick={() => {
                       setFolder("inbox");
                       setSelected(null);
@@ -749,11 +772,12 @@ export default function InboxPage() {
                       setNotice("");
                     }}
                   >
-                    Inbox
+                    Inbox <span>{messages.filter((message) => !message.is_read).length}</span>
                   </button>
                   <button
                     className={`folder-tab ${folder === "sent" ? "active" : ""}`}
                     type="button"
+                    aria-pressed={folder === "sent"}
                     onClick={() => {
                       setFolder("sent");
                       setSelected(null);
@@ -772,44 +796,40 @@ export default function InboxPage() {
                       setNotice("");
                     }}
                   >
-                    New Message
+                    + New message
                   </button>
                 </div>
                 <div className="message-list">
-                  {folder === "sent" && sentError ? (
-                    <div className="error">{sentError}</div>
+                  {(folder === "inbox" && error) || (folder === "sent" && sentError) ? (
+                    <div className="error" role="alert">Messages could not be loaded: {folder === "inbox" ? error : sentError}</div>
                   ) : visibleMessages.length === 0 ? (
                     <div className="empty">
                       {folder === "inbox" ? "No messages in your inbox." : "No sent messages yet."}
                     </div>
                   ) : (
                     visibleMessages.map((message) => (
-                      <div
-                        className={
-                          message.is_read || folder === "sent"
-                            ? "message-row"
-                            : "message-row unread"
-                        }
+                      <button
+                        type="button"
+                        aria-pressed={selected?.id === message.id}
+                        className={`message-row ${!message.is_read && folder === "inbox" ? "unread" : ""} ${selected?.id === message.id ? "selected" : ""}`}
                         key={message.id}
                         onClick={() => openMessage(message)}
                       >
-                        <div className="message-subject">{message.subject}</div>
-
-                        <div className={`message-meta ${senderClass(message)}`}>
-                          {folder === "inbox"
-                            ? `From: ${senderName(message, profileNames)}`
-                            : `To: ${recipientName(message, profileNames)}`}
-                        </div>
-
-                        <div className="message-preview">{message.body}</div>
-                      </div>
+                        <span className="message-row-top">
+                          <span className="message-person">{folder === "inbox" ? `From: ${senderName(message, profileNames)}` : `To: ${recipientName(message, profileNames)}`}</span>
+                          {!message.is_read && folder === "inbox" && <span className="message-unread">NEW</span>}
+                        </span>
+                        <span className="message-subject">{message.subject}</span>
+                        <span className="message-preview">{message.body}</span>
+                        <time className="message-date" dateTime={message.created_at}>{messageDate(message.created_at)}</time>
+                      </button>
                     ))
                   )}
                 </div>
               </div>
 
               <div className="panel">
-                <div className="panel-title">{composeOpen ? "New Message" : "Message Details"}</div>
+                <div className="panel-title"><span>{composeOpen ? "NEW MESSAGE" : "MESSAGE DETAILS"}</span></div>
 
                 {composeOpen ? (
                   <form
@@ -865,23 +885,23 @@ export default function InboxPage() {
                         Cancel
                       </button>
                     </div>
-                    {notice && <div className="notice" role="status">{notice}</div>}
                   </form>
                 ) : !selected ? (
-                  <div className="empty">Select a message to read it.</div>
+                  <div className="inbox-reader-empty"><span aria-hidden="true">✉</span><strong>Choose a message</strong><p>Select a message to see its details, or start a new conversation.</p></div>
                 ) : (
                   <div className="reader">
-                    <div className="reader-subject">{selected.subject}</div>
-
-                    <div className={`reader-meta ${senderClass(selected)}`}>
-                      {folder === "inbox"
-                        ? `From: ${senderName(selected, profileNames)}`
-                        : `To: ${recipientName(selected, profileNames)}`}
+                    <div className="reader-heading">
+                      <span className="inbox-eyebrow">{folder === "inbox" ? "RECEIVED MESSAGE" : "SENT MESSAGE"}</span>
+                      <h2 className="reader-subject">{selected.subject}</h2>
+                      <div className="reader-meta">
+                        <span><b>{folder === "inbox" ? "From" : "To"}</b> {folder === "inbox" ? senderName(selected, profileNames) : recipientName(selected, profileNames)}</span>
+                        <span><b>Date</b> <time dateTime={selected.created_at}>{messageDate(selected.created_at)}</time></span>
+                      </div>
                     </div>
 
                     <div className="reader-body">{selected.body}</div>
 
-                    {selected.related_type === "friend_request" && selected.related_id && (
+                    {folder === "inbox" && selected.related_type === "friend_request" && selected.related_id && (
                       <div className="reader-actions">
                         <button
                           className="reply-btn accept-btn"
@@ -918,6 +938,8 @@ export default function InboxPage() {
                         <textarea
                           value={replyBody}
                           onChange={(e) => setReplyBody(e.target.value)}
+                          aria-label="Reply message"
+                          maxLength={5000}
                           placeholder="Type your reply..."
                         />
 
@@ -934,12 +956,10 @@ export default function InboxPage() {
                       </div>
                     )}
 
-                    {notice && <div className="notice">{notice}</div>}
                   </div>
                 )}
               </div>
             </section>
-          )}
 
           <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>

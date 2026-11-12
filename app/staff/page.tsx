@@ -18,8 +18,8 @@ type Tier = "owner" | "admin" | "staff" | "referee";
 const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duties: string[] }[] = [
   {
     tier: "owner",
-    label: "Founder / Owner",
-    plural: "Founders / Owners",
+    label: "Founder",
+    plural: "Founders",
     blurb: "Founds and runs GameBattles. Has final say on every decision.",
     duties: ["Full access to every staff tool", "Assigns and removes staff ranks", "Final ruling on appeals and escalations"],
   },

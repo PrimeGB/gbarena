@@ -37,7 +37,7 @@ function Requests() {
     const { error } = await supabase.rpc("staff_request_site_change", { p_description: description });
     setSaving(false);
     if (error) setMessage(`Request could not be submitted: ${error.message}`);
-    else { setDescription(""); await load(); setMessage("Request submitted for Owner review."); }
+    else { setDescription(""); await load(); setMessage("Request submitted for Founder review."); }
   }
 
   async function review(id: number, approve: boolean) {
@@ -53,7 +53,7 @@ function Requests() {
 
   return (
     <>
-      {isOwner !== null && <p>{isOwner ? "Review site changes proposed by staff." : "Propose a change for Owner review."} Approval records a decision only; it does not change the site.</p>}
+      {isOwner !== null && <p>{isOwner ? "Review site changes proposed by staff." : "Propose a change for Founder review."} Approval records a decision only; it does not change the site.</p>}
       {message && <p role="status">{message}</p>}
       {isOwner === false && <form className="staff-mobile-form" onSubmit={submit} style={{ display: "grid", maxWidth: 600 }}>
         <label>Proposed change <textarea required minLength={10} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} /></label>

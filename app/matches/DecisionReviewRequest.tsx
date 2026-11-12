@@ -74,7 +74,7 @@ export default function DecisionReviewRequest({ matchId, teamId, teamName, previ
             <p role="status">Your team&apos;s review request: {status.status}. {status.review_note}</p>
           ) : (
             <form onSubmit={submit}>
-              <p>If you believe the staff decision is wrong, explain why. Administrators and Owners can review it, but cannot currently change the result here. One request per team.</p>
+              <p>If you believe the staff decision is wrong, explain why. Administrators and Founders can review it, but cannot currently change the result here. One request per team.</p>
               <label>
                 Reason for review
                 <textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={10} maxLength={2000} required style={{ display: "block", width: "100%", minHeight: 80 }} />

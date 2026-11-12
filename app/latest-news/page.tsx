@@ -308,13 +308,13 @@ export default function LatestNewsPage() {
                 <div className="news-head">
                   <div className="news-title">
                     <span className="tag">Now Available</span>
-                    Owner Email Alerts for Feedback
+                    Founder Email Alerts for Feedback
                   </div>
                   <div className="news-date">November 4, 2026</div>
                 </div>
                 <div className="news-body">
                   Suggestions and bug reports now send an email alert to the site
-                  owner so important player feedback can be reviewed.
+                  founder so important player feedback can be reviewed.
                 </div>
               </div>
 

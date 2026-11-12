@@ -60,7 +60,7 @@ function viewForHash(hash: string): DashboardView {
 }
 
 const rankNames: Record<string, string> = {
-  owner: "Founder — Prime",
+  owner: "Founder",
   admin: "Administrator",
   senior_staff: "Senior Staff",
   staff: "Moderator",
@@ -158,13 +158,13 @@ export default function StaffDashboardPage() {
     can("basic_moderation") && { key: "forum_reports", title: "Forum reports", description: "Review reports about forum posts and replies.", cta: "Open reports", href: "/staff/forum-reports" },
     can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
     can("team_enforcement") && { key: "team_names", title: "Team name requests", description: "Review requests and apply approved team name changes.", cta: "Open requests", href: "/staff/team-names" },
-    can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only an Owner sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
+    can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only a Founder sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
     can("credit_management") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
     (can("manage_staff") || can("staff_directory")) && { key: "access", title: "Staff management", description: "Manage staff access, positions, and duties in one place. Every change is recorded.", cta: "Manage staff", view: "access" },
     isOwner
       ? { key: "recommend_award", title: "Recommended awards", description: "Review award recommendations from staff.", cta: "Review recommendations", href: "/staff/awards#award-recommendations" }
       : role !== "admin" && can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
-    can("staff_access") && { key: "site_requests", title: "Site change requests", description: isOwner ? "Review site changes proposed by staff." : "Propose site changes for Owner review.", cta: isOwner ? "Review requests" : "Open requests", href: "/staff/site-requests" },
+    can("staff_access") && { key: "site_requests", title: "Site change requests", description: isOwner ? "Review site changes proposed by staff." : "Propose site changes for Founder review.", cta: isOwner ? "Review requests" : "Open requests", href: "/staff/site-requests" },
     { key: "role_guide", title: "Staff roles and access", description: "See the full role and permission breakdown.", cta: "View the breakdown", href: "/staff/role-guide" },
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
   ].filter(Boolean) as Tile[];
@@ -472,7 +472,7 @@ export default function StaffDashboardPage() {
         ) : !hasPortalAccess ? (
           <p style={styles.message}>
             This account is not on the approved staff email list. Contact the site
-            Owner if you believe this is a mistake.
+            Founder if you believe this is a mistake.
           </p>
         ) : (
           <>
@@ -635,7 +635,7 @@ export default function StaffDashboardPage() {
               ) : (
                 <p style={styles.help}>
                   This approved account has no staff work areas assigned yet.
-                  Contact the site Owner to request the duties you need.
+                  Contact the site Founder to request the duties you need.
                 </p>
               )}
             </section>
@@ -644,7 +644,7 @@ export default function StaffDashboardPage() {
               <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
-                  Owners manage Administrators. Administrators may manage Moderators and Referees only.
+                  Founders manage Administrators. Administrators may manage Moderators and Referees only.
                   Every change requires a reason and is recorded.
                 </p>
                 <form className="staff-mobile-form" onSubmit={assignStaffMember} style={styles.form}>
@@ -686,7 +686,7 @@ export default function StaffDashboardPage() {
                 {isOwner && (
                   <div style={styles.form}>
                     <h3 style={styles.cardTitle}>Administrator credit access</h3>
-                    <p style={styles.help}>Only an Owner can grant or remove this ongoing access. It permits manual credit changes and tournament prize payouts.</p>
+                    <p style={styles.help}>Only a Founder can grant or remove this ongoing access. It permits manual credit changes and tournament prize payouts.</p>
                     <p style={styles.help}>Currently authorized: {staff.filter((member) => creditGrants.includes(member.user_id)).map((member) => member.username).join(", ") || "None"}</p>
                     <label style={styles.label}>Administrator username
                       <input value={creditUsername} onChange={(event) => setCreditUsername(event.target.value)} style={styles.input} />
@@ -760,7 +760,7 @@ export default function StaffDashboardPage() {
                       ) : (
                         <>
                           <strong style={styles.cardTitle}>
-                            {member.position} — {member.username}
+                            {member.is_owner ? "Founder" : member.position} — {member.username}
                           </strong>
                           <p style={styles.cardText}>{member.duties}</p>
                         </>

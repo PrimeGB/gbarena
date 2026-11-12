@@ -67,11 +67,11 @@ export default function SuggestionsPage() {
       setBrowser("");
       setSuccess(
         selectedType === "Bug Report"
-          ? "Your bug report is saved for staff review and in the owner's inbox. Bug Finder awards require staff to confirm the issue is fixed."
-          : "Your suggestion is saved for staff review and in the owner's inbox."
+          ? "Your bug report is saved for staff review and in the founder's inbox. Bug Finder awards require staff to confirm the issue is fixed."
+          : "Your suggestion is saved for staff review and in the founder's inbox."
       );
       if (result.emailDelivered !== true) {
-        setError("Your submission was saved, but the owner email notification could not be sent.");
+        setError("Your submission was saved, but the founder email notification could not be sent.");
       }
     } catch (submitError) {
       setError(`Delivery could not be confirmed: ${submitError instanceof Error ? submitError.message : "Please check your connection."} Contact support before resubmitting to avoid duplicates.`);
@@ -215,7 +215,7 @@ export default function SuggestionsPage() {
                   <ul><li>Include the page and steps to reproduce it.</li><li>Describe what happened and what you expected.</li><li>Verify your account email before submitting a bug report.</li></ul>
                 )}
                 <h3>What happens next?</h3>
-                <p>Feedback is sent to staff for review and to the owner&apos;s inbox. We also send an email notification to the owner.</p>
+                <p>Feedback is sent to staff for review and to the founder&apos;s inbox. We also send an email notification to the founder.</p>
                 <h3>Need match help?</h3>
                 <p>For disputes, score issues, or urgent match help, visit <Link href="/support">Support</Link> instead.</p>
                 <Link href="/latest-news/accepted-suggestions">See accepted suggestions →</Link>

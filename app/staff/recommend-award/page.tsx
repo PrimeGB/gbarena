@@ -38,14 +38,14 @@ function RecommendationForm() {
     setSaving(false);
     if (error) setMessage(`Recommendation could not be submitted: ${error.message}`);
     else {
-      setMessage("Recommendation submitted for Administrator or Owner review.");
+      setMessage("Recommendation submitted for Administrator or Founder review.");
       setTarget(""); setReason(""); setEvidence("");
     }
   }
 
   return (
     <>
-      <p>Recommend an award for another player or team. An Administrator or Owner must review it.</p>
+      <p>Recommend an award for another player or team. An Administrator or Founder must review it.</p>
       {message && <p role="status">{message}</p>}
       <form className="staff-mobile-form" onSubmit={submit} style={{ display: "grid", maxWidth: 600 }}>
         <label>Award <select required value={award} onChange={(e) => setAward(e.target.value)}><option value="">Choose an award</option>{awards.map((a) => <option key={a.name} value={a.name}>{a.name} - {a.award_group}</option>)}</select></label>

@@ -133,7 +133,7 @@ function ReviewQueue() {
               <button type="submit" disabled={savingId !== null}>Record review (result unchanged)</button>
             </form>
           )}
-          {request.status === "pending" && !request.can_review && <p>Only an Owner can record a review of this decision.</p>}
+          {request.status === "pending" && !request.can_review && <p>Only a Founder can record a review of this decision.</p>}
         </article>
       ))}
     </>

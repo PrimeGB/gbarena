@@ -28,6 +28,7 @@ type EarnedAward = {
   name: string;
   award_group: string;
   reason: string;
+  revoked_at: string | null;
 };
 
 type EditTab = "main" | "awards" | "friends" | "settings";
@@ -63,6 +64,12 @@ function EditProfileContent() {
   const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
   const [earnedAwards, setEarnedAwards] = useState<EarnedAward[]>([]);
+  const [awardsReady, setAwardsReady] = useState(false);
+  const [awardSaveStatus, setAwardSaveStatus] = useState<{ state: "idle" | "saving" | "saved" | "error"; message: string }>({ state: "idle", message: "" });
+  const awardsDraft = useRef<string[]>([]);
+  const savedAwardSlots = useRef<string[]>([]);
+  const awardSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const awardSaveVersion = useRef(0);
   const [dragSource, setDragSource] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
@@ -140,14 +147,14 @@ function EditProfileContent() {
 
   useEffect(() => {
     function warnBeforeLeave(event: BeforeUnloadEvent) {
-      if (!hasChanges) return;
+      if (!hasChanges && awardSaveStatus.state !== "saving" && !(awardsReady && awardSaveStatus.state === "error")) return;
       event.preventDefault();
       event.returnValue = "";
     }
 
     window.addEventListener("beforeunload", warnBeforeLeave);
     return () => window.removeEventListener("beforeunload", warnBeforeLeave);
-  }, [hasChanges]);
+  }, [hasChanges, awardSaveStatus.state, awardsReady]);
 
   function markChanged() {
     setHasChanges(true);
@@ -159,7 +166,7 @@ function EditProfileContent() {
       if (!currentUser?.id) return;
 
       try {
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select(
             `username,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
@@ -168,13 +175,18 @@ function EditProfileContent() {
           .maybeSingle();
 
         let loadedAwards: EarnedAward[] = [];
-        if (profileData?.username) {
-          const { data: awardRows } = await supabase.rpc("staff_player_award_history", {
+        let awardsError = profileError?.message || "";
+        if (profileData?.username && !awardsError) {
+          const { data: awardRows, error: historyError } = await supabase.rpc("staff_player_award_history", {
             target_username: profileData.username,
           });
-          loadedAwards = (awardRows || []) as EarnedAward[];
+          awardsError = historyError?.message || "";
+          loadedAwards = ((awardRows || []) as EarnedAward[]).filter((award) => !award.revoked_at);
           setEarnedAwards(loadedAwards);
+        } else if (!awardsError) {
+          awardsError = "Your profile could not be found.";
         }
+        if (awardsError) setAwardSaveStatus({ state: "error", message: `Awards could not be loaded: ${awardsError}` });
 
         if (profileData) {
           setProfileGlow(profileData.profile_glow || "On");
@@ -187,17 +199,18 @@ function EditProfileContent() {
           setGtPlaystation(profileData.gt_playstation || "");
           setGtNintendo(profileData.gt_nintendo || "");
           setGtPc(profileData.gt_pc || "");
-          const saved = Array.isArray(profileData.display_awards) ? (profileData.display_awards as string[]) : [];
+          const hasSavedSlots = Array.isArray(profileData.display_awards);
+          const saved = hasSavedSlots ? (profileData.display_awards as string[]) : [];
           const resolved = saved
             .map((entry) => loadedAwards.find((a) => String(a.id) === entry || a.name === entry))
             .filter((a): a is EarnedAward => !!a)
             .map((a) => String(a.id));
           const unique = Array.from(new Set(resolved)).slice(0, 6);
-          setDisplayAwards(
-            unique.length > 0 || saved.length > 0
-              ? unique
-              : loadedAwards.slice(0, 6).map((a) => String(a.id)),
-          );
+          const slots = hasSavedSlots ? unique : loadedAwards.slice(0, 6).map((a) => String(a.id));
+          savedAwardSlots.current = saved;
+          awardsDraft.current = slots;
+          setDisplayAwards(slots);
+          setAwardsReady(!awardsError);
         }
 
         // load linked second email (separate query so a missing column cannot break the page)
@@ -358,7 +371,7 @@ function EditProfileContent() {
   }
 
   function handleNavClick(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
-    if (hasChanges) {
+    if (hasChanges || awardSaveStatus.state === "saving" || (awardsReady && awardSaveStatus.state === "error")) {
       const confirmLeave = window.confirm("Please save changes first. Leave without saving?");
       if (!confirmLeave) {
         event.preventDefault();
@@ -370,7 +383,7 @@ function EditProfileContent() {
   }
 
   function handleTabChange(tab: EditTab) {
-    if (hasChanges) {
+    if (hasChanges || awardSaveStatus.state === "saving" || (awardsReady && awardSaveStatus.state === "error")) {
       const confirmSwitch = window.confirm("Please save changes first. Switch sections without saving?");
       if (!confirmSwitch) return;
     }
@@ -382,8 +395,37 @@ function EditProfileContent() {
     return String(award.id);
   }
 
+  function saveAwardSlots(next: string[]) {
+    if (!currentUser || !awardsReady) return;
+    awardsDraft.current = next;
+    setDisplayAwards(next);
+    setAwardSaveStatus({ state: "saving", message: "Saving awards..." });
+    const version = ++awardSaveVersion.current;
+    awardSaveQueue.current = awardSaveQueue.current.then(async () => {
+      try {
+        const { data, error } = await supabase.rpc("gb_save_profile_award_slots", {
+          p_expected: savedAwardSlots.current,
+          p_awards: next,
+        });
+        if (error) throw new Error(error.message);
+        if (!Array.isArray(data)) throw new Error("The server did not return the saved awards.");
+        savedAwardSlots.current = data;
+        if (version === awardSaveVersion.current) {
+          awardsDraft.current = data;
+          setDisplayAwards(data);
+          setAwardSaveStatus({ state: "saved", message: "Awards saved." });
+        }
+      } catch (error) {
+        if (version === awardSaveVersion.current) {
+          const message = error instanceof Error ? error.message : "Please try again.";
+          setAwardSaveStatus({ state: "error", message: `Awards could not be saved: ${message}` });
+        }
+      }
+    });
+  }
+
   function placeAward(key: string, slotIndex: number, fromSlot: number | null) {
-    const next = [...displayAwards];
+    const next = [...awardsDraft.current];
     if (fromSlot !== null) {
       const target = Math.min(slotIndex, next.length - 1);
       [next[fromSlot], next[target]] = [next[target], next[fromSlot]];
@@ -393,25 +435,22 @@ function EditProfileContent() {
       if (slotIndex >= next.length) next.push(key);
       else next[slotIndex] = key;
     }
-    setDisplayAwards(next.slice(0, 6));
-    markChanged();
+    saveAwardSlots(next.slice(0, 6));
   }
 
   function removeAwardAt(slotIndex: number) {
-    setDisplayAwards(displayAwards.filter((_, i) => i !== slotIndex));
-    markChanged();
+    saveAwardSlots(awardsDraft.current.filter((_, i) => i !== slotIndex));
   }
 
   function addAwardToFirstSlot(key: string) {
-    if (displayAwards.includes(key) || displayAwards.length >= 6) return;
-    setDisplayAwards([...displayAwards, key]);
-    markChanged();
+    if (awardsDraft.current.includes(key) || awardsDraft.current.length >= 6) return;
+    saveAwardSlots([...awardsDraft.current, key]);
   }
 
   function handleSlotDrop(slotIndex: number) {
     if (dragSource) {
       if (dragSource.from === "slot") {
-        const fromIndex = displayAwards.indexOf(dragSource.key);
+        const fromIndex = awardsDraft.current.indexOf(dragSource.key);
         if (fromIndex !== -1 && fromIndex !== slotIndex) placeAward(dragSource.key, slotIndex, fromIndex);
       } else {
         placeAward(dragSource.key, slotIndex, null);
@@ -609,7 +648,6 @@ function EditProfileContent() {
         gt_playstation: gtPlaystation || null,
         gt_nintendo: gtNintendo || null,
         gt_pc: gtPc || null,
-        display_awards: displayAwards || null,
       };
 
       if (avatarUrl) updateData.avatar_url = avatarUrl;
@@ -1518,7 +1556,7 @@ function EditProfileContent() {
                   <div className="box-title">Top 6 Awards (shown on your profile)</div>
                   <div className="box-body">
                     <div className="notice">
-                      Drag awards from the list below into a slot, drag between slots to reorder, or drag a slot back to the list to remove it. Slot 1 is shown first on your profile.
+                      Drag awards into a slot, reorder them, or remove them. Your changes save automatically. Slot 1 is shown first on your profile.
                     </div>
                     <div className="award-slots">
                       {Array.from({ length: 6 }).map((_, idx) => {
@@ -1552,8 +1590,8 @@ function EditProfileContent() {
                       })}
                     </div>
                     <div className="save-row">
-                      <button className="save-button" type="button" onClick={handleSave}>Save Awards</button>
-                      {savedMessage && <div className="saved-message">{savedMessage}</div>}
+                      {awardSaveStatus.message && <div role={awardSaveStatus.state === "error" ? "alert" : "status"} className="saved-message">{awardSaveStatus.message}</div>}
+                      {awardsReady && awardSaveStatus.state === "error" && <button className="save-button" type="button" onClick={() => saveAwardSlots(awardsDraft.current)}>Retry saving</button>}
                     </div>
                   </div>
                 </div>
@@ -1563,7 +1601,7 @@ function EditProfileContent() {
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
-                    if (dragSource?.from === "slot") removeAwardAt(displayAwards.indexOf(dragSource.key));
+                    if (dragSource?.from === "slot") removeAwardAt(awardsDraft.current.indexOf(dragSource.key));
                     setDragSource(null);
                     setDragOverSlot(null);
                   }}

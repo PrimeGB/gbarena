@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
 import { hasNewTrophy } from "./NewTrophyArt";
@@ -14,10 +14,20 @@ type PublicAward = {
   auto?: boolean;
 };
 
+const communityPreview: PublicAward[] = [
+  { name: "Community Origin", award_group: "Community", purpose: "Part of the community from the very beginning.", auto: true },
+  { name: "Community Pioneer", award_group: "Community", purpose: "Part of the community early on.", auto: true },
+  { name: "Community Trailblazer", award_group: "Community", purpose: "Part of the community in its early days.", auto: true },
+];
+const subscribePreview = () => () => {};
+const getPreview = () => process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "community";
+const getServerPreview = () => false;
+
 export default function AwardsPage() {
   const [catalog, setCatalog] = useState<PublicAward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const preview = useSyncExternalStore(subscribePreview, getPreview, getServerPreview);
 
   useEffect(() => {
     let mounted = true;
@@ -57,6 +67,11 @@ export default function AwardsPage() {
         </header>
         {error && <p role="alert" style={styles.error}>{error}</p>}
         <section style={styles.content}>
+          {preview && <section>
+            <h2 style={styles.sectionTitle}>Early community awards — example preview</h2>
+            <p style={styles.text}>Preview only. These examples do not grant awards.</p>
+            <div style={styles.catalog}>{communityPreview.map((award) => <AwardCard award={award} key={award.name} />)}</div>
+          </section>}
           {!loading && catalog.some((award) => hasNewTrophy(award.name)) && (
             <section>
               <h2 style={styles.sectionTitle}>New trophies</h2>
