@@ -1,4 +1,6 @@
-import Link from "next/link";
+import Image from "next/image";
+import CompactTopBar from "../components/CompactTopBar";
+
 export default function AboutPage() {
   return (
     <>
@@ -20,24 +22,8 @@ export default function AboutPage() {
         }
 
         .wrapper{
-          width:1100px;
+          width:min(1100px, calc(100% - 28px));
           margin:0 auto;
-        }
-
-        .top-strip{
-          height:22px;
-          background:linear-gradient(to bottom,#c40000,#6a0000);
-          border-bottom:1px solid #140000;
-          display:flex;
-          align-items:center;
-          padding:0 12px;
-        }
-
-        .top-strip a{
-          color:#fff;
-          font-size:10px;
-          margin-right:14px;
-          font-weight:bold;
         }
 
         .header{
@@ -57,32 +43,11 @@ export default function AboutPage() {
           gap:10px;
         }
 
-        .controller-mark{
-          width:68px;
-          height:40px;
-          background:linear-gradient(to bottom,#1b4c78,#07111b);
-          border:1px solid #6aa9e8;
-          border-radius:22px;
-          position:relative;
-        }
-
-        .controller-mark:before{
-          content:"+";
-          position:absolute;
-          left:12px;
-          top:8px;
-          color:#f2c14e;
-          font-size:18px;
-          font-weight:bold;
-        }
-
-        .controller-mark:after{
-          content:"● ●";
-          position:absolute;
-          right:10px;
-          top:12px;
-          color:#f2c14e;
-          font-size:12px;
+        .about-logo{
+          width:72px;
+          height:72px;
+          object-fit:contain;
+          flex-shrink:0;
         }
 
         .logo-main{
@@ -160,20 +125,19 @@ export default function AboutPage() {
           font-size:10px;
         }
 
+        @media(max-width:480px){
+          .logo-main{font-size:24px;}
+          .content{padding:16px;}
+        }
       `}</style>
 
-      <div className="top-strip">
-        <Link href="/">Home</Link>
-        <Link href="/forums">Forums</Link>
-        <Link href="/support">Support</Link>
-      </div>
-
       <div className="wrapper">
+        <CompactTopBar />
 
         <header className="header">
 
           <div className="logo-area">
-            <div className="controller-mark"></div>
+            <Image className="about-logo" src="/logo-emblem.png" alt="" width={72} height={72} loading="eager" />
 
             <div>
               <div className="logo-main">GameBattles</div>
@@ -260,7 +224,7 @@ export default function AboutPage() {
               </p>
 
               <p>
-                Any references to the "golden era" of gaming are purely for
+                Any references to the &quot;golden era&quot; of gaming are purely for
                 nostalgic and community discussion purposes. This project exists
                 only to celebrate competitive gaming culture and build a fun
                 community-driven platform for players.
