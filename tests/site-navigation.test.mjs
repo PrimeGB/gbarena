@@ -79,3 +79,13 @@ test("game and ladder pages do not render the old members and top rankings bar",
   assert.match(markup, /Nintendo Fortnite Ladders/);
   assert.match(markup, /Current Ladder Rankings/);
 });
+
+test("other player actions omit gaming accounts and home while keeping player links", () => {
+  const source = readFileSync("app/profile/page.tsx", "utf8");
+  const actions = source.slice(source.indexOf('{isViewingOwnProfile ? "Control Center" : "Player Actions"}'), source.indexOf("{isViewingOwnProfile && <ProfileFollowingFeed />"));
+  assert.doesNotMatch(actions, /View Player Gaming Accounts|Back To Home/);
+  assert.match(actions, /View Player Awards/);
+  assert.match(actions, /View Player Friends/);
+  assert.match(actions, /View Player Teams/);
+  assert.match(actions, /View Player Stats/);
+});

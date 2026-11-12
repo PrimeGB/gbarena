@@ -1969,10 +1969,6 @@ function ProfilePageContent() {
     View Player Friends
   </a>
 
-  <Link className="quick-link" href={`/profile/gaming-accounts?userId=${encodeURIComponent(viewedUserId)}`}>
-    View Player Gaming Accounts
-  </Link>
-
   <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>
     View Player Teams
   </a>
@@ -1983,9 +1979,6 @@ function ProfilePageContent() {
     </Link>
   )}
 
-  <a className="quick-link" href="/home">
-    Back To Home
-  </a>
 </>
                     )}
                   </div>
