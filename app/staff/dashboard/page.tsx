@@ -664,14 +664,12 @@ export default function StaffDashboardPage() {
                 </p>
                 <form className="staff-mobile-form staff-management-form" onSubmit={assignStaffMember} style={styles.form}>
                   <div className="staff-management-step">
-                    <span className="staff-management-step-number">01</span>
                     <div className="staff-management-step-content">
                       <label style={styles.label}>Find a player</label>
                       <StaffPlayerPicker value={username} onChange={setUsername} />
                     </div>
                   </div>
                   <div className="staff-management-step">
-                    <span className="staff-management-step-number">02</span>
                     <div className="staff-management-step-content">
                   <label style={styles.label}>
                     Choose a rank
@@ -688,7 +686,6 @@ export default function StaffDashboardPage() {
                     </div>
                   </div>
                   <div className="staff-management-step">
-                    <span className="staff-management-step-number">03</span>
                     <div className="staff-management-step-content">
                   <label style={styles.label}>
                     Reason for rank change
@@ -728,6 +725,8 @@ export default function StaffDashboardPage() {
                 {staff.length === 0 ? (
                   <p style={styles.help}>No staff assignments have been created yet.</p>
                 ) : (
+                <>
+                <div className="staff-management-list-heading" aria-hidden="true"><span>Staff member</span><span>Role</span></div>
                 <div className="staff-mobile-list staff-management-list" style={styles.staffList}>
                   {staff.map((member) => (
                     <article key={member.user_id} className="staff-management-member" style={styles.staffCard}>
@@ -798,6 +797,7 @@ export default function StaffDashboardPage() {
                     </article>
                   ))}
                 </div>
+                </>
                 )}
               </section>
             )}
