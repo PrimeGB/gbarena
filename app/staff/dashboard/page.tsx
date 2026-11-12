@@ -157,9 +157,8 @@ export default function StaffDashboardPage() {
     can("team_enforcement") && { key: "team_names", title: "Team name requests", description: "Review requests and apply approved team name changes.", cta: "Open requests", href: "/staff/team-names" },
     can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only an Owner sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
     can("credit_management") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
-    can("manage_staff") && { key: "access", title: "Assign staff access", description: "Manage the roles within your authority. Every change is recorded.", cta: "Open work area", view: "access" },
-    can("staff_directory") && { key: "staff_directory", title: "Trusted staff roster", description: "Review staff positions, duties, and rank assignments.", cta: "Manage directory details", view: "roster" },
-    can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
+    (can("manage_staff") || can("staff_directory")) && { key: "access", title: "Staff management", description: "Manage staff access, positions, and duties in one place. Every change is recorded.", cta: "Manage staff", view: "access" },
+    role !== "admin" && can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
     can("staff_access") && { key: "site_requests", title: "Site change requests", description: "Propose site changes for Owner review.", cta: "Open requests", href: "/staff/site-requests" },
     { key: "role_guide", title: "Staff roles and access", description: "See the full role and permission breakdown.", cta: "View the breakdown", href: "/staff/role-guide" },
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
@@ -458,8 +457,8 @@ export default function StaffDashboardPage() {
               {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
               {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/moderation">Moderation</Link>}
               {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
-              {(isOwner || permissions.includes("staff_directory")) && (
-                <a href={viewHashes.roster}>Staff roster</a>
+              {(can("manage_staff") || can("staff_directory")) && (
+                <a href={viewHashes.access}>Staff management</a>
               )}
             </>
           )}
@@ -650,7 +649,7 @@ export default function StaffDashboardPage() {
               )}
             </section>
             )}
-            {view === "access" && can("manage_staff") && (
+            {(view === "access" || view === "roster") && can("manage_staff") && (
               <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
                 <p style={styles.help}>
@@ -713,7 +712,7 @@ export default function StaffDashboardPage() {
               </section>
             )}
 
-            {view === "roster" && (isOwner || permissions.length > 0) && (
+            {(view === "access" || view === "roster") && (isOwner || permissions.length > 0) && (
               <section className="staff-mobile-section" style={styles.section}>
                 <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
                 {staff.length === 0 ? (

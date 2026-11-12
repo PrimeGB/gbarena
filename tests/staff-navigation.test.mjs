@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 
-function renderDashboard(hash) {
+function renderDashboard(hash, role = "owner", permissions = ["staff_reports"]) {
   const previousWindow = globalThis.window;
   const listeners = new Set();
   globalThis.window = {
@@ -26,7 +26,7 @@ function renderDashboard(hash) {
   };
   const user = { id: "owner", email: "owner@example.test" };
   const states = [
-    "owner", ["staff_reports"], [], { recent_actions: [{ action: "example_action", target_type: "example", actor_username: "Staff", created_at: "2026-01-01", reason: "Example" }] },
+    role, permissions, [], { recent_actions: [{ action: "example_action", target_type: "example", actor_username: "Staff", created_at: "2026-01-01", reason: "Example" }] },
     [], true, false, "owner:owner@example.test",
   ];
   let stateIndex = 0;
@@ -68,7 +68,8 @@ test("staff work areas use browser history links and restore views from the URL"
   const home = renderDashboard("");
   assert.match(home.markup, /href="#staff-access"/);
   assert.match(home.markup, /href="#reports-inbox"/);
-  assert.match(home.markup, /href="#staff-directory"/);
+  assert.match(home.markup, /Staff management/);
+  assert.doesNotMatch(home.markup, /<h3[^>]*>Trusted staff roster<\/h3>/);
   assert.match(home.markup, /href="#staff-audit"/);
   assert.equal(home.notifications, 1);
   assert.equal(home.remainingListeners, 0);
@@ -87,6 +88,30 @@ test("staff work areas use browser history links and restore views from the URL"
       assert.match(markup, /href="#staff-work-areas"[^>]*>← Back to work areas/);
     }
   }
+
+  for (const hash of ["#staff-access", "#staff-directory"]) {
+    const { markup } = renderDashboard(hash);
+    assert.match(markup, /<h2[^>]*>Assign staff access<\/h2>/);
+    assert.match(markup, /<h2[^>]*>Trusted staff roster<\/h2>/);
+  }
+});
+
+test("administrators grant awards directly while other staff can recommend them", () => {
+  const admin = renderDashboard("", "admin", ["awards", "award_recommendation"]).markup;
+  assert.match(admin, /Awards management/);
+  assert.doesNotMatch(admin, /Recommend an award/);
+
+  for (const role of ["staff", "referee"]) {
+    const markup = renderDashboard("", role, ["award_recommendation"]).markup;
+    assert.match(markup, /Recommend an award/);
+    assert.doesNotMatch(markup, /Awards management/);
+  }
+});
+
+test("credit management appears for administrators only when granted", () => {
+  const permissions = ["awards", "award_recommendation"];
+  assert.doesNotMatch(renderDashboard("", "admin", permissions).markup, /<h3[^>]*>Credits<\/h3>/);
+  assert.match(renderDashboard("", "admin", [...permissions, "credit_management"]).markup, /<h3[^>]*>Credits<\/h3>/);
 });
 
 test("forum reports return to the staff dashboard", () => {
