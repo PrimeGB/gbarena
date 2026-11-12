@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "../../awards/AwardArt";
+import AwardDetailsDialog, { type EarnedAwardDetails } from "../../components/AwardDetailsDialog";
 
 type PlayerAward = {
   id: number;
@@ -32,6 +33,7 @@ function PlayerAwardsContent() {
   const viewedUserId = requestedUserId || user?.id || "";
   const [username, setUsername] = useState("");
   const [awards, setAwards] = useState<PlayerAward[]>([]);
+  const [selectedAward, setSelectedAward] = useState<{ playerId: string; award: EarnedAwardDetails } | null>(null);
   const [referralProgress, setReferralProgress] = useState<ReferralProgress | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
   const [ready, setReady] = useState(false);
@@ -65,7 +67,7 @@ function PlayerAwardsContent() {
       if (cancelled) return;
       setUsername(profile.username);
       if (awardsError) setError(`Awards could not be loaded: ${awardsError.message}`);
-      else setAwards((data || []) as PlayerAward[]);
+      else setAwards(((data || []) as PlayerAward[]).filter((award) => !award.revoked_at));
       setReady(true);
     }
 
@@ -119,6 +121,8 @@ function PlayerAwardsContent() {
         .pa-sub,.pa-empty{color:#a9c3db;font-size:13px}
         .pa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:20px 0}
         .pa-card{padding:12px;border:1px solid #244b70;background:#050b12;text-align:center;line-height:1.55}
+        .pa-card-button{position:absolute;inset:0;z-index:1;width:100%;border:0;background:transparent;cursor:pointer}
+        .pa-card-button:focus-visible{outline:2px solid #80c8ff;outline-offset:-3px}
         .pa-name{color:#fff;font-size:14px}
         .pa-group{margin:4px 0 6px;color:#f2c14e;font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
         .pa-meta{margin:6px 0 0;color:#a9c3db;font-size:11px}
@@ -192,9 +196,11 @@ function PlayerAwardsContent() {
               <p className="pa-group">{award.award_group}</p>
               {award.reason && <p className="pa-meta">{award.reason}</p>}
               <p className="pa-meta">Awarded {new Date(award.granted_at).toLocaleDateString()}</p>
+              <button className="pa-card-button" type="button" aria-label={`View ${award.name} details`} aria-haspopup="dialog" onClick={() => setSelectedAward({ playerId: viewedUserId, award })} />
             </article>
           ))}
         </section>
+        <AwardDetailsDialog award={selectedAward?.playerId === viewedUserId ? selectedAward.award : null} playerName={username} onClose={() => setSelectedAward(null)} />
       </div>
     </main>
   );

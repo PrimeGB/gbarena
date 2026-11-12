@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
 import FollowButton from "../components/FollowButton";
 import ProfileFollowingFeed from "../components/ProfileFollowingFeed";
+import AwardDetailsDialog, { type EarnedAwardDetails } from "../components/AwardDetailsDialog";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
@@ -121,6 +122,7 @@ function ProfilePageContent() {
   const [friendsResult, setFriendsResult] = useState<{ userId: string; friends: TopFriend[]; private: boolean; error: string } | null>(null);
   const currentFriends = friendsResult?.userId === viewedUserId ? friendsResult : null;
   const [earnedAwards, setEarnedAwards] = useState<AwardHistoryEntry[]>([]);
+  const [selectedAward, setSelectedAward] = useState<{ playerId: string; award: EarnedAwardDetails } | null>(null);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1567,6 +1569,8 @@ function ProfilePageContent() {
         .pf-section-title::after{ content:""; flex:1; height:1px; background:#244b70; }
         .pf-award-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
         .pf-award{ text-align:center; position:relative; padding:2px 0 0; }
+        .pf-award-trigger{ position:absolute; inset:0; z-index:3; width:100%; border:0; background:transparent; cursor:pointer; }
+        .pf-award-trigger:focus-visible{ outline:2px solid #80c8ff; outline-offset:2px; }
         .pf-award-art{ height:104px; display:flex; align-items:flex-end; justify-content:center; position:relative; transition:transform .25s; }
         .pf-award-art .award-art,.pf-award-art .award-sprite{ width:auto; max-width:100%; height:104px!important; overflow:visible; animation:pfFloat 4s ease-in-out infinite; filter:saturate(.82) contrast(1.12) brightness(.92) drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
         .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite{ animation-delay:-1.3s; }
@@ -2020,9 +2024,26 @@ function ProfilePageContent() {
                           )}
                         </div>
                         <div className="pf-award-name">{award.label === "★" ? award.name : "Locked"}</div>
+                        {chosenAwards[awardIndex] && (
+                          <button
+                            className="pf-award-trigger"
+                            type="button"
+                            aria-label={`View ${award.name} details`}
+                            aria-haspopup="dialog"
+                            onClick={() => {
+                              const earned = chosenAwards[awardIndex];
+                              if (earned) setSelectedAward({ playerId: viewedUserId, award: earned });
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
+                  <AwardDetailsDialog
+                    award={selectedAward?.playerId === viewedUserId ? selectedAward.award : null}
+                    playerName={playerName}
+                    onClose={() => setSelectedAward(null)}
+                  />
                 </div>
 
                 <div className="pf-section">

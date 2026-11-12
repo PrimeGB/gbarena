@@ -11,7 +11,9 @@ import {
 } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
+import StaffPlayerPicker from "./StaffPlayerPicker";
 import "../staff-responsive.css";
+import "./staff-management.css";
 
 type PermissionKey =
   | "match_review"
@@ -66,6 +68,12 @@ const rankNames: Record<string, string> = {
   staff: "Moderator",
   referee: "Referee",
   member: "User",
+};
+
+const rankDuties: Record<Exclude<StaffRank, "member">, string> = {
+  staff: "Help players, review reports, and moderate the community.",
+  referee: "Review match evidence and make fair decisions on disputed results.",
+  admin: "Manage staff and oversee reports, moderation, awards, and site operations.",
 };
 
 type DashboardOverview = {
@@ -135,7 +143,6 @@ export default function StaffDashboardPage() {
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [username, setUsername] = useState("");
-  const [duties, setDuties] = useState("");
   const [staffRank, setStaffRank] = useState<StaffRank>("staff");
   const [rankReason, setRankReason] = useState("");
   const [creditUsername, setCreditUsername] = useState("");
@@ -286,10 +293,6 @@ export default function StaffDashboardPage() {
       setError("Enter an existing account username.");
       return;
     }
-    if (staffRank !== "member" && !duties.trim()) {
-      setError("Enter a duty description.");
-      return;
-    }
     if (rankReason.trim().length < 10) {
       setError("Enter a reason of at least 10 characters for the rank assignment.");
       return;
@@ -300,7 +303,7 @@ export default function StaffDashboardPage() {
       target_username: username.trim(),
       target_role: staffRank,
       staff_position: staffRank === "member" ? "" : rankNames[staffRank],
-      staff_duties: staffRank === "member" ? "" : duties.trim(),
+      staff_duties: staffRank === "member" ? "" : rankDuties[staffRank],
       decision_reason: rankReason.trim(),
     });
     setSaving(false);
@@ -311,7 +314,6 @@ export default function StaffDashboardPage() {
     }
 
     setUsername("");
-    setDuties("");
     setRankReason("");
     setStaffRank("staff");
     setNotice("Staff rank and audit entry saved.");
@@ -640,26 +642,39 @@ export default function StaffDashboardPage() {
               )}
             </section>
             )}
-            {(view === "access" || view === "roster") && can("manage_staff") && (
+            {(view === "access" || view === "roster") && (
+            <div className="staff-management">
+              <div className="staff-management-heading">
+                <div>
+                  <p>TEAM ACCESS</p>
+                  <h2>Staff management</h2>
+                  <span>Find a player, choose their role, and keep your team organized.</span>
+                </div>
+                <div className="staff-management-count">
+                  <strong>{staff.length}</strong><span>Staff members</span>
+                </div>
+              </div>
+              <div className="staff-management-grid">
+            {can("manage_staff") && (
               <section id="staff-access" className="staff-mobile-section" style={styles.section}>
                 <h2 style={styles.sectionTitle}>Assign staff access</h2>
-                <p style={styles.help}>
-                  Founders manage Administrators. Administrators may manage Moderators and Referees only.
-                  Every change requires a reason and is recorded.
+                <p className="staff-management-help">
+                  {isOwner ? "Assign a role or remove access from an existing account." : "Manage Moderator and Referee access."}
+                  {" "}Every change needs a reason and is recorded.
                 </p>
-                <form className="staff-mobile-form" onSubmit={assignStaffMember} style={styles.form}>
+                <form className="staff-mobile-form staff-management-form" onSubmit={assignStaffMember} style={styles.form}>
+                  <div className="staff-management-step">
+                    <span className="staff-management-step-number">01</span>
+                    <div className="staff-management-step-content">
+                      <label style={styles.label}>Find a player</label>
+                      <StaffPlayerPicker value={username} onChange={setUsername} />
+                    </div>
+                  </div>
+                  <div className="staff-management-step">
+                    <span className="staff-management-step-number">02</span>
+                    <div className="staff-management-step-content">
                   <label style={styles.label}>
-                    Existing account username
-                    <input
-                      autoComplete="off"
-                      value={username}
-                      onChange={(event) => setUsername(event.target.value)}
-                      style={styles.input}
-                      required
-                    />
-                  </label>
-                  <label style={styles.label}>
-                    Rank
+                    Choose a rank
                     <select value={staffRank} onChange={(event) => setStaffRank(event.target.value as StaffRank)} style={styles.input}>
                       <option value="member">User — remove staff access</option>
                       <option value="staff">Moderator</option>
@@ -668,26 +683,28 @@ export default function StaffDashboardPage() {
                     </select>
                   </label>
                   {staffRank !== "member" && (
-                    <>
-                      <label style={styles.label}>
-                        Duties
-                        <textarea maxLength={400} value={duties} onChange={(event) => setDuties(event.target.value)} style={styles.input} rows={3} required />
-                      </label>
-                    </>
+                    <div className="staff-management-role-info"><strong>{rankNames[staffRank]}</strong><span>{rankDuties[staffRank]}</span></div>
                   )}
+                    </div>
+                  </div>
+                  <div className="staff-management-step">
+                    <span className="staff-management-step-number">03</span>
+                    <div className="staff-management-step-content">
                   <label style={styles.label}>
                     Reason for rank change
-                    <textarea maxLength={1000} minLength={10} value={rankReason} onChange={(event) => setRankReason(event.target.value)} style={styles.input} rows={2} required />
+                    <textarea maxLength={1000} minLength={10} value={rankReason} onChange={(event) => setRankReason(event.target.value)} placeholder="Explain this change (at least 10 characters)" style={styles.input} rows={2} required />
                   </label>
+                    </div>
+                  </div>
                   <button type="submit" disabled={saving} style={styles.button}>
-                    {saving ? "Saving..." : "Save rank change"}
+                    {saving ? "Saving..." : "Apply rank change"}
                   </button>
                 </form>
                 {isOwner && (
-                  <div style={styles.form}>
-                    <h3 style={styles.cardTitle}>Administrator credit access</h3>
-                    <p style={styles.help}>Only a Founder can grant or remove this ongoing access. It permits manual credit changes and tournament prize payouts.</p>
-                    <p style={styles.help}>Currently authorized: {staff.filter((member) => creditGrants.includes(member.user_id)).map((member) => member.username).join(", ") || "None"}</p>
+                  <details className="staff-management-credit">
+                    <summary><span><strong>Administrator credit access</strong><small>Currently authorized: {staff.filter((member) => creditGrants.includes(member.user_id)).map((member) => member.username).join(", ") || "None"}</small></span><span aria-hidden="true">+</span></summary>
+                    <div className="staff-management-credit-body" style={styles.form}>
+                    <p className="staff-management-help">Only a Founder can grant or remove this ongoing access. It permits manual credit changes and tournament prize payouts.</p>
                     <label style={styles.label}>Administrator username
                       <input value={creditUsername} onChange={(event) => setCreditUsername(event.target.value)} style={styles.input} />
                     </label>
@@ -698,21 +715,31 @@ export default function StaffDashboardPage() {
                       <button type="button" onClick={() => setCreditAccess(true)} style={styles.secondaryButton}>Grant credit access</button>{" "}
                       <button type="button" onClick={() => setCreditAccess(false)} style={styles.removeButton}>Remove credit access</button>
                     </div>
-                  </div>
+                    </div>
+                  </details>
                 )}
               </section>
             )}
 
-            {(view === "access" || view === "roster") && (isOwner || permissions.length > 0) && (
-              <section className="staff-mobile-section" style={styles.section}>
+            {(isOwner || permissions.length > 0) && (
+              <section className="staff-mobile-section staff-management-roster" style={styles.section}>
                 <h2 id="staff-directory" style={styles.sectionTitle}>Trusted staff roster</h2>
+                <p className="staff-management-help">Your current staff and their responsibilities.</p>
                 {staff.length === 0 ? (
                   <p style={styles.help}>No staff assignments have been created yet.</p>
                 ) : (
-                <div className="staff-mobile-list" style={styles.staffList}>
+                <div className="staff-mobile-list staff-management-list" style={styles.staffList}>
                   {staff.map((member) => (
-                    <article key={member.user_id} style={styles.staffCard}>
-                      {canEditDirectory && canManageStaffMember(member) ? (
+                    <article key={member.user_id} className="staff-management-member" style={styles.staffCard}>
+                      <div className="staff-management-member-head">
+                        <strong>{member.username}</strong>
+                        <span>{member.is_owner ? "Founder" : member.position}</span>
+                      </div>
+                      {member.duties && <p className="staff-management-duties">{member.duties}</p>}
+                      {canManageStaffMember(member) && (canEditDirectory || can("manage_staff")) ? (
+                        <details className="staff-management-editor">
+                        <summary>Manage {member.username}</summary>
+                        {canEditDirectory && (
                         <form
                           onSubmit={(event) =>
                             updateDirectoryEntry(event, member.username)
@@ -720,7 +747,6 @@ export default function StaffDashboardPage() {
                           className="staff-mobile-form"
                           style={styles.form}
                         >
-                          <strong style={styles.cardTitle}>{member.username}</strong>
                           <label style={styles.label}>
                             Position
                             <input
@@ -757,14 +783,7 @@ export default function StaffDashboardPage() {
                             Save directory details
                           </button>
                         </form>
-                      ) : (
-                        <>
-                          <strong style={styles.cardTitle}>
-                            {member.is_owner ? "Founder" : member.position} — {member.username}
-                          </strong>
-                          <p style={styles.cardText}>{member.duties}</p>
-                        </>
-                      )}
+                        )}
                       {can("manage_staff") && canManageStaffMember(member) && (
                         <button
                           type="button"
@@ -774,11 +793,16 @@ export default function StaffDashboardPage() {
                           Remove staff access
                         </button>
                       )}
+                        </details>
+                      ) : null}
                     </article>
                   ))}
                 </div>
                 )}
               </section>
+            )}
+              </div>
+            </div>
             )}
           </>
         )}

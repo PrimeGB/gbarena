@@ -1,0 +1,344 @@
+.staff-management {
+  margin: 0 20px 20px;
+}
+
+.staff-management-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 22px;
+  border: 1px solid #31546c;
+  border-left: 4px solid #e14444;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #173449, #0d1d2b);
+}
+
+.staff-management-heading p {
+  margin: 0 0 5px;
+  color: #f48d8d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.staff-management-heading h2 {
+  margin: 0 0 5px;
+  color: #fff;
+  font-size: 23px;
+  line-height: 1.15;
+}
+
+.staff-management-heading > div > span {
+  color: #b7cfe0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.staff-management-count {
+  display: grid;
+  flex: none;
+  gap: 3px;
+  min-width: 100px;
+  padding: 10px 14px;
+  border: 1px solid #3a647e;
+  border-radius: 6px;
+  background: #0a1a28;
+  text-align: center;
+}
+
+.staff-management-count strong {
+  color: #fff;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.staff-management-count span {
+  color: #b7cfe0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.staff-management-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+  align-items: start;
+}
+
+.staff-management-grid > :only-child {
+  grid-column: 1 / -1;
+}
+
+.staff-portal-page .staff-management .staff-mobile-section {
+  min-width: 0;
+  margin: 0;
+  padding: 20px !important;
+  border-radius: 8px;
+}
+
+.staff-portal-page .staff-management .staff-mobile-section > h2 {
+  margin: 0 0 10px !important;
+  color: #fff !important;
+  font-size: 17px !important;
+  letter-spacing: .02em !important;
+}
+
+.staff-management-help {
+  margin: 0;
+  color: #abc2d4;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.staff-portal-page .staff-management .staff-management-form {
+  gap: 16px !important;
+  margin-top: 16px;
+}
+
+.staff-management-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.staff-management-step-number {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid #a93c43;
+  border-radius: 5px;
+  background: #441c25;
+  color: #ffb6b6;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.staff-management-step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-management-step-content > label {
+  margin-bottom: 8px;
+}
+
+.staff-player-picker {
+  position: relative;
+}
+
+.staff-portal-page .staff-player-picker input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.staff-player-picker ul {
+  position: absolute;
+  z-index: 4;
+  top: 100%;
+  right: 0;
+  left: 0;
+  max-height: 240px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 4px;
+  border: 1px solid #49718b;
+  border-radius: 6px;
+  background: #0a1926;
+  box-shadow: 0 12px 24px #000b;
+  list-style: none;
+}
+
+.staff-player-picker li {
+  padding: 10px;
+  border-radius: 4px;
+  color: #e7f3fb;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.staff-player-picker li[aria-selected="true"],
+.staff-player-picker li:hover {
+  background: #21465e;
+}
+
+.staff-player-status {
+  margin: 7px 0 0;
+  color: #f6b6a9;
+  font-size: 12px;
+}
+
+.staff-management-role-info {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid #599ed0;
+  border-radius: 3px;
+  background: #142a3a;
+  color: #b7cfe0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.staff-management-role-info strong {
+  color: #fff;
+  font-size: 12px;
+}
+
+.staff-portal-page .staff-management-form > button {
+  border: 1px solid #e75a5a !important;
+  background: linear-gradient(#b53139, #7d1b25) !important;
+  color: #fff !important;
+}
+
+.staff-portal-page .staff-management textarea {
+  min-height: 58px;
+}
+
+.staff-portal-page .staff-management input:focus,
+.staff-portal-page .staff-management select:focus,
+.staff-portal-page .staff-management textarea:focus,
+.staff-management summary:focus-visible {
+  outline: 2px solid #80c8ff;
+  outline-offset: 2px;
+}
+
+.staff-management-credit {
+  margin-top: 18px;
+  border: 1px solid #36566c;
+  border-radius: 6px;
+  background: #0b1b28;
+}
+
+.staff-management-credit summary,
+.staff-management-editor summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  color: #d6ebfa;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.staff-management-credit summary::-webkit-details-marker,
+.staff-management-editor summary::-webkit-details-marker {
+  display: none;
+}
+
+.staff-management-credit summary strong,
+.staff-management-credit summary small {
+  display: block;
+}
+
+.staff-management-credit summary small {
+  margin-top: 3px;
+  color: #9db8cb;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.staff-management-credit summary > span:last-child {
+  color: #8bc6eb;
+  font-size: 20px;
+}
+
+.staff-management-credit[open] summary > span:last-child {
+  transform: rotate(45deg);
+}
+
+.staff-management-credit-body {
+  padding: 0 12px 12px;
+}
+
+.staff-management-list {
+  margin-top: 16px;
+}
+
+.staff-portal-page .staff-management-list > .staff-management-member {
+  padding: 13px !important;
+  border-color: #315169 !important;
+  background: #0a1a27 !important;
+}
+
+.staff-management-member-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.staff-management-member-head strong {
+  min-width: 0;
+  color: #fff;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.staff-management-member-head span {
+  flex: none;
+  padding: 5px 8px;
+  border: 1px solid #3e7390;
+  border-radius: 4px;
+  background: #18374a;
+  color: #b8e3ff;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.staff-management-duties {
+  margin: 9px 0 0;
+  color: #b7cfe0;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.staff-management-editor {
+  margin-top: 10px;
+  border-top: 1px solid #294457;
+}
+
+.staff-management-editor summary {
+  padding: 10px 0 0;
+  color: #84cafa;
+}
+
+.staff-management-editor summary::after {
+  content: "+";
+  font-size: 17px;
+}
+
+.staff-management-editor[open] summary::after {
+  content: "−";
+}
+
+@media (max-width: 700px) {
+  .staff-management {
+    margin: 0 12px 16px;
+  }
+
+  .staff-management-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staff-management-heading {
+    padding: 15px;
+  }
+
+  .staff-management-count {
+    min-width: 76px;
+    padding: 8px;
+  }
+}

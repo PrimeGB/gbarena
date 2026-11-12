@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 
-function renderDashboard(hash, role = "owner", permissions = ["staff_reports"]) {
+function renderDashboard(hash, role = "owner", permissions = ["staff_reports"], staff = []) {
   const previousWindow = globalThis.window;
   const listeners = new Set();
   globalThis.window = {
@@ -26,7 +26,7 @@ function renderDashboard(hash, role = "owner", permissions = ["staff_reports"]) 
   };
   const user = { id: "owner", email: "owner@example.test" };
   const states = [
-    role, permissions, [], { recent_actions: [{ action: "example_action", target_type: "example", actor_username: "Staff", created_at: "2026-01-01", reason: "Example" }] },
+    role, permissions, staff, { recent_actions: [{ action: "example_action", target_type: "example", actor_username: "Staff", created_at: "2026-01-01", reason: "Example" }] },
     [], true, false, "owner:owner@example.test",
   ];
   let stateIndex = 0;
@@ -49,6 +49,7 @@ function renderDashboard(hash, role = "owner", permissions = ["staff_reports"]) 
     }
     if (name.endsWith("/useUser")) return { useUser: () => ({ user, loading: false }) };
     if (name.endsWith("/supabase")) return { supabase: {} };
+    if (name.endsWith("/StaffPlayerPicker")) return { __esModule: true, default: () => React.createElement("input", { "aria-label": "Find a player" }) };
     if (name.endsWith(".css")) return {};
     return require(name);
   };
@@ -98,6 +99,30 @@ test("staff work areas use browser history links and restore views from the URL"
     assert.match(markup, /<h2[^>]*>Assign staff access<\/h2>/);
     assert.match(markup, /<h2[^>]*>Trusted staff roster<\/h2>/);
   }
+});
+
+test("staff management keeps editing controls collapsed and respects role boundaries", () => {
+  const staff = [
+    { user_id: "founder", username: "FounderUser", position: "Founder", duties: "Leads the site", is_owner: true },
+    { user_id: "admin", username: "AdminUser", position: "Administrator", duties: "Manages staff", is_owner: false },
+    { user_id: "moderator", username: "ModUser", position: "Moderator", duties: "Helps players", is_owner: false },
+  ];
+  const founder = renderDashboard("#staff-access", "owner", [], staff).markup;
+  assert.match(founder, /<details class="staff-management-credit">/);
+  assert.match(founder, /Currently authorized: None/);
+  assert.match(founder, /Help players, review reports, and moderate the community/);
+  assert.doesNotMatch(founder, /What will this staff member do\?/);
+  assert.match(founder, /<details class="staff-management-editor"><summary>Manage AdminUser<\/summary>/);
+  assert.match(founder, /<details class="staff-management-editor"><summary>Manage ModUser<\/summary>/);
+  assert.doesNotMatch(founder, /Manage FounderUser/);
+
+  const admin = renderDashboard("#staff-access", "admin", ["manage_staff", "staff_directory"], staff).markup;
+  assert.doesNotMatch(admin, /staff-management-credit|Manage FounderUser|Manage AdminUser/);
+  assert.match(admin, /<details class="staff-management-editor"><summary>Manage ModUser<\/summary>/);
+  assert.doesNotMatch(admin, /<option value="admin"/);
+  assert.match(admin, /Reason for rank change/);
+  assert.match(admin, /Reason for directory change/);
+  assert.match(admin, /Remove staff access/);
 });
 
 test("administrators grant awards directly while other staff can recommend them", () => {
