@@ -1,13 +1,12 @@
-import Link from "next/link";
+import CompactTopBar from "../components/CompactTopBar";
+
 export default function RulesPage() {
   return (
     <>
       <style>{`
         body{margin:0;background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
         a{text-decoration:none;}
-        .wrapper{width:1100px;margin:0 auto;}
-        .top-strip{height:22px;background:linear-gradient(to bottom,#c40000,#6a0000);border-bottom:1px solid #140000;display:flex;align-items:center;padding:0 12px;}
-        .top-strip a{color:#fff;font-size:10px;margin-right:14px;font-weight:bold;}
+        .wrapper{width:min(1100px, calc(100% - 28px));margin:0 auto;}
         .header{height:92px;background:#0a1622;border-left:1px solid #3b7fc2;border-right:1px solid #3b7fc2;border-bottom:2px solid #4f93d6;display:flex;align-items:center;padding:0 16px;}
         .logo-main{font-size:30px;font-weight:bold;color:#eaf5ff;line-height:1;}
         .logo-sub{color:#f2c14e;font-size:10px;text-transform:uppercase;margin-top:5px;}
@@ -23,14 +22,8 @@ export default function RulesPage() {
         .footer{margin-top:8px;height:26px;background:#0a1622;border:1px solid #3b7fc2;display:flex;align-items:center;justify-content:center;color:#a9c3db;font-size:10px;}
       `}</style>
 
-      <div className="top-strip">
-        <Link href="/">Home</Link>
-        <Link href="/about">About Us</Link>
-        <Link href="/history">History</Link>
-        <Link href="/support">Support</Link>
-      </div>
-
       <div className="wrapper">
+        <CompactTopBar />
         <header className="header">
           <div>
             <div className="logo-main">GameBattles</div>
@@ -82,7 +75,7 @@ export default function RulesPage() {
             <ul>
               <li>Teams must play matches with the correct players listed on their roster.</li>
               <li>Once a match is accepted, both team rosters are locked until the match is completed or cancelled.</li>
-              <li>Every selected participant must have a saved gaming ID for that platform and game; the accepted match records and displays both teams' IDs.</li>
+              <li>Every selected participant must have a saved gaming ID for that platform and game; the accepted match records and displays both teams&apos; IDs.</li>
               <li>Players must follow the rules for the specific game, ladder, tournament, map, mode, and settings.</li>
               <li>Matches should be played fully unless both sides clearly agree to cancel or reschedule.</li>
               <li>Disputes must include clear proof such as screenshots, video, scoreboard, match ID, or messages.</li>
