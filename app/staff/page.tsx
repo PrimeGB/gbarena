@@ -97,7 +97,7 @@ export default function StaffInfoPage() {
   return (
     <main className="si-page">
       <style>{`
-        body{background:#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
+        body{background:#0b1c2b radial-gradient(ellipse at 50% 0,#173956 0,#0b1c2b 75%) fixed;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;}
         .si-page{max-width:1000px;margin:0 auto;padding:22px 16px 70px;}
         .si-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px;}
         .si-home{color:#7fb8ee;text-decoration:none;font-size:13px;}
