@@ -7,7 +7,6 @@ import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import { getGameRules } from "../../../lib/matchRules";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
-import { MatchJoinGuide, isBattlefield } from "../../components/MatchJoinGuide";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
@@ -2020,8 +2019,6 @@ export default function MatchDetailsPage() {
                     )}
                   </div>
                 </div>
-
-                <MatchJoinGuide battlefield={isBattlefield(match.category, match.game)} compact />
 
                 <div className="detail-rows match-map-details">
                   <div className="detail-row">
