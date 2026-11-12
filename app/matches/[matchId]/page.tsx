@@ -134,6 +134,11 @@ type MatchParticipant = {
   platform?: string | null;
 };
 
+type CancellationRequest = {
+  requesting_team_id: string;
+  status: "pending" | "accepted" | "denied";
+};
+
 function getMatchProofPath(proofUrl: string) {
   const marker = "/match-proofs/";
   const markerIndex = proofUrl.indexOf(marker);
@@ -274,6 +279,9 @@ export default function MatchDetailsPage() {
   const [viewerCanManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [cancellation, setCancellation] = useState<CancellationRequest | null>(null);
+  const [cancellationError, setCancellationError] = useState("");
+  const [cancellationBusy, setCancellationBusy] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeDetails, setDisputeDetails] = useState("");
@@ -294,6 +302,30 @@ export default function MatchDetailsPage() {
     const timer = setInterval(() => setClock(Date.now()), 15000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!matchId || matchId === "preview") return;
+    let active = true;
+    async function refreshCancellation() {
+      const [requestResult, matchResult] = await Promise.all([
+        supabase.from("match_cancellation_requests").select("requesting_team_id,status").eq("match_id", matchId).maybeSingle(),
+        supabase.from("matches").select("status,reporting_status,finalized").eq("id", matchId).maybeSingle(),
+      ]);
+      if (!active) return;
+      if (requestResult.error || matchResult.error) {
+        setCancellationError("Cancellation status could not be loaded: " + (requestResult.error?.message || matchResult.error?.message));
+        return;
+      }
+      setCancellationError("");
+      setCancellation(requestResult.data as CancellationRequest | null);
+      if (matchResult.data) {
+        setMatch((current) => current && current.id === matchId ? { ...current, ...matchResult.data } : current);
+      }
+    }
+    void refreshCancellation();
+    const timer = setInterval(refreshCancellation, 15000);
+    return () => { active = false; clearInterval(timer); };
+  }, [matchId]);
 
   useEffect(() => {
     if (!match?.posting_team_id || !match?.accepting_team_id || match.id === "preview") return;
@@ -382,6 +414,8 @@ export default function MatchDetailsPage() {
             .concat(["Ghost", "Raven", "Echo", "Drift"].map((u, i) => ({ id: `b${i}`, team_id: "t2", team_name_at_match: "Ghost Ops", username_at_match: u, account_id_at_match: `${u}#20${i}` })))
         );
         setTeamRanks({ t1: 2, t2: 3 });
+        setUserTeamId("t1");
+        setCanManageMatch(true);
         setLoading(false);
         return;
       }
@@ -389,7 +423,6 @@ export default function MatchDetailsPage() {
         .from("matches")
         .select("*")
         .eq("id", matchId)
-        .neq("status", "cancelled")
         .maybeSingle();
 
       if (matchError) {
@@ -635,6 +668,7 @@ export default function MatchDetailsPage() {
   const canReportScore = reportOpensAt !== null && clock >= reportOpensAt;
   const isDisputed = rawStatus === "disputed";
   const isCompleted = rawStatus === "completed";
+  const isCancelled = rawStatus === "cancelled";
   const reportingStatus = String(match?.reporting_status || "none").toLowerCase();
   const isFinalized = !!match?.finalized;
   const scoreAlreadyReported = reportingStatus !== "none" && reportingStatus !== "";
@@ -652,11 +686,13 @@ export default function MatchDetailsPage() {
     !scoreAlreadyReported &&
     !isFinalized &&
     !isDisputed &&
+    !isCancelled &&
     !isCompleted;
   const canConfirmScore =
     viewerCanManageMatch &&
     userMustConfirm &&
     !isFinalized &&
+    !isCancelled &&
     reportingStatus === "awaiting_confirmation";
   const canDisputeScore = canConfirmScore && canReportScore;
   const confirmationTeamName =
@@ -674,7 +710,6 @@ export default function MatchDetailsPage() {
       .from("matches")
       .select("*")
       .eq("id", matchId)
-      .neq("status", "cancelled")
       .maybeSingle();
 
     if (data) {
@@ -691,6 +726,30 @@ export default function MatchDetailsPage() {
           : String(updatedMatch.accepting_team_score)
       );
     }
+  }
+
+  async function handleCancellation(action: "request" | "accept" | "deny") {
+    if (!match || !userTeamId || cancellationBusy) return;
+    if (process.env.NODE_ENV === "development" && match.id === "preview") {
+      setCancellation({ requesting_team_id: "t1", status: action === "request" ? "pending" : action === "accept" ? "accepted" : "denied" });
+      if (action === "accept") setMatch({ ...match, status: "cancelled" });
+      return;
+    }
+    setCancellationBusy(true);
+    setCancellationError("");
+    const { error } = await supabase.rpc("gb_manage_match_cancellation", {
+      p_match_id: match.id, p_team_id: userTeamId, p_action: action,
+    });
+    if (error) {
+      setCancellationError(error.message);
+    } else {
+      const { data, error: loadError } = await supabase.from("match_cancellation_requests")
+        .select("requesting_team_id,status").eq("match_id", match.id).maybeSingle();
+      if (loadError) setCancellationError("Cancellation status could not be loaded: " + loadError.message);
+      else setCancellation(data as CancellationRequest | null);
+      if (action === "accept") await reloadMatch();
+    }
+    setCancellationBusy(false);
   }
 
   async function loadComments() {
@@ -1866,6 +1925,27 @@ export default function MatchDetailsPage() {
                     <button className="blue-btn" type="button" onClick={() => setRulesOpen(true)}>
                       Match Rules
                     </button>
+                    {isCancelled ? (
+                      <div className="score-note">This match has been cancelled.</div>
+                    ) : viewerCanManageMatch && userIsMatchTeam && !scoreAlreadyReported && !isFinalized && !isDisputed && !isCompleted && (
+                      cancellation?.status === "pending" ? (
+                        cancellation.requesting_team_id === userTeamId ? (
+                          <div className="score-note">Cancellation requested. Waiting for the other team.</div>
+                        ) : (
+                          <>
+                            <div className="score-note">The other team requested to cancel this match.</div>
+                            <button className="blue-btn" type="button" disabled={cancellationBusy} onClick={() => void handleCancellation("accept")}>Accept Cancellation</button>
+                            <button className="blue-btn" type="button" disabled={cancellationBusy} onClick={() => void handleCancellation("deny")}>Deny Cancellation</button>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          {cancellation?.status === "denied" && <div className="score-note">The last cancellation request was denied. The match remains scheduled.</div>}
+                          <button className="blue-btn" type="button" disabled={cancellationBusy} onClick={() => void handleCancellation("request")}>Request Cancellation</button>
+                        </>
+                      )
+                    )}
+                    {cancellationError && <div className="score-note" role="alert">{cancellationError}</div>}
                     {canReportScore && isDisputed ? (
                       <Link
                         className="blue-btn"
@@ -2030,7 +2110,7 @@ export default function MatchDetailsPage() {
                     </>
                   )}
 
-                  {!canReportScore && (
+                  {!canReportScore && !isCancelled && (
                     <div className="score-note">
                       {reportOpensAt === null
                         ? "A complete scheduled match date and time is required for reporting. Contact staff."

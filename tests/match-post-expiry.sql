@@ -49,14 +49,14 @@ begin
   begin
     insert into public.match_posts
     select (jsonb_populate_record(null::public.match_posts, to_jsonb(p) || jsonb_build_object(
-      'id', gen_random_uuid(), 'match_time', (now() + interval '31 days')::text
+      'id', gen_random_uuid(), 'match_time', (now() + interval '30 days 14 minutes')::text
     ))).*
     from public.match_posts p where p.id = new_post;
   exception when raise_exception then
-    if sqlerrm not like '%already has an open or active match commitment%' then raise; end if;
+    if sqlerrm not like '%within 15 minutes%' then raise; end if;
     rejected := true;
   end;
-  if not rejected then raise exception 'A future commitment did not block a second post'; end if;
+  if not rejected then raise exception 'A future commitment did not block a post within 15 minutes'; end if;
 end;
 $$;
 

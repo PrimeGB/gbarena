@@ -79,26 +79,6 @@ function getNextQuarterHour(date: Date) {
   return new Date((Math.floor(date.getTime() / quarterHourMs) + 1) * quarterHourMs);
 }
 
-function getScheduledTimeMs(matchTime: string, createdAt: string | null) {
-  const directTime = new Date(matchTime).getTime();
-  if (!Number.isNaN(directTime)) return directTime;
-
-  const legacyTime = matchTime.trim().match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
-  if (!legacyTime || !createdAt) return 0;
-
-  const scheduled = new Date(createdAt);
-  if (Number.isNaN(scheduled.getTime())) return 0;
-
-  let hours = Number(legacyTime[1]);
-  const minutes = Number(legacyTime[2]);
-  const period = legacyTime[3].toUpperCase();
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-  scheduled.setHours(hours, minutes, 0, 0);
-
-  return scheduled.getTime();
-}
-
 type RulesType = "GB Variant" | "CDL" | "Custom";
 type CrossPlayType = "Off" | "On";
 type RestrictionDraft = {
@@ -446,31 +426,6 @@ function CreateMatchContent() {
 
     setPosting(true);
     const scheduledIso = scheduledTime.toISOString();
-    const { data: existingPosts, error: existingPostError } = await supabase
-      .from("match_posts")
-      .select("match_time, created_at")
-      .eq("platform", platform)
-      .eq("category", category)
-      .eq("game", game)
-      .eq("ladder", ladder)
-      .eq("status", "open");
-
-    if (existingPostError) {
-      setPosting(false);
-      setPostError("Could not check whether this ladder time is already booked: " + existingPostError.message);
-      return;
-    }
-
-    if (
-      existingPosts?.some(
-        (post) => getScheduledTimeMs(String(post.match_time || ""), post.created_at) === scheduledTime.getTime()
-      )
-    ) {
-      setPosting(false);
-      setPostError("That time already has an open match post for this ladder. Choose another time.");
-      return;
-    }
-
     const cod = !gameRules;
     const presetDefaults: Record<string, string> = {
       perks: "On", launchers: "Off", killstreaks: "Off", field_upgrades: "On",
@@ -1047,7 +1002,7 @@ function CreateMatchContent() {
                           </div>
 
                           <div className="small-note">
-                            Choose a future date and time. Match times are available in 15-minute increments.
+                            Choose a future date and time. Your team&apos;s matches and open posts must start at least 15 minutes apart.
                           </div>
                         </div>
                       </div>
