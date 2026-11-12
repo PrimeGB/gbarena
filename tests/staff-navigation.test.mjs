@@ -69,6 +69,10 @@ test("staff work areas use browser history links and restore views from the URL"
   assert.match(home.markup, /href="#staff-access"/);
   assert.match(home.markup, /href="#reports-inbox"/);
   assert.match(home.markup, /Staff management/);
+  assert.match(home.markup, /href="\/staff\/moderation"/);
+  assert.match(home.markup, /href="\/staff\/forum-reports"/);
+  assert.match(home.markup, /href="\/home"[^>]*>Leave staff area/);
+  assert.doesNotMatch(home.markup, /staff-mobile-nav/);
   assert.doesNotMatch(home.markup, /<h3[^>]*>Trusted staff roster<\/h3>/);
   assert.match(home.markup, /href="#staff-audit"/);
   assert.equal(home.notifications, 1);

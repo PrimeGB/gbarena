@@ -153,6 +153,8 @@ export default function StaffDashboardPage() {
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
     can("staff_reports") && { key: "community_feedback", title: "Community feedback", description: "Review suggestions and site bug reports from players.", cta: "Open feedback", href: "/staff/feedback" },
+    can("basic_moderation") && { key: "moderation", title: "Moderation", description: "Review moderation actions and manage permitted sanctions.", cta: "Open moderation", href: "/staff/moderation" },
+    can("basic_moderation") && { key: "forum_reports", title: "Forum reports", description: "Review reports about forum posts and replies.", cta: "Open reports", href: "/staff/forum-reports" },
     can("awards") && { key: "awards", title: "Awards management", description: "Work with community and competition awards.", cta: "Open work area", href: "/staff/awards" },
     can("team_enforcement") && { key: "team_names", title: "Team name requests", description: "Review requests and apply approved team name changes.", cta: "Open requests", href: "/staff/team-names" },
     can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only an Owner sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
@@ -436,33 +438,19 @@ export default function StaffDashboardPage() {
                 and recorded for accountability.
               </p>
             </div>
-            {role && (
-              <span style={styles.rankBadge}>
-                {rankNames[role] || "Staff"}
-              </span>
-            )}
+            <div style={styles.rankActions}>
+              {role && (
+                <span style={styles.rankBadge}>
+                  {rankNames[role] || "Staff"}
+                </span>
+              )}
+              <Link href="/home" style={styles.leaveButton}>Leave staff area</Link>
+              {user && hasPortalAccess && (
+                <button type="button" onClick={signOut} style={styles.signOutButton}>Sign out</button>
+              )}
+            </div>
           </div>
         </header>
-        <nav className="staff-mobile-nav" style={styles.nav}>
-          <Link href="/home">Leave staff area</Link>
-          {user && hasPortalAccess && (
-            <>
-              <button type="button" onClick={signOut}>Sign out</button>
-              {permissions.includes("staff_reports") && (
-                <a href={viewHashes.reports}>Reports</a>
-              )}
-              {(isOwner || permissions.includes("match_review")) && <Link href="/staff/matches">Dispute tickets</Link>}
-              {(isOwner || permissions.includes("awards")) && <Link href="/staff/awards">Awards</Link>}
-              {(isOwner || permissions.includes("staff_reports")) && <Link href="/staff/feedback">Feedback</Link>}
-              {(isOwner || permissions.includes("staff_access")) && <Link href="/staff/tournaments">Tournaments</Link>}
-              {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/moderation">Moderation</Link>}
-              {(isOwner || permissions.includes("basic_moderation")) && <Link href="/staff/forum-reports">Forum Reports</Link>}
-              {(can("manage_staff") || can("staff_directory")) && (
-                <a href={viewHashes.access}>Staff management</a>
-              )}
-            </>
-          )}
-        </nav>
 
         {authLoading ||
         (user &&
@@ -811,13 +799,6 @@ const styles: Record<string, CSSProperties> = {
     background: "#07111b",
     boxShadow: "0 0 28px rgba(0,80,140,.25)",
   },
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "12px 18px",
-    borderBottom: "1px solid #244b70",
-    background: "#0b1823",
-  },
   header: {
     padding: "30px 24px 24px",
     borderBottom: "2px solid #315f88",
@@ -848,6 +829,26 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     fontWeight: 900,
     textTransform: "uppercase",
+  },
+  rankActions: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: 8 },
+  leaveButton: {
+    padding: "9px 13px",
+    border: "1px solid #d34b4b",
+    background: "linear-gradient(#a82020, #5b0d0d)",
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 900,
+    textAlign: "center",
+    textDecoration: "none",
+  },
+  signOutButton: {
+    padding: "7px 13px",
+    border: "1px solid #354d63",
+    background: "#142434",
+    color: "#d7e2ee",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
   },
   subheading: { margin: 0, color: "#b8cede", lineHeight: 1.6 },
   section: { padding: "20px 22px", borderBottom: "1px solid #17334a" },
