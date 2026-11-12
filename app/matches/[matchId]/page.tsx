@@ -10,6 +10,7 @@ import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccount
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
+import { UnscannedEvidenceLink } from "../../components/UnscannedEvidenceLink";
 
 type MatchRow = {
   id: string;
@@ -418,6 +419,7 @@ export default function MatchDetailsPage() {
             .concat(["Ghost", "Raven", "Echo", "Drift"].map((u, i) => ({ id: `b${i}`, team_id: "t2", team_name_at_match: "Ghost Ops", username_at_match: u, account_id_at_match: `${u}#20${i}` })))
         );
         setTeamRanks({ t1: 2, t2: 3 });
+        setProofs([{ id: "sample-proof", team_id: "t1", proof_url: "about:blank" }]);
         setUserTeamId(awaiting ? "t2" : "t1");
         setCanManageMatch(true);
         setLoading(false);
@@ -2123,11 +2125,11 @@ export default function MatchDetailsPage() {
                   {proofError && <div className="score-note" role="alert">{proofError}</div>}
                   {proofs.length > 0 && (
                     <div className="score-note">
-                      Proof:{" "}
+                      Proof files have not been scanned for malware and may be unsafe. Verify the source before opening.{" "}
                       {proofs.map((p, i) => (
-                        <a key={p.id} href={p.proof_url} target="_blank" rel="noreferrer" style={{ marginRight: 8 }}>
-                          Screenshot {i + 1}
-                        </a>
+                        <UnscannedEvidenceLink key={p.id} href={p.proof_url} style={{ marginRight: 8 }}>
+                          {match.id === "preview" ? "Sample screenshot" : `Screenshot ${i + 1}`}
+                        </UnscannedEvidenceLink>
                       ))}
                     </div>
                   )}

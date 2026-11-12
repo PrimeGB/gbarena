@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
+import { UnscannedEvidenceLink } from "../../components/UnscannedEvidenceLink";
 import "../staff-responsive.css";
 
 type MatchReviewEntry = {
@@ -344,6 +345,10 @@ export default function StaffMatchReviewPage() {
                 <p style={styles.description}>{ticket.dispute_description}</p>
                 <section aria-label="Team dispute submissions">
                   <h3 style={styles.reasonTitle}>Both team statements and proof</h3>
+                  <p style={styles.evidenceWarning}>
+                    Evidence files and links have not been scanned for malware and may be unsafe.
+                    External links in statements are plain text. Verify the source before opening or downloading anything.
+                  </p>
                   {(ticket.ticket_submissions || []).map((submission) => (
                     <div key={submission.team_id} style={styles.submission}>
                       <h4 style={styles.submissionTitle}>
@@ -356,15 +361,13 @@ export default function StaffMatchReviewPage() {
                       <div style={styles.evidenceList}>
                         {(submission.evidence_files || []).map((file, index) =>
                           file.url ? (
-                            <a
+                            <UnscannedEvidenceLink
                               key={file.path}
                               href={file.url}
-                              target="_blank"
-                              rel="noreferrer"
                               style={styles.matchLink}
                             >
                               View {submission.team_name || "team"} evidence {index + 1}
-                            </a>
+                            </UnscannedEvidenceLink>
                           ) : (
                             <span key={file.path} style={styles.evidenceUnavailable}>
                               Evidence {index + 1} could not be opened
@@ -538,6 +541,7 @@ const styles: Record<string, React.CSSProperties> = {
   submission: { marginTop: 12, padding: 12, border: "1px solid #315f88", background: "#07111b" },
   submissionTitle: { margin: "0 0 8px", color: "#f2c14e", fontSize: 13 },
   evidenceList: { display: "flex", flexWrap: "wrap", gap: 12, marginTop: 10 },
+  evidenceWarning: { margin: "8px 0", padding: 10, border: "1px solid #b99028", background: "#2b2110", color: "#ffe2a0", fontSize: 13, lineHeight: 1.5 },
   evidenceUnavailable: { color: "#ffb0b0", fontSize: 12 },
   decisionForm: { display: "grid", gap: 12, marginTop: 18, paddingTop: 16, borderTop: "1px solid #244b70" },
   scoreInputs: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 },
