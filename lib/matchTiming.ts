@@ -1,4 +1,3 @@
-export const MATCH_REPORT_DELAY_MS = 15 * 60 * 1000;
 export const MATCH_TICKET_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 function scheduledTime(matchTime: string | null | undefined): number | null {
@@ -8,8 +7,7 @@ function scheduledTime(matchTime: string | null | undefined): number | null {
 }
 
 export function matchReportingOpensAt(matchTime: string | null | undefined): number | null {
-  const scheduled = scheduledTime(matchTime);
-  return scheduled === null ? null : scheduled + MATCH_REPORT_DELAY_MS;
+  return scheduledTime(matchTime);
 }
 
 export function matchTicketDeadline(matchTime: string | null | undefined): number | null {

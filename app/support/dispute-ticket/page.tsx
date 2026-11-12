@@ -109,7 +109,7 @@ function DisputeTicketPageContent() {
   const [clock, setClock] = useState(() => Date.now());
 
   useEffect(() => {
-    const timer = setInterval(() => setClock(Date.now()), 15000);
+    const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -310,7 +310,7 @@ function DisputeTicketPageContent() {
 
     const currentTime = Date.now();
     if (opensAt === null || deadline === null || currentTime < opensAt || currentTime >= deadline) {
-      setMessage("Tickets are available from 15 minutes until 2 hours after the scheduled match time.");
+      setMessage("Tickets are available from the scheduled match time until 2 hours afterward.");
       return;
     }
 
@@ -957,7 +957,7 @@ function DisputeTicketPageContent() {
                     <div className="section-title">Explain What Happened</div>
                     <div className="section-body">
                       <div className="guide">
-                        <strong>Filing window:</strong> tickets open 15 minutes after match time and close 2 hours after match time.
+                        <strong>Filing window:</strong> tickets open at match time and close 2 hours after match time.
                         Staff only see a case once both teams have filed, or once the
                         window has ended.
                       </div>
@@ -1005,7 +1005,7 @@ function DisputeTicketPageContent() {
                     {submitting ? "Submitting Case..." : "Submit Dispute Case"}
                   </button>
 
-                  {!windowOpen && <div className="message">Tickets are available from 15 minutes until 2 hours after the scheduled match time.</div>}
+                  {!windowOpen && <div className="message">Tickets are available from the scheduled match time until 2 hours afterward.</div>}
                   {message && (
                     <div className={submitted ? "message good" : "message"}>
                       {message}

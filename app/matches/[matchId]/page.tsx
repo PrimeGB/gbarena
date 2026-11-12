@@ -299,7 +299,7 @@ export default function MatchDetailsPage() {
   const [proofRefreshKey, setProofRefreshKey] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setClock(Date.now()), 15000);
+    const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -653,7 +653,7 @@ export default function MatchDetailsPage() {
         {
           title: "Reporting Results",
           items: [
-            "Starting 15 minutes after the scheduled match time, a team leader, co-leader or captain reports the series score.",
+            "Starting at the scheduled match time, a team leader, co-leader or captain can report the series score.",
             "The opposing team confirms the score, or disputes it. If a result is disputed because of a no-show, choose \"No-show\" as the reason.",
             "Both teams have 2 hours from match time to submit a ticket with an explanation and proof. Staff only see the case once both teams have submitted, or once the 2 hours have ended.",
           ],
@@ -1958,7 +1958,7 @@ export default function MatchDetailsPage() {
                         {!canReportScore
                           ? reportOpensAt === null
                             ? "A complete scheduled match date and time is required for reporting and tickets. Contact staff."
-                            : "Reporting and dispute tickets open 15 minutes after match time."
+                            : "Reporting opens at match time. Dispute tickets are available after a score is disputed."
                           : "A dispute ticket can be submitted after a score is disputed."}
                       </div>
                     )}
@@ -2114,7 +2114,7 @@ export default function MatchDetailsPage() {
                     <div className="score-note">
                       {reportOpensAt === null
                         ? "A complete scheduled match date and time is required for reporting. Contact staff."
-                        : "Reporting and disputes unlock 15 minutes after the scheduled match time."}
+                        : "Reporting and disputes unlock at the scheduled match time."}
                     </div>
                   )}
 
