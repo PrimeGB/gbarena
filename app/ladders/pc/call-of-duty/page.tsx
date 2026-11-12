@@ -138,25 +138,8 @@ export default function PCCallOfDutyPage() {
           text-shadow:0 2px 4px #000;
         }
 
-        .nav{
-          height:36px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          gap:28px;
-          padding:0 18px;
-        }
 
-        .nav a{
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
 
-        .nav a:hover{color:#f2c14e;}
 
         .title-bar{
           background:linear-gradient(to bottom,#205077,#0a1724);
@@ -307,13 +290,6 @@ export default function PCCallOfDutyPage() {
             letter-spacing:1px;
             line-height:1.4;
           }
-          .nav{
-            height:auto;
-            flex-wrap:wrap;
-            justify-content:flex-start;
-            gap:10px 16px;
-            padding:10px 12px;
-          }
           .title-bar{padding:16px 12px;}
           .title-bar h1{font-size:clamp(22px,7vw,30px);}
           .title-bar p{font-size:13px;line-height:1.5;}
@@ -363,13 +339,6 @@ export default function PCCallOfDutyPage() {
 
             <div className="pc-mark">PC</div>
           </header>
-
-          <nav className="nav">
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-            <Link href="/teams/top">Top Teams</Link>
-            <Link href="/players/top">Top Players</Link>
-          </nav>
 
           <section className="title-bar">
             <h1>PC Call of Duty Ladders</h1>

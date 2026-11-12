@@ -217,25 +217,8 @@ export default function CallOfDutyLaddersPage() {
           box-shadow:0 0 18px rgba(255,45,45,.45), inset 0 0 18px rgba(0,0,0,.7);
         }
 
-        .nav{
-          height:36px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          gap:28px;
-          padding:0 18px;
-        }
 
-        .nav a{
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
 
-        .nav a:hover{color:#f2c14e;}
 
         .title-bar{
           background:linear-gradient(to bottom,#205077,#0a1724);
@@ -383,12 +366,6 @@ export default function CallOfDutyLaddersPage() {
             padding:20px;
             text-align:center;
           }
-          .nav{
-            height:auto;
-            flex-wrap:wrap;
-            gap:14px;
-            padding:10px;
-          }
           .ladder-item{
             grid-template-columns:1fr;
             gap:8px;
@@ -407,13 +384,6 @@ export default function CallOfDutyLaddersPage() {
 
             <div className="platform-mark">{platformName}</div>
           </header>
-
-          <nav className="nav">
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-            <Link href="/teams/top">Top Teams</Link>
-            <Link href="/players/top">Top Players</Link>
-          </nav>
 
           <section className="title-bar">
             <h1>{platformName} Old School Ladders</h1>

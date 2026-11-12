@@ -34,13 +34,6 @@ export default function LadderCategoryPage() {
           </div>
           <div className="platform-mark">{platformName}</div>
         </header>
-        <nav className="nav" aria-label="Main navigation">
-          <Link href={`/ladders/${platform}`}>{platformName} Ladders</Link>
-          <Link href="/members">Members</Link>
-          <Link href="/forums">Forums</Link>
-          <Link href="/teams/top">Top Teams</Link>
-          <Link href="/players/top">Top Players</Link>
-        </nav>
         <section className="title-bar">
           <Link className="back-link" href={`/ladders/${platform}`}>
             ← {platformName} Ladders
@@ -116,8 +109,7 @@ export default function LadderCategoryPage() {
           background: linear-gradient(to bottom, #9a0000, #3a0000);
           border-bottom: 1px solid #b10000;
         }
-        .top-strip a,
-        .nav a {
+        .top-strip a {
           color: #fff;
           font-size: 12px;
           font-weight: bold;
@@ -166,21 +158,6 @@ export default function LadderCategoryPage() {
           text-align: center;
           text-shadow: 0 2px 4px #000;
         }
-        .nav {
-          min-height: 36px;
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          align-items: center;
-          gap: 12px 28px;
-          padding: 8px 18px;
-          background: linear-gradient(to bottom, #10283d, #07111b);
-          border-bottom: 1px solid #244b70;
-        }
-        .nav a {
-          color: #d7eaff;
-        }
-        .nav a:hover,
         .top-strip a:hover {
           color: #f2c14e;
         }
@@ -323,8 +300,7 @@ export default function LadderCategoryPage() {
             gap: 12px;
             padding: 6px 10px;
           }
-          .top-strip a,
-          .nav a {
+          .top-strip a {
             font-size: 10px;
           }
           .platform-mark {
