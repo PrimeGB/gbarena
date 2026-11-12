@@ -18,10 +18,10 @@ type ActivityItem = {
 };
 
 function activityLabel(kind: string) {
-  if (kind === "match") return "MATCH RESULT";
-  if (kind === "award") return "PLAYER AWARD";
-  if (kind === "team") return "TEAM UPDATE";
-  return "COMMUNITY UPDATE";
+  if (kind === "match") return "Match";
+  if (kind === "award") return "Award";
+  if (kind === "team") return "Team";
+  return "Update";
 }
 
 function timeAgo(value: string) {
@@ -100,19 +100,19 @@ export default function ProfileFollowingFeed() {
           </p>
         )}
         {items.length > 0 && (
-          <div className="pf-follow-feed-list" aria-label="Recent activity from people and teams you follow">
+          <div className="pf-follow-feed-list" aria-label="Recent activity from people and teams you follow" tabIndex={0}>
             {items.map((item) => (
               <article className="pf-follow-feed-item" key={`${item.id}:${item.follow_type}:${item.follow_id}`}>
-                <Link className="pf-follow-feed-name" href={item.follow_href}>{item.follow_name}</Link>
-                {item.href ? (
-                  <Link className="pf-follow-feed-text" href={item.href}>{item.text}</Link>
-                ) : (
-                  <p className="pf-follow-feed-text">{item.text}</p>
-                )}
                 <div className="pf-follow-feed-meta">
+                  <Link className="pf-follow-feed-name" href={item.follow_href} title={item.follow_name}>{item.follow_name}</Link>
                   <span>{activityLabel(item.kind)}</span>
                   <time dateTime={item.at}>{timeAgo(item.at)}</time>
                 </div>
+                {item.href ? (
+                  <Link className="pf-follow-feed-text" href={item.href} title={item.text}>{item.text}</Link>
+                ) : (
+                  <p className="pf-follow-feed-text" title={item.text}>{item.text}</p>
+                )}
               </article>
             ))}
           </div>
@@ -122,20 +122,20 @@ export default function ProfileFollowingFeed() {
         .pf-follow-feed{flex:none;overflow:hidden;border:1px solid #263b4d;background:#0a1119}
         .pf-follow-feed-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;color:#dca541;font-size:12px;letter-spacing:.04em}
         .pf-follow-feed-body{padding:0}
-        .pf-follow-feed-list{max-height:144px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
-        .pf-follow-feed-item{padding:7px 10px;border-top:1px solid #1c2b37;background:#0a1119}
+        .pf-follow-feed-list{max-height:150px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#355774 #08131d;scrollbar-width:thin}
+        .pf-follow-feed-item{box-sizing:border-box;height:50px;padding:4px 10px;border-top:1px solid #1c2b37;background:#0a1119}
         .pf-follow-feed-item:nth-child(even){background:#0d1620}
-        .pf-follow-feed-name{display:block;color:#7fc0ff;font-size:11px;font-weight:bold;line-height:1.3;text-decoration:none;overflow-wrap:anywhere}
+        .pf-follow-feed-name{min-width:0;flex:1;overflow:hidden;color:#7fc0ff;font-size:11px;font-weight:bold;text-decoration:none;text-overflow:ellipsis;white-space:nowrap}
         .pf-follow-feed-name:hover{color:#fff;text-decoration:underline}
-        .pf-follow-feed-meta{display:flex;justify-content:space-between;gap:8px;margin-top:3px;color:#8193a1;font-size:10px;line-height:1.3}
-        .pf-follow-feed-meta time{flex:none}
-        .pf-follow-feed-text{display:block;margin:3px 0 0;color:#b9c9d6;font-size:11px;line-height:1.35;text-decoration:none;overflow-wrap:anywhere}
+        .pf-follow-feed-meta{display:flex;align-items:baseline;gap:6px;color:#8193a1;font-size:10px;line-height:13px}
+        .pf-follow-feed-meta span,.pf-follow-feed-meta time{flex:none;white-space:nowrap}
+        .pf-follow-feed-text{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin:2px 0 0;color:#b9c9d6;font-size:11px;line-height:13px;text-decoration:none;overflow-wrap:anywhere}
         a.pf-follow-feed-text:hover{color:#fff;text-decoration:underline}
         .pf-follow-feed-message,.pf-follow-feed-error{margin:0;padding:10px;color:#9aabba;font-size:11px;line-height:1.5}
         .pf-follow-feed-error{color:#ffb3b3}
         .pf-follow-feed-more{color:#7fc0ff;font-size:10px;font-weight:bold;letter-spacing:0;text-decoration:none;text-transform:none;white-space:nowrap}
         .pf-follow-feed-more:hover{color:#fff;text-decoration:underline}
-        .pf-follow-feed-more:focus-visible,.pf-follow-feed-name:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
+        .pf-follow-feed-list:focus-visible,.pf-follow-feed-more:focus-visible,.pf-follow-feed-name:focus-visible,.pf-follow-feed-text:focus-visible{outline:2px solid #f2c14e;outline-offset:-2px}
       `}</style>
     </section>
   );
