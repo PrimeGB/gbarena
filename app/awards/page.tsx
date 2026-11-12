@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
+import { hasNewTrophy } from "./NewTrophyArt";
+import CompactTopBar from "../components/CompactTopBar";
 
 type PublicAward = {
   name: string;
@@ -37,17 +39,17 @@ export default function AwardsPage() {
     <main style={styles.page}>
       <style>{AWARD_CSS}</style>
       <section style={styles.shell}>
-        <nav style={styles.nav}>
-          <Link href="/home">Home</Link>
-        </nav>
+        <CompactTopBar />
         <header style={styles.header}>
           <p style={styles.eyebrow}>GAMEBATTLES AWARDS</p>
           <h1 style={styles.title}>Awards &amp; Achievements</h1>
           <p style={styles.subheading}>
-            Browse every award and trophy you can work toward on GameBattles.
+            These are just some of the awards you can work toward on GameBattles.
+            More are on the way, and we&apos;re open to <Link href="/suggestions">your ideas for new awards</Link>.
           </p>
           <p style={{ ...styles.subheading, marginTop: 8 }}>
             Awards without the automatic label are reviewed and granted by staff.
+            Voided ladder matches do not count toward automatic trophies.
             Bug Finder tiers unlock at 1, 3, 5, and 10 unique issues confirmed
             and fixed by staff. <Link href="/suggestions">Report a bug</Link> while
             signed in for consideration.
@@ -55,26 +57,25 @@ export default function AwardsPage() {
         </header>
         {error && <p role="alert" style={styles.error}>{error}</p>}
         <section style={styles.content}>
+          {!loading && catalog.some((award) => hasNewTrophy(award.name)) && (
+            <section>
+              <h2 style={styles.sectionTitle}>New trophies</h2>
+              <p style={styles.text}>From first steps to seasonal challenges and standout community moments.</p>
+              <div style={styles.catalog}>
+                {catalog.filter((award) => hasNewTrophy(award.name)).map((award) => (
+                  <AwardCard award={award} key={award.name} />
+                ))}
+              </div>
+            </section>
+          )}
           <section>
-            <h2 style={styles.sectionTitle}>Award catalog</h2>
+            <h2 style={styles.sectionTitle}>More awards</h2>
             {loading ? (
               <p style={styles.text}>Loading awards...</p>
             ) : (
               <div style={styles.catalog}>
-                {catalog.map((award) => (
-                  <article
-                    key={award.name}
-                    className="award-card"
-                    style={{ ...styles.card, ["--accent" as string]: awardAccent(award.name, award.award_group) }}
-                  >
-                    <div className="award-stage">
-                      <AwardArt name={award.name} group={award.award_group} />
-                    </div>
-                    <strong style={styles.cardName}>{award.name}</strong>
-                    <p style={styles.group}>{award.award_group}</p>
-                    <p style={styles.purpose}>{award.purpose}</p>
-                    {award.auto && <p style={{ margin: "8px 0 0", color: "#38f2a7", fontSize: 10, fontWeight: 900, letterSpacing: 0.6 }}>⚡ EARNED AUTOMATICALLY</p>}
-                  </article>
+                {catalog.filter((award) => !hasNewTrophy(award.name)).map((award) => (
+                  <AwardCard award={award} key={award.name} />
                 ))}
               </div>
             )}
@@ -82,6 +83,23 @@ export default function AwardsPage() {
         </section>
       </section>
     </main>
+  );
+}
+
+function AwardCard({ award }: { award: PublicAward }) {
+  return (
+    <article
+      className="award-card"
+      style={{ ...styles.card, ["--accent" as string]: awardAccent(award.name, award.award_group) }}
+    >
+      <div className="award-stage">
+        <AwardArt name={award.name} group={award.award_group} />
+      </div>
+      <strong style={styles.cardName}>{award.name}</strong>
+      <p style={styles.group}>{award.award_group}</p>
+      <p style={styles.purpose}>{award.purpose}</p>
+      {award.auto && <p style={{ margin: "8px 0 0", color: "#38f2a7", fontSize: 10, fontWeight: 900, letterSpacing: 0.6 }}>⚡ EARNED AUTOMATICALLY</p>}
+    </article>
   );
 }
 
@@ -99,15 +117,6 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #315f88",
     background: "#07111b",
     boxShadow: "0 0 28px rgba(0,80,140,.3)",
-  },
-  nav: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 18,
-    padding: "12px 16px",
-    background: "#050b12",
-    borderBottom: "1px solid #244b70",
-    fontSize: 12,
   },
   header: {
     padding: "22px 18px",

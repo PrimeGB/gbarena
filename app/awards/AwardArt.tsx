@@ -3,6 +3,7 @@
 import { useId } from "react";
 import AutoBadgeArt, { hasAutoBadge } from "./AutoBadges";
 import ServiceAwardArt, { hasServiceAward, serviceAwardAccent } from "./ServiceAwardArt";
+import NewTrophyArt, { hasNewTrophy, newTrophyAccent } from "./NewTrophyArt";
 
 // Illustrated art (public/awards/art/N.png) for the awards that have a hand-made emblem.
 const SPRITES: Record<string, number> = {
@@ -65,6 +66,7 @@ function pickTone(name: string, group: string): Tone {
 }
 
 export function awardAccent(name: string, group: string) {
+  if (hasNewTrophy(name)) return newTrophyAccent(name);
   if (hasServiceAward(name)) return serviceAwardAccent(name);
   return SPRITES[name] ? TONES.crimson.glow : pickTone(name, group).glow;
 }
@@ -365,6 +367,7 @@ function EmblemArt({ name, group, height = 150 }: { name: string; group: string;
 }
 
 export default function AwardArt({ name, group, height }: { name: string; group: string; height?: number }) {
+  if (hasNewTrophy(name)) return <NewTrophyArt name={name} height={height} />;
   if (hasServiceAward(name)) return <ServiceAwardArt name={name} height={height} />;
   if (hasAutoBadge(name)) return <AutoBadgeArt name={name} height={height} />;
   const sprite = SPRITES[name];
