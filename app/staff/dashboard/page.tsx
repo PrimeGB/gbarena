@@ -151,6 +151,7 @@ export default function StaffDashboardPage() {
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
   const tiles: Tile[] = [
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
+    can("staff_access") && { key: "decision_reviews", title: "Match decision reviews", description: "Review team requests about staff match decisions.", cta: "Open review queue", href: "/staff/match-reviews" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
     can("staff_reports") && { key: "community_feedback", title: "Community feedback", description: "Review suggestions and site bug reports from players.", cta: "Open feedback", href: "/staff/feedback" },
     can("basic_moderation") && { key: "moderation", title: "Moderation", description: "Review moderation actions and manage permitted sanctions.", cta: "Open moderation", href: "/staff/moderation" },
@@ -160,8 +161,10 @@ export default function StaffDashboardPage() {
     can("staff_access") && { key: "tournaments", title: "Tournaments", description: "Manage events; only an Owner sets fees and prizes.", cta: "Open work area", href: "/staff/tournaments" },
     can("credit_management") && { key: "credits", title: "Credits", description: "Award or remove player credits for prizes and rewards.", cta: "Open work area", href: "/staff/credits" },
     (can("manage_staff") || can("staff_directory")) && { key: "access", title: "Staff management", description: "Manage staff access, positions, and duties in one place. Every change is recorded.", cta: "Manage staff", view: "access" },
-    role !== "admin" && can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
-    can("staff_access") && { key: "site_requests", title: "Site change requests", description: "Propose site changes for Owner review.", cta: "Open requests", href: "/staff/site-requests" },
+    isOwner
+      ? { key: "recommend_award", title: "Recommended awards", description: "Review award recommendations from staff.", cta: "Review recommendations", href: "/staff/awards#award-recommendations" }
+      : role !== "admin" && can("award_recommendation") && { key: "recommend_award", title: "Recommend an award", description: "Recommend a player or team for an award review.", cta: "Make a recommendation", href: "/staff/recommend-award" },
+    can("staff_access") && { key: "site_requests", title: "Site change requests", description: isOwner ? "Review site changes proposed by staff." : "Propose site changes for Owner review.", cta: isOwner ? "Review requests" : "Open requests", href: "/staff/site-requests" },
     { key: "role_guide", title: "Staff roles and access", description: "See the full role and permission breakdown.", cta: "View the breakdown", href: "/staff/role-guide" },
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
   ].filter(Boolean) as Tile[];

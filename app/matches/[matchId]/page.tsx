@@ -11,6 +11,7 @@ import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
 import { UnscannedEvidenceLink } from "../../components/UnscannedEvidenceLink";
+import DecisionReviewRequest from "../DecisionReviewRequest";
 
 type MatchRow = {
   id: string;
@@ -277,6 +278,8 @@ export default function MatchDetailsPage() {
   const [postingScore, setPostingScore] = useState("");
   const [acceptingScore, setAcceptingScore] = useState("");
   const [userTeamId, setUserTeamId] = useState("");
+  const [reviewTeamIds, setReviewTeamIds] = useState<string[]>([]);
+  const [reviewTeamError, setReviewTeamError] = useState("");
   const [viewerCanManageMatch, setCanManageMatch] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -378,11 +381,14 @@ export default function MatchDetailsPage() {
       setLoading(true);
       setPageError("");
       setUserTeamId("");
+      setReviewTeamIds([]);
+      setReviewTeamError("");
       setCanManageMatch(false);
 
       if (process.env.NODE_ENV === "development" && matchId === "preview") {
         const previewStart = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         const awaiting = new URLSearchParams(window.location.search).get("state") === "awaiting";
+        const reviewPreview = new URLSearchParams(window.location.search).get("state") === "review";
         setMatch({
           id: "preview",
           posting_team_id: "t1",
@@ -403,8 +409,9 @@ export default function MatchDetailsPage() {
           round_length: "2:00",
           score_limit: "6",
           bomb_timer: "45s",
-          status: awaiting ? "awaiting_confirmation" : "upcoming",
-          reporting_status: awaiting ? "awaiting_confirmation" : "none",
+          status: reviewPreview ? "completed" : awaiting ? "awaiting_confirmation" : "upcoming",
+          reporting_status: reviewPreview ? "completed" : awaiting ? "awaiting_confirmation" : "none",
+          finalized: reviewPreview,
           confirmation_team_id: awaiting ? "t2" : null,
           posting_team_score: awaiting ? 2 : null,
           accepting_team_score: awaiting ? 1 : null,
@@ -421,6 +428,7 @@ export default function MatchDetailsPage() {
         setTeamRanks({ t1: 2, t2: 3 });
         setProofs([{ id: "sample-proof", team_id: "t1", proof_url: "about:blank" }]);
         setUserTeamId(awaiting ? "t2" : "t1");
+        setReviewTeamIds(["t1"]);
         setCanManageMatch(true);
         setLoading(false);
         return;
@@ -537,16 +545,23 @@ export default function MatchDetailsPage() {
               team.id === officialMatch.accepting_team_id)
         );
 
+        const { data: memberRows, error: memberError } = await supabase
+          .from("team_members")
+          .select("team_id, role")
+          .eq("user_id", currentUser.id)
+          .in("team_id", teamIds);
+
+        if (memberError) {
+          setReviewTeamError(`Review eligibility could not be loaded: ${memberError.message}`);
+        } else {
+          const memberTeamIds = ((memberRows || []) as TeamMemberRow[]).map((member) => member.team_id);
+          setReviewTeamIds(teamIds.filter((id) => teams.some((team) => team.id === id && team.owner_id === currentUser.id) || memberTeamIds.includes(id)));
+        }
+
         if (ownedTeam) {
           setUserTeamId(ownedTeam.id);
           setCanManageMatch(true);
         } else {
-          const { data: memberRows, error: memberError } = await supabase
-            .from("team_members")
-            .select("team_id, role")
-            .eq("user_id", currentUser.id)
-            .in("team_id", teamIds);
-
           if (memberError) {
             setUserTeamId("");
             setCanManageMatch(false);
@@ -2038,6 +2053,10 @@ export default function MatchDetailsPage() {
                           : "A dispute ticket can be submitted after a score is disputed."}
                       </div>
                     )}
+                    {isFinalized && reviewTeamError && <p role="alert">{reviewTeamError}</p>}
+                    {isFinalized && reviewTeamIds.map((teamId) => (
+                      <DecisionReviewRequest key={`${match.id}:${teamId}`} matchId={match.id} teamId={teamId} teamName={(teamId === postingTeam?.id ? postingTeam.name : acceptingTeam?.name) || "Your team"} preview={match.id === "preview"} />
+                    ))}
                   </div>
                 </div>
 

@@ -10,7 +10,7 @@ type Request = { id: number; requested_by: string; description: string; status: 
 function Requests() {
   const { user } = useUser();
   const [requests, setRequests] = useState<Request[]>([]);
-  const [isOwner, setIsOwner] = useState(false);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -53,12 +53,12 @@ function Requests() {
 
   return (
     <>
-      <p>Propose a change for Owner review. Approval records a decision only; it does not change the site.</p>
+      {isOwner !== null && <p>{isOwner ? "Review site changes proposed by staff." : "Propose a change for Owner review."} Approval records a decision only; it does not change the site.</p>}
       {message && <p role="status">{message}</p>}
-      <form className="staff-mobile-form" onSubmit={submit} style={{ display: "grid", maxWidth: 600 }}>
+      {isOwner === false && <form className="staff-mobile-form" onSubmit={submit} style={{ display: "grid", maxWidth: 600 }}>
         <label>Proposed change <textarea required minLength={10} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
         <button type="submit" disabled={saving}>Submit request</button>
-      </form>
+      </form>}
       <h2>Requests</h2>
       {requests.length === 0 && <p>No requests found.</p>}
       {requests.map((request) => <article className="staff-mobile-card" key={request.id} style={{ marginTop: 12 }}>

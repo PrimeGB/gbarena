@@ -416,7 +416,7 @@ export default function StaffAwardsPage() {
               </form>
             </section>
 
-            <section style={styles.panel}>
+            <section id="award-recommendations" style={styles.panel}>
               <h2 style={styles.sectionTitle}>Pending award requests</h2>
               {requests.length === 0 ? (
                 <p style={styles.empty}>No pending requests.</p>
