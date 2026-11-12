@@ -84,9 +84,19 @@ export default function SuggestionsPage() {
         .feedback-panel{min-width:0;background:#0a1622;border:1px solid #315f88}
         .feedback-panel-title{margin:0;padding:12px 16px;background:#0f2a40;border-bottom:1px solid #315f88;color:#f2c14e;font-size:12px;font-weight:bold;text-transform:uppercase}
         .feedback-form,.feedback-guide{padding:18px}
-        .feedback-type{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-        .feedback-type button{padding:12px;border:1px solid #315f88;background:#10283d;color:#d7eaff;font:inherit;font-size:12px;font-weight:bold;cursor:pointer}
-        .feedback-type button[aria-pressed="true"]{border-color:#e8c46a;background:linear-gradient(to bottom,#d6a943,#8a6218);color:#07111b}
+        .feedback-type{min-width:0;margin:0 0 20px;padding:0;border:0}
+        .feedback-type legend{padding:0;color:#fff;font-size:14px;font-weight:bold}
+        .feedback-type-hint{margin:6px 0 12px;color:#b9cddd;font-size:12px;line-height:1.5}
+        .feedback-type-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+        .feedback-type button{min-height:112px;padding:14px;text-align:left;border:2px solid #6198bf;background:linear-gradient(to bottom,#193d59,#10283d);color:#fff;font:inherit;cursor:pointer}
+        .feedback-type button:hover{border-color:#b9e1ff;background:#214d6c}
+        .feedback-type button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+        .feedback-type button[aria-pressed="true"]{border-color:#f2c14e;background:linear-gradient(to bottom,#e2bd5e,#a77b20);color:#151000}
+        .feedback-type button:disabled{cursor:wait;opacity:.7}
+        .feedback-type-name,.feedback-type-description,.feedback-type-state{display:block}
+        .feedback-type-name{font-size:15px;font-weight:bold}
+        .feedback-type-description{margin-top:5px;font-size:12px;line-height:1.4}
+        .feedback-type-state{margin-top:10px;font-size:11px;font-weight:bold;text-transform:uppercase}
         .feedback-label{display:block;margin:0 0 7px;color:#f2c14e;font-size:12px;font-weight:bold}
         .feedback-input,.feedback-textarea{display:block;width:100%;margin-bottom:16px;padding:12px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit;font-size:14px}
         .feedback-textarea{min-height:180px;resize:vertical;line-height:1.5}
@@ -101,6 +111,7 @@ export default function SuggestionsPage() {
         .feedback-guide ul{margin:0 0 18px;padding-left:20px}
         .feedback-guide a,.feedback-message a{color:#8dcaff}
         @media(max-width:768px){.feedback-content{padding:18px 14px}.feedback-header{padding:18px}.feedback-grid{grid-template-columns:minmax(0,1fr)}.feedback-heading h1{font-size:24px}}
+        @media(max-width:450px){.feedback-type-options{grid-template-columns:1fr}.feedback-type button{min-height:0}}
       `}</style>
       <div className="feedback-page">
         <CompactTopBar />
@@ -123,10 +134,22 @@ export default function SuggestionsPage() {
                 )}
                 {error && <p role="alert" className="feedback-message">{error}</p>}
                 {success && <p role="status" className="feedback-message feedback-success">{success}</p>}
-                <div className="feedback-type" aria-label="Feedback type">
-                  <button type="button" aria-pressed={selectedType === "Suggestion"} onClick={() => setSelectedType("Suggestion")}>Suggestion</button>
-                  <button type="button" aria-pressed={selectedType === "Bug Report"} onClick={() => setSelectedType("Bug Report")}>Report a Bug</button>
-                </div>
+                <fieldset className="feedback-type">
+                  <legend>What would you like to send?</legend>
+                  <p className="feedback-type-hint">Choose one below. You can switch between an idea and a bug report.</p>
+                  <div className="feedback-type-options">
+                    <button type="button" disabled={submitting} aria-pressed={selectedType === "Suggestion"} onClick={() => setSelectedType("Suggestion")}>
+                      <span className="feedback-type-name">Suggestion</span>
+                      <span className="feedback-type-description">Share an idea to improve GameBattles.</span>
+                      <span className="feedback-type-state">{selectedType === "Suggestion" ? "Selected" : "Select suggestion →"}</span>
+                    </button>
+                    <button type="button" disabled={submitting} aria-pressed={selectedType === "Bug Report"} onClick={() => setSelectedType("Bug Report")}>
+                      <span className="feedback-type-name">Report a Bug</span>
+                      <span className="feedback-type-description">Tell us about something that is not working.</span>
+                      <span className="feedback-type-state">{selectedType === "Bug Report" ? "Selected" : "Select bug report →"}</span>
+                    </button>
+                  </div>
+                </fieldset>
                 <label className="feedback-label" htmlFor="feedback-title">Title</label>
                 <input id="feedback-title" className="feedback-input" value={title} onChange={(event) => setTitle(event.target.value)} minLength={4} maxLength={160} required placeholder={selectedType === "Suggestion" ? "What is your idea?" : "What is not working?"} />
                 <label className="feedback-label" htmlFor="feedback-details">Details</label>
