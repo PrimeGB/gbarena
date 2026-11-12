@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AcceptedSuggestions from "../AcceptedSuggestions";
-import UpcomingUpdates from "../UpcomingUpdates";
+import NewsCategoryContent from "../NewsCategoryContent";
 import { newsCategories, newsMenuCategories } from "../categoryData";
 
 export function generateStaticParams() {
@@ -17,7 +17,9 @@ export default async function NewsCategoryPage({
   const category = newsCategories.find((item) => item.slug === slug);
   if (!category) notFound();
   if (slug === "accepted-suggestions") return <AcceptedSuggestions />;
-  if (slug === "upcoming-updates") return <UpcomingUpdates category={category} />;
+  if (slug === "upcoming-updates" || slug === "rule-changes") {
+    return <NewsCategoryContent category={category} />;
+  }
 
   return (
     <main className="news-category-page">

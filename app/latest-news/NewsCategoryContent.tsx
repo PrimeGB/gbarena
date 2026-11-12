@@ -3,7 +3,7 @@ import CompactTopBar from "../components/CompactTopBar";
 import NewsCategoriesNav from "./NewsCategoriesNav";
 import type { NewsCategory } from "./categoryData";
 
-export default function UpcomingUpdates({ category }: { category: NewsCategory }) {
+export default function NewsCategoryContent({ category }: { category: NewsCategory }) {
   return (
     <>
       <style>{`
