@@ -120,26 +120,6 @@ export default function PcBattlefieldPage() {
           text-shadow:0 2px 4px #000;
         }
 
-        .nav{
-          height:36px;
-          background:linear-gradient(to bottom,#10283d,#07111b);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          gap:28px;
-          padding:0 18px;
-        }
-
-        .nav a{
-          color:#d7eaff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .nav a:hover{color:#f2c14e;}
-
         .title-bar{
           background:linear-gradient(to bottom,#205077,#0a1724);
           border-bottom:1px solid #2f638f;
@@ -269,13 +249,6 @@ export default function PcBattlefieldPage() {
 
             <div className="pc-mark">PC</div>
           </header>
-
-          <nav className="nav">
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-            <Link href="/teams/top">Top Teams</Link>
-            <Link href="/players/top">Top Players</Link>
-          </nav>
 
           <section className="title-bar">
             <h1>PC Battlefield Ladders</h1>
