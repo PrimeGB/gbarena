@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CompactTopBar from "../components/CompactTopBar";
-import { newsMenuCategories, type NewsCategory } from "./categoryData";
+import NewsCategoriesNav from "./NewsCategoriesNav";
+import type { NewsCategory } from "./categoryData";
 
 export default function UpcomingUpdates({ category }: { category: NewsCategory }) {
   return (
@@ -15,8 +16,6 @@ export default function UpcomingUpdates({ category }: { category: NewsCategory }
         .updates-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:10px;margin-top:8px}
         .updates-panel{min-width:0;background:#0a1622;border:1px solid #3b7fc2}
         .updates-panel-title{padding:9px 10px;background:#0f2a40;border-bottom:1px solid #3b7fc2;color:#f2c14e;font-size:11px;font-weight:bold;text-transform:uppercase}
-        .updates-category{display:block;padding:10px;color:#d7eaff;border-bottom:1px solid #16324a;font-size:12px;text-decoration:none}
-        .updates-category:hover,.updates-category:focus-visible,.updates-category[aria-current="page"]{background:#12324b;color:#f2c14e}
         .updates-content{padding:20px}
         .updates-back{color:#9bc9ec;font-size:12px;font-weight:bold;text-decoration:none}
         .updates-back:hover,.updates-back:focus-visible,.updates-link:hover,.updates-link:focus-visible{color:#f2c14e}
@@ -42,19 +41,7 @@ export default function UpcomingUpdates({ category }: { category: NewsCategory }
           </div>
         </header>
         <div className="updates-layout">
-          <aside className="updates-panel">
-            <div className="updates-panel-title">News Categories</div>
-            {newsMenuCategories.map((item) => (
-              <Link
-                className="updates-category"
-                href={`/latest-news/${item.slug}`}
-                aria-current={item.slug === category.slug ? "page" : undefined}
-                key={item.slug}
-              >
-                {item.title}
-              </Link>
-            ))}
-          </aside>
+          <NewsCategoriesNav currentSlug={category.slug} />
           <main className="updates-panel">
             <div className="updates-panel-title">Latest News</div>
             <div className="updates-content">

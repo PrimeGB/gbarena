@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CompactTopBar from "../components/CompactTopBar";
 import { acceptedSuggestions } from "./categoryData";
+import NewsCategoriesNav from "./NewsCategoriesNav";
 
 export default function AcceptedSuggestions() {
   return (
@@ -12,7 +13,8 @@ export default function AcceptedSuggestions() {
         .accepted-header{padding:22px 24px;background:linear-gradient(110deg,#173956,#07111b);border-bottom:2px solid #315f88}
         .accepted-brand{color:#fff;font-size:30px;font-weight:900;text-transform:uppercase}
         .accepted-brand-sub{margin-top:5px;color:#f2c14e;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase}
-        .accepted-content{padding:26px 24px 40px}
+        .accepted-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:10px;margin:8px 10px 0}
+        .accepted-content{min-width:0;padding:26px 24px 40px;background:#0a1622;border:1px solid #3b7fc2}
         .accepted-back{color:#9bc9ec;font-size:12px;font-weight:bold;text-decoration:none}
         .accepted-back:hover,.accepted-back:focus-visible,.accepted-link:hover,.accepted-link:focus-visible{color:#f2c14e}
         .accepted-heading{display:flex;justify-content:space-between;align-items:end;gap:18px;margin:24px 0 22px;padding-bottom:18px;border-bottom:1px solid #244b70}
@@ -33,6 +35,7 @@ export default function AcceptedSuggestions() {
         .accepted-details .accepted-author{grid-column:1 / -1;border-top:1px solid #1b364d;padding-top:14px}
         .accepted-link{display:inline-block;margin:0 18px 18px;color:#8dcaff;font-size:12px;font-weight:bold;text-decoration:none}
         .accepted-empty{padding:20px;border:1px solid #315f88;color:#b9cddd;font-size:13px;line-height:1.6}
+        @media(max-width:768px){.accepted-layout{grid-template-columns:minmax(0,1fr)}}
         @media(max-width:700px){.accepted-header{padding:18px}.accepted-content{padding:22px 16px 32px}.accepted-heading{align-items:flex-start;flex-direction:column}.accepted-heading h1{font-size:24px}.accepted-details{grid-template-columns:1fr;gap:16px}.accepted-details .accepted-author{grid-column:auto}.accepted-card-head{align-items:flex-start;flex-direction:column}}
       `}</style>
       <div className="accepted-page">
@@ -41,6 +44,8 @@ export default function AcceptedSuggestions() {
           <div className="accepted-brand">GameBattles</div>
           <div className="accepted-brand-sub">Latest News &amp; Community Updates</div>
         </header>
+        <div className="accepted-layout">
+        <NewsCategoriesNav currentSlug="accepted-suggestions" />
         <main className="accepted-content">
           <Link className="accepted-back" href="/latest-news">← Back to Latest News</Link>
           <div className="accepted-heading">
@@ -72,6 +77,7 @@ export default function AcceptedSuggestions() {
             </div>
           )}
         </main>
+        </div>
       </div>
     </>
   );
