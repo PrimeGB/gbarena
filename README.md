@@ -79,6 +79,8 @@ Signed-in players' suggestions and bug reports are saved for staff review in
 verified account email and remain eligible for review in the Bug Finder queue
 under `/staff/awards`. Staff can mark suggestions reviewed; that does not
 automatically publish them as accepted suggestions.
+New bug reports include the selected site area and any device or browser details
+in the staff queue, owner inbox, and owner email.
 To also email the owner, configure these server-side environment variables in the deployment:
 
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only key used to look up the Prime owner's account email

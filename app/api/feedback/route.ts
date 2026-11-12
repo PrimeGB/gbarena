@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { bugAreas, bugBrowsers, bugDevices } from "../../../lib/feedbackOptions";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -6,7 +7,14 @@ type FeedbackPayload = {
   type?: unknown;
   title?: unknown;
   details?: unknown;
+  area?: unknown;
+  device?: unknown;
+  browser?: unknown;
 };
+
+function validOption(value: unknown, options: readonly string[]) {
+  return typeof value === "string" && options.includes(value);
+}
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
@@ -32,12 +40,28 @@ export async function POST(request: Request) {
       : null;
   const title = typeof payload.title === "string" ? payload.title.trim() : "";
   const details = typeof payload.details === "string" ? payload.details.trim() : "";
+  const hasBugArea = type === "Bug Report" && payload.area !== undefined;
+  if (hasBugArea && (
+    !validOption(payload.area, bugAreas) ||
+    (payload.device !== undefined && payload.device !== "" && !validOption(payload.device, bugDevices)) ||
+    (payload.browser !== undefined && payload.browser !== "" && !validOption(payload.browser, bugBrowsers))
+  )) {
+    return Response.json({ error: "Choose a valid bug report area, device, and browser." }, { status: 400 });
+  }
+  const context = hasBugArea
+    ? [
+        `Area: ${payload.area}`,
+        ...(payload.device ? [`Device: ${payload.device}`] : []),
+        ...(payload.browser ? [`Browser: ${payload.browser}`] : []),
+      ].join("\n")
+    : "";
+  const storedDetails = context ? `${context}\n\n${details}` : details;
   if (
     !type ||
     title.length < 4 ||
     title.length > 160 ||
     details.length < 10 ||
-    details.length > 5000
+    storedDetails.length > 5000
   ) {
     return Response.json(
       { error: "Enter a title and details within the allowed length." },
@@ -64,7 +88,7 @@ export async function POST(request: Request) {
   const { error: inboxError } = await client.rpc("gb_submit_community_feedback", {
     p_type: type,
     p_title: title,
-    p_details: details,
+    p_details: storedDetails,
   });
   if (inboxError) {
     console.error("Feedback submission failed:", inboxError.message);
@@ -83,6 +107,7 @@ export async function POST(request: Request) {
     "",
     `Title: ${title}`,
     "",
+    ...(context ? [context, ""] : []),
     "Details:",
     details,
     "",

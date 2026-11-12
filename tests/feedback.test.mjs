@@ -7,6 +7,10 @@ import ts from "typescript";
 
 const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "app", "api", "feedback", "route.ts"), "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const optionsSource = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "lib", "feedbackOptions.ts"), "utf8");
+const optionsCompiled = ts.transpileModule(optionsSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const feedbackOptions = {};
+new Function("exports", optionsCompiled)(feedbackOptions);
 
 function loadHandler({ inboxError = null, email = "owner@example.test", user = true } = {}) {
   const calls = [];
@@ -18,19 +22,20 @@ function loadHandler({ inboxError = null, email = "owner@example.test", user = t
       rpc: async (name, args) => { calls.push([name, args]); return { error: inboxError }; },
     };
   new Function("require", "exports", compiled)((name) => {
-    assert.equal(name, "@supabase/supabase-js");
-    return { createClient };
+    if (name === "@supabase/supabase-js") return { createClient };
+    if (name === "../../../lib/feedbackOptions") return feedbackOptions;
+    throw new Error(`Unexpected import: ${name}`);
   }, exports);
   return { post: exports.POST, calls };
 }
 
-function request(token = "player-token", type = "Suggestion") {
+function request(token = "player-token", type = "Suggestion", fields = {}) {
   const headers = { origin: "https://example.test", "content-type": "application/json" };
   if (token) headers.authorization = `Bearer ${token}`;
   return new Request("https://example.test/api/feedback", {
     method: "POST",
     headers,
-    body: JSON.stringify({ type, title: "Test title", details: "Test feedback details" }),
+    body: JSON.stringify({ type, title: "Test title", details: "Test feedback details", ...fields }),
   });
 }
 
@@ -62,14 +67,47 @@ test("feedback requires sign-in and stores inbox before emailing the owner", asy
 test("bug reports are submitted to the staff queue and inbox before the owner email", async () => {
   process.env.RESEND_API_KEY = "test-key";
   const oldFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response("{}", { status: 200 });
+  let emailText;
+  globalThis.fetch = async (_url, options) => {
+    emailText = JSON.parse(options.body).text;
+    return new Response("{}", { status: 200 });
+  };
   try {
     const { post, calls } = loadHandler();
-    const response = await post(request("player-token", "Bug Report"));
+    const response = await post(request("player-token", "Bug Report", { area: "Team ladders", device: "Phone", browser: "Safari" }));
     assert.deepEqual(await response.json(), { ok: true, emailDelivered: true });
     assert.equal(calls[0][0], "gb_submit_community_feedback");
     assert.equal(calls[0][1].p_type, "Bug Report");
+    assert.equal(calls[0][1].p_details, "Area: Team ladders\nDevice: Phone\nBrowser: Safari\n\nTest feedback details");
     assert.equal(calls[1], "gb_owner_feedback_email");
+    assert.match(emailText, /Area: Team ladders\nDevice: Phone\nBrowser: Safari/);
+  } finally {
+    globalThis.fetch = oldFetch;
+  }
+});
+
+test("invalid bug report options and oversized combined details are rejected", async () => {
+  const { post, calls } = loadHandler();
+  for (const fields of [
+    { area: "" },
+    { area: "Team ladders\nFake" },
+    { area: "Home page", device: "Invalid" },
+    { area: "Home page", browser: "Invalid" },
+    { area: "Home page", details: "x".repeat(5000) },
+  ]) {
+    assert.equal((await post(request("player-token", "Bug Report", fields))).status, 400);
+  }
+  assert.equal(calls.length, 0);
+});
+
+test("older bug report clients without area still submit", async () => {
+  process.env.RESEND_API_KEY = "test-key";
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("{}", { status: 200 });
+  try {
+    const { post, calls } = loadHandler();
+    assert.equal((await post(request("player-token", "Bug Report"))).status, 200);
+    assert.equal(calls[0][1].p_details, "Test feedback details");
   } finally {
     globalThis.fetch = oldFetch;
   }

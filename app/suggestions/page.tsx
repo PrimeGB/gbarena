@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import { bugAreas, bugBrowsers, bugDevices, maxBugDetailsLength } from "../../lib/feedbackOptions";
 import CompactTopBar from "../components/CompactTopBar";
 
 type PostType = "Suggestion" | "Bug Report";
@@ -13,6 +14,9 @@ export default function SuggestionsPage() {
   const [selectedType, setSelectedType] = useState<PostType>("Suggestion");
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
+  const [area, setArea] = useState("");
+  const [device, setDevice] = useState("");
+  const [browser, setBrowser] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,6 +28,10 @@ export default function SuggestionsPage() {
     const cleanDetails = details.trim();
     if (cleanTitle.length < 4 || cleanDetails.length < 10) {
       setError("Enter a title of at least 4 characters and details of at least 10 characters.");
+      return;
+    }
+    if (selectedType === "Bug Report" && (!area || cleanDetails.length > maxBugDetailsLength)) {
+      setError(!area ? "Choose where you found the bug." : `Bug report details must be ${maxBugDetailsLength} characters or fewer.`);
       return;
     }
 
@@ -41,7 +49,10 @@ export default function SuggestionsPage() {
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: selectedType, title: cleanTitle, details: cleanDetails }),
+        body: JSON.stringify({
+          type: selectedType, title: cleanTitle, details: cleanDetails,
+          ...(selectedType === "Bug Report" ? { area, device, browser } : {}),
+        }),
       });
       const result: { error?: string; emailDelivered?: boolean } = await response.json();
       if (!response.ok) {
@@ -51,6 +62,9 @@ export default function SuggestionsPage() {
 
       setTitle("");
       setDetails("");
+      setArea("");
+      setDevice("");
+      setBrowser("");
       setSuccess(
         selectedType === "Bug Report"
           ? "Your bug report is saved for staff review and in the owner's inbox. Bug Finder awards require staff to confirm the issue is fixed."
@@ -98,9 +112,13 @@ export default function SuggestionsPage() {
         .feedback-type-description{margin-top:5px;font-size:12px;line-height:1.4}
         .feedback-type-state{margin-top:10px;font-size:11px;font-weight:bold;text-transform:uppercase}
         .feedback-label{display:block;margin:0 0 7px;color:#f2c14e;font-size:12px;font-weight:bold}
-        .feedback-input,.feedback-textarea{display:block;width:100%;margin-bottom:16px;padding:12px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit;font-size:14px}
+        .feedback-input,.feedback-textarea,.feedback-select{display:block;width:100%;margin-bottom:16px;padding:12px;border:1px solid #315b7d;background:#02070c;color:#fff;font:inherit;font-size:14px}
+        .feedback-select{cursor:pointer}
+        .feedback-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+        .feedback-context-area{grid-column:1 / -1}
+        .feedback-context-hint{margin:-5px 0 15px;color:#b9cddd;font-size:12px;line-height:1.5}
         .feedback-textarea{min-height:180px;resize:vertical;line-height:1.5}
-        .feedback-input:focus,.feedback-textarea:focus{outline:2px solid #8dcaff;outline-offset:1px}
+        .feedback-input:focus,.feedback-textarea:focus,.feedback-select:focus{outline:2px solid #8dcaff;outline-offset:1px}
         .feedback-submit{padding:12px 20px;border:1px solid #e8c46a;background:linear-gradient(to bottom,#d6a943,#8a6218);color:#07111b;font:inherit;font-size:12px;font-weight:bold;text-transform:uppercase;cursor:pointer}
         .feedback-submit:disabled{opacity:.55;cursor:not-allowed}
         .feedback-message{margin:0 0 16px;padding:12px;border:1px solid #a34a4a;background:#2a1010;color:#ffd1d1;font-size:13px;line-height:1.5}
@@ -111,7 +129,7 @@ export default function SuggestionsPage() {
         .feedback-guide ul{margin:0 0 18px;padding-left:20px}
         .feedback-guide a,.feedback-message a{color:#8dcaff}
         @media(max-width:768px){.feedback-content{padding:18px 14px}.feedback-header{padding:18px}.feedback-grid{grid-template-columns:minmax(0,1fr)}.feedback-heading h1{font-size:24px}}
-        @media(max-width:450px){.feedback-type-options{grid-template-columns:1fr}.feedback-type button{min-height:0}}
+        @media(max-width:450px){.feedback-type-options,.feedback-context{grid-template-columns:1fr}.feedback-type button{min-height:0}.feedback-context-area{grid-column:auto}}
       `}</style>
       <div className="feedback-page">
         <CompactTopBar />
@@ -150,10 +168,38 @@ export default function SuggestionsPage() {
                     </button>
                   </div>
                 </fieldset>
+                {selectedType === "Bug Report" && (
+                  <>
+                    <p className="feedback-context-hint">Help us narrow it down before describing the problem.</p>
+                    <div className="feedback-context">
+                      <div className="feedback-context-area">
+                        <label className="feedback-label" htmlFor="bug-area">Where did you find the bug? (required)</label>
+                        <select id="bug-area" className="feedback-select" value={area} onChange={(event) => setArea(event.target.value)} required>
+                          <option value="">Choose a page or area</option>
+                          {bugAreas.map((option) => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="feedback-label" htmlFor="bug-device">Device (optional)</label>
+                        <select id="bug-device" className="feedback-select" value={device} onChange={(event) => setDevice(event.target.value)}>
+                          <option value="">Select a device</option>
+                          {bugDevices.map((option) => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="feedback-label" htmlFor="bug-browser">Browser (optional)</label>
+                        <select id="bug-browser" className="feedback-select" value={browser} onChange={(event) => setBrowser(event.target.value)}>
+                          <option value="">Select a browser</option>
+                          {bugBrowsers.map((option) => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <label className="feedback-label" htmlFor="feedback-title">Title</label>
                 <input id="feedback-title" className="feedback-input" value={title} onChange={(event) => setTitle(event.target.value)} minLength={4} maxLength={160} required placeholder={selectedType === "Suggestion" ? "What is your idea?" : "What is not working?"} />
                 <label className="feedback-label" htmlFor="feedback-details">Details</label>
-                <textarea id="feedback-details" className="feedback-textarea" value={details} onChange={(event) => setDetails(event.target.value)} minLength={10} maxLength={5000} required placeholder={selectedType === "Suggestion" ? "Describe your idea and how it would help." : "Describe what happened and how to reproduce it."} />
+                <textarea id="feedback-details" className="feedback-textarea" value={details} onChange={(event) => setDetails(event.target.value)} minLength={10} maxLength={selectedType === "Bug Report" ? maxBugDetailsLength : 5000} required placeholder={selectedType === "Suggestion" ? "Describe your idea and how it would help." : "Describe what happened and how to reproduce it."} />
                 <button className="feedback-submit" type="submit" disabled={submitting || authLoading || !user}>
                   {submitting ? "Sending..." : `Submit ${selectedType}`}
                 </button>
