@@ -28,16 +28,6 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
         }
         .hero-expanded .hs-slide.active{opacity:1;transform:scale(1);}
         .hero-expanded .hs-slide.retro-slide{filter:brightness(.84) saturate(.78);}
-        .hero-expanded .hs-credits{
-          position:absolute;
-          right:14px;
-          bottom:10px;
-          z-index:5;
-          color:rgba(255,255,255,.82);
-          font:11px/1.2 Arial,sans-serif;
-          text-shadow:0 1px 3px #000;
-        }
-        .hero-expanded .hs-credits:hover{color:#fff;text-decoration:underline;}
       `}</style>
       {images.map((src, index) => (
         <div
@@ -52,9 +42,6 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
           }}
         />
       ))}
-      <a className="hs-credits" href="/retro-systems/ATTRIBUTION.txt" target="_blank" rel="noreferrer">
-        Image credits
-      </a>
     </>
   );
 }
