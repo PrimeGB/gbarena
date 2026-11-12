@@ -14,6 +14,7 @@ import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchListDate } from "../../../lib/matchTiming";
 import { profilePlatformAccountId } from "../../../lib/gamingAccounts";
+import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -76,6 +77,7 @@ type RosterMember = {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "";
+  value = rapidRoyalDisplayName(value);
   if (value === "mw2") return "Modern Warfare 2 (2009)";
   if (value === "modern-warfare-4") return "Modern Warfare (2019)";
   if (value === "modern-warfare-ii") return "Modern Warfare II (2022)";

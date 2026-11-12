@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
+import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 
 type Board = "overall" | "week" | "month" | "season";
 type RankingKind = "players" | "teams";
@@ -47,6 +48,7 @@ const previewTeams: TeamRow[] = [
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
+  value = rapidRoyalDisplayName(value);
   if (value === "mw2") return "MW2";
   if (value === "modern-warfare-4") return "Modern Warfare (2019)";
   return value.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");

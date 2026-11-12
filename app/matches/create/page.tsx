@@ -17,6 +17,9 @@ import { getGameRules } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
+import { rapidRoyalRules } from "../../../lib/rapidRoyal";
+import RapidRoyalRules from "../../components/RapidRoyalRules";
+import { getPlayerOptions, getRequiredRosterSize } from "../../../lib/matchCreationRoster";
 
 function prettyText(value: string | null) {
   if (!value) return "";
@@ -45,28 +48,8 @@ function getGameImage(game: string | null, category?: string) {
 function getLadderName(ladder: string | null) {
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
-  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
-}
-
-function getPlayerOptions(ladder: string | null, isRedSec: boolean, teamSizes?: string[]) {
-  if (isRedSec) return ["2v2", "3v3", "4v4"];
-  if (ladder === "rapid-royal-duos") return ["2v2"];
-  if (ladder === "singles") return ["1v1"];
-  if (ladder === "duos") return ["2v2"];
-  return teamSizes?.length ? teamSizes : ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
-}
-
-function getRequiredRosterSize(ladder: string | null, players: string) {
-  const normalized = String(players || "").toLowerCase();
-
-  if (ladder === "singles" || normalized === "1v1") return 1;
-  if (ladder === "duos" || normalized.startsWith("2v")) return 2;
-
-  const match = normalized.match(/(\d+)v/);
-  if (match) return Number(match[1]);
-
-  return 1;
 }
 
 function toLocalDateTimeValue(date: Date) {
@@ -108,7 +91,7 @@ function CreateMatchContent() {
 
   const isRedSec = game === "redsec" || ladder === "redsec";
   const isRapidRoyal = ladder === "rapid-royal-duos";
-  const killRaceName = isRapidRoyal ? "Rapid Royal Duos" : "RedSec";
+  const killRaceName = isRapidRoyal ? "Rapid Royal" : "RedSec";
   const gameRules = useMemo(() => getGameRules(category, game), [category, game]);
 
   const platformName = prettyText(platform);
@@ -127,7 +110,7 @@ function CreateMatchContent() {
   );
 
   const [gameMode, setGameMode] = useState(
-    isRedSec ? "RedSec" : isRapidRoyal ? "Rapid Royal Duos" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
+    isRedSec ? "RedSec" : isRapidRoyal ? "Rapid Royal" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
   );
   const currentMode = gameRules
     ? gameRules.modes.find((mode) => mode.value === gameMode) || gameRules.modes[0]
@@ -1034,18 +1017,18 @@ function CreateMatchContent() {
                     <div className="form-body">
                       {isRapidRoyal ? (
                         <div className="rules-box">
-                          <strong>RAPID ROYAL DUOS — KILL RACE RULES</strong>
+                          <strong>RAPID ROYAL — KILL RACE RULES</strong>
                           <br />
                           <br />
-                          • Teams may roster up to 3 players; 2 play each round.
+                          • {rapidRoyalRules.teams}
                           <br />
                           • {bestOf} · {players} · Cross Play {crossplay}.
                           <br />
-                          • One team loads in with an enemy player who eliminates themselves and spectates; then the other team goes.
+                          • {players === "3v3" ? rapidRoyalRules.trios : rapidRoyalRules.duos}
                           <br />
-                          • The duo with the most kills before dying or winning takes the round.
+                          • {rapidRoyalRules.winning}
                           <br />
-                          • Screenshots or proof are required for disputes.
+                          • {rapidRoyalRules.proof}
                           <br />
                           <br />
                           <button
@@ -1188,7 +1171,7 @@ function CreateMatchContent() {
         <div className="modal-backdrop">
           <div className="settings-modal">
             <div className="modal-title">
-              {isRapidRoyal ? "RAPID ROYAL DUOS" : "REDSEC"} — KILL RACE RULES
+              {isRapidRoyal ? "RAPID ROYAL" : "REDSEC"} — KILL RACE RULES
               <button
                 className="modal-close"
                 type="button"
@@ -1200,21 +1183,7 @@ function CreateMatchContent() {
 
             <div className="modal-body">
               {isRapidRoyal ? (
-                <div className="redsec-rules">
-                  <h2>RAPID ROYAL DUOS — KILL RACE RULES</h2>
-                  <h3>Teams</h3>
-                  <p>Teams may roster up to 3 players. Two players compete in each round.</p>
-                  <h3>Best of 1</h3>
-                  <p>
-                    One team loads in with an enemy player. The enemy player eliminates
-                    themselves and spectates. The team plays until they die or win. Then the
-                    opposite team does the same.
-                  </p>
-                  <h3>Winning</h3>
-                  <p>The duo with the most kills before dying or winning takes the match.</p>
-                  <h3>Proof</h3>
-                  <p>Both teams must submit scoreboard screenshots or video for disputes.</p>
-                </div>
+                <RapidRoyalRules />
               ) : (
               <div className="redsec-rules">
                 <h2>REDSEC — KILL RACE RULES</h2>

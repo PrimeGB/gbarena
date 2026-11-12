@@ -63,7 +63,7 @@ function getLadderName(ladder: string | null) {
   if (ladder === "redsec") return "RedSec Ladder";
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
-  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   if (ladder === "team") return "Team Ladder";
   return "Team Ladder";
 }

@@ -29,7 +29,7 @@ export default function BattlefieldGamePage() {
   const ladders =
     game === "battlefield-6"
       ? [
-          { slug: "rapid-royal-duos", title: "Rapid Royal Duos" },
+          { slug: "rapid-royal-duos", title: "Rapid Royal" },
           { slug: "redsec", title: "RedSec" },
         ]
       : standardLadders;

@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { gamingCategoryLabel, gamingGameLabel, gamingGames } from "../../../lib/gamingAccounts";
+import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 import {
   categoriesForPlatform,
   gamesForCategory,
@@ -16,6 +17,7 @@ import {
 
 function cleanName(value: string | null) {
   if (!value) return "Team";
+  value = rapidRoyalDisplayName(value);
 
   return value
     .replaceAll("-", " ")

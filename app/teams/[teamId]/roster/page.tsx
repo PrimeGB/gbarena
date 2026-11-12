@@ -8,6 +8,7 @@ import SiteNav from "../../../components/SiteNav";
 import TeamTabs from "../../../components/TeamTabs";
 import { ladderPlatformLabel } from "../../../../lib/ladderCatalog";
 import { resolveGamingAccountId } from "../../../../lib/gamingAccounts";
+import { rapidRoyalDisplayName } from "../../../../lib/rapidRoyal";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -49,6 +50,7 @@ type SearchResult = {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
+  value = rapidRoyalDisplayName(value);
 
   const replacements: Record<string, string> = {
     mw2: "Modern Warfare 2 (2009)",

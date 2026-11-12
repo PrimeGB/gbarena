@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { rapidRoyalDisplayName } from "../../lib/rapidRoyal";
 
 type PlayerResult = {
   id: string;
@@ -29,6 +30,7 @@ function cleanText(value: string | null | undefined, fallback = "Unknown") {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
+  value = rapidRoyalDisplayName(value);
 
   if (value === "mw2") return "Call of Duty: Modern Warfare 2 (2009)";
   if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II (2022)";

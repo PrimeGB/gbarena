@@ -154,7 +154,7 @@ export function laddersForGame(category: string, game: string) {
   if (category === "uno") return game === "2v2" ? [duos] : [singles];
   return category === "battlefield" && game === "battlefield-6"
     ? [
-        { slug: "rapid-royal-duos", title: "Rapid Royal Duos" },
+        { slug: "rapid-royal-duos", title: "Rapid Royal" },
         { slug: "redsec", title: "RedSec" },
       ]
     : standard;

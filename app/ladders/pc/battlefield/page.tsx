@@ -302,7 +302,7 @@ export default function PcBattlefieldPage() {
                     <div className="ladder-list">
                       {game.slug === "battlefield-6" && (
                         <div className="ladder-item" key={`${game.title}-rapid-royal-duos`}>
-                          <div className="ladder-name">Rapid Royal Duos</div>
+                          <div className="ladder-name">Rapid Royal</div>
 
                           <Link
                             className="ladder-link"

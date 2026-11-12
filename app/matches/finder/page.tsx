@@ -13,6 +13,7 @@ import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
 import { getGameRules } from "../../../lib/matchRules";
 import { initialAcceptanceRoster, toggleAcceptancePlayer } from "../../../lib/matchAcceptanceRoster";
+import { rapidRoyalDisplayName, rapidRoyalRules } from "../../../lib/rapidRoyal";
 
 type TeamRole = "leader" | "co-leader" | "captain" | "member";
 
@@ -89,13 +90,14 @@ function GameCover({ image, name }: { image: string; name: string }) {
 function getLadderName(ladder: string | null) {
   if (ladder === "singles") return "Solos Ladder";
   if (ladder === "duos") return "Duos Ladder";
-  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
 }
 
 function getRosterText(ladder: string) {
   if (ladder === "singles") return "1 Player";
   if (ladder === "duos") return "2 Players";
+  if (ladder === "rapid-royal-duos") return "3 Players";
   return "8 Players";
 }
 
@@ -759,7 +761,7 @@ function MatchFinderContent() {
                       return (
                         <div className="match-row" key={match.id}>
                           <div className="match-cell players">{match.players}</div>
-                          <div className="match-cell mode">{match.game_mode}<span className="mode-preset">{match.preset || "Rules not specified"}</span></div>
+                          <div className="match-cell mode">{rapidRoyalDisplayName(match.game_mode)}<span className="mode-preset">{rapidRoyalDisplayName(match.preset || "Rules not specified")}</span></div>
                           <div className="match-cell rules-type">{match.best_of}<span className="rules-meta">{prettyText(match.platform)} · Cross Play {match.crossplay ? "On" : "Off"}</span></div>
                           <div className="match-cell time">{formatMatchTime(match)}</div>
                           <div className="match-cell actions-cell">
@@ -814,9 +816,9 @@ function MatchFinderContent() {
               <div className="accept-summary">
                 Players: {confirmMatch.players}
                 <br />
-                Mode: {confirmMatch.game_mode}
+                Mode: {rapidRoyalDisplayName(confirmMatch.game_mode)}
                 <br />
-                Rules: {confirmMatch.preset || "Not specified"}
+                Rules: {rapidRoyalDisplayName(confirmMatch.preset || "Not specified")}
                 <br />
                 System: {prettyText(confirmMatch.platform)} · Cross Play {confirmMatch.crossplay ? "On" : "Off"}
                 <br />
@@ -896,9 +898,9 @@ function MatchFinderContent() {
               <div className="accept-summary">
                 Players: {viewMatch.players}
                 <br />
-                Mode: {viewMatch.game_mode}
+                Mode: {rapidRoyalDisplayName(viewMatch.game_mode)}
                 <br />
-                Rules: {viewMatch.preset || "Not specified"}
+                Rules: {rapidRoyalDisplayName(viewMatch.preset || "Not specified")}
                 <br />
                 Format: {viewMatch.best_of}
                 <br />
@@ -926,7 +928,7 @@ function MatchFinderContent() {
                   <p key={rule}>• {rule}</p>
                 ))}
               {viewMatch.ladder === "rapid-royal-duos" && (
-                <p>Teams may roster up to 3 players; 2 play each round. Each team plays its round with an enemy spectator, and the duo with the most kills before dying or winning takes the round. Proof is required for disputes.</p>
+                <p>{viewMatch.players === "3v3" ? rapidRoyalRules.trios : rapidRoyalRules.duos} {rapidRoyalRules.winning} {rapidRoyalRules.proof}</p>
               )}
               {(viewMatch.game === "redsec" || viewMatch.ladder === "redsec") && (
                 <p>RedSec uses Lyndon Oil Works and the locked GameBattles RedSec kill-race rules.</p>

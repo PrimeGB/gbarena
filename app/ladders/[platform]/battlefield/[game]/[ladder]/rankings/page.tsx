@@ -62,7 +62,7 @@ export default function BattlefieldRankingsPage() {
     ladder === "redsec"
       ? "RedSec"
       : ladder === "rapid-royal-duos"
-        ? "Rapid Royal Duos"
+        ? "Rapid Royal"
         : ladder === "singles"
         ? "Singles"
         : ladder === "duos"

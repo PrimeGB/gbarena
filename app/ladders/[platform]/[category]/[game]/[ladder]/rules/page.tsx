@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getGameRules } from "../../../../../../../lib/matchRules";
+import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
 
 type LadderRulesPageProps = {
   params: Promise<{
@@ -24,7 +25,7 @@ function prettyText(value: string) {
 
 function ladderName(ladder: string) {
   if (ladder === "redsec") return "RedSec";
-  if (ladder === "rapid-royal-duos") return "Rapid Royal Duos";
+  if (ladder === "rapid-royal-duos") return "Rapid Royal";
   if (ladder === "singles") return "Solos";
   if (ladder === "duos") return "Duos";
   if (ladder === "team") return "Team";
@@ -54,21 +55,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
         </header>
 
         {ladder === "rapid-royal-duos" ? (
-          <div className="redsec-rules">
-            <h2>Rapid Royal Duos — Kill Race Rules</h2>
-            <h3>Teams</h3>
-            <p>Teams may roster up to <strong>3 players</strong>. Two players compete in each round.</p>
-            <h3>Best of 1</h3>
-            <p>
-              One team loads in with an enemy player. The enemy player eliminates themselves
-              and spectates. The team plays until they die or win. Then the opposite team
-              does the same.
-            </p>
-            <h3>Winning</h3>
-            <p>The duo with the most kills before dying or winning takes the match.</p>
-            <h3>Proof</h3>
-            <p>Both teams must keep scoreboard screenshots or video for disputes.</p>
-          </div>
+          <RapidRoyalRules />
         ) : ladder === "redsec" ? (
           <div className="redsec-rules">
             <h2>RedSec — Kill Race Rules</h2>

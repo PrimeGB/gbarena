@@ -26,6 +26,15 @@ test("players can choose a 1v1 player or a correctly sized team lineup", () => {
   assert.deepEqual(roster.toggleAcceptancePlayer(["one", "two"], "one", 2), ["two"]);
 });
 
+test("a 3v3 lineup accepts exactly three selected players", () => {
+  let selected = [];
+  for (const player of ["one", "two", "three", "four"]) {
+    selected = roster.toggleAcceptancePlayer(selected, player, 3);
+  }
+  assert.deepEqual(selected, ["one", "two", "three"]);
+  assert.deepEqual(roster.toggleAcceptancePlayer(selected, "two", 3), ["one", "three"]);
+});
+
 test("confirmation has no checkboxes and displays acceptance errors", () => {
   const page = readFileSync(new URL("../app/matches/finder/page.tsx", import.meta.url), "utf8");
   const confirmation = page.slice(page.indexOf("{confirmMatch && ("), page.indexOf("{viewMatch && ("));

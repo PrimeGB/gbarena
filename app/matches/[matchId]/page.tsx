@@ -10,6 +10,7 @@ import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccount
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
+import { rapidRoyalDisplayName, rapidRoyalRules } from "../../../lib/rapidRoyal";
 import { UnscannedEvidenceLink } from "../../components/UnscannedEvidenceLink";
 import DecisionReviewRequest from "../DecisionReviewRequest";
 
@@ -153,6 +154,7 @@ function clean(value: string | null | undefined, fallback = "TBD") {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
+  value = rapidRoyalDisplayName(value);
   if (value === "mw2") return "Call of Duty: Modern Warfare 2 (2009)";
   if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II (2022)";
   if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare (2019)";
@@ -169,7 +171,7 @@ function prettyText(value: string | null | undefined) {
 function ladderName(value: string | null | undefined) {
   if (value === "singles") return "Solos Ladder";
   if (value === "duos") return "Duos Ladder";
-  if (value === "rapid-royal-duos") return "Rapid Royal Duos Ladder";
+  if (value === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
 }
 
@@ -633,7 +635,7 @@ export default function MatchDetailsPage() {
         { label: isSolo ? "Format" : "Players", value: match.players?.trim() || "" },
         { label: "Games (Best of...)", value: String(bestOfNumber) },
         { label: "Game Mode", value: match.game_mode ? prettyText(match.game_mode) : "" },
-        { label: "Gameplay", value: match.preset?.trim() || "" },
+        { label: "Gameplay", value: rapidRoyalDisplayName(match.preset?.trim() || "") },
         ...featuredSettings.map((setting) => ({ label: setting.label, value: setting.value || "" })),
       ].filter((row) => row.value)
     : [];
@@ -643,7 +645,9 @@ export default function MatchDetailsPage() {
         {
           title: `${ladderName(match.ladder)} Format`,
           items: [
-            match.ladder === "singles"
+            match.ladder === "rapid-royal-duos"
+              ? rapidRoyalRules.teams
+              : match.ladder === "singles"
               ? "This is a solo match. Only the one player on each side may compete."
               : match.ladder === "duos"
               ? "This is a duos match. Each side must play with its locked duo roster."
@@ -664,10 +668,13 @@ export default function MatchDetailsPage() {
               : "Game mode is agreed in the match lobby.",
             ...(match.host_team_ids?.length ? ["The higher-ranked team hosts first; teams alternate hosts. Ties and matches between two unranked teams start with the posting team. Rankings are compared within each team's own system ladder at acceptance."] : []),
             ...(match.map_names?.length ? ["Play the assigned maps in the order shown on the match page."] : []),
-            isBombMode
+            match.ladder === "rapid-royal-duos"
+              ? (match.players === "3v3" ? rapidRoyalRules.trios : rapidRoyalRules.duos)
+              : isBombMode
               ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
               : "A game ends when the score limit or time limit in the settings below is reached.",
             ...(modeDef ? modeDef.rules : []),
+            ...(match.ladder === "rapid-royal-duos" ? [rapidRoyalRules.winning, rapidRoyalRules.proof] : []),
             "Teams must be ready to play at the scheduled time. If the opponent has not shown up 15 minutes after the scheduled time, they forfeit and the present team can report the win.",
           ],
         },
@@ -2352,7 +2359,7 @@ export default function MatchDetailsPage() {
                   <h3>Required Match Settings</h3>
                   <p className="rules-note">Both teams must play with exactly these settings.</p>
                   <div className="rules-settings">
-                    {[{ label: "Gameplay", value: match.preset }, ...allSettings]
+                    {[{ label: "Gameplay", value: rapidRoyalDisplayName(match.preset || "") }, ...allSettings]
                       .filter((setting) => !!setting.value?.trim())
                       .map((setting) => (
                         <div className="setting-line" key={`${setting.label}:${setting.value}`}>

@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabase";
 import { ladderGameLabel, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { useUser } from "../../../lib/useUser";
+import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 
 type TeamRow = {
   id: string;
@@ -26,6 +27,7 @@ type TeamRow = {
 
 function prettyText(value: string | null) {
   if (!value) return "Unknown";
+  value = rapidRoyalDisplayName(value);
   return value
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
