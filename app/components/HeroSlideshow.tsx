@@ -28,6 +28,9 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
         }
         .hero-expanded .hs-slide.active{opacity:1;transform:scale(1);}
         .hero-expanded .hs-slide.retro-slide{filter:brightness(.84) saturate(.78);}
+        @media (prefers-reduced-motion: reduce){
+          .hero-expanded .hs-slide{transition:none;transform:none;}
+        }
       `}</style>
       {images.map((src, index) => (
         <div
