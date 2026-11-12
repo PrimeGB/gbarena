@@ -12,7 +12,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
 }).outputText;
 
-function harness({ preview = false, inboxError = null } = {}) {
+function harness({ preview = false, inboxError = null, actionError = null } = {}) {
   const states = [];
   const effects = [];
   const calls = [];
@@ -36,13 +36,17 @@ function harness({ preview = false, inboxError = null } = {}) {
     useSyncExternalStore() { return preview; },
   };
   const incoming = [
-    { id: "1", sender_id: "alex", recipient_id: "me", sender_type: "player", subject: "First", body: "First body", is_read: false, created_at: "2026-01-01T00:00:00Z" },
-    { id: "2", sender_id: "jordan", recipient_id: "me", sender_type: "staff", subject: "Second", body: "Second body", is_read: true, created_at: "2026-01-02T00:00:00Z" },
+    { id: "1", sender_id: "alex", recipient_id: "me", sender_type: "player", subject: "First", body: "First body", is_read: false, is_saved: false, created_at: new Date().toISOString() },
+    { id: "2", sender_id: "jordan", recipient_id: "me", sender_type: "staff", subject: "Second", body: "Second body", is_read: true, is_saved: false, created_at: new Date().toISOString() },
   ];
   const outgoing = [{ ...incoming[0], id: "3", sender_id: "me", recipient_id: "alex", subject: "Sent subject", is_archived: true }];
   let finishRead;
   const readPending = new Promise((resolve) => { finishRead = resolve; });
   const supabase = {
+    rpc(method, args) {
+      calls.push({ method, args });
+      return Promise.resolve({ data: { saved: args.p_saved, removed: false }, error: actionError });
+    },
     from(table) {
       const query = { table, filters: {}, action: "select" };
       const builder = {
@@ -112,7 +116,7 @@ test("inbox names, folders, and delayed read updates keep the selected message",
   view = page.render();
   assert.match(renderToStaticMarkup(view), /To: Alex/);
   assert.match(renderToStaticMarkup(view), /Sent subject/);
-  assert.equal(page.calls.find((call) => call.filters.sender_id === "me").filters.is_archived, undefined);
+  assert.equal(page.calls.find((call) => call.filters?.sender_id === "me").filters.is_archived, undefined);
 });
 
 test("reply sends the selected message and displays the saved reply in Sent", async () => {
@@ -145,6 +149,67 @@ test("composing sends to the resolved player and opens Sent", async () => {
   assert.equal(sent.values.body, "Good game!");
   assert.match(renderToStaticMarkup(page.render()), /Message sent\./);
   assert.equal(button(page.render(), "Sent").props["aria-pressed"], true);
+});
+
+test("saved messages can be found and read messages deleted without changing sent messages", async () => {
+  const page = harness();
+  page.render();
+  await flush();
+  button(page.render(), "Second body").props.onClick();
+  button(page.render(), "Save message").props.onClick();
+  await flush();
+  assert.deepEqual(page.calls.find((call) => call.method === "gb_save_inbox_message").args, { p_message_id: "2", p_saved: true });
+  button(page.render(), "Saved").props.onClick();
+  let view = page.render();
+  assert.match(renderToStaticMarkup(view), /Second body/);
+  assert.doesNotMatch(renderToStaticMarkup(find(view, (element) => element.props?.className === "message-list")), /First body/);
+  button(view, "Second body").props.onClick();
+  const previousWindow = globalThis.window;
+  globalThis.window = { confirm: () => true };
+  try {
+    button(page.render(), "Delete message").props.onClick();
+    await flush();
+  } finally {
+    globalThis.window = previousWindow;
+  }
+  assert.equal(page.calls.find((call) => call.method === "gb_delete_inbox_message").args.p_message_id, "2");
+  assert.match(renderToStaticMarkup(page.render()), /No saved messages yet/);
+  button(page.render(), "Sent").props.onClick();
+  assert.match(renderToStaticMarkup(page.render()), /Sent subject/);
+});
+
+test("delayed read updates do not undo a saved message", async () => {
+  const page = harness();
+  page.render();
+  await flush();
+  const pending = button(page.render(), "First body").props.onClick();
+  button(page.render(), "Save message").props.onClick();
+  await flush();
+  page.finishRead({ error: null });
+  await pending;
+  assert.ok(button(page.render(), "Unsave message"));
+  button(page.render(), "Saved").props.onClick();
+  assert.match(renderToStaticMarkup(page.render()), /First body/);
+});
+
+test("unread messages cannot be deleted and deletion failures stay visible", async () => {
+  const page = harness({ actionError: { message: "offline" } });
+  page.render();
+  await flush();
+  const pending = button(page.render(), "First body").props.onClick();
+  assert.equal(button(page.render(), "Delete message").props.disabled, true);
+  page.finishRead({ error: null });
+  await pending;
+  const previousWindow = globalThis.window;
+  globalThis.window = { confirm: () => true };
+  try {
+    button(page.render(), "Delete message").props.onClick();
+    await flush();
+  } finally {
+    globalThis.window = previousWindow;
+  }
+  assert.match(renderToStaticMarkup(page.render()), /Message could not be deleted: offline/);
+  assert.match(renderToStaticMarkup(page.render()), /First body/);
 });
 
 test("load errors are visible and sample mode never accesses the database", async () => {

@@ -18,7 +18,8 @@ export default function NotificationBell() {
         .from("messages")
         .select("id", { count: "exact", head: true })
         .eq("recipient_id", userId)
-        .eq("is_read", false);
+        .eq("is_read", false)
+        .eq("is_archived", false);
       if (active) setCount(unread || 0);
     }
 

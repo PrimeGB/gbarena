@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import CompactTopBar from "../../components/CompactTopBar";
@@ -24,10 +23,11 @@ type MessageRow = {
   related_id?: string | null;
   is_read: boolean;
   is_archived: boolean;
+  is_saved: boolean;
   created_at: string;
 };
 
-type MessageFolder = "inbox" | "sent";
+type MessageFolder = "inbox" | "saved" | "sent";
 
 function senderName(message: MessageRow, profileNames: Record<string, string>) {
   if (message.sender_type === "system") return "GameBattles";
@@ -59,12 +59,12 @@ const getServerPreview = () => false;
 const previewUser: AppUser = { id: "preview-user" };
 const previewNames = { "preview-player": "Alex", "preview-staff": "Jordan" };
 const previewInbox: MessageRow[] = [
-  { id: "preview-1", sender_id: "preview-player", recipient_id: "preview-user", sender_type: "player", subject: "Great games last night", body: "Hey! Those matches were a lot of fun. Let me know if your team is up for another series this weekend.", message_type: "player", is_read: false, is_archived: false, created_at: "2026-11-12T18:20:00Z" },
-  { id: "preview-2", sender_id: "preview-staff", recipient_id: "preview-user", sender_type: "staff", subject: "Your match ticket", body: "Thanks for sending in the details. We've reviewed the evidence and recorded a decision on your ticket.", message_type: "staff", is_read: true, is_archived: false, created_at: "2026-11-11T15:00:00Z" },
-  { id: "preview-3", sender_id: null, recipient_id: "preview-user", sender_type: "system", subject: "You earned an award", body: "Congratulations! A new award was added to your profile.", message_type: "system", is_read: true, is_archived: false, created_at: "2026-11-10T12:00:00Z" },
+  { id: "preview-1", sender_id: "preview-player", recipient_id: "preview-user", sender_type: "player", subject: "Great games last night", body: "Hey! Those matches were a lot of fun. Let me know if your team is up for another series this weekend.", message_type: "player", is_read: false, is_archived: false, is_saved: false, created_at: "2026-11-12T18:20:00Z" },
+  { id: "preview-2", sender_id: "preview-staff", recipient_id: "preview-user", sender_type: "staff", subject: "Your match ticket", body: "Thanks for sending in the details. We've reviewed the evidence and recorded a decision on your ticket.", message_type: "staff", is_read: true, is_archived: false, is_saved: true, created_at: "2026-11-11T15:00:00Z" },
+  { id: "preview-3", sender_id: null, recipient_id: "preview-user", sender_type: "system", subject: "You earned an award", body: "Congratulations! A new award was added to your profile.", message_type: "system", is_read: true, is_archived: false, is_saved: false, created_at: "2026-11-10T12:00:00Z" },
 ];
 const previewSent: MessageRow[] = [
-  { id: "preview-4", sender_id: "preview-user", recipient_id: "preview-player", sender_type: "player", subject: "Ready for the next match?", body: "Let's find a time that works for both teams.", message_type: "player", is_read: true, is_archived: false, created_at: "2026-11-09T12:00:00Z" },
+  { id: "preview-4", sender_id: "preview-user", recipient_id: "preview-player", sender_type: "player", subject: "Ready for the next match?", body: "Let's find a time that works for both teams.", message_type: "player", is_read: true, is_archived: false, is_saved: false, created_at: "2026-11-09T12:00:00Z" },
 ];
 
 export default function InboxPage() {
@@ -89,6 +89,7 @@ export default function InboxPage() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [managingMessage, setManagingMessage] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -187,7 +188,7 @@ export default function InboxPage() {
     setReplyBody("");
     setNotice("");
 
-    if (folder === "inbox" && !message.is_read && currentUser?.id) {
+    if (folder !== "sent" && !message.is_read && currentUser?.id) {
       if (preview) {
         const updatedMessage = { ...message, is_read: true };
         setMessages((old) => old.map((item) => item.id === message.id ? updatedMessage : item));
@@ -205,10 +206,51 @@ export default function InboxPage() {
         return;
       }
 
-      const updatedMessage = { ...message, is_read: true };
-      setMessages((old) => old.map((item) => item.id === message.id ? updatedMessage : item));
-      setSelected((current) => current?.id === message.id ? updatedMessage : current);
+      setMessages((old) => old.map((item) => item.id === message.id ? { ...item, is_read: true } : item));
+      setSelected((current) => current?.id === message.id ? { ...current, is_read: true } : current);
     }
+  }
+
+  async function saveMessage(message: MessageRow) {
+    if (managingMessage) return;
+    const saved = !message.is_saved;
+    const expired = Date.now() - new Date(message.created_at).getTime() >= 60 * 24 * 60 * 60 * 1000;
+    if (!saved && expired
+      && !window.confirm("This message is over 60 days old and will be removed if you unsave it. Continue?")) return;
+    setManagingMessage(true);
+    setNotice("");
+    let removed = !saved && expired;
+    if (!preview) {
+      const { data, error: saveError } = await supabase.rpc("gb_save_inbox_message", { p_message_id: message.id, p_saved: saved });
+      if (saveError || !data || typeof data.removed !== "boolean") {
+        setNotice(`Message could not be updated: ${saveError?.message || "Unexpected server response."}`);
+        setManagingMessage(false);
+        return;
+      }
+      removed = data.removed;
+    }
+    setMessages((old) => removed ? old.filter((item) => item.id !== message.id) : old.map((item) => item.id === message.id ? { ...item, is_saved: saved } : item));
+    setSelected((current) => current?.id === message.id ? (removed || (!saved && folder === "saved") ? null : { ...current, is_saved: saved }) : current);
+    setNotice(preview ? "Preview only: no message was changed." : removed ? "Message removed from your inbox." : saved ? "Message saved." : "Message removed from Saved.");
+    setManagingMessage(false);
+  }
+
+  async function deleteMessage(message: MessageRow) {
+    if (managingMessage || !message.is_read || !window.confirm("Delete this message from your inbox?")) return;
+    setManagingMessage(true);
+    setNotice("");
+    if (!preview) {
+      const { error: deleteError } = await supabase.rpc("gb_delete_inbox_message", { p_message_id: message.id });
+      if (deleteError) {
+        setNotice(`Message could not be deleted: ${deleteError.message}`);
+        setManagingMessage(false);
+        return;
+      }
+    }
+    setMessages((old) => old.filter((item) => item.id !== message.id));
+    setSelected((current) => current?.id === message.id ? null : current);
+    setNotice(preview ? "Preview only: no message was deleted." : "Message deleted from your inbox.");
+    setManagingMessage(false);
   }
 
   async function sendNewMessage() {
@@ -338,11 +380,7 @@ export default function InboxPage() {
       return;
     }
 
-    const { error: archiveError } = await supabase
-      .from("messages")
-      .update({ is_archived: true })
-      .eq("id", selected.id)
-      .eq("recipient_id", currentUser.id);
+    const { error: archiveError } = await supabase.rpc("gb_delete_inbox_message", { p_message_id: selected.id });
 
     if (archiveError) {
       setNotice(`Friend request ${status}, but the message could not be archived: ${archiveError.message}`);
@@ -361,7 +399,7 @@ export default function InboxPage() {
     return <div className="inbox-loading">You must be logged in to view inbox.</div>;
   }
 
-  const visibleMessages = folder === "inbox" ? messages : sentMessages;
+  const visibleMessages = folder === "sent" ? sentMessages : folder === "saved" ? messages.filter((message) => message.is_saved) : messages;
 
   return (
     <>
@@ -743,14 +781,7 @@ export default function InboxPage() {
             </div>
           </header>
 
-          <nav className="nav">
-            <Link href="/profile">Profile</Link>
-            <Link href="/profile/teams">Teams</Link>
-            <Link href="/profile/friends">Friends</Link>
-            <Link href="/profile/matches">Matches</Link>
-            <Link href="/profile/awards">Awards</Link>
-            <Link className="active" href="/profile/inbox">Inbox</Link>
-          </nav>
+          <p className="inbox-retention">Received messages are deleted from your inbox after 60 days unless saved. Sent messages are not affected.</p>
 
           {nameError && <div className="inbox-status" role="alert">Player names could not be loaded: {nameError}</div>}
           {notice && <div className="inbox-status" role="status">{notice}</div>}
@@ -773,6 +804,19 @@ export default function InboxPage() {
                     }}
                   >
                     Inbox <span>{messages.filter((message) => !message.is_read).length}</span>
+                  </button>
+                  <button
+                    className={`folder-tab ${folder === "saved" ? "active" : ""}`}
+                    type="button"
+                    aria-pressed={folder === "saved"}
+                    onClick={() => {
+                      setFolder("saved");
+                      setSelected(null);
+                      setComposeOpen(false);
+                      setNotice("");
+                    }}
+                  >
+                    Saved <span>{messages.filter((message) => message.is_saved).length}</span>
                   </button>
                   <button
                     className={`folder-tab ${folder === "sent" ? "active" : ""}`}
@@ -800,24 +844,24 @@ export default function InboxPage() {
                   </button>
                 </div>
                 <div className="message-list">
-                  {(folder === "inbox" && error) || (folder === "sent" && sentError) ? (
-                    <div className="error" role="alert">Messages could not be loaded: {folder === "inbox" ? error : sentError}</div>
+                  {(folder !== "sent" && error) || (folder === "sent" && sentError) ? (
+                    <div className="error" role="alert">Messages could not be loaded: {folder === "sent" ? sentError : error}</div>
                   ) : visibleMessages.length === 0 ? (
                     <div className="empty">
-                      {folder === "inbox" ? "No messages in your inbox." : "No sent messages yet."}
+                      {folder === "inbox" ? "No messages in your inbox." : folder === "saved" ? "No saved messages yet." : "No sent messages yet."}
                     </div>
                   ) : (
                     visibleMessages.map((message) => (
                       <button
                         type="button"
                         aria-pressed={selected?.id === message.id}
-                        className={`message-row ${!message.is_read && folder === "inbox" ? "unread" : ""} ${selected?.id === message.id ? "selected" : ""}`}
+                        className={`message-row ${!message.is_read && folder !== "sent" ? "unread" : ""} ${selected?.id === message.id ? "selected" : ""}`}
                         key={message.id}
                         onClick={() => openMessage(message)}
                       >
                         <span className="message-row-top">
-                          <span className="message-person">{folder === "inbox" ? `From: ${senderName(message, profileNames)}` : `To: ${recipientName(message, profileNames)}`}</span>
-                          {!message.is_read && folder === "inbox" && <span className="message-unread">NEW</span>}
+                          <span className="message-person">{folder === "sent" ? `To: ${recipientName(message, profileNames)}` : `From: ${senderName(message, profileNames)}`}</span>
+                          {folder !== "sent" && (message.is_saved || !message.is_read) && <span className="message-unread">{message.is_saved ? "SAVED" : "NEW"}</span>}
                         </span>
                         <span className="message-subject">{message.subject}</span>
                         <span className="message-preview">{message.body}</span>
@@ -891,21 +935,22 @@ export default function InboxPage() {
                 ) : (
                   <div className="reader">
                     <div className="reader-heading">
-                      <span className="inbox-eyebrow">{folder === "inbox" ? "RECEIVED MESSAGE" : "SENT MESSAGE"}</span>
+                      <span className="inbox-eyebrow">{folder === "sent" ? "SENT MESSAGE" : "RECEIVED MESSAGE"}</span>
                       <h2 className="reader-subject">{selected.subject}</h2>
                       <div className="reader-meta">
-                        <span><b>{folder === "inbox" ? "From" : "To"}</b> {folder === "inbox" ? senderName(selected, profileNames) : recipientName(selected, profileNames)}</span>
+                        <span><b>{folder === "sent" ? "To" : "From"}</b> {folder === "sent" ? recipientName(selected, profileNames) : senderName(selected, profileNames)}</span>
                         <span><b>Date</b> <time dateTime={selected.created_at}>{messageDate(selected.created_at)}</time></span>
                       </div>
                     </div>
 
                     <div className="reader-body">{selected.body}</div>
 
-                    {folder === "inbox" && selected.related_type === "friend_request" && selected.related_id && (
+                    {folder !== "sent" && selected.related_type === "friend_request" && selected.related_id && (
                       <div className="reader-actions">
                         <button
                           className="reply-btn accept-btn"
                           type="button"
+                          disabled={!selected.is_read}
                           onClick={() => respondToFriendRequest("accepted")}
                         >
                           Accept
@@ -914,6 +959,7 @@ export default function InboxPage() {
                         <button
                           className="reply-btn decline-btn"
                           type="button"
+                          disabled={!selected.is_read}
                           onClick={() => respondToFriendRequest("declined")}
                         >
                           Decline
@@ -921,19 +967,19 @@ export default function InboxPage() {
                       </div>
                     )}
 
-                    {folder === "inbox" && canReply(selected) && (
+                    {folder !== "sent" && (
                       <div className="reader-actions">
-                        <button
-                          className="reply-btn"
-                          type="button"
-                          onClick={() => setReplyOpen(!replyOpen)}
-                        >
-                          Reply
+                        <button className="reply-btn" type="button" disabled={managingMessage} onClick={() => void saveMessage(selected)}>
+                          {selected.is_saved ? "Unsave message" : "Save message"}
                         </button>
+                        <button className="reply-btn inbox-delete" type="button" disabled={managingMessage || !selected.is_read} onClick={() => void deleteMessage(selected)}>
+                          Delete message
+                        </button>
+                        {canReply(selected) && <button className="reply-btn" type="button" onClick={() => setReplyOpen(!replyOpen)}>Reply</button>}
                       </div>
                     )}
 
-                    {replyOpen && folder === "inbox" && canReply(selected) && (
+                    {replyOpen && folder !== "sent" && canReply(selected) && (
                       <div className="reply-box">
                         <textarea
                           value={replyBody}
