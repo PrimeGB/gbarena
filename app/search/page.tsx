@@ -5,464 +5,170 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { rapidRoyalDisplayName } from "../../lib/rapidRoyal";
+import { rankSiteResults, searchFilter, type SiteSearchResult } from "../../lib/searchRanking";
+import { siteSearchIndex } from "../../lib/siteSearch";
 
-type PlayerResult = {
-  id: string;
-  username: string | null;
+type Player = { id: string; username: string | null };
+type Team = {
+  id: string; name: string | null; tag: string | null; platform: string | null;
+  game: string | null; ladder: string | null; logo_url: string | null;
+  wins: number | null; losses: number | null;
 };
-
-type TeamResult = {
-  id: string;
-  name: string | null;
-  tag: string | null;
-  platform: string | null;
-  game: string | null;
-  ladder: string | null;
-  logo_url: string | null;
-  wins: number | null;
-  losses: number | null;
-};
-
-function cleanText(value: string | null | undefined, fallback = "Unknown") {
-  if (!value) return fallback;
-  return value;
-}
-
-function prettyText(value: string | null | undefined) {
-  if (!value) return "Unknown";
-  value = rapidRoyalDisplayName(value);
-
-  if (value === "mw2") return "Call of Duty: Modern Warfare 2 (2009)";
-  if (value === "modern-warfare-ii") return "Call of Duty: Modern Warfare II (2022)";
-  if (value === "modern-warfare-4") return "Call of Duty: Modern Warfare (2019)";
-  if (value === "black-ops-6") return "Call of Duty: Black Ops 6";
-  if (value === "modern-warfare-iii") return "Call of Duty: Modern Warfare III (2023)";
-  if (value === "black-ops-cold-war") return "Call of Duty: Black Ops Cold War";
-
-  return value
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
+type ForumPost = { id: number; subject: string; message: string | null; category: string; author: string };
+type Tournament = { id: string; title: string; game: string | null; platform: string | null; status: string };
+type Award = { name: string; award_group: string; purpose: string };
 
 function SearchPageInner() {
   const searchParams = useSearchParams();
-  const query = String(searchParams.get("q") || "").trim();
-
-  const [players, setPlayers] = useState<PlayerResult[]>([]);
-  const [teams, setTeams] = useState<TeamResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pageError, setPageError] = useState("");
-
-  const safeQuery = useMemo(() => query.replace(/[%_]/g, ""), [query]);
+  const query = (searchParams.get("q") || "").trim().slice(0, 120);
+  const [dynamicResults, setDynamicResults] = useState<SiteSearchResult[]>([]);
+  const [searchedQuery, setSearchedQuery] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
+  const loading = !!searchFilter(query, ["username"]) && searchedQuery !== query;
+  const results = useMemo(
+    () => rankSiteResults(query, [...siteSearchIndex, ...(searchedQuery === query ? dynamicResults : [])]).slice(0, 60),
+    [query, searchedQuery, dynamicResults],
+  );
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
+    const playerFilter = searchFilter(query, ["username"]);
+    if (!playerFilter) return;
 
     async function runSearch() {
-      setPageError("");
-
-      if (!safeQuery) {
-        setPlayers([]);
-        setTeams([]);
-        return;
-      }
-
-      setLoading(true);
-
-      const playerSearch = supabase
-        .from("profiles")
-        .select("id, username")
-        .ilike("username", `%${safeQuery}%`)
-        .limit(20);
-
-      const teamSearch = supabase
-        .from("teams")
-        .select("id, name, tag, platform, game, ladder, logo_url, wins, losses")
-        .or(`name.ilike.%${safeQuery}%,tag.ilike.%${safeQuery}%`)
-        .limit(20);
-
-      const [playerResponse, teamResponse] = await Promise.all([
-        playerSearch,
-        teamSearch,
+      const [players, teams, posts, tournaments, awards] = await Promise.all([
+        supabase.from("profiles").select("id,username").or(playerFilter).limit(50),
+        supabase.from("teams").select("id,name,tag,platform,game,ladder,logo_url,wins,losses")
+          .or(searchFilter(query, ["name", "tag"])).limit(50),
+        supabase.from("forum_posts").select("id,subject,message,category,author").eq("hidden", false)
+          .or(searchFilter(query, ["subject", "message"])).limit(50),
+        supabase.from("tournaments").select("id,title,game,platform,status")
+          .in("status", ["upcoming", "live"])
+          .or(searchFilter(query, ["title", "game", "platform"])).limit(50),
+        supabase.rpc("staff_public_award_catalog"),
       ]);
+      if (!active) return;
 
-      if (!mounted) return;
+      const unavailable: string[] = [];
+      if (players.error) unavailable.push("players");
+      if (teams.error) unavailable.push("teams");
+      if (posts.error) unavailable.push("forum posts");
+      if (tournaments.error) unavailable.push("tournaments");
+      if (awards.error) unavailable.push("awards");
 
-      if (playerResponse.error && teamResponse.error) {
-        setPageError("Search could not be loaded. Check the profiles and teams table permissions.");
-        setPlayers([]);
-        setTeams([]);
-        setLoading(false);
-        return;
-      }
-
-      setPlayers(playerResponse.error ? [] : ((playerResponse.data || []) as PlayerResult[]));
-      setTeams(teamResponse.error ? [] : ((teamResponse.data || []) as TeamResult[]));
-      setLoading(false);
+      const found: SiteSearchResult[] = [
+        ...((players.data || []) as Player[]).map((player) => ({
+          id: `player:${player.id}`, href: `/profile?userId=${encodeURIComponent(player.id)}`,
+          title: player.username || "Unknown Player", type: "Player", description: "GameBattles member",
+        })),
+        ...((teams.data || []) as Team[]).map((team) => ({
+          id: `team:${team.id}`, href: `/teams/${encodeURIComponent(team.id)}`,
+          title: team.name || "Unknown Team", type: "Team",
+          description: [team.tag ? `[${team.tag}]` : "", team.platform, team.game, rapidRoyalDisplayName(team.ladder || ""), `${team.wins || 0}-${team.losses || 0}`].filter(Boolean).join(" · "),
+          keywords: team.tag || "", imageUrl: team.logo_url,
+        })),
+        ...((posts.data || []) as ForumPost[]).map((post) => ({
+          id: `forum:${post.id}`, href: `/forums/${post.id}`, title: post.subject,
+          description: `${post.category} · ${post.author}`, keywords: post.message || "", type: "Forum",
+        })),
+        ...((tournaments.data || []) as Tournament[]).map((tournament) => ({
+          id: `tournament:${tournament.id}`, href: `/tournaments/${encodeURIComponent(tournament.id)}`,
+          title: tournament.title, description: [tournament.platform, tournament.game, tournament.status].filter(Boolean).join(" · "),
+          type: "Tournament",
+        })),
+        ...((awards.data || []) as Award[]).map((award) => ({
+          id: `award:${award.name}`, href: "/awards", title: award.name,
+          description: award.purpose, keywords: `${award.award_group} trophy achievement`, type: "Award",
+        })),
+      ];
+      setDynamicResults(found);
+      setErrors(unavailable);
+      setSearchedQuery(query);
     }
 
-    runSearch();
-
-    return () => {
-      mounted = false;
-    };
-  }, [safeQuery]);
+    void runSearch();
+    return () => { active = false; };
+  }, [query]);
 
   return (
-    <>
-      <style>{`
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:#000;font-family:Tahoma,Verdana,Arial,sans-serif;color:#d7e2ee;}
-        a{text-decoration:none;}
-
-        .page{
-          min-height:100vh;
-          background:
-            radial-gradient(circle at top,rgba(45,100,150,.22),transparent 42%),
-            linear-gradient(to bottom,#02060a,#000);
-          padding:32px 22px;
-        }
-
-        .wrap{
-          max-width:1050px;
-          margin:0 auto;
-          background:#07111b;
-          border:1px solid #315f88;
-          box-shadow:0 0 28px rgba(0,80,140,.35), inset 0 0 22px rgba(0,0,0,.7);
-        }
-
-        .top-strip{
-          height:30px;
-          background:linear-gradient(to bottom,#8b0000,#3b0000);
-          border-bottom:1px solid #b32222;
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          gap:18px;
-          padding:0 14px;
-        }
-
-        .top-strip a{
-          color:#fff;
-          font-size:12px;
-          font-weight:bold;
-          text-transform:uppercase;
-        }
-
-        .header{
-          min-height:104px;
-          background:linear-gradient(to bottom,#173956,#07111b);
-          border-bottom:2px solid #315f88;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          padding:0 24px;
-        }
-
-        .title-block h1{
-          color:#f2c14e;
-          font-size:34px;
-          font-weight:900;
-          text-transform:uppercase;
-          text-shadow:0 2px 4px #000;
-        }
-
-        .title-block p{
-          color:#cfe2f2;
-          font-size:13px;
-          margin-top:7px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .home-btn{
-          border:1px solid #6ba8d6;
-          background:linear-gradient(to bottom,#214765,#0b1c2d);
-          color:#f5f8ff;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          padding:12px 18px;
-        }
-
-        .search-panel{padding:18px;}
-
-        .search-box{
-          border:1px solid #244b70;
-          background:#050b12;
-          padding:14px;
-          margin-bottom:14px;
-        }
-
-        .search-line{
-          color:#fff;
-          font-size:15px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .search-line span{color:#d7ad4a;}
-
-        .small-note{
-          color:#8aa7c0;
-          font-size:12px;
-          margin-top:7px;
-          line-height:18px;
-        }
-
-        .grid{
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:14px;
-        }
-
-        .panel{
-          border:1px solid #244b70;
-          background:#050b12;
-          min-height:260px;
-        }
-
-        .panel-title{
-          height:34px;
-          background:linear-gradient(to bottom,#18344f,#091521);
-          border-bottom:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#d7ad4a;
-          font-size:12px;
-          font-weight:900;
-          text-transform:uppercase;
-          letter-spacing:1px;
-        }
-
-        .result-list{padding:10px;}
-
-        .result-row{
-          min-height:62px;
-          border:1px solid rgba(255,255,255,.08);
-          background:linear-gradient(to bottom,#071827,#030910);
-          margin-bottom:8px;
-          display:grid;
-          grid-template-columns:52px 1fr 82px;
-          gap:10px;
-          align-items:center;
-          padding:9px;
-        }
-
-        .result-row:hover{
-          border-color:#d7ad4a;
-          background:linear-gradient(to bottom,#0c253b,#06101a);
-        }
-
-        .avatar{
-          width:46px;
-          height:46px;
-          border:1px solid #315f88;
-          background:#000;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          overflow:hidden;
-          color:#d7ad4a;
-          font-size:15px;
-          font-weight:900;
-          text-transform:uppercase;
-        }
-
-        .avatar img{
-          width:100%;
-          height:100%;
-          object-fit:cover;
-          display:block;
-        }
-
-        .main-text{min-width:0;}
-
-        .name{
-          color:#7fc7ff;
-          font-size:14px;
-          font-weight:900;
-          text-transform:uppercase;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-        }
-
-        .sub{
-          color:#cfe2f2;
-          font-size:11px;
-          margin-top:5px;
-          line-height:16px;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-        }
-
-        .view-btn{
-          height:28px;
-          border:1px solid #4b95d8;
-          background:linear-gradient(to bottom,#1c4b72,#0a1724);
-          color:#fff;
-          font-size:10px;
-          font-weight:900;
-          text-transform:uppercase;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-        }
-
-        .view-btn:hover{
-          color:#d7ad4a;
-          border-color:#d7ad4a;
-        }
-
-        .empty,.loading,.error{
-          padding:34px 12px;
-          color:#cfe2f2;
-          text-align:center;
-          font-size:13px;
-          font-weight:900;
-          text-transform:uppercase;
-          line-height:20px;
-        }
-
-        .error{color:#ff9c9c;}
-
-        .footer{
-          height:36px;
-          background:#07111b;
-          border-top:1px solid #244b70;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          color:#a9c3db;
-          font-size:11px;
-        }
-
-        @media(max-width:780px){
-          .grid{grid-template-columns:1fr;}
-          .header{flex-direction:column;gap:12px;text-align:center;padding:18px;}
-        }
+    <main className="search-page">
+      <div className="search-wrap">
+        <header className="search-header">
+          <p>GAMEBATTLES</p>
+          <h1>Search the site</h1>
+          <span>Find games, ladders, players, teams, forums and more.</span>
+        </header>
+        <form action="/search" className="search-form" role="search">
+          <input name="q" defaultValue={query} key={query} maxLength={120} placeholder="Search GameBattles" aria-label="Search GameBattles" autoComplete="off" />
+          <button type="submit">Search</button>
+        </form>
+        <section aria-live="polite" aria-busy={loading}>
+          {!query ? (
+            <p className="notice">Enter a name, game, topic or keyword to search.</p>
+          ) : !searchFilter(query, ["username"]) ? (
+            <p className="notice">Enter a letter or number to search.</p>
+          ) : (
+            <>
+              <div className="results-heading">
+                <h2>Results for &ldquo;{query}&rdquo;</h2>
+                <span>{loading ? "Searching..." : "Best matches"}</span>
+              </div>
+              {!loading && errors.length > 0 && (
+                <p className="warning" role="alert">Some results could not be loaded: {errors.join(", ")}. Please try again.</p>
+              )}
+              {results.length === 0 && !loading ? (
+                <p className="notice">No matches found. Try a different name or keyword.</p>
+              ) : (
+                <div className="results">
+                  {results.map((result) => (
+                    <Link href={result.href} className="result" key={result.id}>
+                      {result.imageUrl && <img src={result.imageUrl} alt="" loading="lazy" decoding="async" />}
+                      <div className="result-copy">
+                        <span className="type">{result.type}</span>
+                        <strong>{result.title}</strong>
+                        <span className="description">{result.description}</span>
+                      </div>
+                      <span className="arrow" aria-hidden="true">→</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {!loading && results.length === 60 && <p className="notice">Showing the best 60 matches. Add more keywords to narrow your search.</p>}
+            </>
+          )}
+        </section>
+      </div>
+      <style jsx>{`
+        .search-page{min-height:100vh;background:#050b12;color:#eaf3fb;padding:40px 20px;font-family:Arial,sans-serif}
+        .search-wrap{max-width:900px;margin:0 auto}
+        .search-header{border-bottom:3px solid #b61e25;padding-bottom:22px}
+        .search-header p{margin:0 0 8px;color:#ea6268;font-weight:800;font-size:11px;letter-spacing:.15em}
+        .search-header h1{margin:0;color:#fff;font-size:32px;font-weight:900}
+        .search-header span{display:block;color:#aabed0;font-size:14px;margin-top:8px}
+        .search-form{display:flex;margin:24px 0;gap:8px}
+        .search-form input{flex:1;min-width:0;background:#101e2b;color:#fff;border:1px solid #40586c;padding:13px;font-size:16px}
+        .search-form button{border:0;background:#a71920;color:#fff;padding:0 22px;font-weight:800;cursor:pointer}
+        .search-form input:focus-visible,.search-form button:focus-visible,.result:focus-visible{outline:2px solid #8cc9ff;outline-offset:2px}
+        .results-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #314555}
+        .results-heading h2{margin:0;font-size:17px;overflow-wrap:anywhere}
+        .results-heading span{color:#9db1c1;font-size:12px;white-space:nowrap}
+        .result{display:flex;align-items:center;gap:14px;padding:16px 4px;border-bottom:1px solid #1e3242;color:inherit;text-decoration:none}
+        .result:hover{background:#102131}
+        .result img{width:46px;height:46px;object-fit:cover}
+        .result-copy{min-width:0;flex:1}
+        .result-copy span,.result-copy strong{display:block}
+        .type{color:#e87c80;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+        .result-copy strong{color:#f5f9fc;font-size:15px;margin-top:4px;overflow-wrap:anywhere}
+        .description{color:#a7becf;font-size:12px;margin-top:5px;line-height:1.4;overflow-wrap:anywhere}
+        .arrow{color:#8eb8d4;font-size:22px}
+        .notice,.warning{padding:18px 0;color:#b8cbd9;font-size:14px;line-height:1.5}
+        .warning{color:#ffb5a8}
+        @media(max-width:600px){.search-page{padding:25px 16px}.search-header h1{font-size:27px}.search-form button{padding:0 16px}}
       `}</style>
-
-      <main className="page">
-        <div className="wrap">
-          <header className="header">
-            <div className="title-block">
-              <h1>Search</h1>
-              <p>Find players and teams on GameBattles</p>
-              <p><Link href="/members">Browse Members</Link></p>
-            </div>
-
-            <Link className="home-btn" href="/home">
-              Back Home
-            </Link>
-          </header>
-
-          <section className="search-panel">
-            <div className="search-box">
-              <div className="search-line">
-                Search Results For: <span>{query || "Nothing Entered"}</span>
-              </div>
-              <div className="small-note">
-                Player results search usernames. Team results search team names and clan tags.
-              </div>
-            </div>
-
-            {pageError && <div className="error">{pageError}</div>}
-
-            {!pageError && !query && (
-              <div className="empty">Type a username, player name, team name, or clan tag from the homepage search bar.</div>
-            )}
-
-            {!pageError && query && (
-              <div className="grid">
-                <div className="panel">
-                  <div className="panel-title">Players</div>
-
-                  <div className="result-list">
-                    {loading ? (
-                      <div className="loading">Searching players...</div>
-                    ) : players.length === 0 ? (
-                      <div className="empty">No players found.</div>
-                    ) : (
-                      players.map((player) => {
-                        const playerName = player.username || "Unknown Player";
-
-                        return (
-                          <div className="result-row" key={player.id}>
-                            <div className="avatar">
-                              {playerName.slice(0, 2)}
-                            </div>
-
-                            <div className="main-text">
-                              <div className="name">{playerName}</div>
-                              <div className="sub">GameBattles Member</div>
-                            </div>
-
-                            <Link className="view-btn" href={`/profile?userId=${player.id}`}>
-                              View
-                            </Link>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                <div className="panel">
-                  <div className="panel-title">Teams</div>
-
-                  <div className="result-list">
-                    {loading ? (
-                      <div className="loading">Searching teams...</div>
-                    ) : teams.length === 0 ? (
-                      <div className="empty">No teams found.</div>
-                    ) : (
-                      teams.map((team) => (
-                        <div className="result-row" key={team.id}>
-                          <div className="avatar">
-                            {team.logo_url ? (
-                              <img loading="lazy" decoding="async" src={team.logo_url} alt={team.name || "Team"} />
-                            ) : (
-                              cleanText(team.tag, "GB").slice(0, 2)
-                            )}
-                          </div>
-
-                          <div className="main-text">
-                            <div className="name">{cleanText(team.name, "Unknown Team")}</div>
-                            <div className="sub">
-                              {prettyText(team.platform)} / {prettyText(team.game)} / {prettyText(team.ladder)}
-                              {" · "}
-                              {team.wins || 0}-{team.losses || 0}
-                            </div>
-                          </div>
-
-                          <Link className="view-btn" href={`/teams/${team.id}`}>
-                            View
-                          </Link>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <footer className="footer">© 2026 Competitive Gaming Network</footer>
-        </div>
-      </main>
-    </>
+    </main>
   );
 }
 
 export default function SearchPage() {
-  return (
-    <Suspense fallback={<div style={{ color: "white", padding: 40 }}>Loading Search...</div>}>
-      <SearchPageInner />
-    </Suspense>
-  );
+  return <Suspense fallback={<div style={{ color: "white", padding: 40 }}>Loading search...</div>}><SearchPageInner /></Suspense>;
 }

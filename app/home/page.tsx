@@ -908,8 +908,8 @@ export default function Home() {
           </Link>
 
           <form className="search-box" action="/search">
-            <input name="q" placeholder="Search..." autoComplete="off" aria-label="Search" />
-            <button className="search-button" type="submit"></button>
+            <input name="q" placeholder="Search..." autoComplete="off" aria-label="Search GameBattles" />
+            <button className="search-button" type="submit" aria-label="Search"></button>
           </form>
 
           <div className="lower-layout">

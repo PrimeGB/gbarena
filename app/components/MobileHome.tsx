@@ -21,6 +21,10 @@ export default function MobileHome() {
         <p className={styles.eyebrow}>YOUR NEXT MATCH STARTS HERE</p>
         <h1>Find your game.<br />Make your mark.</h1>
         <p className={styles.intro}>Build your team, compete on the ladder, and join a community that loves the game.</p>
+        <form action="/search" className={styles.search} role="search">
+          <input name="q" aria-label="Search GameBattles" placeholder="Search GameBattles" autoComplete="off" />
+          <button type="submit">Search</button>
+        </form>
         <div className={styles.actions}>
           <Link className={styles.primary} href="/getting-started">Get started <span aria-hidden="true">→</span></Link>
           <Link className={styles.secondary} href="/matches/finder">Find a match</Link>
