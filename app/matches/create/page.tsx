@@ -507,15 +507,18 @@ function CreateMatchContent() {
         .title-bar p{color:#cfe2f2;font-size:11px;margin-top:4px;}
 
         .content{padding:14px;}
-        .old-grid{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;align-items:start;}
-        .side-panel,.main-panel{background:#050b12;border:1px solid #244b70;box-shadow:inset 0 0 18px rgba(0,0,0,.75);}
+        .old-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start;}
+        .main-panel{background:#050b12;border:1px solid #244b70;box-shadow:inset 0 0 18px rgba(0,0,0,.75);}
         .panel-header{min-height:32px;background:linear-gradient(to bottom,#18344f,#091521);border-bottom:1px solid #244b70;display:flex;align-items:center;padding:0 11px;color:#d7ad4a;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
 
-        .side-body{padding:10px;}
-        .match-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-        .match-info div{min-width:0;border:1px solid #1f3d5a;background:#081522;padding:7px;color:#cfe2f2;font-size:10px;line-height:14px;}
-        .match-info span{display:block;color:#8aa7c0;font-size:9px;font-weight:bold;text-transform:uppercase;letter-spacing:.4px;}
-        .match-info strong{display:block;margin-top:2px;color:#f5f8ff;font-size:11px;overflow-wrap:anywhere;}
+        .match-snapshot{display:grid;grid-template-columns:minmax(160px,1fr) minmax(0,3fr);align-items:center;gap:24px;padding:18px 20px;border-top:2px solid #347eae;border-bottom:1px solid #1c3d56;background:linear-gradient(110deg,rgba(26,79,119,.4),rgba(8,24,39,.2));}
+        .snapshot-title{color:#e5f3ff;font-size:15px;font-weight:800;line-height:1.4;}
+        .snapshot-caption{margin-top:5px;color:#a8bed0;font-size:11px;line-height:1.5;}
+        .snapshot-details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;min-width:0;}
+        .snapshot-detail{min-width:0;border-left:1px solid #29475f;padding-left:16px;}
+        .snapshot-detail dt{color:#9bbbd3;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;line-height:1.5;}
+        .snapshot-detail dd{margin-top:4px;color:#f5f8ff;font-size:16px;font-weight:bold;line-height:1.35;overflow-wrap:anywhere;}
+        .snapshot-detail:nth-child(2) dd{color:#f2c14e;}
 
         .main-body{padding:12px;}
         .form-section{border:1px solid #244b70;background:#07111b;margin-bottom:10px;box-shadow:inset 0 0 14px rgba(0,0,0,.35);}
@@ -614,9 +617,7 @@ function CreateMatchContent() {
         .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:15px;}
 
         @media(max-width:850px){
-          .old-grid{grid-template-columns:1fr;}
-          .side-panel .side-body{padding:8px;}
-          .match-info{grid-template-columns:repeat(4,minmax(0,1fr));}
+          .match-snapshot{grid-template-columns:1fr;gap:14px;padding:16px;}
           .header{gap:12px;padding:12px 16px;}
         }
         @media(max-width:620px){
@@ -628,7 +629,12 @@ function CreateMatchContent() {
           .ladder-name{font-size:18px;}
           .header-badge{font-size:10px;padding:8px;}
           .title-bar h1{font-size:19px;}
-          .match-info{grid-template-columns:repeat(2,minmax(0,1fr));}
+          .match-snapshot{padding:14px;}
+          .snapshot-caption{display:none;}
+          .snapshot-details{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;}
+          .snapshot-detail{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-left:0;border-top:1px solid #29475f;padding:9px 0 0;}
+          .snapshot-detail dt{font-size:9px;letter-spacing:.3px;}
+          .snapshot-detail dd{margin-top:0;font-size:14px;}
           .match-details .form-body{grid-template-columns:1fr;gap:10px;}
           .row{grid-template-columns:1fr;gap:4px;}
           .row-wide{grid-column:auto;}
@@ -669,17 +675,17 @@ function CreateMatchContent() {
 
           <section className="content">
             <div className="old-grid">
-              <aside className="side-panel">
-                <div className="panel-header">Match Snapshot</div>
-
-                <div className="side-body">
-                  <div className="match-info">
-                    <div><span>Platform</span><strong>{platformName}</strong></div>
-                    <div><span>Players</span><strong>{players}</strong></div>
-                    <div><span>Rules</span><strong>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</strong></div>
-                    <div><span>Cross Play</span><strong>{crossplay}</strong></div>
-                  </div>
+              <aside className="match-snapshot" aria-labelledby="match-snapshot-title">
+                <div>
+                  <h2 className="snapshot-title" id="match-snapshot-title">Match snapshot</h2>
+                  <p className="snapshot-caption">Updates as you choose your settings.</p>
                 </div>
+                <dl className="snapshot-details">
+                  <div className="snapshot-detail"><dt>Platform</dt><dd>{platformName}</dd></div>
+                  <div className="snapshot-detail"><dt>Players</dt><dd>{players}</dd></div>
+                  <div className="snapshot-detail"><dt>Rules</dt><dd>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</dd></div>
+                  <div className="snapshot-detail"><dt>Cross Play</dt><dd>{crossplay}</dd></div>
+                </dl>
               </aside>
 
               <section className="main-panel">

@@ -55,6 +55,12 @@ test("Create Match keeps its form and action links without a secondary navigatio
   assert.match(markup, /Match Post Form/);
   assert.match(markup, /href="\/teams\/example"[^>]*>View Team/);
   assert.match(markup, /Match Finder/);
+  assert.match(markup, /<aside[^>]*aria-labelledby="match-snapshot-title"/);
+  assert.match(markup, /<dl class="snapshot-details">/);
+  assert.match(markup, /<dt>Platform<\/dt><dd>Xbox<\/dd>/);
+  assert.match(markup, /<dt>Players<\/dt><dd>1v1<\/dd>/);
+  assert.match(markup, /<dt>Rules<\/dt><dd>GB Variant<\/dd>/);
+  assert.match(markup, /<dt>Cross Play<\/dt><dd>Off<\/dd>/);
 });
 
 test("secondary profile and team navigation keeps its links without a duplicate Home option", () => {
