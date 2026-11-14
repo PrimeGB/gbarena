@@ -666,11 +666,10 @@ export default function TeamPage() {
         .team-follow-error{margin-top:5px;color:#ffb3b3;font-size:11px;}
 
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
-        .team-founded{overflow-wrap:anywhere;}
+        .team-founded{margin-top:23px;overflow-wrap:anywhere;}
         .team-founded>a{color:#9ed7ff;text-decoration:none;}
         .team-founded>a:hover{text-decoration:underline;}
         .team-founding-error{color:#ffb3b3;font-size:11px;}
-        .team-achievements{margin-top:23px;}
 
         .team-match-actions{
           margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;

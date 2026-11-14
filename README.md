@@ -96,15 +96,17 @@ transaction (the fixture bypasses only new-match roster admission).
 
 ## Team founding history
 
-Team headers show their saved founding date in UTC, plus a linked original
-founder when recorded. Existing creation dates are preserved; unknown legacy
+Directly above Achievements, team headers show their saved founding date in
+UTC, plus a linked original founder when recorded. Existing creation dates are preserved; unknown legacy
 creators are not inferred from the current leader. Apply
 `20261114225000_immutable_team_founding.sql` before deploying this header.
 New teams have their founding date and founding account recorded by the
 database, ignoring client-supplied founding details. These fields cannot be
 edited, including when leadership changes. Historical founder identifiers
 survive account removal; an unavailable account is labelled rather than
-reassigned. `supabase/tests/team_founding.sql` checks spoofed inputs,
+reassigned. Verified historical creators may be recorded through a one-time
+admin migration, never inferred automatically or exposed as an editable field.
+`supabase/tests/team_founding.sql` checks spoofed inputs,
 immutability, normal edits and leadership transfers inside a rollback.
 
 ---
