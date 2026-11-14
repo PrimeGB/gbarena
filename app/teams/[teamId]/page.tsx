@@ -10,7 +10,6 @@ import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
 import TeamStreams from "../../components/TeamStreams";
-import SeasonHonours from "../../components/SeasonHonours";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchListDate } from "../../../lib/matchTiming";
@@ -943,7 +942,7 @@ export default function TeamPage() {
                       </div>
 
                       <div className="team-header-spacer" aria-hidden="true" />
-                      <div className="team-line team-achievements"><Link href={`/champions?kind=teams&entity=${teamId}`}>Season achievements &amp; Hall of Fame</Link></div>
+                      <div className="team-line team-achievements">Achievements</div>
 
                       <div className="team-match-actions">
                         {canCreateMatch ? (
@@ -1179,7 +1178,6 @@ export default function TeamPage() {
                   </div>
                 </div>
                 <TeamStreams teamId={teamId} userId={user?.id} isMember={viewerIsMember && (team?.ladder?.toLowerCase() !== "singles" || team.owner_id === user?.id)} />
-                <SeasonHonours entityId={teamId} kind="teams" />
               </aside>
             </section>
           )}

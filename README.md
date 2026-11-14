@@ -58,7 +58,9 @@ The dashboard's Awards & Achievements section links to `/champions`, the Hall
 of Fame. Completed seasons grant exclusive edition badges for global Top 10
 and global/game/game-and-ladder champions. Rare honours recognise ten wins
 without a loss, fifty matches with a win, and a third global season title.
-Player award pages and team profiles show earned season badges. Clearly marked
+Player award pages show earned season badges. Team pages keep their original
+compact layout with an Achievements label in the main box; small earned awards
+there are deferred, and no seasonal gallery is shown on team pages. Clearly marked
 fictional previews illustrate recognition when no competitors have qualified.
 Season honours are separate from manually granted awards and credit rewards.
 The compact Hall of Fame opens on the latest season with recognition, showing
