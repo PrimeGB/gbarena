@@ -32,10 +32,11 @@ type PermissionKey =
 
 type StaffRank = "member" | "staff" | "referee" | "admin";
 
-type DashboardView = "home" | "reports" | "audit" | "access" | "roster";
+type DashboardView = "home" | "overview" | "reports" | "audit" | "access" | "roster";
 
 const viewHashes: Record<DashboardView, string> = {
   home: "#staff-work-areas",
+  overview: "#founder-overview",
   reports: "#reports-inbox",
   audit: "#staff-audit",
   access: "#staff-access",
@@ -202,6 +203,7 @@ export default function StaffDashboardPage() {
   type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: DashboardView };
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
   const tiles: Tile[] = [
+    isOwner && { key: "site_overview", title: "Site overview", description: "Founder-only view of site stats, ladder activity, forums, and open work queues.", cta: "Open site overview", view: "overview" },
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
     can("staff_access") && { key: "decision_reviews", title: "Match decision reviews", description: "Review team requests about staff match decisions.", cta: "Open review queue", href: "/staff/match-reviews" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
@@ -636,16 +638,19 @@ export default function StaffDashboardPage() {
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
 
-            {view === "home" && isOwner && (
-              <details id="founder-overview" className="founder-overview" open>
-                <summary className="founder-overview-summary">
-                  <span>
-                    <span className="founder-overview-kicker">FOUNDER ONLY</span>
-                    <strong>Site overview</strong>
-                    <small>Accounts, competition, community activity, and open work queues.</small>
-                  </span>
-                  <span className="founder-overview-toggle">Show / hide</span>
-                </summary>
+            {view !== "home" && (
+              <a href={viewHashes.home} style={styles.backButton}>
+                &larr; Back to work areas
+              </a>
+            )}
+
+            {view === "overview" && isOwner && (
+              <section id="founder-overview" className="founder-overview" aria-labelledby="founder-overview-title">
+                <header className="founder-overview-heading">
+                  <p className="founder-overview-kicker">FOUNDER ONLY</p>
+                  <h2 id="founder-overview-title">Site overview</h2>
+                  <p>Accounts, competition, community activity, and open work queues.</p>
+                </header>
                 {founderOverviewError ? (
                   <p className="founder-overview-error" role="alert">{founderOverviewError}</p>
                 ) : founderOverview ? (
@@ -746,13 +751,7 @@ export default function StaffDashboardPage() {
                 ) : (
                   <p className="founder-overview-empty">Owner overview is not available.</p>
                 )}
-              </details>
-            )}
-
-            {view !== "home" && (
-              <a href={viewHashes.home} style={styles.backButton}>
-                &larr; Back to work areas
-              </a>
+              </section>
             )}
 
             {view === "reports" && permissions.includes("staff_reports") && (

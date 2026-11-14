@@ -369,59 +369,23 @@
   background: linear-gradient(145deg, #101f2d, #0b141e 76%);
 }
 
-.founder-overview-summary {
-  display: flex;
-  min-height: 82px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 16px 22px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.founder-overview-summary::-webkit-details-marker {
-  display: none;
-}
-
-.founder-overview-summary::after {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  border: 1px solid #425a70;
-  border-radius: 50%;
-  color: #e8c46a;
-  content: "+";
-  font-size: 19px;
-  line-height: 25px;
-  text-align: center;
-}
-
-.founder-overview[open] .founder-overview-summary::after {
-  content: "−";
-}
-
-.founder-overview-summary > span:first-child {
+.founder-overview-heading {
   display: grid;
   gap: 4px;
+  padding: 16px 22px;
 }
 
-.founder-overview-summary strong {
+.founder-overview-heading h2 {
+  margin: 0;
   color: #f5f8fb;
   font-size: 19px;
 }
 
-.founder-overview-summary small {
+.founder-overview-heading > p:last-child {
+  margin: 0;
   color: #aab8c5;
   font-size: 12px;
   line-height: 1.5;
-}
-
-.founder-overview-toggle {
-  flex: 0 0 auto;
-  color: #a9bfd1;
-  font-size: 11px;
-  font-weight: 700;
 }
 
 .founder-overview-kicker {
@@ -636,7 +600,6 @@
   line-height: 1.5;
 }
 
-.founder-overview-summary:focus-visible,
 .founder-overview a:focus-visible {
   outline: 2px solid #e8c46a;
   outline-offset: 3px;
@@ -660,18 +623,12 @@
     margin: 12px 10px 10px;
   }
 
-  .founder-overview-summary {
-    min-height: 74px;
-    gap: 12px;
+  .founder-overview-heading {
     padding: 13px 15px;
   }
 
-  .founder-overview-summary strong {
+  .founder-overview-heading h2 {
     font-size: 16px;
-  }
-
-  .founder-overview-toggle {
-    display: none;
   }
 
   .founder-overview-body {
