@@ -502,10 +502,6 @@ function CreateMatchContent() {
         .header-badge{border:1px solid #6ba8d6;background:linear-gradient(to bottom,#214765,#0b1c2d);color:#f5f8ff;font-size:12px;font-weight:900;text-transform:uppercase;padding:10px 15px;text-shadow:0 2px 4px #000;}
         .header-badge:hover{border-color:#d7ad4a;color:#d7ad4a;}
 
-        .nav{height:36px;background:linear-gradient(to bottom,#10283d,#07111b);border-bottom:1px solid #244b70;display:flex;align-items:center;justify-content:center;gap:28px;}
-        .nav a{color:#d7eaff;font-size:12px;font-weight:bold;text-transform:uppercase;}
-        .nav a:hover{color:#d7ad4a;}
-
         .title-bar{background:linear-gradient(to bottom,#1d496e,#0a1724);border-bottom:1px solid #315f88;padding:10px 18px;text-align:center;}
         .title-bar h1{color:#d7ad4a;font-size:23px;text-transform:uppercase;text-shadow:0 1px 2px #000;}
         .title-bar p{color:#cfe2f2;font-size:11px;margin-top:4px;}
@@ -622,7 +618,6 @@ function CreateMatchContent() {
           .side-panel .side-body{padding:8px;}
           .match-info{grid-template-columns:repeat(4,minmax(0,1fr));}
           .header{gap:12px;padding:12px 16px;}
-          .nav{flex-wrap:wrap;height:auto;padding:10px;gap:14px;}
         }
         @media(max-width:620px){
           .page{padding:8px;}
@@ -666,13 +661,6 @@ function CreateMatchContent() {
               View Team
             </a>
           </header>
-
-          <nav className="nav">
-            <Link href="/profile/teams">My Teams</Link>
-            <Link href="/members">Members</Link>
-            <Link href="/forums">Forums</Link>
-            <Link href={`/ladders/${platform}/${category}/${game}/${ladder}/rankings`}>Ladder</Link>
-          </nav>
 
           <section className="title-bar">
             <h1>Create Match</h1>

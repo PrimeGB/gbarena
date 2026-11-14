@@ -21,7 +21,7 @@ function load(path, mocks = {}) {
 
 test("the red quick links appear once away from the homepage", () => {
   const CompactTopBar = load("app/components/CompactTopBar.tsx");
-  for (const [pathname, shown] of [["/", false], ["/home", false], ["/profile", true], ["/staff/dashboard", true], ["/ladders", true], ["/ladders/nintendo/fortnite", true], ["/ladders/pc/battlefield/battlefield-6/rapid-royal-duos/rankings", true], ["/team-hub", true]]) {
+  for (const [pathname, shown] of [["/", false], ["/home", false], ["/profile", true], ["/staff/dashboard", true], ["/ladders", true], ["/ladders/nintendo/fortnite", true], ["/ladders/pc/battlefield/battlefield-6/rapid-royal-duos/rankings", true], ["/team-hub", true], ["/matches/create", true]]) {
     const TopHomeBar = load("app/components/TopHomeBar.tsx", {
       "next/navigation": { usePathname: () => pathname },
       "./CompactTopBar": { __esModule: true, default: CompactTopBar },
@@ -35,6 +35,26 @@ test("the red quick links appear once away from the homepage", () => {
       assert.match(markup, /href="\/forums">Forums/);
     }
   }
+});
+
+test("Create Match keeps its form and action links without a secondary navigation bar", () => {
+  const Page = load("app/matches/create/page.tsx", {
+    "next/navigation": { useRouter: () => ({}), useSearchParams: () => new URLSearchParams("teamId=example&platform=xbox&category=call-of-duty&game=mw2&ladder=singles") },
+    "../../../lib/useUser": { useUser: () => ({ user: null }) },
+    "../../../lib/supabase": { supabase: {} },
+    "../../../lib/gamingAccounts": {},
+    "../../../lib/matchRules": { getGameRules: () => null },
+    "../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg" },
+    "../../../lib/ladderStandings": {},
+    "../../../lib/rapidRoyal": {},
+    "../../components/RapidRoyalRules": { __esModule: true, default: () => null },
+    "../../../lib/matchCreationRoster": { getPlayerOptions: () => ["1v1"], getRequiredRosterSize: () => 1 },
+  });
+  const markup = renderToStaticMarkup(React.createElement(Page));
+  assert.doesNotMatch(markup, /<nav\b/);
+  assert.match(markup, /Match Post Form/);
+  assert.match(markup, /href="\/teams\/example"[^>]*>View Team/);
+  assert.match(markup, /Match Finder/);
 });
 
 test("secondary profile and team navigation keeps its links without a duplicate Home option", () => {
