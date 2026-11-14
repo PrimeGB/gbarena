@@ -1,0 +1,27 @@
+.hof-page{min-height:100vh;padding:28px 16px 60px;background:radial-gradient(ellipse at top,#163c5b,#02070d 65%);color:#c8dce9;font-family:Tahoma,Verdana,Arial,sans-serif}
+.hof-shell{max-width:1100px;margin:auto;border:1px solid #335d7e;background:#07121d}
+.hof-header{padding:28px;background:linear-gradient(115deg,#1d4867,#0a1928);border-bottom:1px solid #416b8a}
+.hof-eyebrow{color:#eac265;font-size:10px;font-weight:900;letter-spacing:1.6px}
+.hof-header h1{margin:8px 0;color:#fff;font-size:34px}
+.hof-header>p:last-of-type{font-size:13px;line-height:1.7;color:#b8d0e1}
+.hof-header nav{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:18px}
+.hof-page a{color:#8acaff;font-size:12px}
+.hof-content{padding:22px}
+.hof-rules{margin-bottom:20px;padding:18px;border-left:3px solid #d5b05c;background:#0d2234;font-size:12px;line-height:1.7;color:#acc5d7}
+.hof-rules strong,.hof-rules h2{color:#f0d48d}
+.hof-rules h2{font-size:16px;margin:0 0 8px}
+.hof-controls{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0}
+.hof-controls label{display:grid;flex:1;min-width:170px;gap:6px;color:#b2ccdf;font-size:11px;font-weight:bold}
+.hof-controls select{width:100%;padding:10px;background:#0c1c2a;border:1px solid #416b8a;color:#fff;min-height:40px}
+.hof-empty{text-align:center;padding:24px;color:#aac0d3;font-size:13px;line-height:1.7}
+.hof-empty h3{color:#fff}
+.hof-page button{padding:10px 14px;border:1px solid #5486aa;background:#173c57;color:#fff;font-weight:bold;cursor:pointer}
+.hof-preview{padding:12px;background:#423613;color:#ffe1a0;font-size:12px;line-height:1.7}
+.hof-preview button{margin-left:10px}
+.hof-error{padding:14px;border:1px solid #9d5252;color:#ffc2c2}
+.hof-note{font-size:11px;color:#a6bdcf;line-height:1.6}
+.hof-rare{margin:28px 0}
+.hof-rare>h2{font-size:20px;color:#f0d48d}
+.hof-rare>p{font-size:12px;color:#a6bdcf}
+.hof-page :is(a,button,select):focus-visible{outline:2px solid #f2c14e;outline-offset:3px}
+@media(max-width:600px){.hof-page{padding:12px 10px 45px}.hof-content{padding:15px}.hof-header{padding:22px 18px}.hof-header h1{font-size:28px}.hof-controls label{min-width:140px}}

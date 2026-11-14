@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import { competitionActivityLabel } from "../../lib/seasonCompetition";
 
 type ActivityItem = {
   id: string;
@@ -18,10 +19,7 @@ type ActivityItem = {
 };
 
 function activityLabel(kind: string) {
-  if (kind === "match") return "Match";
-  if (kind === "award") return "Award";
-  if (kind === "team") return "Team";
-  return "Update";
+  return competitionActivityLabel(kind);
 }
 
 function timeAgo(value: string) {

@@ -11,7 +11,7 @@ const pages: [string, string, string, string][] = [
   ["/latest-news", "Latest News", "News and updates", "announcements changes"],
   ["/forums", "Forums", "Community discussions and updates", "posts threads questions suggestions clips"],
   ["/recruit", "Recruit Players", "Find teammates and recruit players", "looking for team lft recruitment"],
-  ["/champions", "Champions", "Competition champions", "winners"],
+  ["/champions", "Hall of Fame", "Season champions, exclusive badges and Top 10 recognition", "winners champions past seasons archives rare achievements"],
   ["/activity", "Community Activity", "See activity from players and teams", "feed following followers"],
   ["/tournaments", "Tournaments", "Browse events and weekly cups", "competition prizes credits"],
   ["/matches/finder", "Find a Match", "Find matches and opponents", "match finder challenge play"],

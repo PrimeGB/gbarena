@@ -43,6 +43,48 @@ reports in the Awards & Trophy Management portal, where decisions are audited.
 Apply the tiered bug and referral awards migration in `supabase/migrations`
 before deploying these features.
 
+### Monthly seasons, Hall of Fame and community moments
+
+`/players/top` offers current and past monthly season boards for players and
+teams, globally, per game, and per game/ladder (combined across platforms).
+`/teams/top` redirects to the real team board rather than example teams.
+Seasons use UTC calendar months. Only finalized completed matches count.
+Season recognition requires at least five matches and one win on the relevant
+board; records sort by wins, then losses, with equal records sharing places.
+The global Top 10 includes everyone tied at an eligible Top 10 place.
+All-time records are preserved.
+
+The dashboard's Awards & Achievements section links to `/champions`, the Hall
+of Fame. Completed seasons grant exclusive edition badges for global Top 10
+and global/game/game-and-ladder champions. Rare honours recognise ten wins
+without a loss, fifty matches with a win, and a third global season title.
+Player award pages and team profiles show earned season badges. Clearly marked
+fictional previews illustrate recognition when no competitors have qualified.
+Season honours are separate from manually granted awards and credit rewards.
+
+Apply `20261114220000_season_archives_and_honours.sql` and
+`20261114221000_community_feed_milestones.sql` before deploying these views.
+The protected archive and honour tables are refreshed by `gb-season-archives`
+every minute and after migration. Corrected results queue affected seasons;
+the worker reconciles archives, revoked/reassigned badges, and later Dynasty
+eligibility. Pending-correction boards read finalized results immediately.
+Honour changes are included in Founder audit history.
+
+The community and profile Following feeds include wins, new teams, public
+friendships, captured team rank climbs, tournament champions, awards and season
+honours. Rival moments require a win against the same opponent after losing
+their immediately previous finalized meeting in the same game and ladder.
+Friendships require both players' public-friend settings; private/revoked
+sources also disappear from Favorites. Tournament wins use a recorded decision,
+staff decision log or reward timestamp, never bracket creation time, and do
+not attribute historical wins to a team's present-day membership.
+
+Existing free weekly team-cup scheduling is preserved; events require an
+announced template. Free singles tournaments are **Coming soon**, with game,
+platform and schedule TBD. There is no solo registration or invented event.
+Run `supabase/tests/season_competition.sql` after the migrations to exercise
+eligibility, ties, rarity, result corrections and feed privacy in a rolled-back
+transaction (the fixture bypasses only new-match roster admission).
 
 ---
 

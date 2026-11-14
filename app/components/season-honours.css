@@ -1,0 +1,14 @@
+.season-honour-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:12px}
+.season-honour-card{min-width:0;padding:16px;border:1px solid #335d7e;background:linear-gradient(145deg,#102a40,#07111d);text-align:center;overflow-wrap:anywhere}
+.season-honour-card h3{margin:12px 0 5px;color:#fff;font-size:15px}
+.season-honour-card a,.season-section-heading a{color:#8acaff}
+.season-honour-card p{margin:5px 0;color:#a8bfd1;font-size:12px;line-height:1.6}
+.season-badge{display:grid;justify-items:center;gap:4px;color:#eac265}
+.season-badge-rare{color:#bdabff}
+.season-badge-edition{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.season-badge strong{font-size:14px}
+.season-badge>span:last-child{font-size:10px;letter-spacing:.5px}
+.season-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.season-section-heading h2{margin:0;color:#f2c14e;font-size:17px}
+.season-section-heading a{font-size:12px}
+.entity-season-honours{margin:20px 0;padding:16px;border:1px solid #284e6e;background:#081521;color:#b6cadd;font-size:12px;line-height:1.6}

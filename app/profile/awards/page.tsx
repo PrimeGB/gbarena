@@ -7,6 +7,7 @@ import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "../../awards/AwardArt";
 import AwardDetailsDialog, { type EarnedAwardDetails } from "../../components/AwardDetailsDialog";
+import SeasonHonours from "../../components/SeasonHonours";
 
 type PlayerAward = {
   id: number;
@@ -144,6 +145,7 @@ function PlayerAwardsContent() {
         <h1 className="pa-title">{ready ? `${username}'s Awards` : "Player Awards"}</h1>
         <p className="pa-sub">Awards earned on GameBattles.</p>
         <Link className="pa-catalog" href="/awards">Browse the award catalog →</Link>
+        {viewedUserId && <SeasonHonours entityId={viewedUserId} kind="players" />}
         {(!requestedUserId || (user && viewedUserId === user.id)) && (
           <section className="pa-invite" id="invite-rewards">
             <h2>Invite players. Earn community awards.</h2>

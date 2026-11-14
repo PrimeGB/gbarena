@@ -318,7 +318,7 @@ function TournamentListing() {
             <p>
               {scope
                 ? `Upcoming and live events for ${gameLabel} on ${scope.platform}. View event details, rules and prizes, or register your eligible team.`
-                : "Every GameBattles tournament starts here. Find free Saturday Community Cups, enter with your team, and compete for credits and winner awards. Monthly team champions also earn credits and an award."}
+                : "Find announced team events and free Community Cups, view the rules and rewards, and register an eligible team. Free singles competitions are coming soon."}
             </p>
           </div>
           <div className="t-hero-side">
@@ -326,6 +326,17 @@ function TournamentListing() {
             <TournamentDisclaimerBox />
           </div>
         </div>
+
+        <section className="t-panel" aria-label="Weekly competition">
+          <div className="t-title">Weekly competition</div>
+          <div style={{ padding: 18, fontSize: 12, color: "#b7cede", lineHeight: 1.7 }}>
+            <p><strong style={{ color: "#f2c14e" }}>Free team Community Cups</strong> — Scheduled cups appear below when announced.
+              Entry is free; check each event for its game, format, date and confirmed rewards.</p>
+            <p style={{ marginTop: 10 }}><strong style={{ color: "#8acaff" }}>Free singles tournaments — Coming soon</strong><br />
+              Game, platform and schedule TBD. Registration is not open yet.</p>
+            <Link href="/champions" style={{ color: "#8acaff" }}>Season champions &amp; Hall of Fame</Link>
+          </div>
+        </section>
 
         <div className="t-panel">
           <div className="t-title">

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabase";
 import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
+import type { SeasonScope } from "../../../lib/seasonCompetition";
 
 type Board = "overall" | "week" | "month" | "season";
 type RankingKind = "players" | "teams";
@@ -24,7 +26,7 @@ type TeamRow = {
   current_win_streak: number | null;
   rating_points: number | null;
 };
-type Standing = { id: string; name: string | null; wins: number; losses: number; rank: number };
+type Standing = { id: string; name: string | null; wins: number; losses: number; rank: number; eligible_rank?: number | null };
 type Season = { id: string; name: string; starts_at: string; ends_at: string };
 type PlayerContext = { game: string | null; ladder: string | null };
 
@@ -64,8 +66,19 @@ function ordinal(value: number) {
 }
 
 export default function TopPlayersPage() {
-  const [board, setBoard] = useState<Board>("overall");
-  const [kind, setKind] = useState<RankingKind>("players");
+  return <Suspense fallback={<p>Loading leaderboards...</p>}><LeaderboardRoute /></Suspense>;
+}
+
+function LeaderboardRoute() {
+  const searchParams = useSearchParams();
+  return <LeaderboardContent key={searchParams.toString()} />;
+}
+
+function LeaderboardContent() {
+  const searchParams = useSearchParams();
+  const requestedBoard = searchParams.get("board");
+  const [board, setBoard] = useState<Board>(requestedBoard === "season" || requestedBoard === "week" || requestedBoard === "month" ? requestedBoard : "overall");
+  const [kind, setKind] = useState<RankingKind>(searchParams.get("kind") === "teams" ? "teams" : "players");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [playerContexts, setPlayerContexts] = useState<Record<string, PlayerContext>>({});
@@ -77,6 +90,10 @@ export default function TopPlayersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [scope, setScope] = useState(searchParams.get("scope") || "global");
+  const [scopes, setScopes] = useState<SeasonScope[]>([]);
+  const [scopeError, setScopeError] = useState("");
+  const requestedSeason = searchParams.get("season") || "";
 
   useEffect(() => {
     let cancelled = false;
@@ -98,13 +115,24 @@ export default function TopPlayersPage() {
       } else {
         const available = (data || []) as Season[];
         setSeasons(available);
-        setSeasonId(current?.id || available[0]?.id || "");
+        setSeasonId(available.some((season) => season.id === requestedSeason) ? requestedSeason : current?.id || available[0]?.id || "");
       }
       setSeasonLoading(false);
     }
     loadSeasons();
     return () => { cancelled = true; };
-  }, []);
+  }, [requestedSeason]);
+
+  useEffect(() => {
+    if (!seasonId) return;
+    let active = true;
+    void supabase.rpc("gb_season_scopes", { p_season: seasonId }).then(({ data, error: scopeError }) => {
+      if (!active) return;
+      if (scopeError) setScopeError(`Season categories could not be loaded: ${scopeError.message}`);
+      else { setScopeError(""); setScopes((data || []) as SeasonScope[]); }
+    });
+    return () => { active = false; };
+  }, [seasonId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +155,7 @@ export default function TopPlayersPage() {
 
       if (board !== "overall") {
         const result = board === "season"
-          ? await supabase.rpc("gb_season_standings", { p_season: seasonId, p_kind: kind, p_limit: 100 })
+          ? await supabase.rpc("gb_season_board", { p_season: seasonId, p_kind: kind, p_scope: scope, p_limit: 100 })
           : await supabase.rpc("gb_leaderboard", { p_period: board, p_kind: kind, p_limit: 100 });
         if (cancelled) return;
         if (result.error) {
@@ -212,7 +240,7 @@ export default function TopPlayersPage() {
     }
     loadBoard();
     return () => { cancelled = true; };
-  }, [board, kind, seasonId, seasonLoading, seasonError]);
+  }, [board, kind, seasonId, scope, seasonLoading, seasonError]);
 
   const selectedBoard = boards.find((item) => item.id === board)!;
   const selectedSeason = seasons.find((season) => season.id === seasonId);
@@ -236,6 +264,10 @@ export default function TopPlayersPage() {
         .tp-header p{color:#b4cadb;font-size:13px;margin:8px 0 0;line-height:1.5;}
         .tp-content{padding:18px 16px 20px;}
         .tp-kind-switch{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+        .tp-archive-links{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin:0 0 16px;font-size:12px}
+        .tp-archive-links a{color:#8acaff}
+        .tp-archive-links button{padding:9px 13px;background:#163b56;border:1px solid #5486aa;color:#fff;cursor:pointer;font:700 12px Tahoma}
+        .tp-season-note{padding:12px 18px;font-size:11px;line-height:1.6;background:#10293c;color:#b9d1e4}
         .tp-kind-label{color:#a8c0d3;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;margin-right:4px;}
         .tp-kind-button{min-width:100px;padding:9px 16px;border:1px solid #416987;background:#0b1c2a;color:#c5d8e7;font:700 12px Tahoma,Verdana,Arial,sans-serif;cursor:pointer;text-transform:uppercase;}
         .tp-kind-button:hover{background:#173852;}
@@ -303,6 +335,14 @@ export default function TopPlayersPage() {
               <button type="button" className="tp-kind-button" aria-pressed={!isTeams} onClick={() => setKind("players")}>Players</button>
               <button type="button" className="tp-kind-button" aria-pressed={isTeams} onClick={() => setKind("teams")}>Teams</button>
             </div>
+            <div className="tp-archive-links">
+              <button type="button" onClick={() => {
+                setBoard("season"); setScope("global");
+                const past = seasons.find((season) => new Date(season.ends_at) <= new Date());
+                if (past) setSeasonId(past.id);
+              }}>Past seasons &amp; archives</button>
+              <Link href="/champions">Hall of Fame &amp; season honours</Link>
+            </div>
             <div className="tp-tabs" role="group" aria-label={`${subject} leaderboard`}>
               {boards.map((item) => (
                 <button key={item.id} type="button" className="tp-tab" aria-pressed={board === item.id} onClick={() => setBoard(item.id)}>
@@ -320,18 +360,31 @@ export default function TopPlayersPage() {
                       ? "Teams with a recorded match are ranked across all ladders by rating, then wins and losses. Unrated teams appear last."
                       : "Ranked by all-time GB points, then wins and losses. Game and ladder show a player's team."
                     : board === "season"
-                      ? "Ranked by wins, then fewer losses. Seasons run for one calendar month."
+                      ? "Finalized ladder matches only. Most wins, then fewer losses; tied records share a place. Seasons follow UTC calendar months."
                       : `Ranked by wins, then fewer losses, from completed matches ${board === "week" ? "this week" : "this month"}.`}</p>
                 </div>
                 {board === "season" && seasons.length > 0 && (
                   <label className="tp-season-picker">
                     Choose season
-                    <select className="tp-select" value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>
-                      {seasons.map((season) => <option key={season.id} value={season.id}>{season.name}</option>)}
+                    <select className="tp-select" value={seasonId} onChange={(event) => { setSeasonId(event.target.value); setScope("global"); }}>
+                      {seasons.map((season) => <option key={season.id} value={season.id}>{season.name}{new Date(season.ends_at) <= new Date() ? " — Archived" : " — Current"}</option>)}
                     </select>
                   </label>
                 )}
+                {board === "season" && <label className="tp-season-picker">Season category
+                  <select className="tp-select" value={scope} onChange={(event) => setScope(event.target.value)}>
+                    <option value="global">All games &amp; ladders</option>
+                    {scopes.filter((item) => item.scope !== "global").map((item) => <option key={item.scope} value={item.scope}>{item.label}</option>)}
+                  </select>
+                </label>}
               </div>
+              {board === "season" && <div className="tp-season-note">
+                Recognition requires at least 5 finalized matches and 1 win within this category.
+                Global Top 10 and global/game/ladder champions earn exclusive season badges when the month ends.
+                Eligible places are shown separately from the participation rankings below.
+                Archived results and honours reconcile after official corrections.
+              </div>}
+              {board === "season" && scopeError && <p className="tp-status tp-error" role="alert">{scopeError}</p>}
 
               {loading ? (
                 <div className="tp-status" role="status">Loading {subject.toLowerCase()} rankings...</div>
@@ -391,13 +444,14 @@ export default function TopPlayersPage() {
                   {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example {kind}, not actual rankings. Real results will appear when matches are completed.</div>}
                   <div className="tp-table-scroll">
                     <table className="tp-table">
-                      <thead><tr><th scope="col">Place</th><th scope="col">{isTeams ? "Team" : "Member"}</th><th scope="col">Wins</th><th scope="col">Losses</th><th scope="col">Win rate</th></tr></thead>
+                      <thead><tr><th scope="col">Place</th><th scope="col">{isTeams ? "Team" : "Member"}</th><th scope="col">Wins</th><th scope="col">Losses</th><th scope="col">Win rate</th>{board === "season" && <th scope="col">Eligible place</th>}</tr></thead>
                       <tbody>{periodRows.map((player) => (
                         <tr key={player.id}>
                           <td className="tp-place">{ordinal(player.rank)}</td>
                           <td>{showPreview ? player.name : <Link className="tp-member" href={isTeams ? `/teams/${encodeURIComponent(player.id)}` : `/profile?userId=${encodeURIComponent(player.id)}`}>{player.name || subject}</Link>}</td>
                           <td className="tp-win">{player.wins}</td><td className="tp-loss">{player.losses}</td>
                           <td>{player.wins + player.losses > 0 ? `${Math.round(100 * player.wins / (player.wins + player.losses))}%` : "—"}</td>
+                          {board === "season" && <td>{showPreview ? "Example" : player.eligible_rank ? `#${player.eligible_rank}${player.eligible_rank === 1 ? " · Champion contender" : scope === "global" && player.eligible_rank <= 10 ? " · Top 10" : ""}` : "Not yet eligible"}</td>}
                         </tr>
                       ))}</tbody>
                     </table>

@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
 import { hasNewTrophy } from "./NewTrophyArt";
+import { SeasonBadge } from "../components/SeasonHonours";
 
 type PublicAward = {
   name: string;
@@ -65,6 +66,21 @@ export default function AwardsPage() {
         </header>
         {error && <p role="alert" style={styles.error}>{error}</p>}
         <section style={styles.content}>
+          <section>
+            <h2 style={styles.sectionTitle}>Season honours &amp; Hall of Fame</h2>
+            <p style={styles.text}>Exclusive monthly editions recognise eligible global Top 10 players and teams,
+              champions across games and ladders, and rare competitive achievements. These badges are earned
+              from finalized results after the season ends, not granted manually.</p>
+            <p style={styles.text}><Link href="/champions">Explore the Hall of Fame</Link>{" · "}
+              <Link href="/players/top?board=season">Current &amp; past season leaderboards</Link></p>
+            <div style={styles.catalog}>
+              <SeasonBadge honour="champion" season="Season edition preview" />
+              <SeasonBadge honour="top10" season="Season edition preview" place={10} />
+              <SeasonBadge honour="undefeated" season="Season edition preview" />
+            </div>
+            <p style={styles.text}>Badge previews only. Qualify with 5 finalized matches and 1 win; most wins,
+              then fewest losses. Tied places are shared. Rare thresholds are listed in the Hall of Fame.</p>
+          </section>
           {preview && <section>
             <h2 style={styles.sectionTitle}>Early community awards — example preview</h2>
             <p style={styles.text}>Preview only. These examples do not grant awards.</p>

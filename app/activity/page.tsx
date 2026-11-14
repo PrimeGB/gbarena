@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useUser } from "../../lib/useUser";
+import { competitionActivityLabel } from "../../lib/seasonCompetition";
 
 type ActivityItem = {
   id: string;
@@ -32,10 +33,7 @@ const REACTIONS = [
 ] as const;
 
 function activityLabel(kind: string) {
-  if (kind === "match") return "MATCH RESULT";
-  if (kind === "award") return "PLAYER AWARD";
-  if (kind === "team") return "TEAM UPDATE";
-  return "COMMUNITY UPDATE";
+  return competitionActivityLabel(kind).toUpperCase();
 }
 
 export default function ActivityPage() {
@@ -232,7 +230,7 @@ export default function ActivityPage() {
                 <div className="community-heading-row">
                   <h1 id="community-feed-title">GameBattles Feed</h1>
                 </div>
-                <p className="community-feed-caption">Recent matches, team updates, and community achievements from the last 48 hours.</p>
+                <p className="community-feed-caption">Wins, friendships, rank climbs, new teams, tournament champions, awards and rival rematches from the last 48 hours.</p>
                 <div className="community-tabs" role="group" aria-label="Your activity feed">
                   <button type="button" aria-pressed={feedMode === "feed"} onClick={() => setFeedMode("feed")}>Your Feed</button>
                   <button type="button" aria-pressed={feedMode === "favorites"} onClick={() => setFeedMode("favorites")}>Favorites</button>

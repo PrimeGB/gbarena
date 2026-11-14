@@ -923,6 +923,7 @@ export default function Home() {
               <div className="section-title">Awards &amp; Achievements</div>
 
               <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/champions">Hall of Fame <span className="arrow">›</span></Link>
 
               <div className="section-title">About GameBattles</div>
 
@@ -954,10 +955,6 @@ export default function Home() {
             <section className="hero-expanded">
               <HeroSlides />
 
-              <div className="hero-title">
-                <div className="hero-main">GAMEBATTLES</div>
-                <div className="hero-sub">WHERE GAMING FINDS ITS EDGE</div>
-              </div>
             </section>
           </div>
 
