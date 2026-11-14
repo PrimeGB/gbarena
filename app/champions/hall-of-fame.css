@@ -1,27 +1,99 @@
-.hof-page{min-height:100vh;padding:28px 16px 60px;background:radial-gradient(ellipse at top,#163c5b,#02070d 65%);color:#c8dce9;font-family:Tahoma,Verdana,Arial,sans-serif}
-.hof-shell{max-width:1100px;margin:auto;border:1px solid #335d7e;background:#07121d}
-.hof-header{padding:28px;background:linear-gradient(115deg,#1d4867,#0a1928);border-bottom:1px solid #416b8a}
-.hof-eyebrow{color:#eac265;font-size:10px;font-weight:900;letter-spacing:1.6px}
-.hof-header h1{margin:8px 0;color:#fff;font-size:34px}
-.hof-header>p:last-of-type{font-size:13px;line-height:1.7;color:#b8d0e1}
-.hof-header nav{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:18px}
-.hof-page a{color:#8acaff;font-size:12px}
-.hof-content{padding:22px}
-.hof-rules{margin-bottom:20px;padding:18px;border-left:3px solid #d5b05c;background:#0d2234;font-size:12px;line-height:1.7;color:#acc5d7}
-.hof-rules strong,.hof-rules h2{color:#f0d48d}
-.hof-rules h2{font-size:16px;margin:0 0 8px}
-.hof-controls{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0}
-.hof-controls label{display:grid;flex:1;min-width:170px;gap:6px;color:#b2ccdf;font-size:11px;font-weight:bold}
-.hof-controls select{width:100%;padding:10px;background:#0c1c2a;border:1px solid #416b8a;color:#fff;min-height:40px}
-.hof-empty{text-align:center;padding:24px;color:#aac0d3;font-size:13px;line-height:1.7}
-.hof-empty h3{color:#fff}
-.hof-page button{padding:10px 14px;border:1px solid #5486aa;background:#173c57;color:#fff;font-weight:bold;cursor:pointer}
-.hof-preview{padding:12px;background:#423613;color:#ffe1a0;font-size:12px;line-height:1.7}
-.hof-preview button{margin-left:10px}
-.hof-error{padding:14px;border:1px solid #9d5252;color:#ffc2c2}
-.hof-note{font-size:11px;color:#a6bdcf;line-height:1.6}
-.hof-rare{margin:28px 0}
-.hof-rare>h2{font-size:20px;color:#f0d48d}
-.hof-rare>p{font-size:12px;color:#a6bdcf}
-.hof-page :is(a,button,select):focus-visible{outline:2px solid #f2c14e;outline-offset:3px}
-@media(max-width:600px){.hof-page{padding:12px 10px 45px}.hof-content{padding:15px}.hof-header{padding:22px 18px}.hof-header h1{font-size:28px}.hof-controls label{min-width:140px}}
+.hof-page{min-height:calc(100vh - 30px);padding:18px 22px 30px;background:radial-gradient(ellipse at 30% 0,#14344d,transparent 58%),#030910;color:#c1d1df;font-family:Arial,Helvetica,sans-serif;line-height:1.4}
+.hof-page *{box-sizing:border-box}
+.hof-shell{max-width:1220px;margin:auto;background:#08121e;border:1px solid #2c4962;box-shadow:0 20px 70px #0008}
+.hof-header{display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;overflow:hidden;padding:18px 26px;background:radial-gradient(ellipse at 74% -35%,#326a8f80,transparent 65%),linear-gradient(115deg,#163d59,#0b1929);border-bottom:1px solid #39576b}
+.hof-header:after{content:"";position:absolute;inset:auto 0 0;height:1px;background:linear-gradient(90deg,transparent,#e6bd7055,transparent)}
+.hof-eyebrow{margin:0 0 6px;color:#ceae73;font-size:8px;letter-spacing:2.4px;font-weight:800}
+.hof-header h1{margin:0;color:#f5f6f7;font-size:38px;line-height:1.05;font-weight:800;letter-spacing:-1.6px}
+.hof-header h1>span:first-child{color:#ecd098;font-family:Georgia,"Times New Roman",serif;font-weight:normal;font-style:italic}
+.hof-title-star{display:inline-block;margin-left:17px;font-size:22px;vertical-align:middle;color:#e8c67c;text-shadow:0 0 22px #efba5e66}
+.hof-header>div>p:last-child{margin:7px 0 0;color:#9eb8cc;font-size:11px;letter-spacing:.5px}
+.hof-header nav{display:flex;gap:21px;align-items:center}
+.hof-page a{color:#a7d6f7;text-decoration:none}
+.hof-page a:hover{text-decoration:underline;color:#fff}
+.hof-header nav a{font-size:10px;font-weight:700;white-space:nowrap}
+.hof-header nav a:nth-child(2){padding:10px 13px;border:1px solid #7491a255;background:#d6e8f20a;color:#e2edf7}
+.hof-toolbar{display:flex;align-items:center;gap:22px;padding:12px 26px;border-bottom:1px solid #233b50;background:#0d1d2b}
+.hof-toolbar label{display:flex;align-items:center;gap:10px;font-size:8px;font-weight:800;letter-spacing:1.2px;color:#809db5}
+.hof-toolbar select{max-width:240px;padding:7px 30px 7px 10px;color:#e8eff5;background:#0b1825;border:1px solid #37516a;font:700 11px Arial;min-height:34px}
+.hof-switch{display:flex;padding:3px;background:#050e18;border:1px solid #263d52;gap:2px}
+.hof-switch button{cursor:pointer;border:0;background:transparent;color:#91aac0;padding:7px 13px;font:700 10px Arial}
+.hof-switch button[aria-pressed=true]{background:linear-gradient(#2c5272,#1c3c58);box-shadow:inset 0 1px #6c91aa55;color:#fff}
+.hof-category-label{margin-left:auto}
+.hof-content{padding:16px 24px 0}
+.hof-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+.hof-section-heading h2{color:#e8eef5;font-size:14px;letter-spacing:.15px;margin:0;font-weight:700}
+.hof-section-heading>span{color:#819ab0;font-size:8px;letter-spacing:1px;text-transform:uppercase}
+.hof-main-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:22px}
+.hof-podium{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(185px,100%),1fr));min-height:273px;max-height:310px;overflow:auto;background:radial-gradient(ellipse at 50% 30%,#3b311f55,transparent 65%),linear-gradient(#101c29,#0a1420);border-top:1px solid #b692524f;border-bottom:1px solid #a68b4a3b;scrollbar-color:#46637a #0b1826}
+.hof-champion{position:relative;min-width:0;padding:13px 15px 15px;text-align:center;isolation:isolate}
+.hof-champion+.hof-champion{border-left:1px solid #c0a46322}
+.hof-champion-title{color:#d9bd81;font-size:8px;font-weight:800;letter-spacing:2.4px}
+.hof-champion-teams{background:radial-gradient(ellipse at 50% 30%,#2b5b7338,transparent 70%)}
+.hof-champion-teams .hof-champion-title{color:#9fc9e7}
+.hof-trophy-stage{position:relative;max-width:240px;height:151px;margin:0 auto}
+.hof-trophy-stage .season-award-art{position:relative;width:222px;max-width:100%;height:166px;margin-top:-3px;z-index:1}
+.hof-stage-orbit{position:absolute;left:15%;right:15%;bottom:3px;height:20px;border:1px solid #d5b67240;border-radius:50%;background:radial-gradient(ellipse,#d3ad5626,transparent);box-shadow:0 6px 12px #0008}
+.hof-champion-info h3{margin:4px 0 7px;font-size:20px;letter-spacing:.3px;overflow-wrap:anywhere}
+.hof-champion-info h3 a{color:#fff3d4}
+.hof-champion-teams h3 a{color:#e4f2ff}
+.hof-record{display:flex;gap:5px;align-items:baseline;justify-content:center;margin:0 0 10px;font-size:14px;font-weight:700;color:#e2e8ee}
+.hof-record strong{color:#edd297;font-size:17px}
+.hof-record span{margin-left:3px;font-size:9px;color:#8196a6}
+.hof-record i{height:12px;border-left:1px solid #456076;margin:0 5px}
+.hof-record small{font-size:9px;margin-left:7px;font-weight:400;color:#8ba3b8}
+.hof-title-list{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.hof-title-list span{font-size:8px;line-height:1.5;color:#c5b38f;padding:2px 6px;border:1px solid #9a81472b;background:#b9984b08}
+.hof-contenders{min-width:0}
+.hof-elite-intro{display:flex;align-items:center;height:90px;border-top:1px solid #37729777;background:radial-gradient(ellipse at 0 50%,#14496666,transparent 80%),#0c1c2b}
+.hof-elite-intro .season-award-art{width:118px;height:102px;flex-shrink:0;margin:-5px 0}
+.hof-elite-intro strong{font-size:13px;color:#c7f1ff}
+.hof-elite-intro p{font-size:10px;color:#88a7bf;margin:5px 8px 0 0}
+.hof-top10-list{max-height:171px;overflow:auto;scrollbar-color:#46637a #0b1826}
+.hof-top10-row{display:flex;align-items:center;gap:12px;padding:11px 12px;background:#0e2031;border-bottom:1px solid #35516b55;min-height:53px}
+.hof-top10-row:nth-child(even){background:#0b1b2a}
+.hof-place{font-size:22px;font-weight:800;letter-spacing:-1px;color:#85c1e3;min-width:28px}
+.hof-top10-row>div{min-width:0}
+.hof-top10-row a,.hof-top10-row strong{display:block;color:#e0eaf4;font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.hof-top10-row small{display:block;font-size:9px;color:#7c9cb5;margin-top:3px}
+.hof-top10-record{margin-left:auto;white-space:nowrap;font-size:10px;color:#c2dbe9}
+.hof-top10-record span{margin-left:3px;color:#7690a6}
+.hof-top10-foot{font-size:9px;line-height:1.5;margin:9px 0 0;color:#819ab0}
+.hof-collection{margin-top:19px}
+.hof-collection>.hof-section-heading{padding-bottom:10px;border-bottom:1px solid #2b4157}
+.hof-rare-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding-bottom:8px}
+.hof-relic{display:flex;align-items:center;min-width:0;position:relative;padding:0 12px 0 0;background:radial-gradient(ellipse at 20% 50%,#b5398b16,transparent 70%)}
+.hof-relic+.hof-relic{border-left:1px solid #2d4258;padding-left:9px}
+.hof-relic-iron_competitor{background:radial-gradient(ellipse at 20% 50%,#dc7a261a,transparent 70%)}
+.hof-relic-dynasty{background:radial-gradient(ellipse at 20% 50%,#8255b91e,transparent 70%)}
+.hof-relic>.season-award-art{width:130px;max-width:43%;height:116px;flex-shrink:0}
+.hof-relic-info{min-width:0}
+.hof-relic-class{color:#f18bd1;font-size:7px;font-weight:800;letter-spacing:1.2px}
+.hof-relic-iron_competitor .hof-relic-class{color:#d6a074}
+.hof-relic-dynasty .hof-relic-class{color:#c4abf5}
+.hof-relic h3{font-size:12px;color:#f0e2f1;line-height:1.4;margin:5px 0}
+.hof-relic-iron_competitor h3{color:#eed9c8}
+.hof-relic-dynasty h3{color:#e1d5fd}
+.hof-relic p{font-size:10px;color:#a6bacb;margin:0 0 7px;line-height:1.5}
+.hof-relic small{font-size:8px;line-height:1.6;color:#788fa4;display:block}
+.hof-relic-recipients{max-height:65px;overflow:auto;font-size:10px;line-height:1.7}
+.hof-relic-recipients a{display:block;overflow-wrap:anywhere}
+.hof-recipient-kind{font-size:8px;color:#8fa4b8}
+.hof-footer{position:relative;display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:13px 0 15px;border-top:1px solid #294156;margin-top:3px;font-size:9px}
+.hof-footer>p{margin:0;color:#829caf;line-height:1.7;flex:1}
+.hof-footer>p>span{padding:0 5px;color:#bb9b65}
+.hof-footer>a{font-size:10px;white-space:nowrap}
+.hof-footer summary{color:#a9c5da;cursor:pointer;white-space:nowrap;font-size:10px}
+.hof-footer details>p{position:absolute;z-index:4;right:0;bottom:40px;width:min(440px,100%);margin:0;padding:18px;background:#142b40;border:1px solid #55728b;box-shadow:0 12px 30px #0009;color:#b9ccdc;font-size:12px;line-height:1.8}
+.hof-notice{margin:0 0 12px;padding:9px 12px;color:#a0b7cb;background:#102234;font-size:10px;line-height:1.6;border-left:2px solid #577f9c}
+.hof-preview{color:#d7c6a1;background:#30291b88;border-color:#c49c50}
+.hof-preview strong{font-size:8px;letter-spacing:1px;margin-right:8px;color:#ecd292}
+.hof-error{padding:16px;border:1px solid #914b52;color:#ffd2d4;font-size:12px}
+.hof-loading{min-height:250px;display:grid;place-items:center;color:#a4bed4;font-size:12px}
+.hof-panel-empty{padding:20px;color:#91a9bd;font-size:11px;line-height:1.8}
+.hof-page :is(a,button,select,summary,[tabindex]):focus-visible{outline:2px solid #f1cf87;outline-offset:3px}
+@media(min-width:1500px){.hof-header{padding-top:23px;padding-bottom:23px}.hof-podium{min-height:295px}.hof-trophy-stage{height:170px}.hof-trophy-stage .season-award-art{height:185px;width:245px}.hof-relic>.season-award-art{height:133px;width:145px}}
+@media(max-width:1000px){.hof-toolbar{gap:12px;padding:12px 18px}.hof-toolbar label{display:grid;gap:5px}.hof-content{padding:15px 18px 0}.hof-main-grid{gap:15px;grid-template-columns:minmax(0,1.4fr) minmax(245px,1fr)}.hof-relic{flex-direction:column;text-align:center;padding:0 8px 10px}.hof-relic+.hof-relic{padding-left:8px}.hof-relic>.season-award-art{max-width:100%;width:134px;height:100px}.hof-relic h3{margin-top:4px}.hof-relic p{font-size:9px}.hof-relic small{font-size:7px}}
+@media(max-width:700px){.hof-page{padding:10px 10px 24px}.hof-header{padding:17px 16px;align-items:flex-start}.hof-header h1{font-size:32px}.hof-eyebrow{font-size:6px;letter-spacing:1.5px}.hof-header nav{flex-direction:column;align-items:flex-end;gap:9px}.hof-header nav a{font-size:9px}.hof-header nav a:nth-child(2){padding:0;border:0;background:none}.hof-header>div>p:last-child{font-size:10px}.hof-title-star{margin-left:9px;font-size:17px}.hof-toolbar{flex-wrap:wrap;gap:10px;padding:12px}.hof-toolbar label{flex:1;min-width:0}.hof-toolbar select{width:100%;max-width:none;padding-left:6px;font-size:10px}.hof-switch{order:3;justify-content:center;width:100%}.hof-switch button{flex:1;font-size:10px}.hof-category-label{margin-left:0}.hof-content{padding:14px 12px 0}.hof-main-grid{grid-template-columns:1fr;gap:17px}.hof-podium{grid-template-columns:repeat(2,minmax(0,1fr));min-height:250px;max-height:282px}.hof-champion{padding:12px 8px}.hof-champion-title{font-size:7px;letter-spacing:1.7px}.hof-trophy-stage{height:137px}.hof-trophy-stage .season-award-art{height:150px}.hof-champion-info h3{font-size:18px}.hof-title-list span{font-size:7px;padding:2px 4px}.hof-record{font-size:12px}.hof-record strong{font-size:15px}.hof-record small{font-size:8px;margin-left:3px}.hof-elite-intro{height:70px}.hof-elite-intro .season-award-art{height:83px;width:95px}.hof-top10-row{padding:8px 12px;min-height:46px}.hof-top10-list{max-height:185px}.hof-top10-foot{font-size:8px}.hof-collection{margin-top:17px}.hof-section-heading h2{font-size:13px}.hof-section-heading>span{font-size:6px;letter-spacing:.7px}.hof-relic>.season-award-art{width:110px;height:86px}.hof-relic-class{font-size:6px;letter-spacing:.5px}.hof-relic h3{font-size:10px;min-height:28px}.hof-relic p{font-size:8px;min-height:24px}.hof-relic small{font-size:6.5px}.hof-relic{padding-left:4px;padding-right:4px}.hof-relic+.hof-relic{padding-left:4px}.hof-footer{gap:12px;padding-top:10px}.hof-footer>p{flex-basis:100%;font-size:8px}.hof-preview{font-size:9px;padding:8px}.hof-preview strong{font-size:7px}}
+@media(max-width:700px){.hof-relic h3{font-size:11px;min-height:31px}.hof-relic p{font-size:9px;min-height:27px}.hof-relic small{font-size:8px}.hof-relic-class{font-size:7px}}
+@media(prefers-reduced-motion:no-preference){.hof-trophy-stage .season-award-art{transition:filter .25s,transform .25s}.hof-champion:hover .season-award-art{transform:translateY(-3px);filter:drop-shadow(0 0 10px #e6bb6633)}}

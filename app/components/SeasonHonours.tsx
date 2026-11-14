@@ -7,18 +7,14 @@ import {
   seasonHonourNames, type CompetitionKind, type SeasonHonour,
 } from "../../lib/seasonCompetition";
 import "./season-honours.css";
+import SeasonAwardArt from "./SeasonAwardArt";
 
 export function SeasonBadge({ honour, season, place }: { honour: string; season: string; place?: number }) {
   const rare = ["undefeated", "iron_competitor", "dynasty"].includes(honour);
   return (
-    <div className={`season-badge${rare ? " season-badge-rare" : ""}`}>
-      <span className="season-badge-edition">GAMEBATTLES / {season}</span>
-      <svg viewBox="0 0 120 112" width="100" height="94" role="img" aria-label={`${seasonHonourNames[honour] || honour} badge`}>
-        <path d="M60 5 102 23 98 72 60 105 22 72 18 23Z" fill="#102c45" stroke="currentColor" strokeWidth="3" />
-        <path d="M60 15 91 29 88 67 60 92 32 67 29 29Z" fill="#081725" stroke="currentColor" opacity=".65" />
-        <path d="m41 43 10 8 9-21 9 21 10-8-4 28H45Z" fill="currentColor" />
-        <text x="60" y="85" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="bold">{honour === "top10" ? `TOP ${place || 10}` : rare ? "RARE" : "#1"}</text>
-      </svg>
+    <div className={`season-badge season-badge-${honour}${rare ? " season-badge-rare" : ""}`}>
+      <span className="season-badge-edition">{season}</span>
+      <SeasonAwardArt honour={honour} place={place} />
       <strong>{seasonHonourNames[honour] || honour}</strong>
       <span>{rare ? "Rare achievement" : "Exclusive season edition"}</span>
     </div>
@@ -27,7 +23,7 @@ export function SeasonBadge({ honour, season, place }: { honour: string; season:
 
 export function SeasonHonourCard({ honour, preview = false }: { honour: SeasonHonour; preview?: boolean }) {
   return (
-    <article className="season-honour-card">
+    <article className={`season-honour-card season-honour-card-${honour.honour}`}>
       <SeasonBadge honour={honour.honour} season={honour.season_name} place={honour.place} />
       {preview ? <h3>{honour.name}</h3> : <h3><Link href={honour.kind === "teams" ? `/teams/${honour.entity_id}` : `/profile/${honour.entity_id}`}>{honour.name}</Link></h3>}
       <p>{honour.scope_label}</p>

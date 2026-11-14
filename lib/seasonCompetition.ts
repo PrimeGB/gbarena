@@ -27,6 +27,25 @@ export function seasonBoardHref(season: string, kind: CompetitionKind, scope = "
   return `/players/top?${new URLSearchParams({ board: "season", season, kind, scope })}`;
 }
 
+export function groupSeasonChampions(rows: SeasonHonour[]) {
+  const groups = new Map<string, { honour: SeasonHonour; categories: { scope: string; label: string }[] }>();
+  for (const honour of rows) {
+    if (honour.honour !== "champion") continue;
+    const key = `${honour.season_id}:${honour.kind}:${honour.entity_id}`;
+    const group = groups.get(key);
+    if (!group) groups.set(key, { honour, categories: [{ scope: honour.scope, label: honour.scope_label }] });
+    else {
+      if (honour.scope === "global") group.honour = honour;
+      if (!group.categories.some((category) => category.scope === honour.scope)) {
+        group.categories.push({ scope: honour.scope, label: honour.scope_label });
+      }
+    }
+  }
+  return [...groups.values()].sort((a, b) =>
+    Number(b.honour.scope === "global") - Number(a.honour.scope === "global")
+      || a.honour.kind.localeCompare(b.honour.kind) || a.honour.name.localeCompare(b.honour.name));
+}
+
 export function competitionActivityLabel(kind: string) {
   const labels: Record<string, string> = {
     match: "Match result", award: "Award earned", team: "New team", friend: "New friendship",

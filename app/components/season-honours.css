@@ -1,13 +1,22 @@
 .season-honour-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:12px}
-.season-honour-card{min-width:0;padding:16px;border:1px solid #335d7e;background:linear-gradient(145deg,#102a40,#07111d);text-align:center;overflow-wrap:anywhere}
-.season-honour-card h3{margin:12px 0 5px;color:#fff;font-size:15px}
-.season-honour-card a,.season-section-heading a{color:#8acaff}
-.season-honour-card p{margin:5px 0;color:#a8bfd1;font-size:12px;line-height:1.6}
-.season-badge{display:grid;justify-items:center;gap:4px;color:#eac265}
-.season-badge-rare{color:#bdabff}
-.season-badge-edition{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-.season-badge strong{font-size:14px}
-.season-badge>span:last-child{font-size:10px;letter-spacing:.5px}
+.season-honour-card{position:relative;min-width:0;padding:15px 16px 17px;border:1px solid #89714666;border-top:2px solid #dcba73;background:radial-gradient(ellipse at 50% 20%,#74551e33,transparent 65%),linear-gradient(145deg,#172637,#080f19);text-align:center;overflow-wrap:anywhere;box-shadow:inset 0 1px #fff1}
+.season-honour-card-top10{border-color:#3a718c88;border-top-color:#78d6ed;background:radial-gradient(ellipse at 50% 25%,#12567955,transparent 70%),#0a1a2a}
+.season-honour-card-undefeated{border-color:#8f4d8288;border-top-color:#f598df;background:radial-gradient(ellipse at 20% 15%,#7d296049,transparent 70%),#181326}
+.season-honour-card-iron_competitor{border-color:#83604a88;border-top-color:#d99360;background:repeating-linear-gradient(135deg,#d58b4610 0 1px,transparent 1px 9px),linear-gradient(120deg,#292727,#101821)}
+.season-honour-card-dynasty{border-color:#79649c88;border-top-color:#ba9ee7;background:radial-gradient(ellipse at 50% 0,#6a4e9655,transparent 75%),#141329;box-shadow:inset 0 0 24px #a284da0c}
+.season-honour-card h3{margin:11px 0 5px;color:#fff;font-size:15px}
+.season-honour-card a,.season-section-heading a{color:#b4d8f1}
+.season-honour-card p{margin:5px 0;color:#a8bfd1;font-size:11px;line-height:1.6}
+.season-badge{display:grid;justify-items:center;gap:3px;color:#edd095}
+.season-award-art{display:block;max-width:100%;height:auto;overflow:visible}
+.season-badge .season-award-art{width:205px;height:154px}
+.season-badge-top10{color:#9be3f8}
+.season-badge-undefeated{color:#f8afe4}
+.season-badge-iron_competitor{color:#e3b18a}
+.season-badge-dynasty{color:#d7c1ff}
+.season-badge-edition{font-size:8px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;opacity:.8}
+.season-badge strong{font-size:13px;letter-spacing:.2px}
+.season-badge>span:last-child{font-size:8px;letter-spacing:1px;text-transform:uppercase;opacity:.65}
 .season-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .season-section-heading h2{margin:0;color:#f2c14e;font-size:17px}
 .season-section-heading a{font-size:12px}

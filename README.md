@@ -61,6 +61,12 @@ without a loss, fifty matches with a win, and a third global season title.
 Player award pages and team profiles show earned season badges. Clearly marked
 fictional previews illustrate recognition when no competitors have qualified.
 Season honours are separate from manually granted awards and credit rewards.
+The compact Hall of Fame opens on the latest season with recognition, showing
+players and teams together. Multiple category titles share one champion entry;
+the Top 10 and rare collection remain visible alongside instead of repeating
+tall award cards. Empty selections show labelled examples without an extra
+preview click. Each seasonal award has its own original metallic illustration:
+a winged cup, star medal, unbroken phoenix, forged hammer and orbital crown.
 
 Apply `20261114220000_season_archives_and_honours.sql` and
 `20261114221000_community_feed_milestones.sql` before deploying these views.
