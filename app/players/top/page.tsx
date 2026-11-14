@@ -244,6 +244,7 @@ function LeaderboardContent() {
 
   const selectedBoard = boards.find((item) => item.id === board)!;
   const selectedSeason = seasons.find((season) => season.id === seasonId);
+  const seasonEnded = Boolean(selectedSeason && new Date(selectedSeason.ends_at) <= new Date());
   const isTeams = kind === "teams";
   const subject = isTeams ? "Team" : "Player";
   const periodRows = showPreview
@@ -451,7 +452,7 @@ function LeaderboardContent() {
                           <td>{showPreview ? player.name : <Link className="tp-member" href={isTeams ? `/teams/${encodeURIComponent(player.id)}` : `/profile?userId=${encodeURIComponent(player.id)}`}>{player.name || subject}</Link>}</td>
                           <td className="tp-win">{player.wins}</td><td className="tp-loss">{player.losses}</td>
                           <td>{player.wins + player.losses > 0 ? `${Math.round(100 * player.wins / (player.wins + player.losses))}%` : "—"}</td>
-                          {board === "season" && <td>{showPreview ? "Example" : player.eligible_rank ? `#${player.eligible_rank}${player.eligible_rank === 1 ? " · Champion contender" : scope === "global" && player.eligible_rank <= 10 ? " · Top 10" : ""}` : "Not yet eligible"}</td>}
+                          {board === "season" && <td>{showPreview ? "Example" : player.eligible_rank ? `#${player.eligible_rank}${player.eligible_rank === 1 ? seasonEnded ? " · Champion" : " · Champion contender" : scope === "global" && player.eligible_rank <= 10 ? " · Top 10" : ""}` : seasonEnded ? "Not eligible" : "Not yet eligible"}</td>}
                         </tr>
                       ))}</tbody>
                     </table>
