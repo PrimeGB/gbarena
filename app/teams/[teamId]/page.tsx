@@ -34,6 +34,8 @@ type TeamData = {
   game: string | null;
   ladder: string | null;
   owner_id: string | null;
+  created_at: string | null;
+  founder_id: string | null;
   logo_url: string | null;
   avatar_url: string | null;
   wins: number | null;
@@ -212,6 +214,9 @@ export default function TeamPage() {
   const [rosterMembers, setRosterMembers] = useState<RosterMember[]>([]);
   const [teamFollowers, setTeamFollowers] = useState<number | null>(null);
   const [teamFollowError, setTeamFollowError] = useState("");
+  const [founder, setFounder] = useState<{ id: string; username: string | null } | null>(null);
+  const [foundingError, setFoundingError] = useState("");
+  const [teamLoadError, setTeamLoadError] = useState("");
 
   const canEditTeamProfile = viewerRole === "leader";
   const canEditRoster = viewerRole === "leader" || viewerRole === "co-leader";
@@ -293,17 +298,32 @@ export default function TeamPage() {
       setLoading(true);
       setViewerRole("member");
       setViewerIsMember(false);
+      setFounder(null);
+      setFoundingError("");
+      setTeamLoadError("");
 
-      const { data: teamData } = await supabase
+      const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .select(
-          "id, name, tag, platform, category, game, ladder, owner_id, logo_url, avatar_url, wins, losses, current_win_streak, best_win_streak, xp, rating_points"
+          "id, name, tag, platform, category, game, ladder, owner_id, created_at, founder_id, logo_url, avatar_url, wins, losses, current_win_streak, best_win_streak, xp, rating_points"
         )
         .eq("id", teamId)
         .single();
 
+      if (teamError) {
+        setTeamLoadError(`Team could not be loaded: ${teamError.message}`);
+        setLoading(false);
+        return;
+      }
+
       if (teamData) {
         setTeam(teamData as TeamData);
+        if (teamData.founder_id) {
+          const { data: founderProfile, error: founderError } = await supabase
+            .from("profiles").select("id,username").eq("id", teamData.founder_id).maybeSingle();
+          if (founderError) setFoundingError(`Founding account could not be loaded: ${founderError.message}`);
+          else setFounder(founderProfile);
+        }
         const { data: followData, error: followError } = await supabase.rpc(
           "gb_community_follow_counts",
           { p_target_type: "team", p_target_id: teamId }
@@ -646,7 +666,10 @@ export default function TeamPage() {
         .team-follow-error{margin-top:5px;color:#ffb3b3;font-size:11px;}
 
         .team-line{color:#cfe2f2;font-size:12px;line-height:23px;}
-        .team-header-spacer{height:23px;}
+        .team-founded{overflow-wrap:anywhere;}
+        .team-founded>a{color:#9ed7ff;text-decoration:none;}
+        .team-founded>a:hover{text-decoration:underline;}
+        .team-founding-error{color:#ffb3b3;font-size:11px;}
         .team-achievements{margin-top:23px;}
 
         .team-match-actions{
@@ -886,6 +909,8 @@ export default function TeamPage() {
 
           {loading ? (
             <div className="loading-text">Loading Team...</div>
+          ) : teamLoadError ? (
+            <div className="team-founding-error" role="alert">{teamLoadError}</div>
           ) : (
             <section className="content">
               <div className="main">
@@ -941,7 +966,15 @@ export default function TeamPage() {
                         </div>
                       </div>
 
-                      <div className="team-header-spacer" aria-hidden="true" />
+                      <div className="team-line team-founded">
+                        Founded: {team?.created_at ? <time dateTime={team.created_at} title="Founding date (UTC)">
+                          {new Date(team.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
+                        </time> : "Not recorded"}
+                        {team?.founder_id && !foundingError && <> by {founder?.username
+                          ? <Link href={`/profile/${founder.id}`}>{founder.username}</Link>
+                          : <span>Founding account unavailable</span>}</>}
+                      </div>
+                      {foundingError && <p className="team-founding-error" role="alert">{foundingError}</p>}
                       <div className="team-line team-achievements">Achievements</div>
 
                       <div className="team-match-actions">
