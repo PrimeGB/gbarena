@@ -125,6 +125,41 @@ visible only to authorized award staff.
 Match review continues to use the existing dispute-ticket workflow and writes its
 finalized score changes to the activity log.
 
+### Founder Site overview and audit history
+
+The Founder-only Site overview card opens site totals, searchable activity logs,
+account/team lookup, and logging coverage/service links. Audit searches support
+actor, category, audience, target IDs, UTC date ranges, and transaction IDs.
+Downloads are private JSON files containing all matching records up to 5,000;
+narrow the filters for larger searches. Preparing a download is itself audited.
+
+Apply `20261114190000_founder_searchable_audit.sql` before deploying the audit UI.
+Database triggers capture saved changes to the allowlisted sources in
+`owner_audit_sources`, including profiles, rosters, matches/disputes, forums,
+reports, awards, credits, staff access, and tournaments. They retain actor
+identity/role, target information, selected before/after values, changed-field
+names, and a shared database transaction ID. Unauthenticated service writes
+are labelled System / service rather than assigned to a guessed member.
+Counter-only updates are not logged. Changes and their audit records commit
+together; a logging failure fails the originating write.
+
+New records are append-only for application users. A daily `pg_cron` job removes
+records older than 12 months. Existing staff/moderation logs remain in their
+original tables with their existing retention and appear in the combined search;
+historical actor names use current profile names where snapshots were not saved.
+Unlogged historical member actions cannot be reconstructed.
+
+Private profile values, free-form report/proof contents, and gaming account IDs
+are recorded only as changed-field markers. Passwords, tokens, private messages,
+and payment details are not captured. Sign-ins, failed requests, browser errors,
+and platform outages remain in the provider consoles, not this saved-action log.
+Coverage reports list the actual enabled capture triggers and retention schedule.
+
+Validation: `node --test tests/owner-audit.test.mjs` checks date boundaries and
+change presentation. `supabase/tests/owner_audit.sql` runs database capture,
+authorization, pagination, immutability, and retention assertions in a transaction
+that rolls back; it requires a migrated database with Founder and member profiles.
+
 ---
 
 ## Roadmap

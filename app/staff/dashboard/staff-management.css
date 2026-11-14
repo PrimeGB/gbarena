@@ -667,4 +667,328 @@
   .founder-overview-metric {
     transition: none;
   }
+
+  .founder-audit-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 22px 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #344d63;
+  }
+
+  .founder-audit-center button {
+    padding: 9px 12px;
+    border: 1px solid #3f5b72;
+    border-radius: 5px;
+    background: #162b3d;
+    color: #d8e8f5;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .founder-audit-center button:hover,
+  .founder-audit-tabs button[aria-pressed="true"] {
+    border-color: #91b8d8;
+    background: #234865;
+    color: #fff;
+  }
+
+  .founder-audit-center button:disabled {
+    opacity: .55;
+    cursor: wait;
+  }
+
+  .founder-audit-body {
+    padding: 0 22px 22px;
+    color: #b8c9d6;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .founder-audit-body h3,
+  .founder-audit-body h4 {
+    margin: 0 0 8px;
+    color: #f0f5f9;
+  }
+
+  .founder-audit-body h4 {
+    margin-top: 20px;
+  }
+
+  .founder-audit-heading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .founder-audit-heading > button {
+    flex: 0 0 auto;
+  }
+
+  .founder-audit-filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+  }
+
+  .founder-audit-filters label,
+  .founder-audit-lookup-form label {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    color: #c6d9e8;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .founder-audit-wide {
+    grid-column: span 2;
+  }
+
+  .founder-audit-center input,
+  .founder-audit-center select {
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid #3a5369;
+    border-radius: 5px;
+    background: #0b1823;
+    color: #edf4f9;
+    font-size: 12px;
+    color-scheme: dark;
+  }
+
+  .founder-audit-form-actions,
+  .founder-audit-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 8px;
+  }
+
+  .founder-audit-note {
+    color: #93aabb;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .founder-audit-error {
+    padding: 12px;
+    border: 1px solid #955a60;
+    border-radius: 5px;
+    background: #2d1b22;
+    color: #ffd3d5;
+  }
+
+  .founder-audit-error button {
+    margin-left: 12px;
+  }
+
+  .founder-audit-warning {
+    color: #ff9da5;
+  }
+
+  .founder-audit-count {
+    color: #e8c46a;
+    font-size: 11px;
+  }
+
+  .founder-audit-list {
+    display: grid;
+    gap: 8px;
+    margin: 14px 0;
+  }
+
+  .founder-audit-event,
+  .founder-audit-source {
+    min-width: 0;
+    border: 1px solid #30495d;
+    border-radius: 6px;
+    background: #0e1c28;
+  }
+
+  .founder-audit-event summary {
+    display: grid;
+    grid-template-columns: 85px minmax(0, 1.3fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    cursor: pointer;
+  }
+
+  .founder-audit-event summary strong,
+  .founder-audit-event summary small {
+    display: block;
+  }
+
+  .founder-audit-event summary strong {
+    color: #e3eff7;
+    font-size: 12px;
+  }
+
+  .founder-audit-event summary small,
+  .founder-audit-event summary time {
+    color: #a0b7c9;
+    font-size: 10px;
+  }
+
+  .founder-audit-category {
+    color: #e8c46a;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .founder-audit-target {
+    overflow-wrap: anywhere;
+    font-size: 11px;
+  }
+
+  .founder-audit-event-detail {
+    padding: 0 14px 14px;
+    border-top: 1px solid #30495d;
+    overflow-wrap: anywhere;
+  }
+
+  .founder-audit-event-detail dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+  }
+
+  .founder-audit-event-detail dt {
+    color: #91aabe;
+    font-size: 10px;
+  }
+
+  .founder-audit-event-detail dd {
+    margin: 0;
+    color: #d6e4ef;
+    font-size: 11px;
+  }
+
+  .founder-audit-links a,
+  .founder-service-links a {
+    color: #8fcafa;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .founder-audit-changes {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .founder-audit-changes > div {
+    display: grid;
+    grid-template-columns: minmax(100px, .6fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid #263b4d;
+    font-size: 11px;
+  }
+
+  .founder-audit-lookup-form {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+    max-width: 650px;
+  }
+
+  .founder-audit-lookup-form label {
+    flex: 1;
+  }
+
+  .founder-lookup-result {
+    display: grid;
+    gap: 5px;
+    padding: 13px 0;
+    border-bottom: 1px solid #30495d;
+    overflow-wrap: anywhere;
+  }
+
+  .founder-lookup-result strong {
+    color: #e9f3fa;
+  }
+
+  .founder-lookup-result small {
+    color: #8da6ba;
+  }
+
+  .founder-audit-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin: 16px 0;
+    color: #e8c46a;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .founder-audit-source summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+
+  .founder-audit-source summary strong {
+    color: #e3eff7;
+  }
+
+  .founder-audit-source > div {
+    padding: 0 12px 12px;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+  }
+
+  .founder-service-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+  }
+
+  .founder-audit-center :is(button, input, select, summary):focus-visible {
+    outline: 2px solid #e8c46a;
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .founder-audit-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .founder-audit-event summary {
+      grid-template-columns: 75px minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .founder-audit-tabs {
+      margin: 0 15px 15px;
+    }
+
+    .founder-audit-body {
+      padding: 0 15px 16px;
+    }
+
+    .founder-audit-heading,
+    .founder-audit-lookup-form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .founder-audit-event-detail dl,
+    .founder-audit-changes > div {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 }

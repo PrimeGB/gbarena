@@ -12,6 +12,7 @@ import {
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import StaffPlayerPicker from "./StaffPlayerPicker";
+import FounderAuditCenter from "./FounderAuditCenter";
 import "../staff-responsive.css";
 import "./staff-management.css";
 
@@ -203,7 +204,7 @@ export default function StaffDashboardPage() {
   type Tile = { key: string; title: string; description: string; cta: string; href?: string; view?: DashboardView };
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
   const tiles: Tile[] = [
-    isOwner && { key: "site_overview", title: "Site overview", description: "Founder-only view of site stats, ladder activity, forums, and open work queues.", cta: "Open site overview", view: "overview" },
+    isOwner && { key: "site_overview", title: "Site overview", description: "Founder-only site stats, searchable activity logs, account and team lookup, and open work queues.", cta: "Open site overview", view: "overview" },
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
     can("staff_access") && { key: "decision_reviews", title: "Match decision reviews", description: "Review team requests about staff match decisions.", cta: "Open review queue", href: "/staff/match-reviews" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },
@@ -649,8 +650,9 @@ export default function StaffDashboardPage() {
                 <header className="founder-overview-heading">
                   <p className="founder-overview-kicker">FOUNDER ONLY</p>
                   <h2 id="founder-overview-title">Site overview</h2>
-                  <p>Accounts, competition, community activity, and open work queues.</p>
+                  <p>Site activity, searchable history, account and team lookup, and open work queues.</p>
                 </header>
+                <FounderAuditCenter key={user.id}>
                 {founderOverviewError ? (
                   <p className="founder-overview-error" role="alert">{founderOverviewError}</p>
                 ) : founderOverview ? (
@@ -722,7 +724,7 @@ export default function StaffDashboardPage() {
                           <p className="founder-overview-kicker">AUDIT TRAIL</p>
                           <h3 id="founder-activity-title">Recent staff activity</h3>
                         </div>
-                        <a href={viewHashes.audit}>Full activity log →</a>
+                        <a href={viewHashes.audit}>Recent staff log →</a>
                       </div>
                       {overview?.recent_actions.length ? (
                         <div className="founder-activity-list">
@@ -751,6 +753,7 @@ export default function StaffDashboardPage() {
                 ) : (
                   <p className="founder-overview-empty">Owner overview is not available.</p>
                 )}
+                </FounderAuditCenter>
               </section>
             )}
 
