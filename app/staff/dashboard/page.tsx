@@ -61,6 +61,16 @@ function viewForHash(hash: string): DashboardView {
   ) || "home";
 }
 
+function activeLadderHref(ladder: ActiveLadderOverview) {
+  const params = new URLSearchParams({
+    platform: ladder.platform,
+    category: ladder.category,
+    game: ladder.game,
+    ladder: ladder.ladder,
+  });
+  return `/matches/finder?${params.toString()}`;
+}
+
 const rankNames: Record<string, string> = {
   owner: "Founder",
   admin: "Administrator",
@@ -94,6 +104,39 @@ type DashboardOverview = {
     created_at: string;
     actor_username: string;
   }[];
+};
+
+type ActiveLadderOverview = {
+  platform: string;
+  category: string;
+  game: string;
+  ladder: string;
+  open_match_posts: number;
+};
+
+type FounderDashboardOverview = {
+  generated_at: string;
+  accounts: number;
+  accounts_7d: number;
+  teams: number;
+  teams_7d: number;
+  matches: number;
+  matches_7d: number;
+  open_match_posts: number;
+  active_ladder_count: number;
+  active_ladders: ActiveLadderOverview[];
+  forum_threads: number;
+  forum_threads_7d: number;
+  forum_replies_7d: number;
+  active_tournaments: number;
+  open_match_disputes: number;
+  open_staff_cases: number;
+  priority_staff_cases: number;
+  open_forum_reports: number;
+  pending_feedback: number;
+  pending_match_reviews: number;
+  pending_awards: number;
+  pending_site_requests: number;
 };
 
 type StaffCase = {
@@ -135,6 +178,8 @@ export default function StaffDashboardPage() {
   const [permissions, setPermissions] = useState<PermissionKey[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [founderOverview, setFounderOverview] = useState<FounderDashboardOverview | null>(null);
+  const [founderOverviewError, setFounderOverviewError] = useState("");
   const [cases, setCases] = useState<StaffCase[]>([]);
   const [emailAllowed, setEmailAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -176,6 +221,92 @@ export default function StaffDashboardPage() {
     !!overview && overview.recent_actions.length > 0 && { key: "audit", title: "Recent staff actions", description: "See the latest recorded staff activity and reasons.", cta: "View activity", view: "audit" },
   ].filter(Boolean) as Tile[];
   const hasPortalAccess = emailAllowed;
+  const founderMetrics = founderOverview
+    ? [
+        {
+          label: "Accounts",
+          value: founderOverview.accounts,
+          detail: `${founderOverview.accounts_7d} joined in 7 days`,
+          href: "/members",
+        },
+        {
+          label: "Teams",
+          value: founderOverview.teams,
+          detail: `${founderOverview.teams_7d} created in 7 days`,
+          href: "/teams/top",
+        },
+        {
+          label: "Matches",
+          value: founderOverview.matches,
+          detail: `${founderOverview.matches_7d} created in 7 days`,
+          href: "/matches/finder",
+        },
+        {
+          label: "Open match posts",
+          value: founderOverview.open_match_posts,
+          detail: `${founderOverview.active_ladder_count} active ladders`,
+          href: "/matches/finder",
+        },
+        {
+          label: "Forum threads",
+          value: founderOverview.forum_threads,
+          detail: `${founderOverview.forum_threads_7d} new · ${founderOverview.forum_replies_7d} replies in 7 days`,
+          href: "/forums",
+        },
+        {
+          label: "Tournaments",
+          value: founderOverview.active_tournaments,
+          detail: "Upcoming or live",
+          href: "/staff/tournaments",
+        },
+      ]
+    : [];
+  const founderQueues = founderOverview
+    ? [
+        {
+          label: "Match disputes",
+          count: founderOverview.open_match_disputes,
+          detail: "Unfinalized results",
+          href: "/staff/matches",
+        },
+        {
+          label: "Player reports and cases",
+          count: founderOverview.open_staff_cases,
+          detail: `${founderOverview.priority_staff_cases} high priority`,
+          href: "#reports-inbox",
+        },
+        {
+          label: "Forum reports",
+          count: founderOverview.open_forum_reports,
+          detail: "Awaiting review",
+          href: "/staff/forum-reports",
+        },
+        {
+          label: "Bugs and suggestions",
+          count: founderOverview.pending_feedback,
+          detail: "Awaiting review",
+          href: "/staff/feedback",
+        },
+        {
+          label: "Match decision reviews",
+          count: founderOverview.pending_match_reviews,
+          detail: "Awaiting review",
+          href: "/staff/match-reviews",
+        },
+        {
+          label: "Award requests",
+          count: founderOverview.pending_awards,
+          detail: "Awaiting review",
+          href: "/staff/awards#award-recommendations",
+        },
+        {
+          label: "Site change requests",
+          count: founderOverview.pending_site_requests,
+          detail: "Awaiting review",
+          href: "/staff/site-requests",
+        },
+      ]
+    : [];
 
   const loadDashboard = useCallback(async (userId: string, userEmail: string) => {
     const userIdentity = `${userId}:${userEmail}`;
@@ -189,6 +320,8 @@ export default function StaffDashboardPage() {
       setRole("");
       setPermissions([]);
       setStaff([]);
+      setFounderOverview(null);
+      setFounderOverviewError("");
       setError(`Staff access could not be checked: ${portalAccessError.message}`);
       setLoadedUserIdentity(userIdentity);
       setLoading(false);
@@ -201,6 +334,8 @@ export default function StaffDashboardPage() {
       setRole("");
       setPermissions([]);
       setStaff([]);
+      setFounderOverview(null);
+      setFounderOverviewError("");
       setError("");
       setLoadedUserIdentity(userIdentity);
       setLoading(false);
@@ -218,6 +353,8 @@ export default function StaffDashboardPage() {
       setRole("");
       setPermissions([]);
       setStaff([]);
+      setFounderOverview(null);
+      setFounderOverviewError("");
       setError(
         `Staff access could not be loaded: ${
           profileError?.message || grantsError?.message
@@ -246,6 +383,8 @@ export default function StaffDashboardPage() {
       setStaff([]);
       setOverview(null);
       setCases([]);
+      setFounderOverview(null);
+      setFounderOverviewError("");
       setError(
         `Staff dashboard could not be loaded: ${
           directoryError?.message || overviewError?.message || caseError?.message
@@ -260,6 +399,20 @@ export default function StaffDashboardPage() {
     setOverview(overviewData as DashboardOverview);
     setCases((caseData || []) as StaffCase[]);
     if (profileRow?.role === "owner") {
+      const { data: founderData, error: founderError } = await supabase.rpc(
+        "owner_dashboard_overview"
+      );
+      if (founderError || !founderData) {
+        setFounderOverview(null);
+        setFounderOverviewError(
+          `Founder overview could not be loaded: ${
+            founderError?.message || "No overview data was returned."
+          }`
+        );
+      } else {
+        setFounderOverview(founderData as FounderDashboardOverview);
+        setFounderOverviewError("");
+      }
       const { data: creditAccess, error: creditAccessError } = await supabase
         .from("staff_credit_grants").select("user_id");
       if (creditAccessError) {
@@ -269,6 +422,8 @@ export default function StaffDashboardPage() {
         setCreditGrants((creditAccess || []).map((grant: { user_id: string }) => grant.user_id));
       }
     } else {
+      setFounderOverview(null);
+      setFounderOverviewError("");
       setCreditGrants([]);
     }
     setLoadedUserIdentity(userIdentity);
@@ -480,6 +635,119 @@ export default function StaffDashboardPage() {
           <>
             {error && <p style={styles.error} role="alert">{error}</p>}
             {notice && <p style={styles.notice} role="status">{notice}</p>}
+
+            {view === "home" && isOwner && (
+              <details id="founder-overview" className="founder-overview" open>
+                <summary className="founder-overview-summary">
+                  <span>
+                    <span className="founder-overview-kicker">FOUNDER ONLY</span>
+                    <strong>Site overview</strong>
+                    <small>Accounts, competition, community activity, and open work queues.</small>
+                  </span>
+                  <span className="founder-overview-toggle">Show / hide</span>
+                </summary>
+                {founderOverviewError ? (
+                  <p className="founder-overview-error" role="alert">{founderOverviewError}</p>
+                ) : founderOverview ? (
+                  <div className="founder-overview-body">
+                    <div className="founder-overview-metrics">
+                      {founderMetrics.map((metric) => (
+                        <Link className="founder-overview-metric" href={metric.href} key={metric.label}>
+                          <span>{metric.label}</span>
+                          <strong>{metric.value}</strong>
+                          <small>{metric.detail}</small>
+                        </Link>
+                      ))}
+                    </div>
+
+                    <div className="founder-overview-panels">
+                      <section className="founder-overview-panel" aria-labelledby="founder-ladders-title">
+                        <div className="founder-overview-panel-heading">
+                          <div>
+                            <p className="founder-overview-kicker">LIVE COMPETITION</p>
+                            <h3 id="founder-ladders-title">Ladders with open matches</h3>
+                          </div>
+                          <Link href="/ladders">All ladders →</Link>
+                        </div>
+                        {founderOverview.active_ladders.length === 0 ? (
+                          <p className="founder-overview-empty">No open match posts right now.</p>
+                        ) : (
+                          <div className="founder-ladder-list">
+                            {founderOverview.active_ladders.map((ladder) => (
+                              <Link
+                                className="founder-ladder-row"
+                                href={activeLadderHref(ladder)}
+                                key={`${ladder.platform}-${ladder.category}-${ladder.game}-${ladder.ladder}`}
+                              >
+                                <span>
+                                  <strong>{ladder.game.replaceAll("-", " ")} · {ladder.ladder.replaceAll("-", " ")}</strong>
+                                  <small>{ladder.platform} · {ladder.category.replaceAll("-", " ")}</small>
+                                </span>
+                                <b>{ladder.open_match_posts} open</b>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+
+                      <section className="founder-overview-panel" aria-labelledby="founder-queues-title">
+                        <div className="founder-overview-panel-heading">
+                          <div>
+                            <p className="founder-overview-kicker">NEEDS ATTENTION</p>
+                            <h3 id="founder-queues-title">Open work queues</h3>
+                          </div>
+                        </div>
+                        <div className="founder-queue-list">
+                          {founderQueues.map((queue) => (
+                            <Link className="founder-queue-row" href={queue.href} key={queue.label}>
+                              <span>
+                                <strong>{queue.label}</strong>
+                                <small>{queue.detail}</small>
+                              </span>
+                              <b>{queue.count}</b>
+                            </Link>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+
+                    <section className="founder-overview-activity" aria-labelledby="founder-activity-title">
+                      <div className="founder-overview-panel-heading">
+                        <div>
+                          <p className="founder-overview-kicker">AUDIT TRAIL</p>
+                          <h3 id="founder-activity-title">Recent staff activity</h3>
+                        </div>
+                        <a href={viewHashes.audit}>Full activity log →</a>
+                      </div>
+                      {overview?.recent_actions.length ? (
+                        <div className="founder-activity-list">
+                          {overview.recent_actions.slice(0, 3).map((action, index) => (
+                            <div
+                              className="founder-activity-row"
+                              key={`${action.action}-${action.created_at}-${index}`}
+                            >
+                              <strong>{action.action.replaceAll("_", " ")}</strong>
+                              <span>{action.actor_username} · {action.target_type}</span>
+                              <time dateTime={action.created_at}>
+                                {new Date(action.created_at).toLocaleString()}
+                              </time>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="founder-overview-empty">No recent staff actions have been recorded.</p>
+                      )}
+                    </section>
+
+                    <p className="founder-overview-footnote">
+                      Activity figures cover the last 7 days. Ladder activity shows ladders with open match posts.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="founder-overview-empty">Owner overview is not available.</p>
+                )}
+              </details>
+            )}
 
             {view !== "home" && (
               <a href={viewHashes.home} style={styles.backButton}>
