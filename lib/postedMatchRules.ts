@@ -14,6 +14,7 @@ export type AdditionalMatchRules = {
 type RulePost = {
   category?: string | null;
   game?: string | null;
+  ladder?: string | null;
   game_mode?: string | null;
   additional_rules?: AdditionalMatchRules | null;
 } & Partial<Record<
@@ -35,7 +36,7 @@ const codFields = [
 ] as const;
 
 export function postedRuleSettings(post: RulePost): { label: string; value: string }[] {
-  const mode = getGameRules(post.category || "", post.game || "")?.modes
+  const mode = getGameRules(post.category || "", post.game || "", post.ladder)?.modes
     .find((item) => item.value === post.game_mode);
   const fields = mode ? mode.fields.map((field) => [field.slot, field.label] as const) : codFields;
   const settings = fields.flatMap(([slot, label]) => {

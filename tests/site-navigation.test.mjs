@@ -43,7 +43,7 @@ test("Create Match keeps its form and action links without a secondary navigatio
     "../../../lib/useUser": { useUser: () => ({ user: null }) },
     "../../../lib/supabase": { supabase: {} },
     "../../../lib/gamingAccounts": {},
-    "../../../lib/matchRules": { getGameRules: () => null },
+    "../../../lib/matchRules": { getGameRules: () => null, isBattlefieldSolos: () => false, bf6SolosMaps: [] },
     "../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg" },
     "../../../lib/ladderStandings": {},
     "../../../lib/rapidRoyal": {},

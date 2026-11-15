@@ -61,3 +61,28 @@ test("non-COD games use their configured field labels", () => {
     [field.slot]: "Test value",
   }), [{ label: field.label, value: "Test value" }]);
 });
+
+test("BF6 Solos uses ladder-specific timed rules without changing other Battlefield ladders", () => {
+  const catalog = loadModule("../lib/ladderCatalog.ts", { "./gamingAccounts": { gamingCategories: [], gamingGames: [] } });
+  assert.deepEqual(catalog.laddersForGame("battlefield", "battlefield-6").map((ladder) => ladder.slug),
+    ["singles", "rapid-royal-duos", "redsec"]);
+  const solos = gameRules.getGameRules("battlefield", "battlefield-6", "singles");
+  assert.deepEqual(solos.teamSizes, ["1v1"]);
+  assert.deepEqual(solos.modes.map((mode) => mode.value), ["Team Deathmatch"]);
+  assert.deepEqual(solos.modes[0].fields.find((field) => field.slot === "round_length").options, ["10 Minutes"]);
+  assert.deepEqual(solos.modes[0].fields.find((field) => field.slot === "score_limit").options, ["Time Limit Only"]);
+  assert.ok(gameRules.getGameRules("battlefield", "battlefield-6", "rapid-royal-duos").modes.some((mode) => mode.value === "Conquest"));
+  assert.ok(gameRules.getGameRules("battlefield", "battlefield-2042", "singles").modes.length > 1);
+  assert.deepEqual(postedRuleSettings({
+    category: "battlefield", game: "battlefield-6", ladder: "singles", game_mode: "Team Deathmatch",
+    score_limit: "Time Limit Only", round_length: "10 Minutes", killstreaks: "Infantry Only",
+    additional_rules: { settings: { "Map Selection": "Empire State", Tiebreak: "Next Kill Wins", "AI Soldiers": "Off" }, restrictions: [] },
+  }), [
+    { label: "Time Limit", value: "10 Minutes" },
+    { label: "Kill Limit", value: "Time Limit Only" },
+    { label: "Vehicles", value: "Infantry Only" },
+    { label: "Map Selection", value: "Empire State" },
+    { label: "Tiebreak", value: "Next Kill Wins" },
+    { label: "AI Soldiers", value: "Off" },
+  ]);
+});

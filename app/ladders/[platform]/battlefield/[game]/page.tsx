@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { laddersForGame } from "../../../../../lib/ladderCatalog";
 
 const platformNames: Record<string, string> = {
   xbox: "Xbox",
@@ -16,23 +17,11 @@ const battlefieldTitles: Record<string, string> = {
   "battlefield-1": "Battlefield 1",
 };
 
-const standardLadders = [
-  { slug: "singles", title: "Singles" },
-  { slug: "duos", title: "Duos" },
-  { slug: "team", title: "Team" },
-];
-
 export default function BattlefieldGamePage() {
   const { platform, game } = useParams<{ platform: string; game: string }>();
   const platformName = platformNames[platform];
   const gameName = battlefieldTitles[game];
-  const ladders =
-    game === "battlefield-6"
-      ? [
-          { slug: "rapid-royal-duos", title: "Rapid Royal" },
-          { slug: "redsec", title: "RedSec" },
-        ]
-      : standardLadders;
+  const ladders = laddersForGame("battlefield", game);
 
   if (!platformName || !gameName) {
     return (
@@ -63,6 +52,7 @@ export default function BattlefieldGamePage() {
                 <p>{gameName} {ladder.title} Ladder</p>
               </div>
               <div className="actions">
+                <Link href={`/ladders/${platform}/battlefield/${game}/${ladder.slug}/rules`}>Rules</Link>
                 <Link
                   href={`/team-hub?platform=${platform}&category=battlefield&game=${game}&ladder=${ladder.slug}`}
                 >

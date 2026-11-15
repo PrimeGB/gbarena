@@ -59,6 +59,50 @@ const field = (slot: RuleSlot, label: string, options: string[], def?: string): 
   default: def ?? options[0],
 });
 
+export const bf6SolosMaps = ["Saints Quarter", "Empire State"] as const;
+
+export function isBattlefieldSolos(category?: string | null, game?: string | null, ladder?: string | null) {
+  return category === "battlefield" && game === "battlefield-6" && ladder === "singles";
+}
+
+export const bf6PortalSetup = [
+  "Create a Portal experience using Team Deathmatch and the selected map's small TDM combat zone, not its Conquest layout.",
+  "Set Game Time to 10 minutes, two teams, one human per team, two human players total, and no AI soldiers or vehicles. Use default health, damage, movement and respawn settings; friendly fire off.",
+  "The experience must allow the full 10 minutes without a kill-target ending. Use Portal Custom and its Rules Editor when the stock mode cannot provide these end conditions. Do not use a 15- or 25-kill cutoff.",
+  "Test the timer, player limits, scoring and tiebreak before play. Share the experience/server details and verify the settings with your opponent. GameBattles does not configure Portal automatically or supply a tested experience code.",
+];
+
+export const bf6SolosSources = [
+  { title: "EA: creating Portal experiences and custom rules", url: "https://help.ea.com/en/articles/battlefield/battlefield-6/how-to-use-battlefield-portal/" },
+  { title: "BF6 maps and TDM compatibility", url: "https://www.polygon.com/map/battlefield-6-interactive-maps-multiplayer-bf6-all-list/" },
+  { title: "Compact infantry map descriptions", url: "https://www.pcgamesn.com/battlefield-6/maps" },
+];
+
+const bf6Solos: GameRuleSet = {
+  modes: [{
+    value: "Team Deathmatch",
+    fields: [
+      field("round_length", "Time Limit", ["10 Minutes"]),
+      field("score_limit", "Kill Limit", ["Time Limit Only"]),
+      field("health", "Health", ["Default"]),
+      field("respawn_delay", "Respawn Delay", ["Default"]),
+      field("friendly_fire", "Friendly Fire", ["Off"]),
+      field("killstreaks", "Vehicles", ["Infantry Only"]),
+    ],
+    rules: [
+      "Exactly one rostered human per side. No AI soldiers or vehicles; standard health, damage, movement and respawns.",
+      "Play the full 10 minutes. Most opponent kills at 10:00 wins; reaching 15 or 25 kills does not end the game. Count kills, not XP, assists or objectives.",
+      "If tied at 10:00, next opponent kill wins. If Portal ends the round, capture the tied scoreboard, restart the same map with identical settings, and play only until the first opponent kill; do not replay another full 10 minutes.",
+      "Random draws are made by GameBattles when accepted. A preselected map is visible before acceptance and applies to every game in the series. Only Saints Quarter and Empire State TDM layouts are allowed.",
+      "Keep scoreboard screenshots and gameplay proof, including the 10-minute score and any sudden-death kill. Report series game wins on GameBattles, not the kill total.",
+    ],
+  }],
+  teamSizes: ["1v1"],
+  bestOf: ["Best of 1", "Best of 3"],
+  presetName: "GB BF6 Solos TDM",
+  notes: ["Locked 1v1 settings: full 10 minutes, most kills wins; next kill wins a tie.", "GameBattles competition rules, not an EA-endorsed preset. The host must configure and test the Portal experience."],
+};
+
 const rocketLeagueMode =  (value: string, extraRule?: string): ModeDef => ({
   value,
   fields: [
@@ -441,7 +485,8 @@ const rules: Record<string, GameRuleSet> = {
   },
 };
 
-export function getGameRules(category: string, game: string): GameRuleSet | null {
+export function getGameRules(category: string, game: string, ladder?: string | null): GameRuleSet | null {
+  if (isBattlefieldSolos(category, game, ladder)) return bf6Solos;
   if (category === "call-of-duty" || category === "old-school") return null;
   if (category === "battlefield" && game === "redsec") return null;
   const set = rules[category];

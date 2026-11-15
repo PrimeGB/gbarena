@@ -606,7 +606,7 @@ export default function MatchDetailsPage() {
   const modeText = String(match?.game_mode || "").toLowerCase();
   const isBombMode = /search|demolition|bomb|defus|s-?n-?d/.test(modeText);
   const isSolo = match?.ladder === "singles";
-  const gameRuleSet = match ? getGameRules(match.category || "", match.game || "") : null;
+  const gameRuleSet = match ? getGameRules(match.category || "", match.game || "", match.ladder) : null;
   const modeDef = gameRuleSet?.modes.find((mode) => mode.value === match?.game_mode) || null;
   const gameTitle = match
     ? gameRuleSet
@@ -670,6 +670,8 @@ export default function MatchDetailsPage() {
             ...(match.map_names?.length ? ["Play the assigned maps in the order shown on the match page."] : []),
             match.ladder === "rapid-royal-duos"
               ? (match.players === "3v3" ? rapidRoyalRules.trios : rapidRoyalRules.duos)
+              : match.category === "battlefield" && match.game === "battlefield-6" && match.ladder === "singles"
+              ? "Follow the full 10-minute and next-kill tiebreak rules below."
               : isBombMode
               ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
               : "A game ends when the score limit or time limit in the settings below is reached.",

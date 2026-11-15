@@ -8,7 +8,7 @@ const battlefieldTitles = [
     title: "Battlefield 6",
     slug: "battlefield-6",
     image: ladderGameImage("battlefield", "battlefield-6") || "",
-    ladders: [] as string[],
+    ladders: ["Singles"],
   },
   {
     title: "Battlefield 2042",

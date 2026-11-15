@@ -94,6 +94,24 @@ Run `supabase/tests/season_competition.sql` after the migrations to exercise
 eligibility, ties, rarity, result corrections and feed privacy in a rolled-back
 transaction (the fixture bypasses only new-match roster admission).
 
+## Battlefield 6 Solos TDM
+
+The BF6 `singles` ladder is 1v1 Team Deathmatch: play the full 10 minutes,
+most opponent kills wins, then next-kill sudden death for a tie. There is no
+15/25-kill cutoff. Hosts must configure and test Portal themselves; the site
+does not control the game or provide an already-tested experience code.
+The public ladder rules include Portal setup, evidence requirements and
+EA/map research links. This is a GameBattles ruleset, not an EA-endorsed preset.
+
+Choose Random or preselect Saints Quarter or Empire State, using the small
+TDM combat zones. Random draws happen at acceptance; a chosen map applies to
+every game in the Best of 1/3 series. `additional_rules` preserves that choice
+in the finder and accepted match. Apply
+`20261115023000_bf6_solos_tdm.sql` before deploying: the database locks the
+rules, validates the map pool, and preserves assigned maps after acceptance.
+Run `supabase/tests/bf6_solos.sql` for rollback-only real acceptance and
+forged-settings checks; it creates no persistent teams or matches.
+
 ## Team founding history
 
 Directly above Achievements, team headers show their saved founding date in

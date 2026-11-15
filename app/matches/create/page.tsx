@@ -13,7 +13,7 @@ import {
   isMatchEligibleGamingId,
   resolveGamingAccountId,
 } from "../../../lib/gamingAccounts";
-import { getGameRules } from "../../../lib/matchRules";
+import { bf6SolosMaps, getGameRules, isBattlefieldSolos } from "../../../lib/matchRules";
 import { ladderGameImage } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
@@ -92,7 +92,9 @@ function CreateMatchContent() {
   const isRedSec = game === "redsec" || ladder === "redsec";
   const isRapidRoyal = ladder === "rapid-royal-duos";
   const killRaceName = isRapidRoyal ? "Rapid Royal" : "RedSec";
-  const gameRules = useMemo(() => getGameRules(category, game), [category, game]);
+  const isBf6Solos = isBattlefieldSolos(category, game, ladder);
+  const gameRules = useMemo(() => getGameRules(category, game, ladder), [category, game, ladder]);
+  const [mapSelection, setMapSelection] = useState("Random");
 
   const platformName = prettyText(platform);
   const gameName = isRedSec
@@ -140,7 +142,7 @@ function CreateMatchContent() {
     toLocalDateTimeValue(getNextQuarterHour(new Date()))
   );
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const [bestOf, setBestOf] = useState(isRedSec || isRapidRoyal ? "Best of 1" : "Best of 3");
+  const [bestOf, setBestOf] = useState(isRedSec || isRapidRoyal || isBf6Solos ? "Best of 1" : "Best of 3");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewPresetOpen, setViewPresetOpen] = useState<RulesType | null>(null);
   const [redSecRulesOpen, setRedSecRulesOpen] = useState(false);
@@ -185,6 +187,10 @@ function CreateMatchContent() {
         ]
       : [],
   );
+
+  useEffect(() => {
+    if (isBf6Solos) setGameMode("Team Deathmatch");
+  }, [isBf6Solos]);
 
   useEffect(() => {
     setPlayers(playerOptions[0]);
@@ -350,6 +356,10 @@ function CreateMatchContent() {
   async function handlePostMatch() {
     setPostError("");
     setPostSuccess("");
+    if (isBf6Solos && mapSelection !== "Random" && !bf6SolosMaps.some((map) => map === mapSelection)) {
+      setPostError("Choose Random or a map from the approved BF6 Solos pool.");
+      return;
+    }
     if (crossplay === "On" && (!crossplaySystems || crossplaySystems.length < 2)) {
       setPostError(crossplayError || "Cross-play is not available for this game and system.");
       return;
@@ -419,7 +429,9 @@ function CreateMatchContent() {
     };
     const slot = (name: string, codValue: string) =>
       cod ? (rulesType === "Custom" || isRedSec || isRapidRoyal ? codValue : presetDefaults[name]) : activeRuleValues[name] ?? null;
-    const additionalRules: AdditionalMatchRules | null = cod && rulesType === "Custom" && !isRedSec && !isRapidRoyal
+    const additionalRules: AdditionalMatchRules | null = isBf6Solos
+      ? { settings: { "Map Selection": mapSelection, "Tiebreak": "Next Kill Wins", "AI Soldiers": "Off" }, restrictions: [] }
+      : cod && rulesType === "Custom" && !isRedSec && !isRapidRoyal
       ? {
           settings: {
             "Mini Map": miniMap, "Headshots Only": headshotsOnly, "Time Limit": timeLimit,
@@ -683,7 +695,7 @@ function CreateMatchContent() {
                 <dl className="snapshot-details">
                   <div className="snapshot-detail"><dt>Platform</dt><dd>{platformName}</dd></div>
                   <div className="snapshot-detail"><dt>Players</dt><dd>{players}</dd></div>
-                  <div className="snapshot-detail"><dt>Rules</dt><dd>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : rulesType}</dd></div>
+                  <div className="snapshot-detail"><dt>Rules</dt><dd>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules?.presetName || rulesType}</dd></div>
                   <div className="snapshot-detail"><dt>Cross Play</dt><dd>{crossplay}</dd></div>
                 </dl>
               </aside>
@@ -743,6 +755,17 @@ function CreateMatchContent() {
                           <div className="rules-box">
                             <strong>Lyndon Oil Works</strong>
                           </div>
+                        ) : isBf6Solos ? (
+                          <div>
+                            <label htmlFor="bf6-solos-map">Map selection</label>
+                            <select id="bf6-solos-map" value={mapSelection} onChange={(event) => setMapSelection(event.target.value)}>
+                              <option value="Random">Random from approved small maps</option>
+                              {bf6SolosMaps.map((map) => <option key={map} value={map}>{map}</option>)}
+                            </select>
+                            <p className="small-note">{mapSelection === "Random"
+                              ? "GameBattles draws from Saints Quarter and Empire State when accepted."
+                              : "This map is shown to opponents before acceptance and used for every game."} Use the small TDM layout.</p>
+                          </div>
                         ) : (
                           <div className="rules-box">
                             Where a game and mode has a supported map pool, maps are randomly assigned when the match is accepted.
@@ -795,6 +818,7 @@ function CreateMatchContent() {
                           <div>
                             <div className="locked-player-box">{gameRules.presetName}</div>
                             <div className="small-note">{gameRules.notes[0]}</div>
+                            {isBf6Solos && <p className="small-note"><Link className="rules-link" href={`/ladders/${platform}/${category}/${game}/${ladder}/rules`}>Portal setup and full rules</Link></p>}
                           </div>
                         ) : (
                           <div>
@@ -829,8 +853,8 @@ function CreateMatchContent() {
                           <details className="settings-summary settings-details">
                             <summary>
                               <span className="settings-title">{currentMode.value} Settings</span>
-                              <span className="settings-copy">Competitive defaults · customize if both teams agree</span>
-                              <span className="settings-toggle">Customize</span>
+                              <span className="settings-copy">{isBf6Solos ? "Locked 10-minute 1v1 · next-kill tiebreak · no AI" : "Competitive defaults · customize if both teams agree"}</span>
+                              <span className="settings-toggle">{isBf6Solos ? "View settings" : "Customize"}</span>
                             </summary>
                             <div className="settings-fields">
                               {currentMode.fields.map((item) => (

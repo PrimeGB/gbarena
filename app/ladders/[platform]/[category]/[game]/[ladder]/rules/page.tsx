@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getGameRules } from "../../../../../../../lib/matchRules";
+import { bf6PortalSetup, bf6SolosMaps, bf6SolosSources, getGameRules, isBattlefieldSolos } from "../../../../../../../lib/matchRules";
 import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
 
 type LadderRulesPageProps = {
@@ -38,6 +38,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   const categoryName = prettyText(category);
   const currentLadderName = ladderName(ladder);
   const mobileRuleSet = platform === "mobile" ? getGameRules(category, game) : null;
+  const bf6Rules = isBattlefieldSolos(category, game, ladder) ? getGameRules(category, game, ladder) : null;
 
   return (
     <main className="page">
@@ -54,7 +55,21 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           <h1>{gameName} {currentLadderName} Ladder</h1>
         </header>
 
-        {ladder === "rapid-royal-duos" ? (
+        {bf6Rules ? (
+          <section className="rule-section">
+            <h2>1v1 Team Deathmatch</h2>
+            <p>{bf6Rules.notes.join(" ")}</p>
+            <ul>{bf6Rules.modes[0].rules.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+            <h3>Approved small maps</h3>
+            <p>{bf6SolosMaps.join(" · ")}. Use their TDM combat zones. Random draws use only this pool; a preselected map is locked before acceptance.</p>
+            <h3>Portal host setup</h3>
+            <ol>{bf6PortalSetup.map((step) => <li key={step}>{step}</li>)}</ol>
+            <h3>Required settings</h3>
+            <ul>{bf6Rules.modes[0].fields.map((field) => <li key={field.slot}>{field.label}: {field.default}</li>)}</ul>
+            <h3>Research and references</h3>
+            <ul>{bf6SolosSources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a></li>)}</ul>
+          </section>
+        ) : ladder === "rapid-royal-duos" ? (
           <RapidRoyalRules />
         ) : ladder === "redsec" ? (
           <div className="redsec-rules">
