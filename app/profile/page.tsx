@@ -1523,12 +1523,12 @@ function ProfilePageContent() {
           letter-spacing:.5px;
           overflow-wrap:anywhere;
         }
-        .pf-level{ display:inline-flex; align-items:center; gap:9px; padding:4px 12px 4px 6px; border-radius:999px; background:rgba(5,12,19,.72); border:1px solid rgba(143,169,194,.28); text-decoration:none; transition:border-color .2s, box-shadow .2s; }
-        .pf-level:hover{ border-color:var(--lv); box-shadow:0 0 14px var(--lvg); }
-        .pf-level-text{ display:flex; flex-direction:column; gap:3px; }
-        .pf-level-text strong{ font-size:12px; line-height:13px; color:var(--lv); text-transform:uppercase; letter-spacing:.04em; }
-        .pf-level-text small{ font-size:10px; line-height:11px; color:#9fb4c8; }
-        .pf-level-bar{ width:96px; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
+        .pf-level{ display:flex; align-items:center; gap:10px; margin:0 0 10px; padding:9px 4px 10px; border-top:1px solid #1d3a55; border-bottom:1px solid #1d3a55; text-align:left; text-decoration:none; }
+        .pf-level:hover .pf-level-text strong{ text-decoration:underline; }
+        .pf-level-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+        .pf-level-text strong{ font-size:12px; line-height:14px; color:var(--lv); text-transform:uppercase; letter-spacing:.04em; }
+        .pf-level-text small{ font-size:10px; line-height:12px; color:#8fa9c2; }
+        .pf-level-bar{ display:block; width:100%; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
         .pf-level-bar i{ display:block; height:100%; border-radius:3px; background:var(--lv); }
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
         .pf-facts > div{ text-align:center; }
@@ -1798,19 +1798,6 @@ function ProfilePageContent() {
                         onChange={() => void loadFollowCounts(viewedUserId)}
                       />
                     )}
-                    <Link
-                      href="/ranks"
-                      className="pf-level"
-                      title={`${playerLevel.xp.toLocaleString()} XP${playerLevel.nextXp !== null ? ` · ${(playerLevel.nextXp - playerLevel.xp).toLocaleString()} XP to next level` : ""}`}
-                      style={{ ["--lv" as string]: playerLevel.tier.light, ["--lvg" as string]: playerLevel.tier.glow }}
-                    >
-                      <RankBadgeArt rank={playerLevel} size={30} />
-                      <span className="pf-level-text">
-                        <strong>{playerLevel.title}</strong>
-                        <small>Level {playerLevel.level} · {playerLevel.xp.toLocaleString()} XP</small>
-                        <span className="pf-level-bar"><i style={{ width: `${Math.round(playerLevel.progress * 100)}%` }} /></span>
-                      </span>
-                    </Link>
                   </div>
                   <div className="pf-facts">
                     <div>
@@ -1925,6 +1912,19 @@ function ProfilePageContent() {
                     </div>
                   )}
                   <div className="pf-rank-points">{gbRankPoints} points</div>
+                  <Link
+                    href="/ranks"
+                    className="pf-level"
+                    title={playerLevel.nextXp !== null ? `${(playerLevel.nextXp - playerLevel.xp).toLocaleString()} XP to next level` : "Max level"}
+                    style={{ ["--lv" as string]: playerLevel.tier.light }}
+                  >
+                    <RankBadgeArt rank={playerLevel} size={34} />
+                    <span className="pf-level-text">
+                      <strong>{playerLevel.title}</strong>
+                      <small>Level {playerLevel.level} · {playerLevel.xp.toLocaleString()} XP</small>
+                      <span className="pf-level-bar"><i style={{ width: `${Math.round(playerLevel.progress * 100)}%` }} /></span>
+                    </span>
+                  </Link>
                   <div className="stat-row"><span>Reputation</span><span>100%</span></div>
                   <div className="stat-row">
                     <span>Following</span>
