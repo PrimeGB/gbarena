@@ -19,6 +19,7 @@ const PAGES = [
   "/teams/top",
   "/members",
   "/awards",
+  "/ambassadors",
   "/ranks",
   "/history",
   "/support",

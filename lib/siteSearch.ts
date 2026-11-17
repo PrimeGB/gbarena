@@ -23,6 +23,7 @@ const pages: [string, string, string, string][] = [
   ["/players", "Players", "Browse players", "members people"],
   ["/awards", "Awards", "Browse trophies and awards", "achievements badges"],
   ["/ranks", "Player Ranks", "Earn XP and climb from Rookie to Legend", "level xp rank badge progression"],
+  ["/ambassadors", "GB Ambassadors", "The creators building the GameBattles community", "ambassador creator program streamer referral partner"],
   ["/history", "History", "GameBattles history", "past legacy"],
   ["/support", "Support", "Get help and contact staff", "help ticket dispute report"],
   ["/support/account", "Account Support", "Help with account problems", "login password account issue"],
