@@ -567,6 +567,81 @@ function ProfilePageContent() {
   }
   const rankTier = getRankTier(gbRankPoints);
   const playerLevel = rankFromXp(playerXp?.userId === viewedUserId ? playerXp.xp : 0);
+
+  async function handleAddFriend(e: { preventDefault: () => void }) {
+    e.preventDefault();
+    if (!currentUser?.id || !viewedUserId || currentUser.id === viewedUserId) return;
+
+    const { data: existing } = await supabase
+      .from("friend_requests")
+      .select("id")
+      .eq("requester_id", currentUser.id)
+      .eq("recipient_id", viewedUserId)
+      .maybeSingle();
+    if (existing) {
+      alert("Friend request already sent.");
+      return;
+    }
+
+    const { data: friendRequest, error: requestError } = await supabase
+      .from("friend_requests")
+      .insert({ requester_id: currentUser.id, recipient_id: viewedUserId, status: "pending" })
+      .select("id")
+      .single();
+    if (requestError || !friendRequest?.id) {
+      alert("Unable to send friend request.");
+      return;
+    }
+
+    const requesterName = currentProfileName || "A player";
+    await supabase.rpc("send_system_message", {
+      target_user_id: viewedUserId,
+      message_subject: "Friend Request",
+      message_body: `${requesterName} would like to add you as a friend.\n\nUse the Accept or Decline buttons in this message to respond to the request.`,
+      message_type_value: "system",
+      related_type_value: "friend_request",
+      related_id_value: friendRequest.id,
+    });
+    alert("Friend request sent.");
+  }
+
+  const controlCenterLinks = isViewingOwnProfile ? (
+    <>
+      <Link className="quick-link" href="/profile/teams">My Teams</Link>
+      <Link className="quick-link" href="/profile/friends">My Friends</Link>
+      <Link className="quick-link" href="/profile/edit?tab=awards">My Awards</Link>
+      <Link className="quick-link" href="/profile/stats">My Stats</Link>
+    </>
+  ) : (
+    <>
+      <a className="quick-link" href="#" onClick={(e) => void handleAddFriend(e)}>Add Friend</a>
+      <Link className="quick-link" href={`/profile/inbox?recipient=${encodeURIComponent(viewedUserId)}`}>Message Player</Link>
+      <a className="quick-link" href={`/profile/awards?userId=${viewedUserId}`}>View Player Awards</a>
+      <a className="quick-link" href={`/profile/friends?userId=${viewedUserId}`}>View Player Friends</a>
+      <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>View Player Teams</a>
+      {statsPublic && (
+        <Link className="quick-link" href={`/profile/stats?userId=${viewedUserId}`}>View Player Stats</Link>
+      )}
+    </>
+  );
+
+  const ambTierLabel = ambassador?.tier === "icon" ? "GB Icon" : ambassador?.tier === "ambassador" ? "Ambassador (Gold)" : "Affiliate";
+  const ambNext = ambassador?.tier === "icon"
+    ? { label: "Status", value: "Top tier" }
+    : ambassador?.tier === "ambassador"
+      ? { label: "Next: Icon at", value: "75 qualified" }
+      : { label: "Next: Ambassador at", value: "25 qualified" };
+
+  async function copyAmbLink() {
+    if (!ambassador) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/amb/${ambassador.slug}`);
+      setAmbLinkCopied(true);
+      window.setTimeout(() => setAmbLinkCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
   const elitePosition =
     rankTier.index === 9 && Number.isFinite(rankNumber) && rankNumber >= 1 && rankNumber <= ELITE_LIMIT
       ? rankNumber
@@ -1601,6 +1676,21 @@ function ProfilePageContent() {
         }
         @media (prefers-reduced-motion: reduce){ .pf-banner-top .pf-avatar.pf-avatar-amb{ animation:none; } }
         .pf-role-amb{ color:#f2c14e !important; }
+        .nav-actions{ position:relative; }
+        .nav-actions summary{ list-style:none; cursor:pointer; padding:8px 4px; color:#ffdf8e; font-size:10.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; white-space:nowrap; }
+        .nav-actions summary::-webkit-details-marker{ display:none; }
+        .nav-actions summary:hover{ color:#fff; }
+        .nav-actions-menu{ position:absolute; right:0; top:100%; z-index:60; min-width:210px; padding:6px; background:#0a1522; border:1px solid #6e5213; border-radius:0 0 8px 8px; box-shadow:0 16px 32px rgba(0,0,0,.75); display:flex; flex-direction:column; }
+        .nav-actions-menu .quick-link{ padding:9px 12px; border-bottom:1px solid #16293c; }
+        .nav-actions-menu .quick-link:last-child{ border-bottom:none; }
+        .amb-box{ border-color:#6e5213 !important; }
+        .amb-box .box-title{ background:linear-gradient(to bottom,#2c2206,#171103); color:#f2c14e; }
+        .amb-body{ padding:8px 10px 12px; }
+        .amb-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 2px; color:#b9cde0; font-size:12px; border-bottom:1px solid #241d08; }
+        .amb-row b{ color:#f2c14e; text-align:right; }
+        .amb-link{ display:block; width:100%; margin-top:11px; padding:8px; border-radius:6px; border:1px dashed #6e5213; background:#050c13; color:#8fa9c2; font-size:10.5px; text-align:center; cursor:pointer; font-family:inherit; }
+        .amb-link b{ color:#ffdf8e; }
+        .amb-link:hover{ border-color:#f2c14e; }
         .pf-role-shimmer{
           background:linear-gradient(100deg,#d4a637 0%,#f2c14e 38%,#fff6d8 50%,#f2c14e 62%,#d4a637 100%);
           background-size:240% 100%;
@@ -1927,6 +2017,14 @@ function ProfilePageContent() {
           <SiteNav
             showLadders={false}
             profileNavigation
+            extra={isAmbassador ? (
+              <details className="nav-actions">
+                <summary>{isViewingOwnProfile ? "Control Center" : "Player Actions"} ▾</summary>
+                <div className="nav-actions-menu">
+                  {controlCenterLinks}
+                </div>
+              </details>
+            ) : undefined}
           />
 
           {profile ? (
@@ -2119,101 +2217,29 @@ function ProfilePageContent() {
                   )}
                 </div>
 
-                <div className="box control-center-box">
-                  <div className="box-title">
-                    {isViewingOwnProfile ? "Control Center" : "Player Actions"}
+                {isAmbassador && ambassador ? (
+                  <div className="box amb-box">
+                    <div className="box-title">★ Ambassador</div>
+                    <div className="amb-body">
+                      <div className="amb-row"><span>Tier</span><b>{ambTierLabel}</b></div>
+                      <div className="amb-row"><span>Players recruited</span><b>{(ambassador.recruits ?? 0).toLocaleString()}</b></div>
+                      <div className="amb-row"><span>Credits given out</span><b>{(ambassador.qualified * 5).toLocaleString()}</b></div>
+                      <div className="amb-row"><span>{ambNext.label}</span><b>{ambNext.value}</b></div>
+                      <button className="amb-link" type="button" onClick={() => void copyAmbLink()} title="Copy recruit link">
+                        {ambLinkCopied ? "Link copied!" : <>gamebattles.app/amb/<b>{ambassador.slug}</b></>}
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="box-body">
-                    {isViewingOwnProfile ? (
-                      <>
-                        <Link className="quick-link" href="/profile/teams">My Teams</Link>
-                        <Link className="quick-link" href="/profile/friends">My Friends</Link>
-                        <Link className="quick-link" href="/profile/edit?tab=awards">My Awards</Link>
-                        <Link className="quick-link" href="/profile/stats">My Stats</Link>
-                      </>
-                    ) : (
-                     <>
-  <a
-  className="quick-link"
-  href="#"
-  onClick={async (e) => {
-    e.preventDefault();
-
-    if (!currentUser?.id) return;
-    if (!viewedUserId) return;
-    if (currentUser.id === viewedUserId) return;
-
-    const { data: existing } = await supabase
-      .from("friend_requests")
-      .select("id")
-      .eq("requester_id", currentUser.id)
-      .eq("recipient_id", viewedUserId)
-      .maybeSingle();
-
-    if (existing) {
-      alert("Friend request already sent.");
-      return;
-    }
-
-    const { data: friendRequest, error } = await supabase
-      .from("friend_requests")
-      .insert({
-        requester_id: currentUser.id,
-        recipient_id: viewedUserId,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (error || !friendRequest?.id) {
-      alert("Unable to send friend request.");
-      return;
-    }
-
-    const requesterName = currentProfileName || "A player";
-
-    await supabase.rpc("send_system_message", {
-      target_user_id: viewedUserId,
-      message_subject: "Friend Request",
-      message_body: `${requesterName} would like to add you as a friend.\n\nUse the Accept or Decline buttons in this message to respond to the request.`,
-      message_type_value: "system",
-      related_type_value: "friend_request",
-      related_id_value: friendRequest.id,
-    });
-
-    alert("Friend request sent.");
-  }}
->
-  Add Friend
-</a>
-
-  <Link className="quick-link" href={`/profile/inbox?recipient=${encodeURIComponent(viewedUserId)}`}>
-    Message Player
-  </Link>
-
-  <a className="quick-link" href={`/profile/awards?userId=${viewedUserId}`}>
-    View Player Awards
-  </a>
-
-  <a className="quick-link" href={`/profile/friends?userId=${viewedUserId}`}>
-    View Player Friends
-  </a>
-
-  <a className="quick-link" href={`/profile/teams?userId=${viewedUserId}`}>
-    View Player Teams
-  </a>
-
-  {statsPublic && (
-    <Link className="quick-link" href={`/profile/stats?userId=${viewedUserId}`}>
-      View Player Stats
-    </Link>
-  )}
-
-</>
-                    )}
+                ) : (
+                  <div className="box control-center-box">
+                    <div className="box-title">
+                      {isViewingOwnProfile ? "Control Center" : "Player Actions"}
+                    </div>
+                    <div className="box-body">
+                      {controlCenterLinks}
+                    </div>
                   </div>
-                </div>
+                )}
                 {isViewingOwnProfile && <ProfileFollowingFeed />}
               </aside>
 

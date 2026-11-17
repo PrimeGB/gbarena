@@ -56,7 +56,23 @@ function Mock() {
           </div>
         </header>
 
-        <SiteNav showLadders={false} profileNavigation />
+        <SiteNav
+          showLadders={false}
+          profileNavigation
+          extra={
+            <details className="nav-actions">
+              <summary>Player Actions ▾</summary>
+              <div className="nav-actions-menu">
+                <a className="quick-link" href="#">Add Friend</a>
+                <a className="quick-link" href="#">Message Player</a>
+                <a className="quick-link" href="#">View Player Awards</a>
+                <a className="quick-link" href="#">View Player Friends</a>
+                <a className="quick-link" href="#">View Player Teams</a>
+                <a className="quick-link" href="#">View Player Stats</a>
+              </div>
+            </details>
+          }
+        />
 
         <div className="pf-banner">
           <div className="pf-banner-top">
@@ -119,15 +135,14 @@ function Mock() {
 
             {/* (nothing extra here yet — ambassador side card not built) */}
 
-            <div className="box control-center-box">
-              <div className="box-title">Player Actions</div>
-              <div className="box-body">
-                <a className="quick-link" href="#">Add Friend</a>
-                <a className="quick-link" href="#">Message Player</a>
-                <a className="quick-link" href="#">View Player Awards</a>
-                <a className="quick-link" href="#">View Player Friends</a>
-                <a className="quick-link" href="#">View Player Teams</a>
-                <a className="quick-link" href="#">View Player Stats</a>
+            <div className="box amb-box">
+              <div className="box-title">★ Ambassador</div>
+              <div className="amb-body">
+                <div className="amb-row"><span>Tier</span><b>Ambassador (Gold)</b></div>
+                <div className="amb-row"><span>Players recruited</span><b>61</b></div>
+                <div className="amb-row"><span>Credits given out</span><b>190</b></div>
+                <div className="amb-row"><span>Next: Icon at</span><b>75 qualified</b></div>
+                <button className="amb-link" type="button">gamebattles.app/amb/<b>sharpz</b></button>
               </div>
             </div>
           </aside>
