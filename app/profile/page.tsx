@@ -1566,7 +1566,14 @@ function ProfilePageContent() {
         .pf-level-text small{ font-size:10px; line-height:12px; color:#8fa9c2; }
         .pf-level-bar{ display:block; width:100%; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
         .pf-level-bar i{ display:block; height:100%; border-radius:3px; background:var(--lv); }
-        .pf-avatar-amb{ box-shadow:0 0 0 3px #05090f, 0 0 0 6px #f2c14e, 0 0 22px #f2c14e88 !important; }
+        .pf-banner-top .pf-avatar.pf-avatar-amb{
+          box-shadow:0 0 0 3px #05090f, 0 0 0 7px #ffd34d, 0 0 16px 5px rgba(255,211,77,.85), 0 0 42px 10px rgba(242,193,78,.45);
+          animation:pfAmbGlow 2.8s ease-in-out infinite;
+        }
+        @keyframes pfAmbGlow{
+          50%{ box-shadow:0 0 0 3px #05090f, 0 0 0 7px #ffe9ab, 0 0 26px 9px rgba(255,217,107,.95), 0 0 60px 16px rgba(242,193,78,.6); }
+        }
+        @media (prefers-reduced-motion: reduce){ .pf-banner-top .pf-avatar.pf-avatar-amb{ animation:none; } }
         .pf-role-amb{ color:#f2c14e !important; }
         .pf-amb-chip{ display:inline-flex; align-items:center; gap:5px; padding:5px 13px; border-radius:999px; background:linear-gradient(180deg,#ffe9ab,#e0a020); color:#231600; font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; text-decoration:none; box-shadow:0 0 14px #f2c14e55; }
         .pf-amb-chip:hover{ filter:brightness(1.1); }

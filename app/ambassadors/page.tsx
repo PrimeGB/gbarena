@@ -155,6 +155,40 @@ export default function AmbassadorsPage() {
           </div>
         )}
 
+        <h2 className="sec">How we treat our Ambassadors</h2>
+        <div className="perks">
+          <div className="perk">
+            <span className="perk-ic">🏆</span>
+            <b>Tournaments in your name</b>
+            <p>We build and run official tournaments named after you - "The Sharpz Showdown" - you just show up and play with your community.</p>
+          </div>
+          <div className="perk">
+            <span className="perk-ic">📅</span>
+            <b>Events around your stream</b>
+            <p>Community nights, viewer matches and ladder events scheduled around your streaming calendar.</p>
+          </div>
+          <div className="perk">
+            <span className="perk-ic">✨</span>
+            <b>Exclusive profile gear</b>
+            <p>A glowing gold profile, ambassador-only awards and flair that nobody else on the site can earn.</p>
+          </div>
+          <div className="perk">
+            <span className="perk-ic">📣</span>
+            <b>Front-page spotlight</b>
+            <p>Your name, stream and recruit link featured on this page and in the home page slideshow.</p>
+          </div>
+          <div className="perk">
+            <span className="perk-ic">🎁</span>
+            <b>Perks for your people</b>
+            <p>Everyone who joins through your link gets 5 free credits - your community gets treated well too.</p>
+          </div>
+          <div className="perk">
+            <span className="perk-ic">🤝</span>
+            <b>A direct line to the Founder</b>
+            <p>Input on new ladders, events and features before they ship. Ambassadors help shape GameBattles.</p>
+          </div>
+        </div>
+
         <h2 className="sec">Program Tiers</h2>
         <div className="tiers">
           <div className="tier t1">
@@ -220,6 +254,12 @@ export default function AmbassadorsPage() {
         .empty h3{margin:0 0 8px;color:#f2c14e;font-size:18px}
         .empty p{margin:0 auto;max-width:480px;color:#a8bdcd;font-size:13px;line-height:1.7}
         .empty a,.note a{color:#67bdff}
+        .perks{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+        .perk{padding:18px;border-radius:12px;border:1px solid #23415d;background:linear-gradient(180deg,#0e1d2e,#081220);transition:border-color .2s,transform .2s}
+        .perk:hover{border-color:#6e5213;transform:translateY(-3px)}
+        .perk-ic{display:grid;place-items:center;width:40px;height:40px;margin-bottom:10px;border-radius:10px;background:linear-gradient(145deg,#2c2206,#171103);border:1px solid #6e5213;font-size:18px}
+        .perk b{display:block;color:#ffdf8e;font-size:13.5px;margin-bottom:6px}
+        .perk p{margin:0;color:#a8bdcd;font-size:12px;line-height:1.65}
         .spotlight{position:relative;display:flex;gap:26px;align-items:center;flex-wrap:wrap;border-radius:14px;padding:26px 30px;overflow:hidden;background:linear-gradient(115deg,#1d1303 0%,#120d04 45%,#0a1320 100%);border:1px solid #6e5213}
         .spotlight::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 85% 20%,#f2c14e22,transparent 55%)}
         .spot-avatar{position:relative;width:110px;height:110px;flex:none;border-radius:50%;padding:4px;background:conic-gradient(#ffe9ab,#f2c14e,#8a5a00,#ffe9ab);box-shadow:0 0 34px #f2c14e66}
@@ -269,8 +309,8 @@ export default function AmbassadorsPage() {
         .t3{--tc:#ff7a3c}.t3 h5{color:#ff7a3c}.t3{border-color:#73380f}
         .tier .pop{position:absolute;top:-10px;right:14px;background:#f2c14e;color:#231600;font-size:8.5px;font-weight:900;letter-spacing:.1em;padding:4px 9px;border-radius:999px;text-transform:uppercase}
         .note{margin-top:22px;color:#7f9ab3;font-size:12px;text-align:center}
-        @media(max-width:820px){.grid,.tiers{grid-template-columns:1fr 1fr}.strip{grid-template-columns:1fr 1fr}}
-        @media(max-width:520px){.grid,.tiers{grid-template-columns:1fr}.hero h1{font-size:34px}}
+        @media(max-width:820px){.grid,.tiers{grid-template-columns:1fr 1fr}.strip{grid-template-columns:1fr 1fr}.perks{grid-template-columns:1fr 1fr}}
+        @media(max-width:520px){.grid,.tiers,.perks{grid-template-columns:1fr}.hero h1{font-size:34px}}
       `}</style>
     </main>
   );
