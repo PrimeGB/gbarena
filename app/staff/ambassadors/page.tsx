@@ -24,6 +24,24 @@ type Ambassador = {
   since: string;
 };
 
+type Application = {
+  id: number;
+  user_id: string;
+  username: string | null;
+  channel: string;
+  twitch: string;
+  youtube: string;
+  tiktok: string;
+  kick: string;
+  instagram: string;
+  discord: string;
+  games: string;
+  audience: string;
+  pitch: string;
+  status: "pending" | "approved" | "declined";
+  created_at: string;
+};
+
 type FormState = {
   username: string;
   tier: Ambassador["tier"];
@@ -51,6 +69,7 @@ const TIER_COLOR = { affiliate: "#9fc2e2", ambassador: "#f2c14e", icon: "#ff7a3c
 
 export default function StaffAmbassadorsPage() {
   const [rows, setRows] = useState<Ambassador[]>([]);
+  const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -59,12 +78,16 @@ export default function StaffAmbassadorsPage() {
   const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
-    const { data, error: rpcError } = await supabase.rpc("staff_ambassador_list");
+    const [{ data, error: rpcError }, { data: appData }] = await Promise.all([
+      supabase.rpc("staff_ambassador_list"),
+      supabase.rpc("staff_ambassador_applications"),
+    ]);
     if (rpcError) setError(rpcError.message);
     else {
       setError("");
       setRows((data || []) as Ambassador[]);
     }
+    setApps((appData || []) as Application[]);
     setLoading(false);
   }, []);
 
@@ -122,6 +145,40 @@ export default function StaffAmbassadorsPage() {
     await load();
   }
 
+  async function reviewApp(app: Application, status: "approved" | "declined") {
+    let note = "";
+    if (status === "declined") {
+      note = window.prompt(`Optional note to ${app.username} (sent with the decline message):`, "") || "";
+    }
+    setBusy(true);
+    const { error: rpcError } = await supabase.rpc("staff_ambassador_application_review", {
+      p_id: app.id,
+      p_status: status,
+      p_note: note,
+    });
+    setBusy(false);
+    if (rpcError) { setError(rpcError.message); return; }
+    if (status === "approved") {
+      // Prefill the appoint form from the application so one click finishes the job.
+      setEditing(false);
+      setForm({
+        ...EMPTY,
+        username: app.username || "",
+        slug: (app.username || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24),
+        tagline: app.games.slice(0, 80),
+        twitch: app.twitch, youtube: app.youtube, tiktok: app.tiktok,
+        kick: app.kick, instagram: app.instagram, discord: app.discord,
+      });
+      setNotice(`${app.username} approved and messaged. The appoint form is prefilled - set the tier and hit Appoint ambassador.`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      setNotice(`${app.username}'s application declined. They were messaged.`);
+    }
+    await load();
+  }
+
+  const pendingApps = apps.filter((a) => a.status === "pending");
+
   const activeRows = rows.filter((r) => r.active);
   const inactiveRows = rows.filter((r) => !r.active);
 
@@ -143,6 +200,32 @@ export default function StaffAmbassadorsPage() {
 
         {error && <p className="err" role="alert">{error}</p>}
         {notice && <p className="ok" role="status">{notice}</p>}
+
+        {pendingApps.length > 0 && (
+          <section className="panel apps">
+            <h2>Applications ({pendingApps.length} waiting)</h2>
+            <div className="list">
+              {pendingApps.map((a) => (
+                <article key={a.id} className="app">
+                  <div className="app-head">
+                    <h3><Link href={`/profile?userId=${a.user_id}`}>{a.username}</Link></h3>
+                    <span className="app-when">{new Date(a.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
+                  </div>
+                  <div className="app-meta">
+                    <a href={a.channel} target="_blank" rel="noopener noreferrer">{a.channel}</a>
+                    <span>{a.games}</span>
+                    {a.audience && <span>Audience: {a.audience}</span>}
+                  </div>
+                  <p className="app-pitch">{a.pitch}</p>
+                  <div className="actions">
+                    <button className="gold" onClick={() => void reviewApp(a, "approved")} disabled={busy}>Approve &amp; prefill</button>
+                    <button className="danger" onClick={() => void reviewApp(a, "declined")} disabled={busy}>Decline</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="panel">
           <h2>{editing ? `Editing ${form.username || "ambassador"}` : "Appoint an ambassador"}</h2>
@@ -271,6 +354,15 @@ export default function StaffAmbassadorsPage() {
         .inactive summary{cursor:pointer;font-weight:bold}
         .inrow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #16293c}
         .inrow span{flex:1}
+        .apps{border-color:#6e5213}
+        .app{padding:14px 16px;border-radius:10px;border:1px solid #6e5213;background:#120e04}
+        .app-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .app-head h3{margin:0;font-size:15px}
+        .app-head h3 a{color:#ffdf8e;text-decoration:none}
+        .app-when{color:#8fa9c2;font-size:10.5px}
+        .app-meta{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0;color:#b9cde0;font-size:11.5px}
+        .app-meta a{color:#67bdff;word-break:break-all}
+        .app-pitch{margin:4px 0 10px;color:#cfdbe8;font-size:12.5px;line-height:1.6;white-space:pre-wrap}
         @media(max-width:640px){.grid{grid-template-columns:1fr}.card{flex-direction:column;align-items:flex-start}}
       `}</style>
     </main>

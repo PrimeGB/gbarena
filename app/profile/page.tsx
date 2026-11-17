@@ -135,15 +135,24 @@ function ProfilePageContent() {
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
   const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
-  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string } | null>(null);
+  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null } | null>(null);
 
   useEffect(() => {
     if (!viewedUserId) return;
     let active = true;
-    void supabase.rpc("gb_ambassador_for", { p_user: viewedUserId }).then(({ data }) => {
+    void supabase.rpc("gb_ambassador_directory").then(({ data }) => {
       if (!active) return;
-      const row = Array.isArray(data) ? data[0] : data;
-      setAmbassador(row ? { userId: viewedUserId, ...row } : null);
+      const row = (Array.isArray(data) ? data : []).find((entry) => entry.user_id === viewedUserId);
+      setAmbassador(row ? {
+        userId: viewedUserId,
+        tier: row.tier,
+        slug: row.slug,
+        twitch: row.twitch,
+        youtube: row.youtube,
+        tiktok: row.tiktok,
+        kick: row.kick,
+        recruits: typeof row.recruits === "number" ? row.recruits : null,
+      } : null);
     });
     return () => {
       active = false;
@@ -511,9 +520,12 @@ function ProfilePageContent() {
   const gbRankPoints = profile?.gb_rank_points || 0;
   const favoriteSystem = profile?.favorite_system || "PlayStation";
   const rawRole = (profile?.role || "").toLowerCase();
+  const isAmbassador = ambassador?.userId === viewedUserId;
   const playerRole = rawRole === "owner"
     ? ((profile?.username || "").toLowerCase() === "prime" ? "Founder" : "Staff")
-    : rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : "Member";
+    : isAmbassador
+      ? (ambassador.tier === "icon" ? "GB Icon" : "Ambassador")
+      : rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : "Member";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
   const xboxGT = profile?.gt_xbox || profile?.xbox_gt || "";
@@ -1555,6 +1567,7 @@ function ProfilePageContent() {
         .pf-level-bar{ display:block; width:100%; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
         .pf-level-bar i{ display:block; height:100%; border-radius:3px; background:var(--lv); }
         .pf-avatar-amb{ box-shadow:0 0 0 3px #05090f, 0 0 0 6px #f2c14e, 0 0 22px #f2c14e88 !important; }
+        .pf-role-amb{ color:#f2c14e !important; }
         .pf-amb-chip{ display:inline-flex; align-items:center; gap:5px; padding:5px 13px; border-radius:999px; background:linear-gradient(180deg,#ffe9ab,#e0a020); color:#231600; font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; text-decoration:none; box-shadow:0 0 14px #f2c14e55; }
         .pf-amb-chip:hover{ filter:brightness(1.1); }
         .pf-amb-stream{ display:inline-flex; align-items:center; gap:6px; padding:6px 13px; border-radius:4px; background:#e91916; color:#fff; font-size:10px; font-weight:900; letter-spacing:.08em; text-decoration:none; }
@@ -1892,12 +1905,18 @@ function ProfilePageContent() {
                     </div>
                     <div>
                       <span>Role</span>
-                      <strong>{playerRole}</strong>
+                      <strong className={isAmbassador ? "pf-role-amb" : undefined}>{playerRole}</strong>
                     </div>
                     <div>
                       <span>Credits</span>
                       <strong>{(profile.credits || 0).toLocaleString()}</strong>
                     </div>
+                    {isAmbassador && ambassador.recruits !== null && (
+                      <div>
+                        <span>Recruits</span>
+                        <strong className="pf-role-amb">{ambassador.recruits.toLocaleString()}</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
 

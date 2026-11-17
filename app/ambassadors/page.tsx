@@ -80,7 +80,7 @@ export default function AmbassadorsPage() {
           spotlight placement and events hosted in their name.
         </p>
         <div className="cta-row">
-          <Link className="btn-gold" href="/support">Apply to become an Ambassador</Link>
+          <Link className="btn-gold" href="/ambassadors/apply">Apply to become an Ambassador</Link>
           <Link className="btn-ghost" href="/home">Back to Home</Link>
         </div>
       </section>
@@ -121,7 +121,7 @@ export default function AmbassadorsPage() {
             <h3>The first class is being selected</h3>
             <p>
               We&apos;re hand-picking the streamers and creators who will represent GameBattles.
-              Think that&apos;s you? Reach out through <Link href="/support">Support</Link> with your channel
+              Think that&apos;s you? <Link href="/ambassadors/apply">Apply here</Link> with your channel
               and the games you play.
             </p>
           </div>
@@ -191,7 +191,7 @@ export default function AmbassadorsPage() {
         </div>
 
         <p className="note">
-          Want in? Send us your channel and the games you play through <Link href="/support">Support</Link>.
+          Want in? <Link href="/ambassadors/apply">Apply here</Link> with your channel and the games you play.
           The Founder reviews every application.
         </p>
       </div>
