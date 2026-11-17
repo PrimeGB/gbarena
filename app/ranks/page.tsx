@@ -20,7 +20,7 @@ export default function RanksPage() {
             </p>
           </div>
           <div className="rk-sample">
-            <RankBadgeArt rank={sample} size={84} />
+            <RankBadgeArt rank={sample} size={120} />
             <div>
               <strong style={{ color: sample.tier.light }}>{sample.title}</strong>
               <span>Level {sample.level} · {sample.xp.toLocaleString()} XP</span>
@@ -44,7 +44,7 @@ export default function RanksPage() {
             const top = rankFromXp(xpForLevel(first + 4));
             return (
               <article key={tier.key} className="rk-card" style={{ ["--rk" as string]: tier.light, ["--rkg" as string]: tier.glow }}>
-                <div className="rk-art"><RankBadgeArt rank={top} size={70} /></div>
+                <div className="rk-art"><RankBadgeArt rank={top} size={130} /></div>
                 <h3>{tier.name}</h3>
                 <p>Levels {first}–{first + 4}</p>
                 <p className="rk-xp">{xpForLevel(first).toLocaleString()} XP</p>
@@ -85,7 +85,7 @@ export default function RanksPage() {
         .rk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
         .rk-card{padding:16px 10px 14px;text-align:center;border-radius:12px;border:1px solid #1d3e5a;background:linear-gradient(180deg,#0e1f30,#070f18);transition:transform .2s,border-color .2s,box-shadow .2s}
         .rk-card:hover{transform:translateY(-3px);border-color:var(--rk);box-shadow:0 8px 24px var(--rkg)}
-        .rk-art{display:grid;place-items:center;height:92px}
+        .rk-art{display:grid;place-items:center;height:118px}
         .rk-card h3{margin:8px 0 2px;color:var(--rk);font-size:15px;text-transform:uppercase;letter-spacing:.04em}
         .rk-card p{margin:0;color:#8fa9c0;font-size:11px}
         .rk-card .rk-xp{color:#fff;font-weight:bold;margin-top:3px}

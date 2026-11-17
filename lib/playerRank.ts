@@ -12,16 +12,16 @@ export type RankTier = {
 };
 
 export const RANK_TIERS: RankTier[] = [
-  { key: "recruit", name: "Rookie", light: "#a9b6c4", dark: "#3c4652", glow: "rgba(169,182,196,.35)" },
-  { key: "private", name: "Contender", light: "#e0a466", dark: "#6b3f1d", glow: "rgba(224,164,102,.4)" },
-  { key: "corporal", name: "Challenger", light: "#ff9466", dark: "#7a2f17", glow: "rgba(255,148,102,.4)" },
-  { key: "sergeant", name: "Striker", light: "#f2f6fa", dark: "#6e7b88", glow: "rgba(230,240,250,.45)" },
-  { key: "lieutenant", name: "Veteran", light: "#ffd96b", dark: "#9a6510", glow: "rgba(255,217,107,.5)" },
-  { key: "captain", name: "Ace", light: "#6bf5bb", dark: "#0c6b47", glow: "rgba(107,245,187,.45)" },
-  { key: "major", name: "Commander", light: "#7fd0ff", dark: "#173f8c", glow: "rgba(127,208,255,.5)" },
-  { key: "colonel", name: "Phantom", light: "#d2a8ff", dark: "#4f2290", glow: "rgba(210,168,255,.5)" },
-  { key: "general", name: "Titan", light: "#ff7a7a", dark: "#7e1020", glow: "rgba(255,122,122,.55)" },
-  { key: "legend", name: "Legend", light: "#fff1a8", dark: "#a8326e", glow: "rgba(255,214,120,.7)" },
+  { key: "rookie", name: "Rookie", light: "#c7d6e8", dark: "#3c4652", glow: "rgba(136,182,255,.4)" },
+  { key: "contender", name: "Contender", light: "#f0a35e", dark: "#6b3f1d", glow: "rgba(240,163,94,.45)" },
+  { key: "challenger", name: "Challenger", light: "#6fb4ff", dark: "#17407a", glow: "rgba(111,180,255,.45)" },
+  { key: "striker", name: "Striker", light: "#ffd34d", dark: "#8a5c10", glow: "rgba(255,211,77,.5)" },
+  { key: "veteran", name: "Veteran", light: "#cdb4ff", dark: "#4a2a85", glow: "rgba(176,128,255,.5)" },
+  { key: "ace", name: "Ace", light: "#4fe3cd", dark: "#0b5e52", glow: "rgba(79,227,205,.5)" },
+  { key: "commander", name: "Commander", light: "#ff5a62", dark: "#73101c", glow: "rgba(255,90,98,.5)" },
+  { key: "phantom", name: "Phantom", light: "#b878ff", dark: "#45177e", glow: "rgba(184,120,255,.55)" },
+  { key: "titan", name: "Titan", light: "#ffc63d", dark: "#7e5505", glow: "rgba(255,198,61,.55)" },
+  { key: "legend", name: "Legend", light: "#ffd98a", dark: "#8a2a12", glow: "rgba(255,166,77,.65)" },
 ];
 
 /** Total XP needed to reach a level (level 1 = 0 XP). */

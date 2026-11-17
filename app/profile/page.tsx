@@ -135,7 +135,7 @@ function ProfilePageContent() {
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
   const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
-  const [showInviteBanner, setShowInviteBanner] = useState(false);
+  const [promoIndex, setPromoIndex] = useState(0);
   const [bannerHovered, setBannerHovered] = useState(false);
   const [bannerFocused, setBannerFocused] = useState(false);
   const [followCounts, setFollowCounts] = useState<{
@@ -146,7 +146,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (bannerHovered || bannerFocused) return;
-    const timer = window.setInterval(() => setShowInviteBanner((current) => !current), 15000);
+    const timer = window.setInterval(() => setPromoIndex((current) => (current + 1) % 4), 15000);
     return () => window.clearInterval(timer);
   }, [bannerHovered, bannerFocused]);
 
@@ -740,6 +740,12 @@ function ProfilePageContent() {
         .promo-invite{
           background:linear-gradient(115deg,#54340d 0%,#8a5717 50%,#352816 100%);
         }
+        .promo-challenges{
+          background:linear-gradient(115deg,#0b4027 0%,#15845a 55%,#0a3322 100%);
+        }
+        .promo-tournaments{
+          background:linear-gradient(115deg,#5a0d16 0%,#b02433 52%,#3c0a12 100%);
+        }
         .promo-icon{
           display:flex;
           align-items:center;
@@ -761,10 +767,14 @@ function ProfilePageContent() {
         .promo-copy{flex:1;min-width:0;line-height:1.2}
         .promo-eyebrow{display:block;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#d9e0ff}
         .promo-invite .promo-eyebrow{color:#ffe0a2}
+        .promo-challenges .promo-eyebrow{color:#b2ffd9}
+        .promo-tournaments .promo-eyebrow{color:#ffc9cf}
         .promo-title{display:block;margin-top:3px;font-size:14px;font-weight:900;color:#fff;white-space:nowrap}
         .promo-sub{display:block;margin-top:3px;font-size:10px;color:#f1f3ff;white-space:nowrap}
         .promo-action{flex:none;padding:6px 8px;border-radius:4px;background:#fff;color:#303d91;font-size:10px;font-weight:900;white-space:nowrap}
         .promo-invite .promo-action{background:#ffdb7b;color:#382100}
+        .promo-challenges .promo-action{background:#8ff5c4;color:#043019}
+        .promo-tournaments .promo-action{background:#ffd0d5;color:#4b0810}
         @media (max-width:380px){.promo-banner{gap:7px;padding:6px 7px}.promo-title{font-size:12px}.promo-sub{font-size:9px}.promo-action{padding:6px}}
 
         .profile-title-bar{
@@ -1739,7 +1749,7 @@ function ProfilePageContent() {
             </div>
 
             <div className="header-ad" onMouseEnter={() => setBannerHovered(true)} onMouseLeave={() => setBannerHovered(false)} onFocus={() => setBannerFocused(true)} onBlur={() => setBannerFocused(false)}>
-              {showInviteBanner ? (
+              {promoIndex === 1 ? (
                 <Link className="promo-banner promo-invite" href="/profile/awards#invite-rewards">
                   <span className="promo-icon"><Image src="/logo-emblem.png" alt="" width={40} height={40} /></span>
                   <span className="promo-copy">
@@ -1748,6 +1758,38 @@ function ProfilePageContent() {
                     <span className="promo-sub">Bring friends. Unlock awards.</span>
                   </span>
                   <span className="promo-action">GET LINK &#8594;</span>
+                </Link>
+              ) : promoIndex === 2 ? (
+                <Link className="promo-banner promo-challenges" href="/challenges">
+                  <span className="promo-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <path d="M32 6 38.6 19.4 53.4 21.5 42.7 31.9 45.2 46.6 32 39.7 18.8 46.6 21.3 31.9 10.6 21.5 25.4 19.4Z" />
+                      <path d="M18 52h28v4H18z" opacity=".75" />
+                    </svg>
+                  </span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">Fresh every week</span>
+                    <span className="promo-title">WEEKLY CHALLENGES</span>
+                    <span className="promo-sub">Complete them. Earn trophies.</span>
+                  </span>
+                  <span className="promo-action">VIEW &#8594;</span>
+                </Link>
+              ) : promoIndex === 3 ? (
+                <Link className="promo-banner promo-tournaments" href="/tournaments">
+                  <span className="promo-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <path d="M20 10h24v6c0 12-5 19-12 21-7-2-12-9-12-21Z" />
+                      <path d="M20 13h-8c0 9 4 14 10 16-1.4-2.6-2.4-5.8-2.9-9.4A47 47 0 0 1 20 13Zm24 0h8c0 9-4 14-10 16 1.4-2.6 2.4-5.8 2.9-9.4A47 47 0 0 0 44 13Z" opacity=".8" />
+                      <rect x="29" y="37" width="6" height="7" />
+                      <path d="M23 48h18v6H23z" />
+                    </svg>
+                  </span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">Prove yourself</span>
+                    <span className="promo-title">JOIN A TOURNAMENT</span>
+                    <span className="promo-sub">Win the bracket. Become a champion.</span>
+                  </span>
+                  <span className="promo-action">PLAY &#8594;</span>
                 </Link>
               ) : (
                 <a className="promo-banner promo-discord" href="https://discord.gg/nKZdS2BDS6" target="_blank" rel="noopener noreferrer">
@@ -1918,7 +1960,7 @@ function ProfilePageContent() {
                     title={playerLevel.nextXp !== null ? `${(playerLevel.nextXp - playerLevel.xp).toLocaleString()} XP to next level` : "Max level"}
                     style={{ ["--lv" as string]: playerLevel.tier.light }}
                   >
-                    <RankBadgeArt rank={playerLevel} size={34} />
+                    <RankBadgeArt rank={playerLevel} size={46} />
                     <span className="pf-level-text">
                       <strong>{playerLevel.title}</strong>
                       <small>Level {playerLevel.level} · {playerLevel.xp.toLocaleString()} XP</small>

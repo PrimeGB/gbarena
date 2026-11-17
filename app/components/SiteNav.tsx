@@ -15,7 +15,6 @@ export default function SiteNav({
     { label: "Tournaments", href: tournamentHref },
     { label: "Create a Team", href: "/teams/create" },
     { label: "Find Players", href: "/players" },
-    { label: "Recruit", href: "/recruit" },
     { label: "Support", href: "/support" },
   ] : [
     ...(showLadders ? [{ label: "Ladders", href: ladderHref }] : []),
