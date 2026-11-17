@@ -200,17 +200,16 @@ export default function Home() {
           border-right:1px solid rgba(74,145,205,.55);
         }
 
-        .playstation{ left:.85%; width:10.5%; }
-        .xbox{ left:11.35%; width:8.5%; }
-        .nintendo{ left:19.85%; width:10%; }
-        .pc{ left:29.85%; width:6.5%; }
-        .mobile{ left:36.35%; width:8.5%; }
-        .tournaments{ left:44.85%; width:10.5%; }
-        .members{ left:55.35%; width:9.5%; }
-        .forums{ left:64.85%; width:8.5%; }
+        .playstation{ left:.85%; width:11.94%; }
+        .xbox{ left:12.79%; width:9.67%; }
+        .nintendo{ left:22.46%; width:11.37%; }
+        .pc{ left:33.83%; width:7.39%; }
+        .mobile{ left:41.22%; width:9.67%; }
+        .tournaments{ left:50.89%; width:11.94%; }
+        .forums{ left:62.83%; width:9.67%; }
         .staff-zone{
-          left:73.35%;
-          width:6.2%;
+          left:72.5%;
+          width:7.05%;
         }
         .nav-label{
           position:absolute;
@@ -931,10 +930,6 @@ export default function Home() {
           <Link className="hotspot nav-zone tournaments" href="/tournaments">
             <span className="nav-label">TOURNAMENTS</span>
           </Link>
-
-          <Link className="hotspot nav-zone members" href="/members">
-            <span className="nav-label">MEMBERS</span>
-          </Link>
           <Link className="hotspot nav-zone forums" href="/forums">
             <span className="nav-label">FORUMS</span>
           </Link>
@@ -954,6 +949,7 @@ export default function Home() {
               <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
               <Link className="side-link" href="/activity">Live Community <span className="arrow">›</span></Link>
               <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/members">Members <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
               <div className="section-title">Awards &amp; Achievements</div>
