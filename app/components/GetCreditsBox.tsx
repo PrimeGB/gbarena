@@ -79,7 +79,7 @@ export default function GetCreditsBox() {
               <summary>Read full terms</summary>
               <ul>
                 {TERMS.map((t) => <li key={t.key}>{t.text}</li>)}
-                <li>Full details are in the <a href="/credits-terms" target="_blank" rel="noreferrer">Credit Terms</a>.</li>
+                <li>Full details are in the <a href="/credits-terms" target="_blank" rel="noreferrer">Credit Terms</a>, <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</li>
               </ul>
             </details>
           </div>

@@ -663,6 +663,10 @@ export default function Home() {
           font-size:clamp(10px,.95vw,16px);
         }
 
+        .footer-cover .legal{display:inline-flex;gap:10px;margin-left:14px;font-size:.8em;font-weight:400}
+        .footer-cover .legal a{color:#9fd4ff;text-decoration:none}
+        .footer-cover .legal a:hover{color:#fff;text-decoration:underline}
+
         .mobile-home{display:none;}
 
       @media(max-width:768px){
@@ -921,6 +925,7 @@ export default function Home() {
               <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
               <Link className="side-link" href="/champions">Hall of Fame <span className="arrow">›</span></Link>
               <Link className="side-link" href="/challenges">Player Challenges <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/ranks">Player Ranks <span className="arrow">›</span></Link>
 
               <div className="section-title">About GameBattles</div>
 
@@ -957,7 +962,8 @@ export default function Home() {
 
           <MobileHome />
           <footer className="footer-cover">
-            © 2026 Competitive Gaming Network
+            <span>© 2026 Competitive Gaming Network</span>
+            <span className="legal"><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/disclaimer">Disclaimer</Link></span>
           </footer>
         </div>
       </main>

@@ -10,6 +10,8 @@ import ProfileFollowingFeed from "../components/ProfileFollowingFeed";
 import AwardDetailsDialog, { AwardHoverDetails, useAwardCatalog, type EarnedAwardDetails } from "../components/AwardDetailsDialog";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
+import { RankBadgeArt } from "../components/RankBadge";
+import { rankFromXp } from "../../lib/playerRank";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
 import { EliteEmblem, ELITE_LIMIT, getEliteBand } from "./EliteEmblem";
 import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
@@ -132,6 +134,7 @@ function ProfilePageContent() {
   const [unreadInboxCount, setUnreadInboxCount] = useState(0);
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
+  const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
   const [showInviteBanner, setShowInviteBanner] = useState(false);
   const [bannerHovered, setBannerHovered] = useState(false);
   const [bannerFocused, setBannerFocused] = useState(false);
@@ -187,6 +190,19 @@ function ProfilePageContent() {
       active = false;
     };
   }, [loadFollowCounts, viewedUserId]);
+
+  useEffect(() => {
+    if (!viewedUserId) return;
+    let active = true;
+    supabase.rpc("gb_player_xp", { p_users: [viewedUserId] }).then(({ data }) => {
+      if (!active) return;
+      const row = Array.isArray(data) ? data[0] : data;
+      setPlayerXp({ userId: viewedUserId, xp: Number(row?.xp) || 0 });
+    });
+    return () => {
+      active = false;
+    };
+  }, [viewedUserId]);
 
   useEffect(() => {
     if (!viewedUserId) return;
@@ -522,6 +538,7 @@ function ProfilePageContent() {
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   }
   const rankTier = getRankTier(gbRankPoints);
+  const playerLevel = rankFromXp(playerXp?.userId === viewedUserId ? playerXp.xp : 0);
   const elitePosition =
     rankTier.index === 9 && Number.isFinite(rankNumber) && rankNumber >= 1 && rankNumber <= ELITE_LIMIT
       ? rankNumber
@@ -1506,6 +1523,13 @@ function ProfilePageContent() {
           letter-spacing:.5px;
           overflow-wrap:anywhere;
         }
+        .pf-level{ display:inline-flex; align-items:center; gap:9px; padding:4px 12px 4px 6px; border-radius:999px; background:rgba(5,12,19,.72); border:1px solid rgba(143,169,194,.28); text-decoration:none; transition:border-color .2s, box-shadow .2s; }
+        .pf-level:hover{ border-color:var(--lv); box-shadow:0 0 14px var(--lvg); }
+        .pf-level-text{ display:flex; flex-direction:column; gap:3px; }
+        .pf-level-text strong{ font-size:12px; line-height:13px; color:var(--lv); text-transform:uppercase; letter-spacing:.04em; }
+        .pf-level-text small{ font-size:10px; line-height:11px; color:#9fb4c8; }
+        .pf-level-bar{ width:96px; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
+        .pf-level-bar i{ display:block; height:100%; border-radius:3px; background:var(--lv); }
         .pf-facts{ display:flex; gap:28px; flex-wrap:wrap; }
         .pf-facts > div{ text-align:center; }
         .pf-facts span{ display:block; font-size:11px; line-height:14px; color:#8fa9c2; font-weight:bold; margin-bottom:8px; }
@@ -1774,6 +1798,19 @@ function ProfilePageContent() {
                         onChange={() => void loadFollowCounts(viewedUserId)}
                       />
                     )}
+                    <Link
+                      href="/ranks"
+                      className="pf-level"
+                      title={`${playerLevel.xp.toLocaleString()} XP${playerLevel.nextXp !== null ? ` · ${(playerLevel.nextXp - playerLevel.xp).toLocaleString()} XP to next level` : ""}`}
+                      style={{ ["--lv" as string]: playerLevel.tier.light, ["--lvg" as string]: playerLevel.tier.glow }}
+                    >
+                      <RankBadgeArt rank={playerLevel} size={30} />
+                      <span className="pf-level-text">
+                        <strong>{playerLevel.title}</strong>
+                        <small>Level {playerLevel.level} · {playerLevel.xp.toLocaleString()} XP</small>
+                        <span className="pf-level-bar"><i style={{ width: `${Math.round(playerLevel.progress * 100)}%` }} /></span>
+                      </span>
+                    </Link>
                   </div>
                   <div className="pf-facts">
                     <div>
@@ -2151,7 +2188,7 @@ function ProfilePageContent() {
             </div>
           )}
 
-          <footer className="footer">Â© 2026 Competitive Gaming Network</footer>
+          <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
       </div>
     </>
