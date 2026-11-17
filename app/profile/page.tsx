@@ -135,7 +135,8 @@ function ProfilePageContent() {
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
   const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
-  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null } | null>(null);
+  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null; qualified: number } | null>(null);
+  const [ambLinkCopied, setAmbLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!viewedUserId) return;
@@ -152,6 +153,7 @@ function ProfilePageContent() {
         tiktok: row.tiktok,
         kick: row.kick,
         recruits: typeof row.recruits === "number" ? row.recruits : null,
+        qualified: typeof row.qualified === "number" ? row.qualified : 0,
       } : null);
     });
     return () => {
@@ -169,7 +171,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (bannerHovered || bannerFocused) return;
-    const timer = window.setInterval(() => setPromoIndex((current) => (current + 1) % 4), 15000);
+    const timer = window.setInterval(() => setPromoIndex((current) => (current + 1) % 6), 15000);
     return () => window.clearInterval(timer);
   }, [bannerHovered, bannerFocused]);
 
@@ -786,6 +788,12 @@ function ProfilePageContent() {
         .promo-tournaments{
           background:linear-gradient(115deg,#5a0d16 0%,#b02433 52%,#3c0a12 100%);
         }
+        .promo-ambassadors{
+          background:linear-gradient(115deg,#4e3407 0%,#a3741a 52%,#2c2206 100%);
+        }
+        .promo-building{
+          background:linear-gradient(115deg,#0b3246 0%,#1879a8 55%,#0a2838 100%);
+        }
         .promo-icon{
           display:flex;
           align-items:center;
@@ -809,12 +817,16 @@ function ProfilePageContent() {
         .promo-invite .promo-eyebrow{color:#ffe0a2}
         .promo-challenges .promo-eyebrow{color:#b2ffd9}
         .promo-tournaments .promo-eyebrow{color:#ffc9cf}
+        .promo-ambassadors .promo-eyebrow{color:#ffe9ab}
+        .promo-building .promo-eyebrow{color:#b4e6ff}
         .promo-title{display:block;margin-top:3px;font-size:14px;font-weight:900;color:#fff;white-space:nowrap}
         .promo-sub{display:block;margin-top:3px;font-size:10px;color:#f1f3ff;white-space:nowrap}
         .promo-action{flex:none;padding:6px 8px;border-radius:4px;background:#fff;color:#303d91;font-size:10px;font-weight:900;white-space:nowrap}
         .promo-invite .promo-action{background:#ffdb7b;color:#382100}
         .promo-challenges .promo-action{background:#8ff5c4;color:#043019}
         .promo-tournaments .promo-action{background:#ffd0d5;color:#4b0810}
+        .promo-ambassadors .promo-action{background:#ffdf8e;color:#2c2206}
+        .promo-building .promo-action{background:#b4e6ff;color:#05283a}
         @media (max-width:380px){.promo-banner{gap:7px;padding:6px 7px}.promo-title{font-size:12px}.promo-sub{font-size:9px}.promo-action{padding:6px}}
 
         .profile-title-bar{
@@ -1862,6 +1874,37 @@ function ProfilePageContent() {
                     <span className="promo-sub">Win the bracket. Become a champion.</span>
                   </span>
                   <span className="promo-action">PLAY &#8594;</span>
+                </Link>
+              ) : promoIndex === 4 ? (
+                <Link className="promo-banner promo-ambassadors" href="/ambassadors">
+                  <span className="promo-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <path d="M10 24 21 32 32 17 43 32 54 24 50 46H14Z" />
+                      <rect x="14" y="49" width="36" height="5" rx="2" opacity=".85" />
+                      <circle cx="10" cy="20" r="3.4" /><circle cx="32" cy="13" r="3.8" /><circle cx="54" cy="20" r="3.4" />
+                    </svg>
+                  </span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">Creator program</span>
+                    <span className="promo-title">GB AMBASSADORS</span>
+                    <span className="promo-sub">Gold status. Events in your name.</span>
+                  </span>
+                  <span className="promo-action">LEARN &#8594;</span>
+                </Link>
+              ) : promoIndex === 5 ? (
+                <Link className="promo-banner promo-building" href="/ranks">
+                  <span className="promo-icon">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" strokeWidth="5" opacity=".55" />
+                      <path d="M22 33 29 40 43 25" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <span className="promo-copy">
+                    <span className="promo-eyebrow">Work in progress</span>
+                    <span className="promo-title">BUILT IN THE OPEN</span>
+                    <span className="promo-sub">Your rank &amp; XP never reset.</span>
+                  </span>
+                  <span className="promo-action">RANKS &#8594;</span>
                 </Link>
               ) : (
                 <a className="promo-banner promo-discord" href="https://discord.gg/nKZdS2BDS6" target="_blank" rel="noopener noreferrer">

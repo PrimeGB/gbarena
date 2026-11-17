@@ -3,6 +3,7 @@ type SiteNavProps = {
   tournamentHref?: string;
   showLadders?: boolean;
   profileNavigation?: boolean;
+  extra?: React.ReactNode;
 };
 
 export default function SiteNav({
@@ -10,6 +11,7 @@ export default function SiteNav({
   tournamentHref = "/tournaments",
   showLadders = true,
   profileNavigation = false,
+  extra,
 }: SiteNavProps) {
   const links = profileNavigation ? [
     { label: "Tournaments", href: tournamentHref },
@@ -33,6 +35,7 @@ export default function SiteNav({
             {link.label}
           </a>
         ))}
+        {extra}
       </nav>
 
       <style>{`

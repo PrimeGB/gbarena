@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import StaffPlayerPicker from "../dashboard/StaffPlayerPicker";
 
 type Ambassador = {
   user_id: string;
@@ -231,7 +232,11 @@ export default function StaffAmbassadorsPage() {
           <h2>{editing ? `Editing ${form.username || "ambassador"}` : "Appoint an ambassador"}</h2>
           <div className="grid">
             <label>Username
-              <input value={form.username} onChange={(e) => set({ username: e.target.value })} placeholder="Player's GB username" disabled={editing} />
+              {editing ? (
+                <input value={form.username} disabled />
+              ) : (
+                <StaffPlayerPicker value={form.username} onChange={(v) => set({ username: v })} />
+              )}
             </label>
             <label>Tier
               <select value={form.tier} onChange={(e) => set({ tier: e.target.value as FormState["tier"] })}>
@@ -327,6 +332,13 @@ export default function StaffAmbassadorsPage() {
         .grid input,.grid select,.grid textarea{padding:9px 11px;border-radius:7px;border:1px solid #2b4a68;background:#050c13;color:#e8f1fa;font-size:13px;font-family:inherit}
         .grid input:focus,.grid select:focus,.grid textarea:focus{outline:none;border-color:#f2c14e}
         .grid input:disabled{opacity:.55}
+        .staff-player-picker{position:relative}
+        .staff-player-picker input{width:100%;padding:9px 11px;border-radius:7px;border:1px solid #2b4a68;background:#050c13;color:#e8f1fa;font-size:13px;font-family:inherit}
+        .staff-player-picker input:focus{outline:none;border-color:#f2c14e}
+        .staff-player-picker ul{position:absolute;top:100%;left:0;right:0;z-index:30;margin:4px 0 0;padding:4px;list-style:none;background:#0a1522;border:1px solid #6e5213;border-radius:8px;max-height:230px;overflow:auto;box-shadow:0 14px 30px #000c}
+        .staff-player-picker li{padding:9px 11px;border-radius:6px;color:#e8f1fa;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:normal}
+        .staff-player-picker li[aria-selected="true"]{background:#2c2206;color:#ffdf8e}
+        .staff-player-status{margin:4px 0 0;color:#8fa9c2;font-size:11px;text-transform:none;letter-spacing:0;font-weight:normal}
         .row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px}
         .check{display:flex;align-items:center;gap:7px;color:#b9cde0;font-size:12px}
         .spacer{flex:1}
