@@ -75,9 +75,9 @@ export default function AmbassadorsPage() {
         <span className="kicker">Creator Program</span>
         <h1>GB <em>Ambassadors</em></h1>
         <p>
-          The streamers and creators building the GameBattles community. Ambassadors earn 5 credits for every
-          player they bring in - and their recruits get 5 free credits too - plus exclusive awards, a gold
-          profile and events hosted in their name.
+          The streamers and creators building the GameBattles community. Every player who joins through an
+          ambassador link gets 5 free credits - and ambassadors earn exclusive awards, a gold profile,
+          spotlight placement and events hosted in their name.
         </p>
         <div className="cta-row">
           <Link className="btn-gold" href="/support">Apply to become an Ambassador</Link>
@@ -89,8 +89,8 @@ export default function AmbassadorsPage() {
         <div className="strip">
           <div><b>{rows.length}</b><span>Active Ambassadors</span></div>
           <div><b>{totalRecruits}</b><span>Players recruited</span></div>
-          <div><b>+5</b><span>Credits per recruit</span></div>
           <div><b>+5</b><span>Free credits for recruits</span></div>
+          <div><b>★</b><span>Exclusive awards</span></div>
         </div>
 
         {featured && (
@@ -162,7 +162,6 @@ export default function AmbassadorsPage() {
             <div className="req">The first step for active creators</div>
             <ul>
               <li>Personal recruit link, every signup tracked</li>
-              <li>You earn 5 credits per qualified recruit</li>
               <li>Your recruits get 5 free credits when they qualify</li>
               <li>GB Affiliate award on your profile</li>
               <li>Listed on this page with your stream links</li>

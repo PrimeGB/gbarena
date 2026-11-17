@@ -73,12 +73,12 @@ const PROMOS: Record<HeroPromoKind, PromoConfig> = {
   ambassadors: {
     tag: "Creator program",
     heading: <>Become an<br /><em>ambassador.</em></>,
-    body: "Streamers and creators: earn credits for every player you bring in, get a gold profile, and host events in your name.",
+    body: "Streamers and creators: your recruits get 5 free credits, you get a gold profile, exclusive awards and events in your name.",
     ctaLabel: "Learn more",
     href: "/ambassadors",
     bottom: "Represent GameBattles.",
     signalOne: "Gold profile status",
-    signalTwo: "Credits per recruit",
+    signalTwo: "Events in your name",
     emblem: CROWN_SVG,
   },
 };
