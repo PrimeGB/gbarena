@@ -27,7 +27,7 @@ export const RANK_TIERS: RankTier[] = [
 /** Total XP needed to reach a level (level 1 = 0 XP). */
 export function xpForLevel(level: number) {
   const n = Math.max(1, Math.min(MAX_LEVEL, level)) - 1;
-  return 40 * n + 5 * n * Math.max(0, n - 1);
+  return 100 * n + 40 * n * Math.max(0, n - 1);
 }
 
 export type PlayerRank = {
