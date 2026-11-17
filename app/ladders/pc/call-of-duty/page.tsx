@@ -8,47 +8,48 @@ const codTitles = [
     title: "Call of Duty: Modern Warfare (2019)",
     slug: "modern-warfare-4",
     image: ladderGameImage("call-of-duty", "modern-warfare-4") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops 6",
     slug: "black-ops-6",
     image: ladderGameImage("call-of-duty", "black-ops-6") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare III (2023)",
     slug: "modern-warfare-iii",
     image: ladderGameImage("call-of-duty", "modern-warfare-iii") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare II (2022)",
     slug: "modern-warfare-ii",
     image: ladderGameImage("call-of-duty", "modern-warfare-ii") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2",
     image: ladderGameImage("call-of-duty", "mw2") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Vanguard",
     slug: "vanguard",
     image: ladderGameImage("call-of-duty", "vanguard") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops Cold War",
     slug: "black-ops-cold-war",
     image: ladderGameImage("call-of-duty", "black-ops-cold-war") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
 ];
 
 function ladderSlug(ladder: string) {
+  if (ladder === "Solo") return "singles";
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
 

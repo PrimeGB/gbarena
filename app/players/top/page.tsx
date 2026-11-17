@@ -47,6 +47,11 @@ const previewTeams: TeamRow[] = [
   { id: "preview-team-2", name: "Team Two", game: "example-game", ladder: "doubles", wins: 9, losses: 3, current_win_streak: 2, rating_points: 325 },
   { id: "preview-team-3", name: "Team Three", game: "example-game", ladder: "singles", wins: 6, losses: 4, current_win_streak: 0, rating_points: 250 },
 ];
+const previewPlayers: PlayerRow[] = [
+  { id: "preview-player-1", username: "Player One", gb_wins: 12, gb_losses: 2, gb_rank_points: 400 },
+  { id: "preview-player-2", username: "Player Two", gb_wins: 9, gb_losses: 3, gb_rank_points: 325 },
+  { id: "preview-player-3", username: "Player Three", gb_wins: 6, gb_losses: 4, gb_rank_points: 250 },
+];
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
@@ -192,6 +197,7 @@ function LeaderboardContent() {
       const { data, error: loadError } = await supabase
         .from("profiles")
         .select("id,username,gb_wins,gb_losses,gb_rank_points")
+        .gt("gb_rank_points", 0)
         .order("gb_rank_points", { ascending: false })
         .order("gb_wins", { ascending: false })
         .order("gb_losses", { ascending: true })
@@ -251,6 +257,7 @@ function LeaderboardContent() {
     ? previewStandings.map((standing) => ({ ...standing, name: standing.name?.replace("Player", isTeams ? "Team" : "Player") ?? null }))
     : standings;
   const overallTeams = showPreview ? previewTeams : teams;
+  const overallPlayers = showPreview ? previewPlayers : players;
 
   return (
     <>
@@ -391,8 +398,12 @@ function LeaderboardContent() {
                 <div className="tp-status" role="status">Loading {subject.toLowerCase()} rankings...</div>
               ) : error ? (
                 <div className="tp-status tp-error" role="alert">Unable to load {subject.toLowerCase()} rankings: {error}</div>
-              ) : board === "overall" && !isTeams && players.length === 0 ? (
-                <div className="tp-status"><strong>No players ranked yet.</strong>Rankings will appear as players join.</div>
+              ) : board === "overall" && !isTeams && players.length === 0 && !showPreview ? (
+                <div className="tp-status">
+                  <strong>No players ranked yet.</strong>
+                  Rankings appear when players earn GB points.
+                  <div><button type="button" className="tp-preview-button" onClick={() => setShowPreview(true)}>See sample standings</button></div>
+                </div>
               ) : board === "overall" && isTeams && teams.length === 0 && !showPreview ? (
                 <div className="tp-status">
                   <strong>No teams ranked yet.</strong>
@@ -425,14 +436,16 @@ function LeaderboardContent() {
                   </div>
                 </>
               ) : board === "overall" ? (
+                <>
+                {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example players, not actual rankings. Real results will appear when players earn GB points.</div>}
                 <div className="tp-table-scroll">
                   <table className="tp-table tp-overall-table">
                     <thead><tr><th scope="col">Place</th><th scope="col">Member</th><th scope="col">Game</th><th scope="col">Ladder</th><th scope="col">W</th><th scope="col">L</th><th scope="col">Streak</th><th scope="col">GB Points</th></tr></thead>
-                    <tbody>{players.map((player, index) => {
+                    <tbody>{overallPlayers.map((player, index) => {
                       const context = playerContexts[player.id];
                       return <tr key={player.id}>
                         <td className="tp-place">{ordinal(index + 1)}</td>
-                        <td><Link className="tp-member" href={`/profile?userId=${encodeURIComponent(player.id)}`}>{player.username || "Player"}</Link></td>
+                        <td>{showPreview ? player.username : <Link className="tp-member" href={`/profile?userId=${encodeURIComponent(player.id)}`}>{player.username || "Player"}</Link>}</td>
                         <td>{prettyText(context?.game)}</td><td>{prettyText(context?.ladder)}</td>
                         <td className="tp-win">{player.gb_wins ?? 0}</td><td className="tp-loss">{player.gb_losses ?? 0}</td>
                         <td>—</td><td className="tp-points">{(player.gb_rank_points ?? 0).toLocaleString()}</td>
@@ -440,6 +453,7 @@ function LeaderboardContent() {
                     })}</tbody>
                   </table>
                 </div>
+                </>
               ) : (
                 <>
                   {showPreview && <div className="tp-preview-note"><strong>Sample preview:</strong> These are example {kind}, not actual rankings. Real results will appear when matches are completed.</div>}

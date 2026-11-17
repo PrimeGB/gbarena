@@ -4,7 +4,7 @@ declare
   original public.match_posts%rowtype;
   first_post uuid := gen_random_uuid();
   second_post uuid := gen_random_uuid();
-  future_time timestamptz := now() + interval '40 days';
+  future_time timestamptz := now() + interval '2 hours';
   rejected boolean := false;
 begin
   select p.* into original from public.match_posts p

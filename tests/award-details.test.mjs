@@ -47,6 +47,9 @@ function harness(responses) {
     dialog,
     get calls() { return calls; },
     render(award, playerName = "Alex") { index = 0; return exports.default({ award, playerName, onClose() {} }); },
+    renderHover(award, catalogState, playerName = "Alex") {
+      return exports.AwardHoverDetails({ award, playerName, catalogState, id: "award-tooltip" });
+    },
   };
 }
 
@@ -69,7 +72,7 @@ test("award details show the catalog description, recipient, earned date, and ma
   const markup = renderToStaticMarkup(page.render(award));
   assert.match(markup, /Help the community/);
   assert.match(markup, /Great sportsmanship/);
-  assert.match(markup, /Earned by Alex/);
+  assert.match(markup, /Earned by<\/h3><p>Alex/);
   assert.match(markup, /<time dateTime="2026-01-02T12:00:00Z">/i);
   assert.equal(page.dialog.open, true);
   page.render(null);
@@ -92,7 +95,44 @@ test("catalog errors are visible and retryable; automatic reasons are not repeat
   view = page.render(automatic, "Jordan");
   const markup = renderToStaticMarkup(view);
   assert.match(markup, /Complete a challenge/);
-  assert.match(markup, /Earned by Jordan/);
+  assert.match(markup, /Earned by<\/h3><p>Jordan/);
   assert.doesNotMatch(markup, /Awarded for/);
   assert.equal(page.calls, 2);
+});
+
+test("hover details show only the award, description, recipient, and date", () => {
+  const page = harness([]);
+  const catalogState = { catalog: [{ name: award.name, purpose: "Help the community" }], error: "", retry() {} };
+  const markup = renderToStaticMarkup(page.renderHover(award, catalogState));
+  assert.match(markup, /role="tooltip"/);
+  assert.match(markup, /Help the community/);
+  assert.doesNotMatch(markup, /Great sportsmanship|Trophies|How to earn it|Awarded for/);
+  assert.match(markup, /Earned by Alex/);
+  assert.match(markup, /<time dateTime="2026-01-02T12:00:00Z">/i);
+  const automatic = renderToStaticMarkup(page.renderHover({ ...award, reason: "Awarded automatically: completed challenge" }, catalogState));
+  assert.doesNotMatch(automatic, /Awarded for/);
+});
+
+test("hover details expose catalog errors and invalid dates", () => {
+  const page = harness([]);
+  const markup = renderToStaticMarkup(page.renderHover(
+    { ...award, granted_at: "invalid" },
+    { catalog: null, error: "offline", retry() {} },
+  ));
+  assert.match(markup, /Award description could not be loaded/);
+  assert.match(markup, /Date unavailable/);
+});
+
+test("award requirements use concise wording and separate multiple conditions", async () => {
+  const purpose = "Awarded automatically when you finish in the top 10. Complete at least 5 matches and 1 win. Tied places are shared.";
+  const catalogState = { catalog: [{ name: award.name, purpose }], error: "", retry() {} };
+  const page = harness([{ data: catalogState.catalog, error: null }]);
+  page.render(award);
+  await flush();
+  for (const markup of [renderToStaticMarkup(page.render(award)), renderToStaticMarkup(page.renderHover(award, catalogState))]) {
+    assert.match(markup, /<li>Finish in the top 10\.<\/li>/);
+    assert.match(markup, /<li>Complete at least 5 matches and 1 win\.<\/li>/);
+    assert.match(markup, /<li>Tied places are shared\.<\/li>/);
+    assert.doesNotMatch(markup, /Awarded automatically/);
+  }
 });

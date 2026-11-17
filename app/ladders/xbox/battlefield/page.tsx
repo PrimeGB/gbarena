@@ -8,29 +8,30 @@ const battlefieldTitles = [
     title: "Battlefield 6",
     slug: "battlefield-6",
     image: ladderGameImage("battlefield", "battlefield-6") || "",
-    ladders: ["Singles"],
+    ladders: ["Solo"],
   },
   {
     title: "Battlefield 2042",
     slug: "battlefield-2042",
     image: ladderGameImage("battlefield", "battlefield-2042") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Battlefield V",
     slug: "battlefield-v",
     image: ladderGameImage("battlefield", "battlefield-v") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Battlefield 1",
     slug: "battlefield-1",
     image: ladderGameImage("battlefield", "battlefield-1") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
 ];
 
 function ladderSlug(ladder: string) {
+  if (ladder === "Solo") return "singles";
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
 

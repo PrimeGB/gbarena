@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ChallengeCheckIn from "./components/ChallengeCheckIn";
 import DevelopmentNotice from "./components/DevelopmentNotice";
 import HomeButton from "./components/HomeButton";
 import NotificationBell from "./components/NotificationBell";
@@ -60,6 +61,7 @@ export default function RootLayout({
         <RecoveryRedirect />
         <HomeButton />
         <NotificationBell />
+        <ChallengeCheckIn />
         <DevelopmentNotice />
       </body>
     </html>

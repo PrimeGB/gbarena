@@ -61,7 +61,7 @@ function prettyText(value: string | null) {
 
 function getLadderName(ladder: string | null) {
   if (ladder === "redsec") return "RedSec Ladder";
-  if (ladder === "singles") return "Solos Ladder";
+  if (ladder === "singles") return "Solo Ladder";
   if (ladder === "duos") return "Duos Ladder";
   if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   if (ladder === "team") return "Team Ladder";
@@ -1502,7 +1502,7 @@ function TeamHubContent() {
                           </div>
 
                           {ladder === "singles" && (
-                            <div className="small-note">Solos Ladder only uses your own player profile. There are no roster slots to edit.</div>
+                            <div className="small-note">Solo Ladder only uses your own player profile. There are no roster slots to edit.</div>
                           )}
 
                           {ladder !== "singles" && (

@@ -156,7 +156,7 @@ function PlayerAwardsContent() {
             <ul className="pa-rules">
               <li>Friends must use your link when creating a new account. You cannot refer yourself.</li>
               <li>Each friend must verify their email and link a gaming account not already claimed by another account before their invite qualifies.</li>
-              <li><strong>1 qualified invite:</strong> Recruitment Recruit; <strong>3:</strong> Community Recruiter; <strong>5:</strong> Recruitment Captain; <strong>10:</strong> Recruitment Legend.</li>
+              <li><strong>1 qualified invite:</strong> Recruitment Recruit award.</li>
             </ul>
             {loading ? <p>Loading your referral link...</p> : !user ? (
               <p><Link href="/login">Sign in</Link> to see and share your personal invite link.</p>

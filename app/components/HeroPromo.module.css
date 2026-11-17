@@ -1,0 +1,56 @@
+.scene{position:absolute;inset:0;z-index:4;isolation:isolate;overflow:hidden;container-type:size;color:#eaf4ff;font-family:Tahoma,Verdana,Arial,sans-serif}
+.scene::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 74px,#fff 75px,transparent 76px);opacity:.035;pointer-events:none}
+.scene::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px #000a}
+.discord{background:radial-gradient(ellipse at 75% 45%,#344cc3 0%,#15245d 30%,transparent 62%),linear-gradient(115deg,#050e1d 4%,#07142c 52%,#101845)}
+.invite{background:radial-gradient(ellipse at 75% 45%,#865514 0%,#39300e 27%,transparent 62%),linear-gradient(115deg,#071524 4%,#0b1f31 53%,#28200e)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(#72b8ff 1px,transparent 1px),linear-gradient(90deg,#72b8ff 1px,transparent 1px);background-size:50px 50px;opacity:.05;mask-image:linear-gradient(90deg,transparent,#000)}
+.orb{position:absolute;width:50%;aspect-ratio:1;right:-5%;top:-19%;border-radius:50%;filter:blur(4px);pointer-events:none;animation:drift 20s ease-in-out infinite}
+.discord .orb{background:radial-gradient(circle,#91aaff33,transparent 65%)}
+.invite .orb{background:radial-gradient(circle,#ffd4703b,transparent 65%)}
+.copy{position:absolute;left:6.5%;top:50%;width:49%;transform:translateY(-50%);z-index:3;animation:reveal .8s ease-out both}
+.tag{display:inline-flex;align-items:center;gap:8px;color:#a6bbff;font-size:clamp(9px,1.2cqw,12px);font-weight:bold;letter-spacing:.19em;text-transform:uppercase}
+.tag::before{content:"";width:21px;height:2px;background:currentColor}
+.invite .tag{color:#f7ca72}
+.copy h2{margin:16px 0 12px;color:#fff;font-size:clamp(26px,5.8cqw,58px);line-height:.98;font-weight:900;letter-spacing:-.04em;text-transform:uppercase;text-shadow:0 3px 16px #0008}
+.copy h2 em{font-style:normal;color:#a8b7ff}
+.invite .copy h2 em{color:#ffcb6b}
+.copy p{max-width:370px;margin:0;color:#c3d2e7;font-size:clamp(11px,1.5cqw,15px);line-height:1.6}
+.cta{display:inline-flex;align-items:center;gap:22px;margin-top:24px;padding:13px 17px;border-radius:3px;background:#627af4;color:#fff;text-decoration:none;font-size:clamp(10px,1.2cqw,12px);font-weight:bold;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 22px #202d8b88;transition:transform .2s,filter .2s}
+.invite .cta{background:#e2a947;color:#0b1520;box-shadow:0 8px 22px #6c460b88}
+.cta:hover,.cta:focus-visible{transform:translateY(-2px);filter:brightness(1.16);outline:2px solid #fff;outline-offset:3px}
+.visual{position:absolute;width:43%;right:4%;top:7%;height:86%;display:grid;place-items:center;animation:float 20s ease-in-out infinite;pointer-events:none}
+.halo{position:absolute;width:80%;aspect-ratio:1;border:1px solid #aebeff44;border-radius:50%;box-shadow:0 0 50px #778bff44,inset 0 0 50px #778bff22}
+.halo::before,.halo::after{content:"";position:absolute;border-radius:50%;inset:7%;border:1px solid #aebeff27}
+.halo::after{inset:-9%;border-style:dashed;opacity:.4;animation:spin 40s linear infinite}
+.invite .halo{border-color:#ffce6b55;box-shadow:0 0 50px #ffc55b33,inset 0 0 50px #ffbd3c22}
+.invite .halo::before,.invite .halo::after{border-color:#ffd78344}
+.emblem{position:relative;display:grid;place-items:center;width:53%;aspect-ratio:1;border-radius:28%;border:1px solid #c8d2ff88;background:linear-gradient(145deg,#8394ff,#394dc4 75%);box-shadow:0 25px 55px #03071fbb,inset 0 1px 3px #fff9;transform:rotate(-7deg)}
+.emblem svg{width:60%;fill:#fff;filter:drop-shadow(0 3px 5px #27378288)}
+.invite .emblem{width:54%;border-radius:50%;background:linear-gradient(145deg,#ffe4a0,#b98229 58%,#563813);border-color:#ffdea0;transform:rotate(7deg)}
+.invite .emblem svg{width:68%;fill:none;filter:drop-shadow(0 4px 4px #42250088)}
+.signal{position:absolute;padding:8px 11px;background:#0a1735e8;border:1px solid #7d93e97a;color:#dde6ff;font-size:clamp(8px,1.1cqw,11px);font-weight:bold;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 9px 22px #0006;white-space:nowrap}
+.signal.one{top:18%;right:2%;transform:rotate(4deg)}
+.signal.two{bottom:17%;left:0;transform:rotate(-3deg)}
+.signal i{display:inline-block;width:6px;height:6px;margin-right:6px;border-radius:50%;background:#65efb0;box-shadow:0 0 8px #65efb0}
+.invite .signal{background:#271c0dea;border-color:#d4a55480;color:#ffe8b4}
+.bottom{position:absolute;left:6.5%;right:6.5%;bottom:6%;display:flex;justify-content:space-between;align-items:center;color:#8aa2bc;font-size:clamp(8px,1cqw,10px);font-weight:bold;letter-spacing:.13em;text-transform:uppercase}
+.bottom strong{color:#d8e9f9}
+.progress{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#ffffff1a}
+.progress::after{content:"";display:block;width:100%;height:100%;background:#8294ff;transform-origin:left;animation:progress 20s linear both}
+.invite .progress::after{background:#edb956}
+.scene:focus-within .progress::after{animation-play-state:paused}
+@keyframes reveal{from{opacity:0;transform:translate(-12px,-50%)}to{opacity:1;transform:translate(0,-50%)}}
+@keyframes drift{0%,100%{transform:scale(1)}50%{transform:scale(1.16) translate(-3%,4%)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@container (max-width: 550px){
+  .copy{left:6%;width:62%}
+  .copy h2{font-size:clamp(24px,8cqw,42px);margin:12px 0}
+  .copy p{font-size:12px}
+  .cta{margin-top:18px;padding:11px 12px;gap:10px}
+  .visual{width:48%;right:-6%;opacity:.8}
+  .signal{display:none}
+  .bottom{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.copy,.visual,.orb,.halo::after,.progress::after{animation:none}.progress::after{transform:scaleX(1)}}

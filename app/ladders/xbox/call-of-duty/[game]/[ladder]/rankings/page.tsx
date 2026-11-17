@@ -35,6 +35,7 @@ type TeamRosterId = {
 
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
+  if (value === "singles") return "Solo";
   if (value === "mw2") return "Modern Warfare 2";
   if (value === "modern-warfare-4") return "Modern Warfare (2019)";
   if (value === "modern-warfare-ii") return "Modern Warfare II (2022)";
@@ -592,7 +593,7 @@ export default function LadderRankingsPage() {
                 Doubles
               </Link>
               <Link className={ladder === "singles" ? "tab active" : "tab"} href={`/ladders/xbox/call-of-duty/${game}/singles/rankings`}>
-                Singles
+                Solo
               </Link>
             </div>
 

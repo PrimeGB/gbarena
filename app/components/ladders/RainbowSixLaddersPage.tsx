@@ -427,7 +427,7 @@ export default function RainbowSixLaddersPage() {
                             className="ladder-item"
                             key={`${game.title}-${ladder}`}
                           >
-                            <div className="ladder-name">{ladder} Ladder</div>
+                            <div className="ladder-name">{ladder === "Singles" ? "Solo" : ladder} Ladder</div>
 
                             <a className="ladder-link" href={teamHubUrl}>
                               View/Create Team

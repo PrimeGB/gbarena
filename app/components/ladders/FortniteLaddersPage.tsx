@@ -9,19 +9,19 @@ const fortniteTitles = [
     title: "Fortnite Battle Royale",
     slug: "battle-royale",
     image: ladderGameImage("fortnite", "battle-royale") || "",
-    ladders: ["Singles", "Duos", "Squads"],
+    ladders: ["Solo", "Duos", "Squads"],
   },
   {
     title: "Fortnite Zero Build",
     slug: "zero-build",
     image: ladderGameImage("fortnite", "zero-build") || "",
-    ladders: ["Singles", "Duos", "Squads"],
+    ladders: ["Solo", "Duos", "Squads"],
   },
   {
     title: "Fortnite Ranked",
     slug: "ranked",
     image: ladderGameImage("fortnite", "ranked") || "",
-    ladders: ["Singles", "Duos", "Squads"],
+    ladders: ["Solo", "Duos", "Squads"],
   },
   {
     title: "Fortnite Reload",
@@ -32,6 +32,7 @@ const fortniteTitles = [
 ];
 
 function ladderSlug(ladder: string) {
+  if (ladder === "Solo") return "singles";
   if (ladder === "Squads") return "team";
   return ladder.toLowerCase().replaceAll(" ", "-");
 }

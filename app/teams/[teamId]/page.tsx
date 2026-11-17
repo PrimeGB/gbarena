@@ -10,6 +10,7 @@ import SiteNav from "../../components/SiteNav";
 import TeamTabs from "../../components/TeamTabs";
 import FollowButton from "../../components/FollowButton";
 import TeamStreams from "../../components/TeamStreams";
+import TeamDisbandDialog from "../../components/TeamDisbandDialog";
 import { ladderGameImage, ladderPlatformLabel } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchListDate } from "../../../lib/matchTiming";
@@ -203,7 +204,7 @@ export default function TeamPage() {
   const [viewerIsMember, setViewerIsMember] = useState(false);
   const [leaderName, setLeaderName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
+  const [disbandOpen, setDisbandOpen] = useState(false);
   const [playerSearch, setPlayerSearch] = useState("");
   const [teamMatches, setTeamMatches] = useState<TeamMatch[]>([]);
   const [teamNames, setTeamNames] = useState<TeamNameMap>({});
@@ -385,6 +386,7 @@ export default function TeamPage() {
         const { data: rankedProfiles } = await supabase
           .from("profiles")
           .select("id, gb_rank_points, gb_wins, gb_losses")
+          .gt("gb_rank_points", 0)
           .order("gb_rank_points", { ascending: false })
           .order("gb_wins", { ascending: false })
           .order("gb_losses", { ascending: true });
@@ -512,33 +514,6 @@ export default function TeamPage() {
 
     document.getElementById(sectionId)?.scrollIntoView({ block: "start" });
   }, [loading]);
-
-  async function handleDisband() {
-    if (!teamId) return;
-
-    const confirmDelete = confirm("Are you sure you want to disband this team? This cannot be undone.");
-    if (!confirmDelete) return;
-
-    setDeleting(true);
-
-    const { error: membersError } = await supabase.from("team_members").delete().eq("team_id", teamId);
-
-    if (membersError) {
-      alert("Could not remove team members: " + membersError.message);
-      setDeleting(false);
-      return;
-    }
-
-    const { error: teamError } = await supabase.from("teams").delete().eq("id", teamId);
-
-    if (teamError) {
-      alert("Could not disband team: " + teamError.message);
-      setDeleting(false);
-      return;
-    }
-
-    router.push("/profile/teams");
-  }
 
   async function handleLeave() {
     if (!teamId || !user?.id || !viewerIsMember || isLeader) return;
@@ -1175,8 +1150,8 @@ export default function TeamPage() {
                     {loading ? (
                       <span className="locked-control">Loading team permissions...</span>
                     ) : isLeader ? (
-                      <button className="danger-link" disabled={deleting} onClick={handleDisband} type="button">
-                        {deleting ? "Disbanding..." : "Disband Team"}
+                      <button className="danger-link" onClick={() => setDisbandOpen(true)} type="button">
+                        Disband Team
                       </button>
                     ) : viewerIsMember ? (
                       <button className="danger-link" onClick={handleLeave} type="button">
@@ -1217,6 +1192,10 @@ export default function TeamPage() {
           <footer className="footer">© 2026 Competitive Gaming Network</footer>
         </div>
       </main>
+      {disbandOpen && user?.id && (
+        <TeamDisbandDialog teamId={teamId} teamName={teamName}
+          onClose={() => setDisbandOpen(false)} onDone={() => router.push("/home")} />
+      )}
     </>
   );
 }

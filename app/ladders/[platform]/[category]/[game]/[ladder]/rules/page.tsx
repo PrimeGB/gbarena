@@ -26,7 +26,7 @@ function prettyText(value: string) {
 function ladderName(ladder: string) {
   if (ladder === "redsec") return "RedSec";
   if (ladder === "rapid-royal-duos") return "Rapid Royal";
-  if (ladder === "singles") return "Solos";
+  if (ladder === "singles") return "Solo";
   if (ladder === "duos") return "Duos";
   if (ladder === "team") return "Team";
   return prettyText(ladder);

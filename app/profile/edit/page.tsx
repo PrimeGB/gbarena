@@ -40,7 +40,10 @@ function EditProfileContent() {
   const gamingAccountSectionRef = useRef<HTMLDivElement | null>(null);
   const gamingAccountIdInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [activeTab, setActiveTab] = useState<EditTab>("main");
+  const [activeTab, setActiveTab] = useState<EditTab>(() => {
+    const tab = searchParams.get("tab");
+    return tab === "awards" || tab === "friends" || tab === "settings" ? tab : "main";
+  });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);

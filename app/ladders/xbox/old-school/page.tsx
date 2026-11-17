@@ -17,41 +17,42 @@ const codTitles: CodTitle[] = [
     title: "Call of Duty 4: Modern Warfare",
     slug: "cod4-2007",
     image: ladderGameImage("old-school", "cod4-2007") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: World at War",
     slug: "waw-2008",
     image: ladderGameImage("old-school", "waw-2008") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 2 (2009)",
     slug: "mw2-2009",
     image: ladderGameImage("old-school", "mw2-2009") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops",
     slug: "bo1-2010",
     image: ladderGameImage("old-school", "bo1-2010") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Modern Warfare 3 (2011)",
     slug: "mw3-2011",
     image: ladderGameImage("old-school", "mw3-2011") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
   {
     title: "Call of Duty: Black Ops II",
     slug: "bo2-2012",
     image: ladderGameImage("old-school", "bo2-2012") || "",
-    ladders: ["Singles", "Duos", "Team"],
+    ladders: ["Solo", "Duos", "Team"],
   },
 ];
 
 function ladderSlug(ladder: string) {
+  if (ladder === "Solo") return "singles";
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
 
@@ -388,7 +389,7 @@ export default function CallOfDutyLaddersPage() {
           <section className="title-bar">
             <h1>{platformName} Old School Ladders</h1>
             <p>
-              Choose a classic Call of Duty title below. Each title has Singles, Duos,
+              Choose a classic Call of Duty title below. Each title has Solo, Duos,
               and Team ladders with its own teams, matches, rules, and standings.
             </p>
           </section>

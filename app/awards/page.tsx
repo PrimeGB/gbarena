@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "./AwardArt";
 import { hasNewTrophy } from "./NewTrophyArt";
+import { hasChallengeTrophy } from "../challenges/challengeTrophies";
 import { SeasonBadge } from "../components/SeasonHonours";
 
 type PublicAward = {
@@ -15,9 +16,7 @@ type PublicAward = {
 };
 
 const communityPreview: PublicAward[] = [
-  { name: "Community Origin", award_group: "Community", purpose: "Part of the community from the very beginning.", auto: true },
-  { name: "Community Pioneer", award_group: "Community", purpose: "Part of the community early on.", auto: true },
-  { name: "Community Trailblazer", award_group: "Community", purpose: "Part of the community in its early days.", auto: true },
+  { name: "Community Origin", award_group: "Community", purpose: "One of the first 100 members of GameBattles.", auto: true },
 ];
 const subscribePreview = () => () => {};
 const getPreview = () => process.env.NODE_ENV === "development" && new URLSearchParams(window.location.search).get("preview") === "community";
@@ -59,8 +58,8 @@ export default function AwardsPage() {
           <p style={{ ...styles.subheading, marginTop: 8 }}>
             Awards without the automatic label are reviewed and granted by staff.
             Voided ladder matches do not count toward automatic trophies.
-            Bug Finder tiers unlock at 1, 3, 5, and 10 unique issues confirmed
-            and fixed by staff. <Link href="/suggestions">Report a bug</Link> while
+            Bug Finder is awarded when staff confirm and fix an issue you reported.
+            <Link href="/suggestions">Report a bug</Link> while
             signed in for consideration.
           </p>
         </header>
@@ -81,17 +80,29 @@ export default function AwardsPage() {
             <p style={styles.text}>Badge previews only. Qualify with 5 finalized matches and 1 win; most wins,
               then fewest losses. Tied places are shared. Rare thresholds are listed in the Hall of Fame.</p>
           </section>
+          <section>
+            <h2 style={styles.sectionTitle}>Player Challenges</h2>
+            <p style={styles.text}>Daily challenges, login streaks, limited-time events and easy trophies for everyday
+              things like adding friends, sending messages and reporting bugs.</p>
+            <div style={styles.catalog}>
+              {[["Inner Circle Trophy", "Have 5 friends"], ["Bug Reporter Trophy", "Report a bug"],
+                ["On Fire Trophy", "Sign in 3 days in a row"], ["Launch Week Trophy", "Limited edition · Nov 16-22"]].map(([name, purpose]) => (
+                <AwardCard award={{ name, award_group: "Player Challenges", purpose, auto: true }} key={name} />
+              ))}
+            </div>
+            <p style={styles.text}><Link href="/challenges">View all Player Challenges and your progress ›</Link></p>
+          </section>
           {preview && <section>
             <h2 style={styles.sectionTitle}>Early community awards — example preview</h2>
             <p style={styles.text}>Preview only. These examples do not grant awards.</p>
             <div style={styles.catalog}>{communityPreview.map((award) => <AwardCard award={award} key={award.name} />)}</div>
           </section>}
-          {!loading && catalog.some((award) => hasNewTrophy(award.name)) && (
+          {!loading && catalog.some((award) => hasNewTrophy(award.name) && !hasChallengeTrophy(award.name)) && (
             <section>
               <h2 style={styles.sectionTitle}>New trophies</h2>
               <p style={styles.text}>From first steps to seasonal challenges and standout community moments.</p>
               <div style={styles.catalog}>
-                {catalog.filter((award) => hasNewTrophy(award.name)).map((award) => (
+                {catalog.filter((award) => hasNewTrophy(award.name) && !hasChallengeTrophy(award.name)).map((award) => (
                   <AwardCard award={award} key={award.name} />
                 ))}
               </div>
@@ -103,7 +114,7 @@ export default function AwardsPage() {
               <p style={styles.text}>Loading awards...</p>
             ) : (
               <div style={styles.catalog}>
-                {catalog.filter((award) => !hasNewTrophy(award.name)).map((award) => (
+                {catalog.filter((award) => !hasNewTrophy(award.name) && !hasChallengeTrophy(award.name)).map((award) => (
                   <AwardCard award={award} key={award.name} />
                 ))}
               </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import SiteNav from "../components/SiteNav";
 import FollowButton from "../components/FollowButton";
 import ProfileFollowingFeed from "../components/ProfileFollowingFeed";
-import AwardDetailsDialog, { type EarnedAwardDetails } from "../components/AwardDetailsDialog";
+import AwardDetailsDialog, { AwardHoverDetails, useAwardCatalog, type EarnedAwardDetails } from "../components/AwardDetailsDialog";
 import { useUser } from "../../lib/useUser";
 import { getRankTier } from "./RankEmblem";
 import { RankEmblemBold as RankEmblem } from "./RankEmblemBold";
@@ -57,9 +57,7 @@ type Award = {
   id: number;
   name: string;
   group: string;
-  type: "trophy" | "medal" | "ribbon" | "shield" | "plaque";
   label: string;
-  description: string;
 };
 
 type AwardHistoryEntry = {
@@ -123,6 +121,9 @@ function ProfilePageContent() {
   const currentFriends = friendsResult?.userId === viewedUserId ? friendsResult : null;
   const [earnedAwards, setEarnedAwards] = useState<AwardHistoryEntry[]>([]);
   const [selectedAward, setSelectedAward] = useState<{ playerId: string; award: EarnedAwardDetails } | null>(null);
+  const [loadAwardCatalog, setLoadAwardCatalog] = useState(false);
+  const [dismissedAwardTooltip, setDismissedAwardTooltip] = useState<number | null>(null);
+  const awardCatalog = useAwardCatalog(loadAwardCatalog);
   const [usernameInput, setUsernameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -505,11 +506,7 @@ function ProfilePageContent() {
       id: earnedAward?.id || index + 1,
       name: earnedAward?.name || "Award Slot",
       group: earnedAward?.award_group || "",
-      type: "shield",
       label: earnedAward ? "★" : "?",
-      description: earnedAward
-        ? `${earnedAward.award_group} Â· ${earnedAward.reason}`
-        : "Waiting to earn.",
     };
   });
   const statusText = isViewingOwnProfile ? "Online" : "Offline";
@@ -1572,23 +1569,38 @@ function ProfilePageContent() {
         .pf-award-trigger{ position:absolute; inset:0; z-index:3; width:100%; border:0; background:transparent; cursor:pointer; }
         .pf-award-trigger:focus-visible{ outline:2px solid #80c8ff; outline-offset:2px; }
         .pf-award-art{ height:104px; display:flex; align-items:flex-end; justify-content:center; position:relative; transition:transform .25s; }
-        .pf-award-art .award-art,.pf-award-art .award-sprite{ width:auto; max-width:100%; height:104px!important; overflow:visible; animation:pfFloat 4s ease-in-out infinite; filter:saturate(.82) contrast(1.12) brightness(.92) drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
-        .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite{ animation-delay:-1.3s; }
-        .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite{ animation-delay:-2.4s; }
+        .pf-award-art .award-art,.pf-award-art .award-sprite,.pf-award-art .award-emblem{ width:auto; max-width:100%; height:104px!important; overflow:visible; animation:pfFloat 3.6s ease-in-out infinite; filter:saturate(.82) contrast(1.12) brightness(.92) drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
+        .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.3s; }
+        .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-2.4s; }
         .pf-award.earned .pf-award-art:after{ content:""; position:absolute; left:14%; right:14%; bottom:-3px; height:7px; border-radius:50%; background:radial-gradient(ellipse,rgba(110,190,255,.55),transparent 70%); }
-        .pf-award.earned:hover .pf-award-art{ transform:translateY(-3px) scale(1.12); z-index:2; }
+        .pf-award.earned:hover,.pf-award.earned:focus-within{ z-index:5; }
+        .pf-award.earned:hover .pf-award-art,.pf-award.earned:focus-within .pf-award-art{ transform:translateY(-6px) scale(1.12); z-index:2; }
+        .pf-award-tooltip{ display:none; position:absolute; z-index:4; top:100%; left:50%; transform:translateX(-50%); width:240px; max-width:min(240px,calc(100vw - 32px)); box-sizing:border-box; padding:11px 13px; border:1px solid #416d90; border-radius:5px; background:#081521; box-shadow:0 10px 24px #000b; color:#d7e6f2; text-align:left; font-size:12px; line-height:1.45; overflow-wrap:anywhere; }
+        .pf-award:not(.tooltip-dismissed):hover .pf-award-tooltip,.pf-award:not(.tooltip-dismissed):focus-within .pf-award-tooltip{ display:grid; gap:5px; }
+        .pf-award-tooltip strong{ color:#fff; font-size:13px; }
+        .pf-award-tooltip .award-purpose-list{ margin:0; padding-left:16px; list-style:disc; }
+        .pf-award-tooltip .award-purpose-list li + li{ margin-top:4px; }
+        .pf-award-tooltip .award-purpose-list li::marker{ color:#e0bb68; }
+        .pf-award-tooltip-meta{ margin-top:4px; padding-top:7px; border-top:1px solid #26435a; color:#a9c3d8; font-size:11px; }
+        .pf-award:nth-child(1) .pf-award-tooltip{ left:0; transform:none; }
+        .pf-award:nth-child(6) .pf-award-tooltip{ left:auto; right:0; transform:none; }
         .pf-award-ghost{ opacity:.35; width:60px; height:80px; }
         .pf-award.locked .pf-award-art{ align-items:center; }
         .pf-award-name{ font-size:11px; color:#b9cde0; overflow-wrap:anywhere; margin-top:4px; line-height:1.2; }
-        .pf-award.locked .pf-award-name{ color:#5f7e9c; }
-        @keyframes pfFloat{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-6px) } }
-        .pf-spark{ position:absolute; width:9px; height:9px; background:#fff; opacity:0; pointer-events:none; clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%); animation:pfTwinkle 2.8s ease-in-out infinite; }
+        @keyframes pfFloat{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-10px) } }
+        .pf-spark{ position:absolute; width:9px; height:9px; background:#fff; opacity:0; pointer-events:none; clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%); animation:pfTwinkle 3.4s ease-in-out infinite; }
         .pf-spark.s1{ left:18%; top:14%; }
-        .pf-spark.s2{ right:16%; top:30%; animation-delay:.9s; width:7px; height:7px; }
-        .pf-spark.s3{ left:28%; bottom:22%; animation-delay:1.8s; width:6px; height:6px; }
+        .pf-spark.s2{ right:16%; top:30%; animation-duration:4.1s; animation-delay:1.3s; width:7px; height:7px; }
+        .pf-spark.s3{ left:28%; bottom:22%; animation-duration:3.7s; animation-delay:2.2s; width:6px; height:6px; }
+        .pf-spark.s4{ right:26%; bottom:36%; animation-duration:4.6s; animation-delay:.6s; width:5px; height:5px; }
+        .pf-spark.s5{ left:14%; top:48%; animation-duration:3.9s; animation-delay:3s; width:5px; height:5px; }
         .pf-award-art .award-art ~ .pf-spark{ display:none; }
-        @keyframes pfTwinkle{ 0%,100%{ opacity:0; transform:scale(.4) } 50%{ opacity:.95; transform:scale(1) } }
-        @media (prefers-reduced-motion:reduce){ .pf-award-art .award-art,.pf-award-art .award-sprite{ animation:none } .pf-spark{ animation:none; opacity:.6 } }
+        @keyframes pfTwinkle{ 0%,100%{ opacity:0; transform:scale(.3) rotate(0deg) } 15%{ opacity:0; transform:scale(.3) rotate(0deg) } 40%{ opacity:.95; transform:scale(1) rotate(20deg) } 50%{ opacity:.6; transform:scale(.8) rotate(30deg) } 58%{ opacity:.9; transform:scale(.95) rotate(40deg) } 80%{ opacity:0; transform:scale(.4) rotate(60deg) } }
+        @media (hover:hover) and (pointer:fine){
+          .pf-award-art .award-art,.pf-award-art .award-sprite,.pf-award-art           .award-emblem{ animation-duration:4s; }
+                    .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.4s; }
+                    .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-2.6s; }
+        }
         .pf-friend-row{ display:flex; flex-wrap:wrap; gap:14px; }
         .pf-friend{ width:72px; text-align:center; font-size:11px; color:#d7eaff; }
         .pf-friend-avatar{
@@ -1680,6 +1692,8 @@ function ProfilePageContent() {
           .profile-grid{ grid-template-columns:1fr; }
           .pf-two-col{ grid-template-columns:1fr; }
           .pf-award-row{ grid-template-columns:repeat(3,1fr); }
+          .pf-award:nth-child(3n+1) .pf-award-tooltip{ left:0; right:auto; transform:none; }
+          .pf-award:nth-child(3n) .pf-award-tooltip{ left:auto; right:0; transform:none; }
         }
         @media (max-width:600px){
           .header{height:auto;flex-direction:column;align-items:flex-start;gap:8px;padding:8px 14px}
@@ -1731,7 +1745,7 @@ function ProfilePageContent() {
 
           <SiteNav
             showLadders={false}
-            profileFriendsHref={isViewingOwnProfile ? "/profile/friends" : `/profile/friends?userId=${encodeURIComponent(viewedUserId)}`}
+            profileNavigation
           />
 
           {profile ? (
@@ -1898,7 +1912,7 @@ function ProfilePageContent() {
                       <>
                         <Link className="quick-link" href="/profile/teams">My Teams</Link>
                         <Link className="quick-link" href="/profile/friends">My Friends</Link>
-                        <Link className="quick-link" href="/profile/awards">My Awards</Link>
+                        <Link className="quick-link" href="/profile/edit?tab=awards">My Awards</Link>
                         <Link className="quick-link" href="/profile/stats">My Stats</Link>
                       </>
                     ) : (
@@ -1992,9 +2006,9 @@ function ProfilePageContent() {
                   <div className="pf-award-row">
                     {topAwards.map((award, awardIndex) => (
                       <div
-                        className={`pf-award ${award.label === "★" ? "earned" : "locked"}`}
+                        className={`pf-award ${award.label === "★" ? "earned" : "locked"}${dismissedAwardTooltip === awardIndex ? " tooltip-dismissed" : ""}`}
                         key={`${award.id}-${awardIndex}`}
-                        title={`${award.name} — ${award.description}`}
+                        title={award.label === "★" ? undefined : "Waiting to earn."}
                       >
                         <div className="pf-award-art">
                           {award.label === "★" ? (
@@ -2003,6 +2017,8 @@ function ProfilePageContent() {
                               <span className="pf-spark s1" aria-hidden="true" />
                               <span className="pf-spark s2" aria-hidden="true" />
                               <span className="pf-spark s3" aria-hidden="true" />
+                              <span className="pf-spark s4" aria-hidden="true" />
+                              <span className="pf-spark s5" aria-hidden="true" />
                             </>
                           ) : (
                             <svg className="pf-award-ghost" viewBox="0 0 60 80" aria-hidden="true">
@@ -2011,17 +2027,34 @@ function ProfilePageContent() {
                             </svg>
                           )}
                         </div>
-                        <div className="pf-award-name">{award.label === "★" ? award.name : "Locked"}</div>
+                        {award.label === "★" && <div className="pf-award-name">{award.name}</div>}
                         {chosenAwards[awardIndex] && (
                           <button
                             className="pf-award-trigger"
                             type="button"
                             aria-label={`View ${award.name} details`}
                             aria-haspopup="dialog"
+                            aria-describedby={`profile-award-details-${awardIndex}`}
+                            onMouseEnter={() => { setDismissedAwardTooltip(null); setLoadAwardCatalog(true); }}
+                            onFocus={() => { setDismissedAwardTooltip(null); setLoadAwardCatalog(true); }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Escape") setDismissedAwardTooltip(awardIndex);
+                            }}
                             onClick={() => {
                               const earned = chosenAwards[awardIndex];
-                              if (earned) setSelectedAward({ playerId: viewedUserId, award: earned });
+                              if (earned) {
+                                setLoadAwardCatalog(true);
+                                setSelectedAward({ playerId: viewedUserId, award: earned });
+                              }
                             }}
+                          />
+                        )}
+                        {chosenAwards[awardIndex] && (
+                          <AwardHoverDetails
+                            id={`profile-award-details-${awardIndex}`}
+                            award={chosenAwards[awardIndex]}
+                            playerName={playerName}
+                            catalogState={awardCatalog}
                           />
                         )}
                       </div>
@@ -2030,6 +2063,7 @@ function ProfilePageContent() {
                   <AwardDetailsDialog
                     award={selectedAward?.playerId === viewedUserId ? selectedAward.award : null}
                     playerName={playerName}
+                    catalogState={awardCatalog}
                     onClose={() => setSelectedAward(null)}
                   />
                 </div>

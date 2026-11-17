@@ -169,7 +169,7 @@ function prettyText(value: string | null | undefined) {
 }
 
 function ladderName(value: string | null | undefined) {
-  if (value === "singles") return "Solos Ladder";
+  if (value === "singles") return "Solo Ladder";
   if (value === "duos") return "Duos Ladder";
   if (value === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
@@ -683,7 +683,7 @@ export default function MatchDetailsPage() {
         {
           title: "Reporting Results",
           items: [
-            "Starting at the scheduled match time, a team leader, co-leader or captain can report the series score.",
+            "Starting 15 minutes after the scheduled match time, a team leader, co-leader or captain can report the series score.",
             "The opposing team confirms the score, or disputes it. If a result is disputed because of a no-show, choose \"No-show\" as the reason.",
             "Both teams have 2 hours from match time to submit a ticket with an explanation and proof. Staff only see the case once both teams have submitted, or once the 2 hours have ended.",
           ],
@@ -2058,7 +2058,7 @@ export default function MatchDetailsPage() {
                         {!canReportScore
                           ? reportOpensAt === null
                             ? "A complete scheduled match date and time is required for reporting and tickets. Contact staff."
-                            : "Reporting opens at match time. Dispute tickets are available after a score is disputed."
+                            : "Reporting opens 15 minutes after match time. Dispute tickets are available after a score is disputed."
                           : "A dispute ticket can be submitted after a score is disputed."}
                       </div>
                     )}
@@ -2223,7 +2223,7 @@ export default function MatchDetailsPage() {
                     <div className="score-note">
                       {reportOpensAt === null
                         ? "A complete scheduled match date and time is required for reporting. Contact staff."
-                        : "Reporting and disputes unlock at the scheduled match time."}
+                        : "Reporting and disputes unlock 15 minutes after the scheduled match time."}
                     </div>
                   )}
 

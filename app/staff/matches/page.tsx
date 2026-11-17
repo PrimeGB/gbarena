@@ -62,6 +62,12 @@ type ReviewedDecision = {
 };
 
 type DecisionDraft = { postingScore: string; acceptingScore: string; note: string };
+type PlayerTournamentDispute = {
+  id: string;
+  tournament_id: string;
+  player_a: string | null;
+  player_b: string | null;
+};
 
 const previewQueue: MatchReviewEntry[] = [
   {
@@ -109,6 +115,9 @@ export default function StaffMatchReviewPage() {
   const { user, loading: authLoading } = useUser();
   const preview = useSyncExternalStore(subscribePreview, getPreview, getServerPreview);
   const [queue, setQueue] = useState<MatchReviewEntry[]>([]);
+  const [playerDisputes, setPlayerDisputes] = useState<PlayerTournamentDispute[]>([]);
+  const [playerTournamentNames, setPlayerTournamentNames] = useState<Record<string, string>>({});
+  const [playerNames, setPlayerNames] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<ReviewDecision[]>([]);
   const [reviews, setReviews] = useState<ReviewedDecision[]>([]);
   const [drafts, setDrafts] = useState<Record<string, DecisionDraft>>({});
@@ -136,6 +145,7 @@ export default function StaffMatchReviewPage() {
       setError(permissionError ? `Match-review access could not be checked: ${permissionError.message}` : "");
       setHasPermission(false);
       setQueue([]);
+      setPlayerDisputes([]);
       setHistory([]);
       setReviews([]);
       setLoadedUserId(userId);
@@ -143,19 +153,41 @@ export default function StaffMatchReviewPage() {
       return;
     }
 
-    const [{ data, error: queueError }, { data: decisionRows, error: historyError }, { data: reviewRows, error: reviewError }] = await Promise.all([
+    const [{ data, error: queueError }, { data: decisionRows, error: historyError }, { data: reviewRows, error: reviewError }, playerResult, registrationsResult] = await Promise.all([
       supabase.rpc("staff_get_match_review_queue"),
       supabase.rpc("staff_my_match_decisions"),
       supabase.rpc("staff_my_match_decision_reviews"),
+      supabase.from("tournament_player_matches").select("id,tournament_id,player_a,player_b").eq("status", "disputed"),
+      supabase.from("tournament_player_registrations").select("tournament_id").eq("player_id", userId),
     ]);
     if (request !== requestId.current) return;
-    if (queueError || historyError || reviewError) {
-      setError(`Tickets could not be loaded: ${queueError?.message || historyError?.message || reviewError?.message}`);
+    if (queueError || historyError || reviewError || playerResult.error || registrationsResult.error) {
+      setError(`Tickets could not be loaded: ${queueError?.message || historyError?.message || reviewError?.message || playerResult.error?.message || registrationsResult.error?.message}`);
       setHasPermission(false);
       setLoadedUserId(userId);
       setLoading(false);
       return;
     }
+
+    const entered = new Set((registrationsResult.data || []).map((row: { tournament_id: string }) => row.tournament_id));
+    const playerRows = ((playerResult.data || []) as PlayerTournamentDispute[]).filter((row) => !entered.has(row.tournament_id));
+    const tournamentIds = Array.from(new Set(playerRows.map((row) => row.tournament_id)));
+    const ids = Array.from(new Set(playerRows.flatMap((row) => [row.player_a, row.player_b]).filter((id): id is string => !!id)));
+    const [tournamentResult, profilesResult] = await Promise.all([
+      tournamentIds.length ? supabase.from("tournaments").select("id,title").in("id", tournamentIds) : Promise.resolve({ data: [], error: null }),
+      ids.length ? supabase.from("profiles").select("id,username").in("id", ids) : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (request !== requestId.current) return;
+    if (tournamentResult.error || profilesResult.error) {
+      setError(`Tournament disputes could not be loaded: ${tournamentResult.error?.message || profilesResult.error?.message}`);
+      setHasPermission(false);
+      setLoadedUserId(userId);
+      setLoading(false);
+      return;
+    }
+    setPlayerDisputes(playerRows);
+    setPlayerTournamentNames(Object.fromEntries((tournamentResult.data || []).map((row: { id: string; title: string }) => [row.id, row.title])));
+    setPlayerNames(Object.fromEntries((profilesResult.data || []).map((row: { id: string; username: string | null }) => [row.id, row.username || "Player"])));
 
     const issues: string[] = [];
     const entries = await Promise.all(((data || []) as MatchReviewEntry[]).map(async (entry) => ({
@@ -280,6 +312,15 @@ export default function StaffMatchReviewPage() {
               {error && <p className="ticket-alert" role="alert">{error}</p>}
               {evidenceWarning && <p className="ticket-alert" role="alert">{evidenceWarning}</p>}
               {notice && <p className="ticket-notice" role="status">{notice}</p>}
+              {!preview && view === "open" && playerDisputes.length > 0 && (
+                <section className="ticket-list" aria-label="Tournament disputes">
+                  <div className="ticket-section-heading"><h2>Player tournament disputes</h2><p>Open the bracket to review and resolve each result.</p></div>
+                  {playerDisputes.map((item) => <Link className="ticket-list-item" key={item.id} href={`/tournaments/${item.tournament_id}#match-${item.id}`}>
+                    <b>{item.player_a ? playerNames[item.player_a] || "Player" : "Player"} <em>vs</em> {item.player_b ? playerNames[item.player_b] || "Player" : "Player"}</b>
+                    <small>{playerTournamentNames[item.tournament_id] || "Player tournament"}</small>
+                  </Link>)}
+                </section>
+              )}
               {view === "open" ? (
                 <div className="ticket-workspace">
                   <section className="ticket-list" aria-label="Open tickets">

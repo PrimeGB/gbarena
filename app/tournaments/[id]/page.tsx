@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabase";
+import { tournamentSystemLabel } from "../../../lib/tournamentDisplay";
+import PlayerTournamentBracket from "../../components/PlayerTournamentBracket";
 
 type BracketMatch = {
   id: string;
@@ -23,6 +25,7 @@ type TournamentInfo = {
   platform: string | null;
   status: string;
   starts_at: string | null;
+  entry_kind: "team" | "player";
 };
 
 function roundName(round: number, total: number) {
@@ -50,16 +53,23 @@ function TournamentBracket() {
   const [isStaff, setIsStaff] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
   const requestedReturn = searchParams.get("returnTo");
   const backHref = requestedReturn?.startsWith("/tournaments?")
     ? requestedReturn
     : "/tournaments";
 
   const load = useCallback(async () => {
-    const [{ data: t }, { data: ms }] = await Promise.all([
-      supabase.from("tournaments").select("id,title,game,platform,status,starts_at").eq("id", id).maybeSingle(),
+    const [{ data: t, error: tournamentError }, { data: ms, error: matchesError }] = await Promise.all([
+      supabase.from("tournaments").select("id,title,game,platform,status,starts_at,entry_kind").eq("id", id).maybeSingle(),
       supabase.from("tournament_matches").select("id,round,slot,team_a,team_b,winner_id").eq("tournament_id", id).order("round").order("slot"),
     ]);
+    if (tournamentError || matchesError) {
+      setLoadError(`Could not load the tournament: ${tournamentError?.message || matchesError?.message}`);
+      setLoading(false);
+      return;
+    }
+    setLoadError("");
     const rows = (ms || []) as BracketMatch[];
     const teamIds = Array.from(new Set(rows.flatMap((m) => [m.team_a, m.team_b]).filter(Boolean))) as string[];
     if (teamIds.length > 0) {
@@ -94,6 +104,10 @@ function TournamentBracket() {
   const totalRounds = matches.reduce((max, m) => Math.max(max, m.round), 0);
   const rounds = Array.from({ length: totalRounds }, (_, i) => i + 1);
 
+  if (tournament?.entry_kind === "player") {
+    return <PlayerTournamentBracket id={id} backHref={backHref} />;
+  }
+
   function teamRow(m: BracketMatch, teamId: string | null) {
     const team = teamId ? teams[teamId] : null;
     const won = teamId && m.winner_id === teamId;
@@ -126,6 +140,8 @@ function TournamentBracket() {
         .br-head a{color:#f2c14e;font-size:12px;text-decoration:none;}
         .br-head h1{color:#fff;font-size:26px;margin:8px 0 4px;}
         .br-head p{font-size:13px;opacity:.8;}
+        .br-access{display:inline-flex;margin-top:8px;padding:5px 10px;border:1px solid #32734d;border-radius:999px;background:#103425;color:#a9efc3;font-size:11px;font-weight:700;}
+        .br-access.system-only{border-color:#8f3037;background:#3a171b;color:#ffd2d4;}
         .br-staff{max-width:1200px;margin:0 auto 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
         .br-staff button{background:linear-gradient(#f2c14e,#c9951f);border:0;border-radius:999px;padding:8px 16px;font:800 11px Tahoma;text-transform:uppercase;cursor:pointer;}
         .br-staff button.red{background:#a33030;color:#fff;}
@@ -151,11 +167,19 @@ function TournamentBracket() {
             {backHref === "/tournaments" ? "← All Tournaments" : "← Back to game tournaments"}
           </Link>
           <h1>{tournament?.title || (loading ? "Loading..." : "Tournament not found")}</h1>
+          {loadError && <p className="br-msg" role="alert">{loadError}</p>}
           {tournament && (
-            <p>
-              {[tournament.game, tournament.platform].filter(Boolean).join(" - ")}
-              {tournament.starts_at ? ` - ${new Date(tournament.starts_at).toLocaleString()}` : ""} - {tournament.status}
-            </p>
+            <>
+              <p>
+                {[tournament.game, tournament.starts_at ? new Date(tournament.starts_at).toLocaleString() : ""]
+                  .filter(Boolean)
+                  .join(" · ")}{" "}
+                · {tournament.status}
+              </p>
+              <span className={`br-access ${tournament.platform ? "system-only" : ""}`}>
+                {tournamentSystemLabel(tournament.platform)}
+              </span>
+            </>
           )}
         </div>
 

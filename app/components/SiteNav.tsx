@@ -2,23 +2,18 @@ type SiteNavProps = {
   ladderHref?: string;
   tournamentHref?: string;
   showLadders?: boolean;
-  profileFriendsHref?: string;
+  profileNavigation?: boolean;
 };
 
 export default function SiteNav({
   ladderHref = "/ladders",
   tournamentHref = "/tournaments",
   showLadders = true,
-  profileFriendsHref,
+  profileNavigation = false,
 }: SiteNavProps) {
-  const links = profileFriendsHref ? [
-    { label: "Profile", href: "/profile", current: true },
-    { label: "Teams", href: "/profile/teams" },
+  const links = profileNavigation ? [
     { label: "Tournaments", href: tournamentHref },
-    { label: "Friends", href: profileFriendsHref },
     { label: "Create a Team", href: "/teams/create" },
-    { label: "Awards", href: "/profile/awards" },
-    { label: "Forums", href: "/forums" },
     { label: "Find Players", href: "/players" },
     { label: "Recruit", href: "/recruit" },
     { label: "Support", href: "/support" },
@@ -33,9 +28,9 @@ export default function SiteNav({
 
   return (
     <>
-      <nav className={`site-nav-bar${profileFriendsHref ? " site-nav-profile" : ""}`} aria-label="Main">
+      <nav className={`site-nav-bar${profileNavigation ? " site-nav-profile" : ""}`} aria-label="Main">
         {links.map((link) => (
-          <a key={link.label} href={link.href} aria-current={"current" in link && link.current ? "page" : undefined}>
+          <a key={link.label} href={link.href}>
             {link.label}
           </a>
         ))}
@@ -72,10 +67,6 @@ export default function SiteNav({
         .site-nav-profile a {
           padding: 11px 3px;
           white-space: nowrap;
-        }
-        .site-nav-profile a[aria-current="page"] {
-          color: #67bfff;
-          box-shadow: inset 0 -2px #4aa3ff;
         }
         @media (max-width: 700px) {
           .site-nav-profile {

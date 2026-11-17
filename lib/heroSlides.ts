@@ -11,6 +11,28 @@ export const CURATED_SLIDES: string[] = [
   "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg",
 ];
 
+export type HeroSlide =
+  | { kind: "image"; src: string }
+  | { kind: "discord" | "invite" };
+
+export function buildHeroRotation(images: string[]): HeroSlide[] {
+  const slides: HeroSlide[] = images.map((src) => ({ kind: "image", src }));
+  const discordPosition = Math.min(2, slides.length);
+  slides.splice(discordPosition, 0, { kind: "discord" });
+  const invitePosition = Math.min(Math.max(discordPosition + 2, Math.floor(images.length * 2 / 3) + 1), slides.length);
+  slides.splice(invitePosition, 0, { kind: "invite" });
+  return slides;
+}
+
+export function nextHeroSlideIndex(slides: HeroSlide[], current: number, loadedImages: ReadonlySet<string>): number {
+  for (let offset = 1; offset <= slides.length; offset += 1) {
+    const next = (current + offset) % slides.length;
+    const slide = slides[next];
+    if (slide.kind !== "image" || loadedImages.has(slide.src)) return next;
+  }
+  return current;
+}
+
 export async function getHeroSlides(): Promise<string[]> {
   return CURATED_SLIDES;
 }

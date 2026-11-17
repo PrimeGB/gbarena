@@ -373,6 +373,7 @@ export default function EditRosterPage() {
     const { data: rankedProfiles } = await supabase
       .from("profiles")
       .select("id, gb_rank_points, gb_wins, gb_losses")
+      .gt("gb_rank_points", 0)
       .order("gb_rank_points", { ascending: false })
       .order("gb_wins", { ascending: false })
       .order("gb_losses", { ascending: true });
@@ -914,7 +915,7 @@ export default function EditRosterPage() {
               </div>
               <div className="invite-area">
                 <div className="no-results">
-                  Singles ladder teams are a single player, so there is no roster to invite
+                  Solo ladder teams are a single player, so there is no roster to invite
                   players to. Invites are available on team ladders.
                 </div>
               </div>

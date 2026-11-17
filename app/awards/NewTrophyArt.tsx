@@ -65,12 +65,37 @@ const trophies = new Map<string, Trophy>(
   }])
 );
 
+// Current trophies reuse the original colour designs; each design is used by one award only.
+const DESIGN_FOR: Record<string, string> = {
+  "Daily Grind Trophy": "On the Grind Trophy",
+  "On Fire Trophy": "Victory Surge Trophy",
+  "Thread Starter Trophy": "Community Spark Trophy",
+  "Chime In Trophy": "Helpful Hand Trophy",
+  "Conversation Starter Trophy": "Positive Play Trophy",
+  "First Message Trophy": "Season Surge Trophy",
+  "Squad Up Trophy": "Team Builder Trophy",
+  "Inner Circle Trophy": "Welcome Wagon Trophy",
+  "Eagle Eye Trophy": "Winning Edge Trophy",
+  "Rising Star Trophy": "Momentum Trophy",
+  "Hype Squad Trophy": "High Five Trophy",
+  "Sideline Voice Trophy": "Game On Trophy",
+  "Call to Arms Trophy": "Battle Ready Trophy",
+  "Gauntlet Thrown Trophy": "Season Challenger Trophy",
+  "Into the Bracket Trophy": "Season Contender Trophy",
+  "Bright Idea Trophy": "Creative Mind Trophy",
+  "Harvest Brawl Trophy": "Autumn Harvest Trophy",
+  "Frostbite Trophy": "Winter Frost Trophy",
+  "New Dawn Trophy": "Season Starter Trophy",
+};
+
+const design = (name: string) => trophies.get(DESIGN_FOR[name] ?? name);
+
 export function hasNewTrophy(name: string) {
-  return trophies.has(name);
+  return Boolean(design(name));
 }
 
 export function newTrophyAccent(name: string) {
-  return trophies.get(name)?.color;
+  return design(name)?.color;
 }
 
 const symbols: Record<string, string> = {
@@ -123,7 +148,7 @@ function TrophyMark({ mark }: { mark: string }) {
 
 export default function NewTrophyArt({ name, height = 150 }: { name: string; height?: number }) {
   const uid = useId().replace(/:/g, "");
-  const trophy = trophies.get(name);
+  const trophy = design(name);
   if (!trophy) return null;
   const metal = `url(#trophy-metal-${uid})`;
   const edge = `url(#trophy-edge-${uid})`;

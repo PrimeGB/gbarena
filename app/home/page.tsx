@@ -924,6 +924,7 @@ export default function Home() {
 
               <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
               <Link className="side-link" href="/champions">Hall of Fame <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/challenges">Player Challenges <span className="arrow">›</span></Link>
 
               <div className="section-title">About GameBattles</div>
 

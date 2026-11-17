@@ -1,3 +1,5 @@
+begin;
+
 do $$
 declare
   m public.matches%rowtype;
@@ -62,17 +64,17 @@ begin
   result := public.post_match_comment(m.id, player, m.posting_team_id, 'After removal');
   if result->>'ok' <> 'false' then raise exception 'Removed comment bypassed limit'; end if;
 
-  update public.matches set match_time = (now() + interval '1 second')::text where id = m.id;
+  update public.matches set match_time = (now() - interval '14 minutes')::text where id = m.id;
   result := public.report_match_score(m.id, m.posting_team_id, 2, 0);
-  if result->>'message' not like '%scheduled match time%' then raise exception 'Early report not blocked: %', result; end if;
+  if result->>'message' not like '%15 minutes%' then raise exception 'Report before 15 minutes not blocked: %', result; end if;
   result := public.dispute_match_score(m.id, 'test');
-  if result->>'message' not like '%scheduled match time%' then raise exception 'Early dispute not blocked: %', result; end if;
-  update public.matches set match_time = now()::text where id = m.id;
+  if result->>'message' not like '%15 minutes%' then raise exception 'Dispute before 15 minutes not blocked: %', result; end if;
+  update public.matches set match_time = (now() - interval '16 minutes')::text where id = m.id;
   result := public.report_match_score(m.id, m.posting_team_id, 2, 0);
-  if result->>'message' like '%scheduled match time%' then raise exception 'Report blocked at boundary: %', result; end if;
+  if result->>'message' like '%15 minutes%' then raise exception 'Report blocked after 15 minutes: %', result; end if;
   result := public.dispute_match_score(m.id, 'test');
-  if result->>'message' like '%scheduled match time%' then raise exception 'Dispute blocked at boundary: %', result; end if;
-  if public.dispute_ticket_window_ends_at(m.id) <> now() + interval '2 hours' then
+  if result->>'message' like '%15 minutes%' then raise exception 'Dispute blocked after 15 minutes: %', result; end if;
+  if public.dispute_ticket_window_ends_at(m.id) <> now() + interval '1 hour 44 minutes' then
     raise exception 'Incorrect ticket deadline';
   end if;
   if has_table_privilege('authenticated', 'public.match_comments', 'INSERT')
@@ -126,25 +128,27 @@ declare
 begin
   select matches.* into m from public.matches matches join public.team_members tm
     on tm.team_id in (matches.posting_team_id, matches.accepting_team_id)
-  where matches.posting_team_id is not null and matches.accepting_team_id is not null limit 1;
+  where matches.posting_team_id is not null and matches.accepting_team_id is not null
+    and not exists (select 1 from public.dispute_tickets where match_id = matches.id)
+  limit 1;
   if m.id is null then raise exception 'Missing ticket rollback fixture'; end if;
   select tm.team_id, tm.user_id into team, member from public.team_members tm
     where tm.team_id in (m.posting_team_id, m.accepting_team_id) limit 1;
   opponent := case when team = m.posting_team_id then m.accepting_team_id else m.posting_team_id end;
   perform set_config('request.jwt.claim.sub', member::text, true);
   update public.matches set status = 'disputed', reporting_status = 'disputed',
-    match_time = (now() + interval '1 second')::text where id = m.id;
+    match_time = (now() - interval '14 minutes')::text where id = m.id;
   rejected := false;
   begin
     insert into public.dispute_tickets(match_id, team_id, opponent_team_id, created_by,
       dispute_reason, dispute_description, status, evidence_paths)
     values (m.id, team, opponent, member, 'test', 'test', 'open', '["test"]'::jsonb);
   exception when others then
-    if sqlerrm not like '%scheduled match time%' then raise; end if;
+    if sqlerrm not like '%15 minutes%' then raise; end if;
     rejected := true;
   end;
   if not rejected then raise exception 'Early ticket accepted'; end if;
-  update public.matches set match_time = now()::text where id = m.id;
+  update public.matches set match_time = (now() - interval '16 minutes')::text where id = m.id;
   insert into public.dispute_tickets(match_id, team_id, opponent_team_id, created_by,
     dispute_reason, dispute_description, status, evidence_paths)
   values (m.id, team, opponent, member, 'test', 'test', 'open', '["test"]'::jsonb);
@@ -155,9 +159,11 @@ begin
       dispute_reason, dispute_description, status, evidence_paths)
     values (m.id, team, opponent, member, 'test', 'test', 'open', '["test"]'::jsonb);
   exception when others then
-    if sqlerrm not like '%scheduled match time%' then raise; end if;
+    if sqlerrm not like '%15 minutes%' then raise; end if;
     rejected := true;
   end;
   if not rejected then raise exception 'Late ticket accepted'; end if;
 end;
 $$;
+
+rollback;

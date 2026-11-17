@@ -46,7 +46,7 @@ function getGameImage(game: string | null, category?: string) {
 }
 
 function getLadderName(ladder: string | null) {
-  if (ladder === "singles") return "Solos Ladder";
+  if (ladder === "singles") return "Solo Ladder";
   if (ladder === "duos") return "Duos Ladder";
   if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
@@ -378,6 +378,10 @@ function CreateMatchContent() {
     const scheduledTime = new Date(matchDateTime);
     if (Number.isNaN(scheduledTime.getTime()) || scheduledTime.getTime() <= Date.now()) {
       setPostError("Choose a match date and time in the future.");
+      return;
+    }
+    if (scheduledTime.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+      setPostError("Choose a match time within the next 24 hours.");
       return;
     }
 
@@ -995,6 +999,7 @@ function CreateMatchContent() {
                               type="datetime-local"
                               value={matchDateTime}
                               min={toLocalDateTimeValue(getNextQuarterHour(new Date(currentTime)))}
+                              max={toLocalDateTimeValue(new Date(currentTime + 24 * 60 * 60 * 1000))}
                               step={900}
                               onChange={(e) => setMatchDateTime(e.target.value)}
                               required
@@ -1002,7 +1007,7 @@ function CreateMatchContent() {
                           </div>
 
                           <div className="small-note">
-                            Choose a future date and time. Your team&apos;s matches and open posts must start at least 15 minutes apart.
+                            Choose a time within the next 24 hours. Teams can have up to three open posts and unfinished matches combined, at least 15 minutes apart. Three unresolved disputes block new matches until fewer than three remain.
                           </div>
                         </div>
                       </div>

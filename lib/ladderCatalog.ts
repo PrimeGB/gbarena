@@ -143,7 +143,7 @@ export function ladderGameLabel(category: string, game: string) {
 
 export function laddersForGame(category: string, game: string) {
   const standard = [
-    { slug: "singles", title: "Singles" },
+    { slug: "singles", title: "Solo" },
     { slug: "duos", title: "Duos" },
     { slug: "team", title: "Team" },
   ];
@@ -154,7 +154,7 @@ export function laddersForGame(category: string, game: string) {
   if (category === "uno") return game === "2v2" ? [duos] : [singles];
   return category === "battlefield" && game === "battlefield-6"
     ? [
-        { slug: "singles", title: "Solos TDM" },
+        { slug: "singles", title: "Solo TDM" },
         { slug: "rapid-royal-duos", title: "Rapid Royal" },
         { slug: "redsec", title: "RedSec" },
       ]

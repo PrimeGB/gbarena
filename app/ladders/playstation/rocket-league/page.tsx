@@ -13,7 +13,7 @@ const rocketLeagueTitles = [
     title: "Rocket League Soccer",
     slug: "soccar",
     image: ladderGameImage("rocket-league", "soccar") || "",
-    ladders: ["Singles", "Duos", "Standard"],
+    ladders: ["Solo", "Duos", "Standard"],
   },
   {
     title: "Rocket League Hoops",
@@ -86,6 +86,7 @@ const platformStyles: Record<
 };
 
 function ladderSlug(ladder: string) {
+  if (ladder === "Solo") return "singles";
   if (ladder === "Standard") return "standard";
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
@@ -419,7 +420,7 @@ export default function RocketLeagueLaddersPage() {
             </p>
 
             <div className="info-note">
-              Rocket League competitive formats fit perfectly for Singles,
+              Rocket League competitive formats fit perfectly for Solo,
               Duos, Standard 3v3, and extra modes like Hoops, Rumble, Dropshot,
               and Snow Day.
             </div>

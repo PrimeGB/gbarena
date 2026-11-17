@@ -21,7 +21,10 @@ begin
   order by p.created_at desc limit 1;
   if original.id is null then raise exception 'Missing expired post test fixture'; end if;
 
+  -- Recreate a post that was valid when created but has since reached its start time.
+  alter table public.match_posts disable trigger match_posts_validate_booking_window;
   update public.match_posts set status = 'open', match_time = now()::text where id = original.id;
+  alter table public.match_posts enable trigger match_posts_validate_booking_window;
   begin
     update public.match_posts set status = 'accepted' where id = original.id;
   exception when raise_exception then
@@ -32,7 +35,7 @@ begin
 
   insert into public.match_posts
   select (jsonb_populate_record(null::public.match_posts, to_jsonb(p) || jsonb_build_object(
-    'id', new_post, 'match_time', (now() + interval '30 days')::text,
+    'id', new_post, 'match_time', (now() + interval '2 hours')::text,
     'created_at', now(), 'status', 'open'
   ))).*
   from public.match_posts p where p.id = original.id;
@@ -49,7 +52,7 @@ begin
   begin
     insert into public.match_posts
     select (jsonb_populate_record(null::public.match_posts, to_jsonb(p) || jsonb_build_object(
-      'id', gen_random_uuid(), 'match_time', (now() + interval '30 days 14 minutes')::text
+      'id', gen_random_uuid(), 'match_time', (now() + interval '2 hours 14 minutes')::text
     ))).*
     from public.match_posts p where p.id = new_post;
   exception when raise_exception then

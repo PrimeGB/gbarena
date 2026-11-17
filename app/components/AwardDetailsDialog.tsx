@@ -14,26 +14,21 @@ export type EarnedAwardDetails = {
 
 type CatalogAward = { name: string; purpose: string };
 
-export default function AwardDetailsDialog({ award, playerName, onClose }: {
-  award: EarnedAwardDetails | null;
-  playerName: string;
-  onClose: () => void;
-}) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+function AwardPurpose({ purpose }: { purpose: string }) {
+  const concise = purpose.replace(/^Awarded automatically (?:when|after) you ([a-z])/i, (_, first: string) => first.toUpperCase());
+  const sentences = concise.trim().split(/(?<=[.!?])\s+(?=[A-Z0-9])/);
+
+  if (sentences.length === 1) return <span>{sentences[0]}</span>;
+  return <ul className="award-purpose-list">{sentences.map((sentence, index) => <li key={index}>{sentence}</li>)}</ul>;
+}
+
+export function useAwardCatalog(enabled: boolean) {
   const [catalog, setCatalog] = useState<CatalogAward[] | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const isOpen = award !== null;
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen && !dialog.open) dialog.showModal();
-    else if (!isOpen && dialog.open) dialog.close();
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || catalog) return;
+    if (!enabled || catalog) return;
     let active = true;
     void supabase.rpc("staff_public_award_catalog").then(
       ({ data, error: catalogError }) => {
@@ -49,7 +44,48 @@ export default function AwardDetailsDialog({ award, playerName, onClose }: {
       }
     );
     return () => { active = false; };
-  }, [isOpen, catalog, attempt]);
+  }, [enabled, catalog, attempt]);
+
+  return { catalog, error, retry: () => { setError(""); setAttempt((value) => value + 1); } };
+}
+
+export function AwardHoverDetails({ award, playerName, catalogState, id }: {
+  award: EarnedAwardDetails;
+  playerName: string;
+  catalogState: ReturnType<typeof useAwardCatalog>;
+  id: string;
+}) {
+  const purpose = catalogState.catalog?.find((item) => item.name === award.name)?.purpose;
+  const date = new Date(award.granted_at);
+
+  return (
+    <div className="pf-award-tooltip" role="tooltip" id={id}>
+      <strong>{award.name}</strong>
+      {catalogState.error ? <span>Award description could not be loaded. Click to see the error and retry.</span>
+        : !catalogState.catalog ? <span>Loading award details...</span>
+          : purpose ? <AwardPurpose purpose={purpose} /> : <span>Award description is unavailable.</span>}
+      <span className="pf-award-tooltip-meta">Earned by {playerName} · {Number.isFinite(date.getTime()) ? <time dateTime={award.granted_at}>{date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</time> : "Date unavailable"}</span>
+    </div>
+  );
+}
+
+export default function AwardDetailsDialog({ award, playerName, onClose, catalogState }: {
+  award: EarnedAwardDetails | null;
+  playerName: string;
+  onClose: () => void;
+  catalogState?: ReturnType<typeof useAwardCatalog>;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const isOpen = award !== null;
+  const localCatalog = useAwardCatalog(isOpen && !catalogState);
+  const { catalog, error, retry } = catalogState || localCatalog;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) dialog.showModal();
+    else if (!isOpen && dialog.open) dialog.close();
+  }, [isOpen]);
 
   const purpose = catalog?.find((item) => item.name === award?.name)?.purpose;
   const date = award ? new Date(award.granted_at) : null;
@@ -59,7 +95,6 @@ export default function AwardDetailsDialog({ award, playerName, onClose }: {
   return (
     <>
       <dialog className="award-details-dialog" ref={dialogRef} aria-labelledby="award-details-title" onClose={() => {
-        setError("");
         onClose();
       }}>
         {award && (
@@ -71,16 +106,19 @@ export default function AwardDetailsDialog({ award, playerName, onClose }: {
             <div className="award-details-art"><AwardArt name={award.name} group={award.award_group} height={120} /></div>
             <h2 id="award-details-title">{award.name}</h2>
             <div className="award-details-info">
-              <h3>How it&apos;s earned</h3>
+              <h3>How to earn it</h3>
               {error ? (
-                <p role="alert">{error} <button type="button" onClick={() => { setError(""); setAttempt((value) => value + 1); }}>Try again</button></p>
+                <p role="alert">{error} <button type="button" onClick={retry}>Try again</button></p>
               ) : !catalog ? <p>Loading award details...</p>
-                : <p>{purpose || "Award description is unavailable."}</p>}
+                : purpose ? <div className="award-details-purpose"><AwardPurpose purpose={purpose} /></div>
+                  : <p>Award description is unavailable.</p>}
               {specificReason && <><h3>Awarded for</h3><p>{specificReason}</p></>}
-              <h3>Earned by {playerName}</h3>
-              {validDate && date
-                ? <p><time dateTime={award.granted_at}>{date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</time></p>
-                : <p>Earned date is unavailable.</p>}
+              <div className="award-details-recipient">
+                <div><h3>Earned by</h3><p>{playerName}</p></div>
+                <div><h3>Date earned</h3>{validDate && date
+                  ? <p><time dateTime={award.granted_at}>{date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</time></p>
+                  : <p>Unavailable</p>}</div>
+              </div>
             </div>
           </>
         )}
@@ -92,9 +130,14 @@ export default function AwardDetailsDialog({ award, playerName, onClose }: {
         .award-details-head button{width:30px;height:30px;border:0;background:transparent;color:#d7e6f2;font-size:24px;line-height:1;cursor:pointer}
         .award-details-art{display:flex;justify-content:center;align-items:center;min-height:130px;padding:8px;background:radial-gradient(circle,#173c59,#081521 70%)}
         .award-details-dialog h2{margin:0;padding:4px 16px 12px;color:#fff;text-align:center;font-size:18px}
-        .award-details-info{padding:0 18px 18px}
-        .award-details-info h3{margin:14px 0 4px;color:#e0bb68;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-        .award-details-info p{margin:0;color:#d7e6f2;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+        .award-details-info{padding:0 20px 20px}
+        .award-details-info h3{margin:16px 0 6px;color:#e0bb68;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+        .award-details-info p,.award-details-purpose{margin:0;color:#d7e6f2;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+        .award-details-purpose .award-purpose-list{margin:0;padding-left:18px;list-style:disc}
+        .award-details-purpose .award-purpose-list li + li{margin-top:5px}
+        .award-details-purpose .award-purpose-list li::marker{color:#e0bb68}
+        .award-details-recipient{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px;padding-top:2px;border-top:1px solid #26435a}
+        .award-details-recipient h3{margin-top:12px}
         .award-details-info button{border:0;background:transparent;color:#80c8ff;font:inherit;text-decoration:underline;cursor:pointer}
         .award-details-dialog button:focus-visible{outline:2px solid #80c8ff;outline-offset:2px}
       `}</style>

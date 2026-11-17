@@ -64,7 +64,7 @@ export default function BattlefieldRankingsPage() {
       : ladder === "rapid-royal-duos"
         ? "Rapid Royal"
         : ladder === "singles"
-        ? "Singles"
+        ? "Solo"
         : ladder === "duos"
           ? "Duos"
           : ladder === "team"

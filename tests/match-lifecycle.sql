@@ -18,6 +18,14 @@ declare
   first_losses integer;
   second_wins integer;
   second_losses integer;
+  first_team_rating integer;
+  second_team_rating integer;
+  owner_a_gb_wins integer;
+  owner_a_gb_losses integer;
+  owner_a_gb_rank integer;
+  accepting_gb_wins integer;
+  accepting_gb_losses integer;
+  accepting_gb_rank integer;
   wins_required integer;
   queue_item jsonb;
   evidence_path text;
@@ -72,7 +80,7 @@ begin
     execute 'set local role authenticated';
     insert into public.match_posts
     select (jsonb_populate_record(null::public.match_posts, to_jsonb(p) || jsonb_build_object(
-      'id', post_id, 'match_time', (now() + interval '90 days' + i * interval '20 minutes')::text,
+      'id', post_id, 'match_time', (now() + interval '2 hours' + i * interval '20 minutes')::text,
       'created_at', now(), 'status', 'open'
     ))).* from public.match_posts p where p.id = original.id;
     execute 'reset role';
@@ -81,11 +89,23 @@ begin
     if match_id is null or not exists (select 1 from public.match_participants mp where mp.match_id = match_id and mp.team_id = accepting.id) then
       raise exception 'Match acceptance or roster snapshot failed';
     end if;
-    update public.matches m set match_time = now()::text where m.id = match_id;
+    update public.matches m set match_time = (now() - interval '14 minutes')::text where m.id = match_id;
+    perform set_config('request.jwt.claim.sub', owner_a::text, true);
+    result := public.report_match_score(match_id, original.team_id, wins_required, 0);
+    if coalesce(result->>'message', '') not like '%15 minutes%' then
+      raise exception 'Score reporting opened before 15 minutes: %', result;
+    end if;
+    update public.matches m set match_time = (now() - interval '16 minutes')::text where m.id = match_id;
     select coalesce(wins, 0) into first_wins from public.teams where id = original.team_id;
     select coalesce(losses, 0) into first_losses from public.teams where id = original.team_id;
     select coalesce(wins, 0) into second_wins from public.teams where id = accepting.id;
     select coalesce(losses, 0) into second_losses from public.teams where id = accepting.id;
+    select coalesce(rating_points, 100) into first_team_rating from public.teams where id = original.team_id;
+    select coalesce(rating_points, 100) into second_team_rating from public.teams where id = accepting.id;
+    select coalesce(gb_wins, 0), coalesce(gb_losses, 0), coalesce(gb_rank_points, 0)
+      into owner_a_gb_wins, owner_a_gb_losses, owner_a_gb_rank from public.profiles where id = owner_a;
+    select coalesce(gb_wins, 0), coalesce(gb_losses, 0), coalesce(gb_rank_points, 0)
+      into accepting_gb_wins, accepting_gb_losses, accepting_gb_rank from public.profiles where id = accepting.owner_id;
     perform set_config('request.jwt.claim.sub', owner_a::text, true);
     result := public.report_match_score(match_id, original.team_id, wins_required, 0);
     if result->>'ok' is distinct from 'true' then raise exception 'Score report failed: %', result; end if;
@@ -99,6 +119,20 @@ begin
       if (select coalesce(wins, 0) from public.teams where id = original.team_id) <> first_wins + 1
         or (select coalesce(losses, 0) from public.teams where id = accepting.id) <> second_losses + 1 then
         raise exception 'Confirmed result did not update team records: %', result;
+      end if;
+      if (select coalesce(rating_points, 100) from public.teams where id = original.team_id) <= first_team_rating
+        or (select coalesce(rating_points, 100) from public.teams where id = accepting.id) <> greatest(0, second_team_rating - 10)
+        or (select coalesce(gb_wins, 0) from public.profiles where id = owner_a) <> owner_a_gb_wins + 1
+        or (select coalesce(gb_rank_points, 0) from public.profiles where id = owner_a) <= owner_a_gb_rank
+        or (select coalesce(gb_losses, 0) from public.profiles where id = accepting.owner_id) <> accepting_gb_losses + 1
+        or (select coalesce(gb_rank_points, 0) from public.profiles where id = accepting.owner_id) <> greatest(0, accepting_gb_rank - 10)
+        or not exists (select 1 from public.xp_ledger ledger where ledger.match_id = match_id and ledger.user_id = owner_a)
+        or not exists (select 1 from public.xp_ledger ledger where ledger.match_id = match_id and ledger.user_id = accepting.owner_id)
+        or not exists (select 1 from public.xp_ledger ledger where ledger.match_id = match_id and ledger.team_id = original.team_id)
+        or not exists (select 1 from public.xp_ledger ledger where ledger.match_id = match_id and ledger.team_id = accepting.id)
+        or not exists (select 1 from public.team_match_rank_movement movement where movement.match_id = match_id and movement.team_id = original.team_id)
+        or not exists (select 1 from public.team_match_rank_movement movement where movement.match_id = match_id and movement.team_id = accepting.id) then
+        raise exception 'Confirmed result did not immediately update player/team rank and reward records';
       end if;
       result := public.confirm_match_and_apply(match_id, accepting.owner_id);
       if (select coalesce(wins, 0) from public.teams where id = original.team_id) <> first_wins + 1 then
@@ -176,6 +210,16 @@ begin
       if (select coalesce(losses, 0) from public.teams where id = original.team_id) <> first_losses + 1
         or (select coalesce(wins, 0) from public.teams where id = accepting.id) <> second_wins + 1 then
         raise exception 'Staff decision did not update team records';
+      end if;
+      if (select coalesce(rating_points, 100) from public.teams where id = original.team_id) <> greatest(0, first_team_rating - 10)
+        or (select coalesce(rating_points, 100) from public.teams where id = accepting.id) <> second_team_rating + 25
+        or (select coalesce(gb_losses, 0) from public.profiles where id = owner_a) <> owner_a_gb_losses + 1
+        or (select coalesce(gb_rank_points, 0) from public.profiles where id = owner_a) <> greatest(0, owner_a_gb_rank - 10)
+        or (select coalesce(gb_wins, 0) from public.profiles where id = accepting.owner_id) <> accepting_gb_wins + 1
+        or (select coalesce(gb_rank_points, 0) from public.profiles where id = accepting.owner_id) <> accepting_gb_rank + 25
+        or not exists (select 1 from public.team_match_rank_movement movement where movement.match_id = match_id and movement.team_id = original.team_id)
+        or not exists (select 1 from public.team_match_rank_movement movement where movement.match_id = match_id and movement.team_id = accepting.id) then
+        raise exception 'Staff decision did not immediately update personal and team ranks';
       end if;
     end if;
   end loop;

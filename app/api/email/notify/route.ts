@@ -60,13 +60,16 @@ function buildTemplate(type: string, subject: string, body: string, relatedType:
       awardName
         ? `${isTeamAward ? "Your team" : "You"} earned a new trophy: ${awardName}`
         : `${isTeamAward ? "Your team earned" : "You earned"} a new trophy on GameBattles`,
-      isTeamAward ? "Your Team Earned a New Trophy!" : "You Earned a New Trophy!",
-      isTeamAward
-        ? "Congratulations! A new trophy has been added to your team's GameBattles profile."
-        : "Congratulations! A new trophy has been added to your GameBattles profile.",
+      awardName ? `Congratulations on earning the ${awardName}!` : isTeamAward ? "Your Team Earned a New Trophy!" : "You Earned a New Trophy!",
+      awardName
+        ? `Great work! The ${awardName} is now on your ${isTeamAward ? "team's " : ""}GameBattles profile for everyone to see.`
+        : isTeamAward
+          ? "Congratulations! A new trophy has been added to your team's GameBattles profile."
+          : "Congratulations! A new trophy has been added to your GameBattles profile.",
       isTeamAward ? "View Team Awards" : "View Your Awards",
       `${SITE}/profile/awards`,
       "#f2c14e",
+      details.replace(/^Congratulations[^\n]*(\n+|$)/i, "").trim(),
     );
   }
   if (relatedType === "match" || /^(Match accepted|Confirm the score|Score submitted|Score disputed|Dispute opened|Dispute resolved|Match completed|Match cancellation)/i.test(subject)) {

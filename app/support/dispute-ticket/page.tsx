@@ -54,7 +54,7 @@ function prettyText(value: string | null | undefined) {
 }
 
 function ladderName(value: string | null | undefined) {
-  if (value === "singles") return "Solos Ladder";
+  if (value === "singles") return "Solo Ladder";
   if (value === "duos") return "Duos Ladder";
   if (value === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
@@ -299,7 +299,7 @@ function DisputeTicketPageContent() {
 
     const currentTime = Date.now();
     if (opensAt === null || deadline === null || currentTime < opensAt || currentTime >= deadline) {
-      setMessage("Tickets are available from the scheduled match time until 2 hours afterward.");
+      setMessage("Tickets are available after a match is disputed, starting 15 minutes after the scheduled match time and closing 2 hours afterward.");
       return;
     }
 
@@ -936,7 +936,7 @@ function DisputeTicketPageContent() {
                     <div className="section-title">Explain What Happened</div>
                     <div className="section-body">
                       <div className="guide">
-                        <strong>Filing window:</strong> tickets open at match time and close 2 hours after match time.
+                        <strong>Filing window:</strong> after a match is disputed, tickets open 15 minutes after match time and close 2 hours after match time.
                         Staff only see a case once both teams have filed, or once the
                         window has ended.
                       </div>
@@ -984,7 +984,7 @@ function DisputeTicketPageContent() {
                     {submitting ? "Submitting Case..." : "Submit Dispute Case"}
                   </button>
 
-                  {!windowOpen && <div className="message">Tickets are available from the scheduled match time until 2 hours afterward.</div>}
+                  {!windowOpen && <div className="message">Tickets are available after a match is disputed, starting 15 minutes after the scheduled match time and closing 2 hours afterward.</div>}
                   {message && (
                     <div className={submitted ? "message good" : "message"} role={submitted ? "status" : "alert"}>
                       {message}

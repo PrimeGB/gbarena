@@ -5,6 +5,7 @@ import AutoBadgeArt, { hasAutoBadge } from "./AutoBadges";
 import ServiceAwardArt, { hasServiceAward, serviceAwardAccent } from "./ServiceAwardArt";
 import NewTrophyArt, { hasNewTrophy, newTrophyAccent } from "./NewTrophyArt";
 import EarlyCommunityArt, { earlyCommunityAccent, hasEarlyCommunityArt } from "./EarlyCommunityArt";
+import { awardEmblem } from "./emblems";
 
 // Illustrated art (public/awards/art/N.png) for the awards that have a hand-made emblem.
 const SPRITES: Record<string, number> = {
@@ -70,6 +71,8 @@ export function awardAccent(name: string, group: string) {
   if (hasEarlyCommunityArt(name)) return earlyCommunityAccent(name);
   if (hasNewTrophy(name)) return newTrophyAccent(name);
   if (hasServiceAward(name)) return serviceAwardAccent(name);
+  const emblem = awardEmblem(name);
+  if (emblem) return emblem.accent;
   return SPRITES[name] ? TONES.crimson.glow : pickTone(name, group).glow;
 }
 
@@ -80,17 +83,18 @@ export const AWARD_CSS = `
 .award-stage:after{content:"";position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 22px rgba(0,0,0,.55);pointer-events:none}
 .award-art{filter:drop-shadow(0 6px 10px rgba(0,0,0,.65));transition:transform .3s}
 .award-sprite{display:block;width:100%;height:150px;object-fit:contain;mix-blend-mode:screen;-webkit-mask-image:radial-gradient(ellipse at center,#000 66%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 66%,transparent 100%);transition:transform .3s,filter .3s;filter:saturate(1.25) contrast(1.15) brightness(1.55)}
+.award-emblem{display:block;width:100%;height:150px;object-fit:contain;padding:14px;box-sizing:border-box;filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)) drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 35%,transparent));transition:transform .3s,filter .3s}
+.award-card:hover .award-emblem{transform:scale(1.09);filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)) drop-shadow(0 0 18px var(--accent))}
 .award-card:hover .award-art,.award-card:hover .award-sprite{transform:scale(1.09)}
 .award-card:hover .award-sprite{filter:saturate(1.4) contrast(1.15) brightness(1.8) drop-shadow(0 0 10px var(--accent))}
 .award-card:has(.service-award-art):hover{box-shadow:0 8px 18px rgba(0,0,0,.65);border-color:#827568!important}
 .award-stage:has(.service-award-art){background:linear-gradient(145deg,#292a29,#101213 65%,#080909)}
 .award-card:hover .service-award-art{transform:scale(1.04)}
 .award-glow{animation:awardPulse 3.2s ease-in-out infinite;transform-origin:center}
-.award-sparkles path{opacity:0;animation:awardTwinkle 2.8s ease-in-out infinite}
-.award-sparkles .sp2{animation-delay:.9s}.award-sparkles .sp3{animation-delay:1.8s}
+.award-sparkles path{opacity:0;transform-box:fill-box;transform-origin:center;animation:awardTwinkle 3.4s ease-in-out infinite}
+.award-sparkles .sp2{animation-duration:4.1s;animation-delay:1.3s}.award-sparkles .sp3{animation-duration:3.7s;animation-delay:2.2s}.award-sparkles .sp4{animation-duration:4.6s;animation-delay:.6s}.award-sparkles .sp5{animation-duration:3.9s;animation-delay:3s}
 @keyframes awardPulse{50%{opacity:.5}}
-@keyframes awardTwinkle{0%,100%{opacity:0}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.award-glow,.award-sparkles path{animation:none}.award-sparkles path{opacity:.8}}
+@keyframes awardTwinkle{0%,15%,100%{opacity:0;transform:scale(.3)}40%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}58%{opacity:.95;transform:scale(.95)}80%{opacity:0;transform:scale(.4)}}
 `;
 
 type Frame = "hex" | "shield" | "trophy" | "medal" | "crystal" | "plaque";
@@ -363,6 +367,8 @@ function EmblemArt({ name, group, height = 150 }: { name: string; group: string;
         <path className="sp1" d="M26 30 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 z" />
         <path className="sp2" d="M132 24 l1.5 4.5 4.5 1.5 -4.5 1.5 -1.5 4.5 -1.5 -4.5 -4.5 -1.5 4.5 -1.5 z" />
         <path className="sp3" d="M136 112 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2 z" />
+        <path className="sp4" d="M118 76 l1 3 3 1 -3 1 -1 3 -1 -3 -3 -1 3 -1 z" />
+        <path className="sp5" d="M40 80 l1 3 3 1 -3 1 -1 3 -1 -3 -3 -1 3 -1 z" />
       </g>
     </svg>
   );
@@ -373,6 +379,8 @@ export default function AwardArt({ name, group, height }: { name: string; group:
   if (hasNewTrophy(name)) return <NewTrophyArt name={name} height={height} />;
   if (hasServiceAward(name)) return <ServiceAwardArt name={name} height={height} />;
   if (hasAutoBadge(name)) return <AutoBadgeArt name={name} height={height} />;
+  const emblem = awardEmblem(name);
+  if (emblem) return <img src={emblem.src} alt={name} className="award-emblem" style={height ? { height } : undefined} loading="lazy" />;
   const sprite = SPRITES[name];
   if (sprite) return <SpriteArt name={name} id={sprite} height={height} />;
   return <EmblemArt name={name} group={group} height={height} />;

@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildHeroRotation, nextHeroSlideIndex } from "../../lib/heroSlides";
+import HeroPromo from "./HeroPromo";
 
 export default function HeroSlideshow({ images }: { images: string[] }) {
   const [active, setActive] = useState(0);
   const [loadedImages, setLoadedImages] = useState<ReadonlySet<string>>(() => new Set());
+  const [promoFocused, setPromoFocused] = useState(false);
   const loadedImagesRef = useRef<ReadonlySet<string>>(new Set());
+  const slides = useMemo(() => buildHeroRotation(images), [images]);
 
   useEffect(() => {
     let mounted = true;
@@ -31,18 +35,12 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
   }, [images]);
 
   useEffect(() => {
-    if (images.length < 2) return;
-    const timer = window.setInterval(() => {
-      setActive((current) => {
-        for (let offset = 1; offset <= images.length; offset += 1) {
-          const next = (current + offset) % images.length;
-          if (loadedImagesRef.current.has(images[next])) return next;
-        }
-        return current;
-      });
-    }, 7000);
-    return () => window.clearInterval(timer);
-  }, [images]);
+    if (promoFocused) return;
+    const timer = window.setTimeout(() => {
+      setActive((current) => nextHeroSlideIndex(slides, current, loadedImagesRef.current));
+    }, slides[active]?.kind === "image" ? 7000 : 20000);
+    return () => window.clearTimeout(timer);
+  }, [slides, active, promoFocused]);
 
   return (
     <>
@@ -63,19 +61,21 @@ export default function HeroSlideshow({ images }: { images: string[] }) {
           .hero-expanded .hs-slide{transition:none;transform:none;}
         }
       `}</style>
-      {images.map((src, index) => (
+      {slides.map((slide, index) => slide.kind === "image" ? (
         <div
-          key={src}
+          key={`${slide.src}-${index}`}
           className={[
             "hs-slide",
-            index === active && loadedImages.has(src) ? "active" : "",
-            src === "/retro-systems/retro-lan-room.png" ? "retro-slide" : "",
+            index === active && loadedImages.has(slide.src) ? "active" : "",
+            slide.src === "/retro-systems/retro-lan-room.png" ? "retro-slide" : "",
           ].filter(Boolean).join(" ")}
           style={{
-            backgroundImage: `linear-gradient(to bottom,rgba(10,18,26,.08),rgba(0,0,0,.48)), url("${src}")`,
+            backgroundImage: `linear-gradient(to bottom,rgba(10,18,26,.08),rgba(0,0,0,.48)), url("${slide.src}")`,
           }}
         />
-      ))}
+      ) : index === active ? (
+        <HeroPromo key={slide.kind} kind={slide.kind} onFocusChange={setPromoFocused} />
+      ) : null)}
     </>
   );
 }

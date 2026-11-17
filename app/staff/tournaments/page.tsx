@@ -18,6 +18,7 @@ type Tournament = {
   entry_fee_credits: number;
   prize_credits: number;
   competition_type: "standard" | "weekly_cup";
+  entry_kind: "team" | "player";
 };
 
 function getNextSaturdayAtEightEastern(weeksAhead = 0) {
@@ -75,6 +76,10 @@ function getNextSaturdayAtEightEastern(weeksAhead = 0) {
 const emptyForm = {
   title: "Weekly Free Community Cup",
   competition_type: "weekly_cup",
+  entry_kind: "team",
+  min_players: "12",
+  winner_award: "",
+  target_score: "25",
   platform: "",
   game: "",
   format: "Single Elimination",
@@ -105,6 +110,7 @@ export default function StaffTournamentsPage() {
   const [payPlace, setPayPlace] = useState("1");
   const [payAmount, setPayAmount] = useState("");
   const [rewardBusy, setRewardBusy] = useState(false);
+  const [schedule, setSchedule] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -135,7 +141,7 @@ export default function StaffTournamentsPage() {
     }
     const { data, error: tournamentsError } = await supabase
       .from("tournaments")
-      .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits,competition_type")
+      .select("id,title,platform,game,starts_at,status,is_free,entry_fee,entry_fee_credits,prize_credits,competition_type,entry_kind")
       .order("starts_at", { ascending: true });
     if (tournamentsError) {
       setError(`Tournaments could not be loaded: ${tournamentsError.message}`);
@@ -182,9 +188,25 @@ export default function StaffTournamentsPage() {
     e.preventDefault();
     setError("");
     setNotice("");
-    if (!form.title.trim() || !form.starts_at) {
-      setError("A title and a start date/time are required.");
+    if (!form.title.trim() || (!form.starts_at && form.entry_kind !== "player")) {
+      setError("A title and, for team events, a start date/time are required.");
       return;
+    }
+    if (form.entry_kind === "player") {
+      const minimum = Number(form.min_players);
+      const maximum = Number(form.max_teams);
+      if (!Number.isInteger(minimum) || minimum < 2 || !Number.isInteger(maximum) || maximum < minimum || maximum > 128) {
+        setError("Player events need a minimum of at least 2 and a maximum between the minimum and 128.");
+        return;
+      }
+      if (Number(form.entry_fee_credits) !== 0) {
+        setError("Player tournaments currently support free entry only.");
+        return;
+      }
+      if (!Number.isInteger(Number(form.target_score)) || Number(form.target_score) < 1 || Number(form.target_score) > 999) {
+        setError("Enter a winning score between 1 and 999.");
+        return;
+      }
     }
     const fee = Math.max(0, Math.trunc(Number(form.entry_fee_credits) || 0));
     const prizeCredits = Math.max(0, Math.trunc(Number(form.prize_credits) || 0));
@@ -204,6 +226,10 @@ export default function StaffTournamentsPage() {
       prize_credits: prizeCredits,
       prize_per_player: form.competition_type === "weekly_cup",
       competition_type: form.competition_type,
+      entry_kind: form.entry_kind,
+      min_players: form.entry_kind === "player" ? Number(form.min_players) : null,
+      winner_award: form.entry_kind === "player" && form.winner_award ? form.winner_award : null,
+      target_score: form.entry_kind === "player" ? Number(form.target_score) : 25,
       prize: form.prize.trim() || null,
       rules: form.rules.trim() || null,
       created_by: user?.id,
@@ -226,6 +252,21 @@ export default function StaffTournamentsPage() {
       .eq("id", id);
     if (updateError) setError(updateError.message);
     load();
+  }
+
+  async function setPlayerSchedule(t: Tournament) {
+    const value = schedule[t.id];
+    if (!value || Number.isNaN(new Date(value).getTime()) || new Date(value).getTime() <= Date.now()) {
+      setError("Choose a future tournament date and time.");
+      return;
+    }
+    setError("");
+    const { data, error: updateError } = await supabase.from("tournaments").update({ starts_at: new Date(value).toISOString() })
+      .eq("id", t.id).eq("status", "upcoming").select("id").maybeSingle();
+    if (updateError) setError(updateError.message);
+    else if (!data) setError("The tournament is no longer available for scheduling.");
+    else setNotice("Tournament date updated.");
+    await load();
   }
 
   async function openPay(t: Tournament) {
@@ -372,6 +413,17 @@ export default function StaffTournamentsPage() {
                   <input value={form.title} onChange={(e) => set("title", e.target.value)} maxLength={120} />
                 </label>
                 <label>
+                  Entrants
+                  <select value={form.entry_kind} onChange={(e) => setForm((current) => ({
+                    ...current, entry_kind: e.target.value, competition_type: "standard", entry_fee_credits: "0",
+                    title: "", prize_credits: "0", prize: "", winner_award: "",
+                    starts_at: e.target.value === "player" ? "" : getNextSaturdayAtEightEastern(),
+                  }))}>
+                    <option value="team">Teams</option>
+                    <option value="player">Individual players</option>
+                  </select>
+                </label>
+                <label>
                   Event type
                   <select
                     value={form.competition_type}
@@ -389,7 +441,7 @@ export default function StaffTournamentsPage() {
                       }));
                     }}
                   >
-                    {isOwner && <option value="weekly_cup">Weekly Free Cup</option>}
+                    {isOwner && form.entry_kind === "team" && <option value="weekly_cup">Weekly Free Cup</option>}
                     <option value="standard">Standard tournament</option>
                   </select>
                 </label>
@@ -417,7 +469,7 @@ export default function StaffTournamentsPage() {
                   <input value={form.team_size} onChange={(e) => set("team_size", e.target.value)} />
                 </label>
                 <label>
-                  Start date and time (your local time; default is Saturday at 8 PM Eastern)
+                  Start date and time (your local time; player events can be TBD)
                   <input type="datetime-local" value={form.starts_at} onChange={(e) => set("starts_at", e.target.value)} />
                 </label>
                 <label>
@@ -425,12 +477,29 @@ export default function StaffTournamentsPage() {
                   <input type="number" min={0} value={form.check_in_minutes} onChange={(e) => set("check_in_minutes", e.target.value)} />
                 </label>
                 <label>
-                  Max teams (blank = unlimited)
+                  {form.entry_kind === "player" ? "Maximum players (up to 128)" : "Max teams (blank = unlimited)"}
                   <input type="number" min={2} value={form.max_teams} onChange={(e) => set("max_teams", e.target.value)} />
                 </label>
+                {form.entry_kind === "player" && <>
+                  <label>
+                    Minimum players
+                    <input type="number" min={2} value={form.min_players} onChange={(e) => set("min_players", e.target.value)} />
+                  </label>
+                  <label>
+                    Winning score
+                    <input type="number" min={1} max={999} value={form.target_score} onChange={(e) => set("target_score", e.target.value)} />
+                  </label>
+                  <label>
+                    Winner profile award
+                    <select value={form.winner_award} disabled={!isOwner} onChange={(e) => set("winner_award", e.target.value)}>
+                      <option value="">None</option>
+                      <option value="Tournament Winner Trophy">Tournament Winner Trophy</option>
+                    </select>
+                  </label>
+                </>}
                 <label>
                   Entry fee (credits, weekly cups are free)
-                  <input type="number" min={0} step="1" value={form.entry_fee_credits} disabled={!isOwner || form.competition_type === "weekly_cup"} onChange={(e) => set("entry_fee_credits", e.target.value)} />
+                  <input type="number" min={0} step="1" value={form.entry_fee_credits} disabled={!isOwner || form.competition_type === "weekly_cup" || form.entry_kind === "player"} onChange={(e) => set("entry_fee_credits", e.target.value)} />
                 </label>
                 <label>
                   Prize (credits per winner)
@@ -471,7 +540,7 @@ export default function StaffTournamentsPage() {
                       <Link className="st-btn" href={`/tournaments/${t.id}`}>
                         Bracket
                       </Link>
-                      {canPay && (t.competition_type === "weekly_cup" ? (
+                      {t.entry_kind !== "player" && canPay && (t.competition_type === "weekly_cup" ? (
                         <button
                           className="st-btn"
                           disabled={t.status !== "completed" || rewardBusy}
@@ -484,12 +553,12 @@ export default function StaffTournamentsPage() {
                           Pay Prize
                         </button>
                       ))}
-                      {t.status !== "live" && (
+                      {t.entry_kind !== "player" && t.status !== "live" && (
                         <button className="st-btn" onClick={() => setStatus(t.id, "live")}>
                           Go Live
                         </button>
                       )}
-                      {t.status !== "completed" && (
+                      {t.entry_kind !== "player" && t.status !== "completed" && (
                         <button className="st-btn" onClick={() => setStatus(t.id, "completed")}>
                           Complete
                         </button>
@@ -505,6 +574,14 @@ export default function StaffTournamentsPage() {
                         </button>
                       )}
                     </div>
+                    {t.entry_kind === "player" && t.status === "upcoming" && (
+                      <div className="st-body" style={{ width: "100%", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                        <label>Start date and time (local){" "}
+                          <input type="datetime-local" value={schedule[t.id] || ""} onChange={(e) => setSchedule((current) => ({ ...current, [t.id]: e.target.value }))} />
+                        </label>
+                        <button className="st-btn" onClick={() => setPlayerSchedule(t)}>Set Date</button>
+                      </div>
+                    )}
                     {payFor === t.id && (
                       <div className="st-body" style={{ width: "100%", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                         <select value={payTeam} onChange={(e) => setPayTeam(e.target.value)}>

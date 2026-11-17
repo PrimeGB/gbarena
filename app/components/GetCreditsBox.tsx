@@ -1,177 +1,62 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { CREDIT_PACKAGES } from "@/lib/creditPackages";
 import { useUser } from "@/lib/useUser";
-import Link from "next/link";
 
-type PayPalButtons = {
-  Buttons: (config: Record<string, unknown>) => { render: (el: HTMLElement) => Promise<void>; close: () => void };
-};
-
-declare global {
-  interface Window {
-    paypal?: PayPalButtons;
-  }
-}
-
-const CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-let paypalSdkPromise: Promise<void> | null = null;
-
-function loadPayPalSdk(clientId: string): Promise<void> {
-  if (window.paypal) return Promise.resolve();
-  if (paypalSdkPromise) return paypalSdkPromise;
-
-  paypalSdkPromise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture`;
-    script.onload = () => {
-      if (window.paypal) resolve();
-      else {
-        script.remove();
-        reject(new Error("PayPal loaded without its payment controls."));
-      }
-    };
-    script.onerror = () => {
-      script.remove();
-      reject(new Error("Could not load PayPal."));
-    };
-    document.body.appendChild(script);
-  }).catch((reason: unknown) => {
-    paypalSdkPromise = null;
-    throw reason;
-  });
-  return paypalSdkPromise;
-}
+const TERMS = [
+  { key: "age", text: <>You are 18 or older, or have a parent or guardian&apos;s permission.</> },
+  { key: "paypal", text: <>Payment is by <b>PayPal Friends &amp; Family</b> only, to prevent chargebacks.</> },
+  { key: "refund", text: <>Credits are <b>non-refundable</b>, but can be used toward paid tournaments, including events with cash prizes.</> },
+  { key: "cad", text: <>Prices are in <b>Canadian dollars (CAD)</b>. Other currencies are converted to CAD by PayPal.</> },
+] as const;
 
 export default function GetCreditsBox() {
   const { user, loading: authLoading } = useUser();
-  const userId = user?.id;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string>(CREDIT_PACKAGES[1].key);
   const [agreed, setAgreed] = useState(false);
-  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [sdkReady, setSdkReady] = useState(false);
-  const holder = useRef<HTMLDivElement>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const payingRef = useRef(false);
-  const agreedRef = useRef(false);
-  const selectedRef = useRef(selected);
+  const [sent, setSent] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const okRef = useRef<HTMLButtonElement>(null);
+  const pack = CREDIT_PACKAGES.find((p) => p.key === selected) ?? CREDIT_PACKAGES[0];
 
   useEffect(() => {
-    if (!open) return;
-    function onOutside(e: MouseEvent) {
-      if (payingRef.current) return;
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    if (sent && dialogRef.current && !dialogRef.current.open) {
+      dialogRef.current.showModal();
+      okRef.current?.focus();
     }
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
-  }, [open]);
+  }, [sent]);
 
-  useEffect(() => {
-    agreedRef.current = agreed;
-  }, [agreed]);
-  useEffect(() => {
-    selectedRef.current = selected;
-  }, [selected]);
-
-  useEffect(() => {
-    if (!open || !userId || !CLIENT_ID) return;
-    let active = true;
-    loadPayPalSdk(CLIENT_ID).then(
-      () => {
-        if (active) {
-          setError("");
-          setSdkReady(true);
-        }
-      },
-      (reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Could not load PayPal.");
-      },
-    );
-    return () => { active = false; };
-  }, [open, userId]);
-
-  async function finishPayment(orderId: string) {
-    const { data } = await supabase.auth.getSession();
-    const res = await fetch("/api/paypal/capture-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
-      body: JSON.stringify({ orderId }),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      setError(json.error || "Payment could not be completed.");
+  async function sendRequest() {
+    if (!agreed || sending) return;
+    setSending(true);
+    setError("");
+    const { error: rpcError } = await supabase.rpc("gb_request_credits", { p_package: selected });
+    setSending(false);
+    if (rpcError) {
+      setError(rpcError.message);
       return;
     }
-    setMessage(`Payment complete. Your balance is now ${Number(json.balance).toLocaleString()} credits.`);
+    setSent(true);
   }
 
-  useEffect(() => {
-    if (!open || !userId || !sdkReady || !window.paypal || !holder.current) return;
-    const el = holder.current;
-    el.innerHTML = "";
-    const buttons = window.paypal.Buttons({
-      style: { layout: "vertical", color: "gold", shape: "rect", label: "paypal" },
-      onClick: (_: unknown, actions: { resolve: () => Promise<void>; reject: () => Promise<void> }) => {
-        if (!agreedRef.current) {
-          setError("Please accept the Credit Terms first.");
-          return actions.reject();
-        }
-        setError("");
-        return actions.resolve();
-      },
-      createOrder: async () => {
-        payingRef.current = true;
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token;
-        if (!token) throw new Error("Sign in to buy credits.");
-        const res = await fetch("/api/paypal/create-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ packageKey: selectedRef.current }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Could not start payment.");
-        return json.id;
-      },
-      onApprove: async (approval: { orderID: string }) => {
-        try {
-          await finishPayment(approval.orderID);
-        } finally {
-          payingRef.current = false;
-        }
-      },
-      onCancel: () => {
-        payingRef.current = false;
-      },
-      onError: (err: Error) => {
-        payingRef.current = false;
-        setError(err?.message || "Payment failed.");
-      },
-    });
-    let active = true;
-    void buttons.render(el).catch((reason: unknown) => {
-      if (active) setError(reason instanceof Error ? reason.message : "Could not display PayPal.");
-    });
-    return () => {
-      active = false;
-      try {
-        buttons.close();
-      } catch {
-        /* already closed */
-      }
-    };
-  }, [open, sdkReady, userId]);
+  function closeDialog() {
+    setSent(false);
+    setOpen(false);
+    setAgreed(false);
+  }
 
   return (
-    <div className="gc-box" ref={boxRef}>
+    <div className="gc-box">
       <div className="gc-head">Get Credits</div>
       {!open ? (
         <>
-          <p>Use credits for tournament entry. Packs of 5 to 25.</p>
+          <p>Use credits for tournament entry. Packs of 5 to 25. Prices in CAD.</p>
           <button className="gc-btn" onClick={() => setOpen(true)}>{user ? "Buy Credits" : "View Credit Packs"}</button>
         </>
       ) : (
@@ -181,32 +66,61 @@ export default function GetCreditsBox() {
               <label key={p.key} className={`gc-pack ${selected === p.key ? "on" : ""}`}>
                 <input type="radio" name="pack" checked={selected === p.key} onChange={() => setSelected(p.key)} />
                 <b>{p.credits} credits</b>
-                <span>${p.price}</span>
+                <span>${p.price} CAD</span>
               </label>
             ))}
           </div>
-          <label className="gc-terms">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-            <span>
-              I am 18+ (or have a parent/guardian&apos;s permission) and agree to the{" "}
-              <a href="/credits-terms" target="_blank" rel="noreferrer">Credit Terms</a>: purchases are final, non-refundable,
-              have no cash value, and I will not file a chargeback or dispute.
-            </span>
-          </label>
-          {!CLIENT_ID ? (
-            <div className="gc-note">Credit purchases are being set up and will open soon.</div>
-          ) : authLoading ? (
+          <div className="gc-agree">
+            <label className="gc-terms">
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <span>I am 18+ and agree to the <b>credit purchase terms</b>.</span>
+            </label>
+            <details className="gc-more">
+              <summary>Read full terms</summary>
+              <ul>
+                {TERMS.map((t) => <li key={t.key}>{t.text}</li>)}
+                <li>Full details are in the <a href="/credits-terms" target="_blank" rel="noreferrer">Credit Terms</a>.</li>
+              </ul>
+            </details>
+          </div>
+          {authLoading ? (
             <div className="gc-note">Checking sign-in...</div>
           ) : !user ? (
-            <div className="gc-note"><Link href="/login?next=%2Ftournaments">Sign in</Link> to buy credits.</div>
+            <div className="gc-note"><Link href="/login?next=%2Ftournaments">Sign in</Link> to request credits.</div>
           ) : (
-            <div ref={holder} className="gc-paypal" />
+            <div className="gc-actions">
+              <button className="gc-btn" type="button" disabled={!agreed || sending} onClick={sendRequest}>
+                {sending ? "Sending..." : `Send Request · ${pack.credits} credits`}
+              </button>
+              <button className="gc-cancel" type="button" disabled={sending} onClick={() => { setOpen(false); setError(""); }}>Cancel</button>
+            </div>
           )}
-          {error && <div className="gc-err">{error}</div>}
-          {message && <div className="gc-ok">{message}</div>}
-          <div className="gc-secure">Payments are processed by PayPal. We never see your card or PayPal login.</div>
+          {!agreed && user && <div className="gc-note gc-hint">Tick the box above to send your request.</div>}
+          {error && <div className="gc-err" role="alert">{error}</div>}
+          <ol className="gc-steps">
+            <li>Send your request.</li>
+            <li>We message you in your GameBattles inbox with PayPal payment details.</li>
+            <li>Your credits are added once payment is confirmed.</li>
+          </ol>
         </>
       )}
+
+      <dialog ref={dialogRef} className="gc-dialog" aria-labelledby="gc-dialog-title" onClose={closeDialog}>
+        <div className="gc-dialog-header">GameBattles Notification</div>
+        <div className="gc-dialog-body">
+          <div className="gc-dialog-icon" aria-hidden="true">✓</div>
+          <h2 id="gc-dialog-title">Request Sent</h2>
+          <p>
+            Your request for <b>{pack.credits} credits (${pack.price} CAD)</b> has been sent. You will be contacted soon to
+            finish your purchase, so keep an eye on your GameBattles inbox.
+          </p>
+          <p className="gc-dialog-warn">
+            <b>Stay safe:</b> do not share your PayPal password or personal login details with anyone.
+            No GameBattles staff member will ever ask for them.
+          </p>
+          <button ref={okRef} type="button" className="gc-dialog-ok" onClick={() => dialogRef.current?.close()}>OK</button>
+        </div>
+      </dialog>
     </div>
   );
 }

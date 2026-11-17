@@ -60,13 +60,15 @@ test("match emails use the match details and an event-specific subject", async (
 test("award emails identify the earned trophy, including team awards", async () => {
   const email = await send({
     subject: "Your team earned an award: Squad Spirit Trophy",
-    body: 'Congratulations! "Squad Spirit Trophy" was added to your team.',
+    body: "Congratulations on earning the Squad Spirit Trophy! It has been added to your team profile.\n\nHow it was earned: Win 5 matches together.",
     related_type: "award",
   });
 
   assert.equal(email.subject, "Your team earned a new trophy: Squad Spirit Trophy");
-  assert.match(email.html, /Your Team Earned a New Trophy!/);
-  assert.match(email.html, /added to your team&#39;s GameBattles profile/);
+  assert.match(email.html, /Congratulations on earning the Squad Spirit Trophy!/);
+  assert.match(email.html, /now on your team&#39;s GameBattles profile/);
+  assert.match(email.html, /How it was earned: Win 5 matches together\./);
+  assert.doesNotMatch(email.text, /It has been added to your team profile/);
 });
 
 test("inbox emails show the GameBattles logo and do not include private message text", async () => {

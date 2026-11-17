@@ -205,6 +205,7 @@ export default function StaffDashboardPage() {
   const can = (key: string) => isOwner || permissions.includes(key as PermissionKey);
   const tiles: Tile[] = [
     isOwner && { key: "site_overview", title: "Site overview", description: "Founder-only site stats, searchable activity logs, account and team lookup, and open work queues.", cta: "Open site overview", view: "overview" },
+    isOwner && { key: "credit_requests", title: "Pending credit purchases", description: "Founder-only. See players requesting credits, send PayPal payment details and add credits once paid.", cta: "Open purchases", href: "/staff/credit-requests" },
     can("match_review") && { key: "match_review", title: "Disputed match tickets", description: "Review submitted disputes and finalize official match results.", cta: "Open ticket queue", href: "/staff/matches" },
     can("staff_access") && { key: "decision_reviews", title: "Match decision reviews", description: "Review team requests about staff match decisions.", cta: "Open review queue", href: "/staff/match-reviews" },
     can("staff_reports") && { key: "staff_reports", title: "Player reports and enforcement", description: "Review new cases, manage evidence, and record decisions.", cta: "Open work area", view: "reports" },

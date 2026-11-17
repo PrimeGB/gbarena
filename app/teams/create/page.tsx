@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import { useUser } from "../../../lib/useUser";
 import { gamingCategoryLabel, gamingGameLabel, gamingGames } from "../../../lib/gamingAccounts";
 import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 import {
   categoriesForPlatform,
   gamesForCategory,
+  ladderGameImage,
   ladderPlatformLabel,
   ladderPlatforms,
   laddersForGame,
@@ -48,98 +50,215 @@ export default function CreateTeamPage() {
 
 function ChooseTeamLadder() {
   const [platform, setPlatform] = useState("");
-  const [category, setCategory] = useState("");
-  const [game, setGame] = useState("");
-  const [ladder, setLadder] = useState("");
-  const categories = categoriesForPlatform(platform);
-  const games = gamesForCategory(category);
-  const ladders = category && game ? laddersForGame(category, game) : [];
-  const hubUrl = `/team-hub?${new URLSearchParams({ platform, category, game, ladder })}`;
+  const [gameSelection, setGameSelection] = useState("");
+  const [ladderSelection, setLadderSelection] = useState("");
+  const [availability, setAvailability] = useState<{ key: string; team?: { id: string; name: string }; error?: string } | null>(null);
+  const [retry, setRetry] = useState(0);
+  const { user, loading: userLoading } = useUser();
+  const groups = categoriesForPlatform(platform).map((category) => ({
+    ...category,
+    games: gamesForCategory(category.value).map((game) => ({
+      value: `${category.value}/${game.value}`,
+      category: category.value,
+      game: game.value,
+      name: gameNames[game.value] || `${category.label}: ${game.label}`,
+    })),
+  })).filter((group) => group.games.length > 0);
+  const selectedGame = groups.flatMap((group) => group.games).find((game) => game.value === gameSelection);
+  const ladders = selectedGame ? laddersForGame(selectedGame.category, selectedGame.game) : [];
+  const selectedLadder = ladders.find((ladder) => ladder.slug === ladderSelection);
+  const ladderTitle = selectedLadder?.slug === "singles" ? "Solos" : selectedLadder?.title;
+  const hubUrl = selectedGame && selectedLadder
+    ? `/team-hub?${new URLSearchParams({ platform, category: selectedGame.category, game: selectedGame.game, ladder: selectedLadder.slug })}`
+    : "";
+  const artwork = selectedGame ? ladderGameImage(selectedGame.category, selectedGame.game) : null;
+  const category = selectedGame?.category || "";
+  const game = selectedGame?.game || "";
+  const ladder = selectedLadder?.slug || "";
+  const availabilityKey = `${user?.id || ""}/${platform}/${category}/${game}/${ladder}`;
+
+  useEffect(() => {
+    if (!user?.id || !platform || !category || !game || !ladder) return;
+    let active = true;
+    const userId = user.id;
+
+    async function checkExistingTeam() {
+      try {
+        const [memberships, owned] = await Promise.all([
+          supabase.from("team_members").select("team_id").eq("user_id", userId),
+          supabase.from("teams").select("id,name").eq("owner_id", userId)
+            .eq("platform", platform).eq("category", category).eq("game", game).eq("ladder", ladder).limit(1),
+        ]);
+        if (memberships.error || owned.error) {
+          throw new Error((memberships.error || owned.error)?.message || "Could not check your teams.");
+        }
+        let team = owned.data?.[0];
+        const teamIds = (memberships.data || []).map((membership) => membership.team_id);
+        if (!team && teamIds.length > 0) {
+          const memberTeams = await supabase.from("teams").select("id,name")
+            .in("id", teamIds).eq("platform", platform).eq("category", category)
+            .eq("game", game).eq("ladder", ladder).limit(1);
+          if (memberTeams.error) throw new Error(memberTeams.error.message);
+          team = memberTeams.data?.[0];
+        }
+        if (active) setAvailability({ key: availabilityKey, team });
+      } catch (error) {
+        if (active) setAvailability({ key: availabilityKey, error: error instanceof Error ? error.message : "Could not check your teams." });
+      }
+    }
+
+    void checkExistingTeam();
+    return () => { active = false; };
+  }, [user?.id, platform, category, game, ladder, availabilityKey, retry]);
+
+  const checking = !!selectedLadder && (userLoading || (!!user && availability?.key !== availabilityKey));
+  const existingTeam = availability?.key === availabilityKey ? availability.team : undefined;
+  const availabilityError = availability?.key === availabilityKey ? availability.error : undefined;
+  const canContinue = !!selectedLadder && !checking && !existingTeam && !availabilityError;
 
   return (
     <main className="choose-team-page">
       <style>{`
-        .choose-team-page{min-height:100vh;padding:40px 24px;background:radial-gradient(circle at top,rgba(20,80,130,.36),transparent 42%),#000;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif}
-        .choose-team-wrap{max-width:900px;margin:auto;background:#07111b;border:1px solid #2f6f9f;box-shadow:0 0 35px rgba(0,90,160,.5)}
-        .choose-team-top{display:flex;justify-content:flex-end;gap:18px;padding:9px 14px;background:linear-gradient(to bottom,#9a0000,#3a0000)}
-        .choose-team-top a{color:#fff;font-size:12px;font-weight:bold;text-decoration:none;text-transform:uppercase}
-        .choose-team-header{padding:20px 24px;background:linear-gradient(to bottom,#15324b,#07111b);border-bottom:2px solid #2f6f9f}
-        .choose-team-logo{color:#f4f8ff;font-size:38px;font-weight:bold;font-style:italic;text-decoration:none;text-transform:uppercase}
-        .choose-team-title{padding:24px;background:linear-gradient(to bottom,#205077,#0a1724);border-bottom:1px solid #2f638f}
-        .choose-team-title h1{margin:0 0 8px;color:#f2c14e;font-size:28px;text-transform:uppercase}
-        .choose-team-title p{margin:0;color:#cfe2f2;font-size:14px;line-height:1.5}
-        .choose-team-content{padding:24px}
-        .choose-team-panel{padding:24px;border:1px solid #244b70;background:#050c14}
-        .choose-team-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-        .choose-team-field{display:flex;flex-direction:column;gap:8px;color:#f2c14e;font-size:12px;font-weight:bold;text-transform:uppercase}
-        .choose-team-field select{width:100%;height:46px;padding:0 12px;border:1px solid #3b7fc2;background:#07111b;color:#fff;font:14px Tahoma,Verdana,Arial,sans-serif}
-        .choose-team-field select:disabled{opacity:.55}
-        .choose-team-field select:focus-visible,.choose-team-button:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
-        .choose-team-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
-        .choose-team-button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid #ffe08a;background:linear-gradient(to bottom,#f2c14e,#93670d);color:#06111b;font-size:13px;font-weight:900;text-decoration:none;text-transform:uppercase}
-        .choose-team-back{color:#8ac6f5;font-size:13px}
-        .choose-team-note{margin:16px 0 0;color:#a9c3db;font-size:12px;line-height:1.5}
-        @media(max-width:600px){.choose-team-page{padding:10px}.choose-team-logo{font-size:clamp(25px,8vw,38px)}.choose-team-content,.choose-team-panel,.choose-team-title{padding:16px}.choose-team-fields{grid-template-columns:1fr}}
+        .choose-team-page{min-height:100vh;padding:30px 20px 54px;background:radial-gradient(ellipse at 50% 0,#102b42 0,#02070d 52%,#000 100%);color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif}
+        .choose-team-page *{box-sizing:border-box}
+        .choose-team-wrap{max-width:1060px;margin:auto;background:#07111b;border:1px solid #315f88;box-shadow:0 12px 40px #000b}
+        .choose-team-header{position:relative;overflow:hidden;padding:28px 30px;background:radial-gradient(ellipse at 86% 20%,#26577b 0,transparent 46%),linear-gradient(115deg,#173b58,#07111b 78%);border-bottom:1px solid #3b719d}
+        .choose-team-eyebrow{margin:0 0 8px;color:#f2c14e;font-size:11px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase}
+        .choose-team-header h1{margin:0;color:#fff;font-size:32px;font-weight:900;letter-spacing:.3px;text-transform:uppercase}
+        .choose-team-header p{margin:8px 0 0;color:#c1d5e4;font-size:13px;line-height:1.5}
+        .choose-team-steps{display:flex;gap:24px;padding:13px 30px;background:#0a1a29;border-bottom:1px solid #254b69;color:#829caf;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
+        .choose-team-steps .current{color:#f2c14e}
+        .choose-team-content{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,1fr);gap:24px;padding:28px 30px 30px}
+        .choose-team-form{min-width:0}
+        .choose-team-section{margin:0;padding:0;border:0}
+        .choose-team-section + .choose-team-section{margin-top:28px}
+        .choose-team-heading{display:flex;align-items:center;gap:10px;margin:0 0 7px;color:#fff;font-size:15px;font-weight:900}
+        .choose-team-number{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border:1px solid #507fa2;border-radius:50%;background:#102b40;color:#f2c14e;font-size:11px;flex:none}
+        .choose-team-help{margin:0 0 14px;color:#a9c3d6;font-size:12px;line-height:1.5}
+        .choose-team-systems{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+        .choose-team-system{min-width:0;min-height:50px;padding:9px 5px;border:1px solid #315875;background:#0a1b29;color:#c2d6e5;font:700 12px Tahoma,Verdana,Arial,sans-serif;cursor:pointer}
+        .choose-team-system:hover{background:#173852;border-color:#6292b5}
+        .choose-team-system[aria-pressed="true"]{background:linear-gradient(#275572,#102a3c);border-color:#72b8e3;color:#fff;box-shadow:inset 0 -3px #f2c14e}
+        .choose-team-system:focus-visible,.choose-team-choice:focus-visible,.choose-team-button:focus-visible,.choose-team-back:focus-visible,.choose-team-retry:focus-visible{outline:2px solid #f2c14e;outline-offset:2px}
+        .choose-team-game-list{max-height:300px;overflow-y:auto;padding:2px 6px 2px 0;scrollbar-color:#5685a6 #0a1a29;scrollbar-width:thin}
+        .choose-team-group + .choose-team-group{margin-top:15px}
+        .choose-team-group h3{margin:0 0 7px;color:#91aec2;font-size:10px;font-weight:900;letter-spacing:.7px;text-transform:uppercase}
+        .choose-team-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+        .choose-team-choice{min-height:44px;padding:10px 12px;border:1px solid #315875;background:#0a1b29;color:#c2d6e5;text-align:left;font:700 12px Tahoma,Verdana,Arial,sans-serif;line-height:1.35;cursor:pointer}
+        .choose-team-choice:hover{background:#173852;border-color:#6292b5}
+        .choose-team-choice[aria-pressed="true"]{background:linear-gradient(#275572,#102a3c);border-color:#72b8e3;color:#fff;box-shadow:inset 3px 0 #f2c14e}
+        .choose-team-ladders{display:flex;flex-wrap:wrap;gap:7px}
+        .choose-team-ladder-options{margin-top:20px}
+        .choose-team-ladders .choose-team-choice{min-width:100px;text-align:center}
+        .choose-team-status{margin:14px 0 0;color:#c6d9e7;font-size:12px;line-height:1.5}
+        .choose-team-status a{color:#9bcff2}
+        .choose-team-retry{padding:0;border:0;background:none;color:#9bcff2;font:inherit;text-decoration:underline;cursor:pointer}
+        .choose-team-summary{align-self:start;overflow:hidden;border:1px solid #315a79;background:#091724}
+        .choose-team-summary-hero{min-height:145px;display:flex;flex-direction:column;justify-content:flex-end;padding:20px;background:radial-gradient(ellipse at 85% 0,#285d7d,transparent 65%),linear-gradient(135deg,#153b56,#091724);background-size:cover;background-position:center}
+        .choose-team-summary-label{color:#f2c14e;font-size:10px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase}
+        .choose-team-summary-hero strong{display:block;margin-top:7px;color:#fff;font-size:19px;line-height:1.25;text-shadow:0 2px 6px #000}
+        .choose-team-summary-body{padding:17px 20px}
+        .choose-team-summary-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #1d3b51;color:#9eb8ca;font-size:12px}
+        .choose-team-summary-row strong{color:#edf6fb;text-align:right}
+        .choose-team-summary-note{margin:13px 0 0;color:#9eb8ca;font-size:12px;line-height:1.55}
+        .choose-team-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:24px}
+        .choose-team-button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border:1px solid #ffe08a;background:linear-gradient(#f2c14e,#bc8c25);color:#101820;font-size:12px;font-weight:900;letter-spacing:.3px;text-decoration:none;text-transform:uppercase}
+        .choose-team-button:hover{background:linear-gradient(#ffdc79,#d3a13a)}
+        .choose-team-button[aria-disabled="true"]{border-color:#36566c;background:#152b3a;color:#7892a2;cursor:not-allowed}
+        .choose-team-back{color:#9bcff2;font-size:12px;text-decoration:none}
+        .choose-team-back:hover{text-decoration:underline}
+        @media(max-width:700px){.choose-team-page{padding:12px 10px 35px}.choose-team-header{padding:22px 18px}.choose-team-header h1{font-size:26px}.choose-team-steps{padding:12px 18px;gap:16px}.choose-team-content{grid-template-columns:1fr;padding:20px 18px;gap:22px}.choose-team-summary{order:2}.choose-team-systems{grid-template-columns:repeat(3,minmax(0,1fr))}}
       `}</style>
       <div className="choose-team-wrap">
         <header className="choose-team-header">
-          <Link className="choose-team-logo" href="/home">GameBattles</Link>
-        </header>
-        <section className="choose-team-title">
+          <div className="choose-team-eyebrow">GameBattles / Teams</div>
           <h1>Create a Team</h1>
-          <p>Choose your system, game, and ladder to get started.</p>
-        </section>
-        <section className="choose-team-content">
-          <div className="choose-team-panel">
-            <div className="choose-team-fields">
-              <label className="choose-team-field">
-                System
-                <select value={platform} onChange={(event) => {
-                  setPlatform(event.target.value);
-                  setCategory("");
-                  setGame("");
-                  setLadder("");
-                }}>
-                  <option value="">Choose a system</option>
-                  {ladderPlatforms.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
-              </label>
-              <label className="choose-team-field">
-                Game Category
-                <select value={category} disabled={!platform} onChange={(event) => {
-                  setCategory(event.target.value);
-                  setGame("");
-                  setLadder("");
-                }}>
-                  <option value="">Choose a game category</option>
-                  {categories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
-              </label>
-              <label className="choose-team-field">
-                Game / Mode
-                <select value={game} disabled={!category} onChange={(event) => {
-                  setGame(event.target.value);
-                  setLadder("");
-                }}>
-                  <option value="">Choose a game or mode</option>
-                  {games.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-                </select>
-              </label>
-              <label className="choose-team-field">
-                Ladder
-                <select value={ladder} disabled={!game} onChange={(event) => setLadder(event.target.value)}>
-                  <option value="">Choose a ladder</option>
-                  {ladders.map((item) => <option key={item.slug} value={item.slug}>{item.title}</option>)}
-                </select>
-              </label>
-            </div>
-            <p className="choose-team-note">Each team belongs to one system, game and ladder. You can create another team for a different ladder.</p>
+          <p>Pick your system and ladder. Then bring your team to life.</p>
+        </header>
+        <div className="choose-team-steps" aria-label="Team creation progress">
+          <span className="current">01 &nbsp; Choose your ladder</span><span>02 &nbsp; Team setup</span>
+        </div>
+        <div className="choose-team-content">
+          <div className="choose-team-form">
+            <fieldset className="choose-team-section">
+              <legend className="choose-team-heading"><span className="choose-team-number">1</span> Choose your system</legend>
+              <p className="choose-team-help">Where will your team compete?</p>
+              <div className="choose-team-systems">
+                {ladderPlatforms.map((item) => (
+                  <button className="choose-team-system" key={item.value} type="button" aria-pressed={platform === item.value} onClick={() => {
+                    if (platform !== item.value) {
+                      setPlatform(item.value);
+                      setGameSelection("");
+                      setLadderSelection("");
+                      setAvailability(null);
+                    }
+                  }}>{item.label}</button>
+                ))}
+              </div>
+            </fieldset>
+            <section className="choose-team-section" aria-labelledby="choose-ladder-heading">
+              <h2 className="choose-team-heading" id="choose-ladder-heading"><span className="choose-team-number">2</span> Choose your ladder</h2>
+              <p className="choose-team-help">{platform ? "Pick a game, then choose its ladder." : "Choose a system to see its games and ladders."}</p>
+              {platform && (
+                <div className="choose-team-game-list" aria-label="Available games">
+                  {groups.map((group) => (
+                    <div className="choose-team-group" key={group.value}>
+                      <h3>{group.label}</h3>
+                      <div className="choose-team-choices">
+                        {group.games.map((item) => (
+                          <button className="choose-team-choice" type="button" key={item.value} aria-pressed={gameSelection === item.value} onClick={() => {
+                            if (gameSelection !== item.value) {
+                              setGameSelection(item.value);
+                              setLadderSelection("");
+                              setAvailability(null);
+                            }
+                          }}>{item.name}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedGame && (
+                <div className="choose-team-ladder-options">
+                  <h3 className="choose-team-heading">Ladders for {selectedGame.name}</h3>
+                  <div className="choose-team-ladders">
+                    {ladders.map((item) => (
+                      <button className="choose-team-choice" type="button" key={item.slug} aria-pressed={ladderSelection === item.slug} onClick={() => {
+                        if (ladderSelection !== item.slug) {
+                          setLadderSelection(item.slug);
+                          setAvailability(null);
+                        }
+                      }}>{item.slug === "singles" ? "Solos" : item.title}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div aria-live="polite">
+                {checking && <p className="choose-team-status">Checking your teams...</p>}
+                {existingTeam && <p className="choose-team-status">You already have a team on this system and ladder: <Link href={`/teams/${existingTeam.id}`}>{existingTeam.name}</Link>.</p>}
+                {availabilityError && <p className="choose-team-status">Could not check your teams: {availabilityError} <button type="button" className="choose-team-retry" onClick={() => { setAvailability(null); setRetry((value) => value + 1); }}>Try again</button></p>}
+              </div>
+            </section>
             <div className="choose-team-actions">
-              {platform && category && game && ladder && <Link className="choose-team-button" href={hubUrl}>Continue to Team Setup</Link>}
+              {canContinue
+                ? <Link className="choose-team-button" href={hubUrl}>Continue to Team Setup →</Link>
+                : <span className="choose-team-button" aria-disabled="true">Continue to Team Setup →</span>}
               <Link className="choose-team-back" href="/profile">Back to Profile</Link>
             </div>
           </div>
-        </section>
+          <aside className="choose-team-summary" aria-label="Your selection">
+            <div className="choose-team-summary-hero" style={artwork ? { backgroundImage: `linear-gradient(0deg, #091724 0%, #09172499 65%, #09172455 100%), url("${artwork}")` } : undefined}>
+              <span className="choose-team-summary-label">Your team starts here</span>
+              <strong>{selectedGame ? selectedGame.name : "Find your ladder"}</strong>
+            </div>
+            <div className="choose-team-summary-body">
+              <div className="choose-team-summary-row"><span>System</span><strong>{ladderPlatformLabel(platform) || "Not selected"}</strong></div>
+              <div className="choose-team-summary-row"><span>Ladder</span><strong>{ladderTitle || "Not selected"}</strong></div>
+              <p className="choose-team-summary-note">Each team competes on one system and ladder. You can create another team for a different ladder.</p>
+            </div>
+          </aside>
+        </div>
       </div>
     </main>
   );
