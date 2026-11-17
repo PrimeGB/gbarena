@@ -28,7 +28,7 @@ const EARNED = [
 
 function Mock() {
   return (
-    <div className="profile-page favorite-playstation">
+    <div className="profile-page favorite-playstation amb-gold-frame">
       <div className="wrapper">
         <header className="header">
           <div className="logo-box">

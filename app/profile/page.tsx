@@ -628,6 +628,20 @@ function ProfilePageContent() {
           box-shadow:-10px 0 22px rgba(170,95,255,.20),10px 0 22px rgba(170,95,255,.20);
         }
 
+        /* Ambassadors: the page frame glows gold no matter their favorite system. */
+        .profile-page.amb-gold-frame .wrapper{
+          border-left:1px solid rgba(242,193,78,.6);
+          border-right:1px solid rgba(242,193,78,.6);
+          box-shadow:-20px 0 44px rgba(242,193,78,.6), 20px 0 44px rgba(242,193,78,.6);
+          animation:pfFrameGold 4.5s ease-in-out infinite;
+        }
+        @keyframes pfFrameGold{
+          50%{ box-shadow:-20px 0 56px rgba(255,217,107,.78), 20px 0 56px rgba(255,217,107,.78); }
+        }
+        @media (prefers-reduced-motion: reduce){
+          .profile-page.amb-gold-frame .wrapper{ animation:none; }
+        }
+
         .top-strip{
           height:22px;
           background:linear-gradient(to bottom,#13304b,#060d14);
@@ -1576,15 +1590,17 @@ function ProfilePageContent() {
         @media (prefers-reduced-motion: reduce){ .pf-banner-top .pf-avatar.pf-avatar-amb{ animation:none; } }
         .pf-role-amb{ color:#f2c14e !important; }
         .pf-role-shimmer{
-          background:linear-gradient(100deg,#d4a637 0%,#f2c14e 38%,#ffeebb 50%,#f2c14e 62%,#d4a637 100%);
+          background:linear-gradient(100deg,#d4a637 0%,#f2c14e 38%,#fff6d8 50%,#f2c14e 62%,#d4a637 100%);
           background-size:240% 100%;
           -webkit-background-clip:text;
           background-clip:text;
           color:transparent !important;
           text-shadow:none;
-          animation:pfRoleShine 4.5s linear infinite;
+          filter:drop-shadow(0 0 5px rgba(255,217,107,.55));
+          animation:pfRoleShine 2.6s linear infinite, pfRoleGlow 2.6s ease-in-out infinite;
         }
         @keyframes pfRoleShine{ to{ background-position:-240% 0; } }
+        @keyframes pfRoleGlow{ 50%{ filter:drop-shadow(0 0 7px rgba(255,217,107,.8)); } }
         .profile-page .pf-banner.pf-banner-amb{
           border:1px solid rgba(242,193,78,.55);
           box-shadow:0 0 14px rgba(242,193,78,.25), 0 0 36px rgba(242,193,78,.12), inset 0 0 22px rgba(242,193,78,.04);
@@ -1792,7 +1808,7 @@ function ProfilePageContent() {
         }
       `}</style>
 
-      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}`}>
+      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}${ambassador?.userId === viewedUserId ? " amb-gold-frame" : ""}`}>
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">
