@@ -6,6 +6,7 @@
 .challenges{background:radial-gradient(ellipse at 75% 45%,#0c7a4e 0%,#0b3d2a 27%,transparent 62%),linear-gradient(115deg,#04140d 4%,#07211a 53%,#0c3324)}
 .tournaments{background:radial-gradient(ellipse at 75% 45%,#9e1420 0%,#49101b 27%,transparent 62%),linear-gradient(115deg,#140407 4%,#250a10 53%,#3d0f14)}
 .ambassadors{background:radial-gradient(ellipse at 72% 40%,#7a5a10 0%,#3a2a06 30%,transparent 64%),linear-gradient(115deg,#120d02 4%,#1d1503 52%,#0a1320)}
+.building{background:radial-gradient(ellipse at 75% 45%,#0e5a7a 0%,#0a2e42 28%,transparent 62%),linear-gradient(115deg,#04111a 4%,#072030 53%,#0b2c40)}
 .grid{position:absolute;inset:0;background-image:linear-gradient(#72b8ff 1px,transparent 1px),linear-gradient(90deg,#72b8ff 1px,transparent 1px);background-size:50px 50px;opacity:.05;mask-image:linear-gradient(90deg,transparent,#000)}
 .orb{position:absolute;width:50%;aspect-ratio:1;right:-5%;top:-19%;border-radius:50%;filter:blur(4px);pointer-events:none;animation:drift 20s ease-in-out infinite}
 .discord .orb{background:radial-gradient(circle,#91aaff33,transparent 65%)}
@@ -13,6 +14,7 @@
 .challenges .orb{background:radial-gradient(circle,#5effb43a,transparent 65%)}
 .tournaments .orb{background:radial-gradient(circle,#ff5a6a38,transparent 65%)}
 .ambassadors .orb{background:radial-gradient(circle,#ffd44e40,transparent 65%)}
+.building .orb{background:radial-gradient(circle,#49c6f038,transparent 65%)}
 .copy{position:absolute;left:6.5%;top:50%;width:49%;transform:translateY(-50%);z-index:3;animation:reveal .8s ease-out both}
 .tag{display:inline-flex;align-items:center;gap:8px;color:#a6bbff;font-size:clamp(9px,1.2cqw,12px);font-weight:bold;letter-spacing:.19em;text-transform:uppercase}
 .tag::before{content:"";width:21px;height:2px;background:currentColor}
@@ -20,18 +22,21 @@
 .challenges .tag{color:#7df0b6}
 .tournaments .tag{color:#ff9aa4}
 .ambassadors .tag{color:#ffdf8e}
+.building .tag{color:#7fd9ff}
 .copy h2{margin:16px 0 12px;color:#fff;font-size:clamp(26px,5.8cqw,58px);line-height:.98;font-weight:900;letter-spacing:-.04em;text-transform:uppercase;text-shadow:0 3px 16px #0008}
 .copy h2 em{font-style:normal;color:#a8b7ff}
 .invite .copy h2 em{color:#ffcb6b}
 .challenges .copy h2 em{color:#59e8a6}
 .tournaments .copy h2 em{color:#ffb84d}
 .ambassadors .copy h2 em{background:linear-gradient(180deg,#ffe9ab,#f2c14e 55%,#9a6510);-webkit-background-clip:text;background-clip:text;color:transparent}
+.building .copy h2 em{color:#6fe3ff}
 .copy p{max-width:370px;margin:0;color:#c3d2e7;font-size:clamp(11px,1.5cqw,15px);line-height:1.6}
 .cta{display:inline-flex;align-items:center;gap:22px;margin-top:24px;padding:13px 17px;border-radius:3px;background:#627af4;color:#fff;text-decoration:none;font-size:clamp(10px,1.2cqw,12px);font-weight:bold;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 22px #202d8b88;transition:transform .2s,filter .2s}
 .invite .cta{background:#e2a947;color:#0b1520;box-shadow:0 8px 22px #6c460b88}
 .challenges .cta{background:#2bd98b;color:#042116;box-shadow:0 8px 22px #0a4f3188}
 .tournaments .cta{background:#e6323f;color:#fff;box-shadow:0 8px 22px #6b0d1888}
 .ambassadors .cta{background:linear-gradient(180deg,#ffdf8e,#e0a020);color:#231600;box-shadow:0 8px 22px #7a5a1088}
+.building .cta{background:#2fb5e8;color:#04202e;box-shadow:0 8px 22px #0b486488}
 .cta:hover,.cta:focus-visible{transform:translateY(-2px);filter:brightness(1.16);outline:2px solid #fff;outline-offset:3px}
 .visual{position:absolute;width:43%;right:4%;top:7%;height:86%;display:grid;place-items:center;animation:float 20s ease-in-out infinite;pointer-events:none}
 .halo{position:absolute;width:80%;aspect-ratio:1;border:1px solid #aebeff44;border-radius:50%;box-shadow:0 0 50px #778bff44,inset 0 0 50px #778bff22}
@@ -71,6 +76,18 @@
 .challenges .progress::after{background:#3fe095}
 .tournaments .progress::after{background:#f0566b}
 .ambassadors .progress::after{background:#f2c14e}
+.building .progress::after{background:#49c6f0}
+
+/* roadmap panel (building) */
+.roadmap{position:absolute;width:37%;right:5.5%;top:50%;transform:translateY(-50%) rotate(-1.5deg);display:flex;flex-direction:column;gap:9px;pointer-events:none;animation:floatM 18s ease-in-out infinite}
+.roadHead{color:#7fd9ff;font-size:clamp(8px,1cqw,11px);font-weight:900;letter-spacing:.18em}
+.road{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:8px;background:#06121add;border:1px solid #2a5a7a;box-shadow:0 10px 24px #0008}
+.road i{display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;border:1.5px solid #49c6f0;color:#9fe2ff;font-style:normal;font-size:12px;font-weight:900}
+.roadDone i{background:#49c6f0;color:#04202e}
+.road span{flex:1;color:#d7ecf7;font-size:clamp(10px,1.3cqw,13.5px);font-weight:bold}
+.road em{font-style:normal;font-size:clamp(8px,.9cqw,9.5px);font-weight:900;letter-spacing:.12em;color:#7fd9ff}
+.roadDone em{color:#59e8a6}
+.roadKeep{margin-top:3px;padding:8px 12px;border-radius:6px;background:#1d1503dd;border:1px dashed #c7921f;color:#ffe9ab;font-size:clamp(9px,1.1cqw,12px);font-weight:bold;align-self:flex-start}
 .scene:focus-within .progress::after{animation-play-state:paused}
 @keyframes reveal{from{opacity:0;transform:translate(-12px,-50%)}to{opacity:1;transform:translate(0,-50%)}}
 
@@ -117,6 +134,7 @@
   .signal{display:none}
   .bottom{font-size:8px}
   .missions{display:none}
+  .roadmap{display:none}
   .copyCenter{width:88%}
   .avatars span{width:40px;height:40px;font-size:11px}
   .bracket{opacity:.25}

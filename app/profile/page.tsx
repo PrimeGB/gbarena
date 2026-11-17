@@ -1567,14 +1567,31 @@ function ProfilePageContent() {
         .pf-level-bar{ display:block; width:100%; height:4px; border-radius:3px; background:#1a2c3d; overflow:hidden; }
         .pf-level-bar i{ display:block; height:100%; border-radius:3px; background:var(--lv); }
         .pf-banner-top .pf-avatar.pf-avatar-amb{
-          box-shadow:0 0 0 3px #05090f, 0 0 0 7px #ffd34d, 0 0 16px 5px rgba(255,211,77,.85), 0 0 42px 10px rgba(242,193,78,.45);
-          animation:pfAmbGlow 2.8s ease-in-out infinite;
+          box-shadow:0 0 0 3px #05090f, 0 0 0 6px #f2c14e, 0 0 13px 3px rgba(255,211,77,.6), 0 0 30px 6px rgba(242,193,78,.3);
+          animation:pfAmbGlow 3.6s ease-in-out infinite;
         }
         @keyframes pfAmbGlow{
-          50%{ box-shadow:0 0 0 3px #05090f, 0 0 0 7px #ffe9ab, 0 0 26px 9px rgba(255,217,107,.95), 0 0 60px 16px rgba(242,193,78,.6); }
+          50%{ box-shadow:0 0 0 3px #05090f, 0 0 0 6px #ffdf8e, 0 0 18px 5px rgba(255,217,107,.75), 0 0 40px 9px rgba(242,193,78,.4); }
         }
         @media (prefers-reduced-motion: reduce){ .pf-banner-top .pf-avatar.pf-avatar-amb{ animation:none; } }
         .pf-role-amb{ color:#f2c14e !important; }
+        .pf-role-shimmer{
+          background:linear-gradient(100deg,#d4a637 0%,#f2c14e 38%,#ffeebb 50%,#f2c14e 62%,#d4a637 100%);
+          background-size:240% 100%;
+          -webkit-background-clip:text;
+          background-clip:text;
+          color:transparent !important;
+          text-shadow:none;
+          animation:pfRoleShine 4.5s linear infinite;
+        }
+        @keyframes pfRoleShine{ to{ background-position:-240% 0; } }
+        .profile-page .pf-banner.pf-banner-amb{
+          border:1px solid rgba(242,193,78,.55);
+          box-shadow:0 0 14px rgba(242,193,78,.25), 0 0 36px rgba(242,193,78,.12), inset 0 0 22px rgba(242,193,78,.04);
+        }
+        @media (prefers-reduced-motion: reduce){
+          .pf-role-shimmer{ animation:none; color:#f2c14e !important; -webkit-background-clip:border-box; background:none; }
+        }
         .pf-amb-chip{ display:inline-flex; align-items:center; gap:5px; padding:5px 13px; border-radius:999px; background:linear-gradient(180deg,#ffe9ab,#e0a020); color:#231600; font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; text-decoration:none; box-shadow:0 0 14px #f2c14e55; }
         .pf-amb-chip:hover{ filter:brightness(1.1); }
         .pf-amb-stream{ display:inline-flex; align-items:center; gap:6px; padding:6px 13px; border-radius:4px; background:#e91916; color:#fff; font-size:10px; font-weight:900; letter-spacing:.08em; text-decoration:none; }
@@ -1854,7 +1871,7 @@ function ProfilePageContent() {
           />
 
           {profile ? (
-            <div className="pf-banner">
+            <div className={`pf-banner${ambassador?.userId === viewedUserId ? " pf-banner-amb" : ""}`}>
               <div className="pf-banner-top">
                 <div className={`pf-avatar${ambassador?.userId === viewedUserId ? " pf-avatar-amb" : ""}`}>
                   {logoUrl || avatarUrl ? (
@@ -1912,7 +1929,7 @@ function ProfilePageContent() {
                     </div>
                     <div>
                       <span>Role</span>
-                      <strong className={isAmbassador ? "pf-role-amb" : undefined}>{playerRole}</strong>
+                      <strong className={isAmbassador ? "pf-role-amb pf-role-shimmer" : undefined}>{playerRole}</strong>
                     </div>
                     <div>
                       <span>Credits</span>

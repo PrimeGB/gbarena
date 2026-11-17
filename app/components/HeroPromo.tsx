@@ -81,6 +81,14 @@ const PROMOS: Record<HeroPromoKind, PromoConfig> = {
     signalTwo: "Events in your name",
     emblem: CROWN_SVG,
   },
+  building: {
+    tag: "Work in progress",
+    heading: <>Built in<br /><em>the open.</em></>,
+    body: "GameBattles grows every week, so expect changes and new features. But your rank and every XP you earn are permanent - they stay with you.",
+    ctaLabel: "See the player ranks",
+    href: "/ranks",
+    bottom: "Getting better every week.",
+  },
 };
 
 const MISSIONS = [
@@ -152,6 +160,14 @@ export default function HeroPromo({ kind, onFocusChange }: {
             </div>
           ))}
           <div className={styles.missionReward}>🏆 Reward: profile trophy</div>
+        </div>
+      ) : kind === "building" ? (
+        <div className={styles.roadmap} aria-hidden="true">
+          <div className={styles.roadHead}>THE ROADMAP</div>
+          <div className={`${styles.road} ${styles.roadDone}`}><i>✓</i><span>Ladders, ranks &amp; XP</span><em>LIVE</em></div>
+          <div className={`${styles.road} ${styles.roadDone}`}><i>✓</i><span>Ambassador program</span><em>LIVE</em></div>
+          <div className={styles.road}><i>⟳</i><span>More games &amp; events</span><em>SOON</em></div>
+          <div className={styles.roadKeep}>🔒 Your rank &amp; XP are never reset</div>
         </div>
       ) : promo.emblem ? (
         <div className={styles.visual} aria-hidden="true">

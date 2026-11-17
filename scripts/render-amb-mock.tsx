@@ -117,16 +117,7 @@ function Mock() {
               <div className="stat-row"><span>Followers</span><span>312</span></div>
             </div>
 
-            {/* NEW: compact ambassador card (proposed) */}
-            <div className="box amb-card">
-              <div className="box-title amb-card-title">★ Ambassador</div>
-              <div className="box-body">
-                <div className="stat-row"><span>Recruits</span><span className="amb-gold">61</span></div>
-                <div className="stat-row"><span>Qualified</span><span className="amb-gold">38</span></div>
-                <div className="stat-row"><span>Next tier</span><span className="amb-gold">Icon at 75</span></div>
-                <div className="amb-card-link">gamebattles.app/amb/<b>sharpz</b></div>
-              </div>
-            </div>
+            {/* (nothing extra here yet — ambassador side card not built) */}
 
             <div className="box control-center-box">
               <div className="box-title">Player Actions</div>
