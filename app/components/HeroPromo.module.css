@@ -5,28 +5,33 @@
 .invite{background:radial-gradient(ellipse at 75% 45%,#865514 0%,#39300e 27%,transparent 62%),linear-gradient(115deg,#071524 4%,#0b1f31 53%,#28200e)}
 .challenges{background:radial-gradient(ellipse at 75% 45%,#0c7a4e 0%,#0b3d2a 27%,transparent 62%),linear-gradient(115deg,#04140d 4%,#07211a 53%,#0c3324)}
 .tournaments{background:radial-gradient(ellipse at 75% 45%,#9e1420 0%,#49101b 27%,transparent 62%),linear-gradient(115deg,#140407 4%,#250a10 53%,#3d0f14)}
+.ambassadors{background:radial-gradient(ellipse at 72% 40%,#7a5a10 0%,#3a2a06 30%,transparent 64%),linear-gradient(115deg,#120d02 4%,#1d1503 52%,#0a1320)}
 .grid{position:absolute;inset:0;background-image:linear-gradient(#72b8ff 1px,transparent 1px),linear-gradient(90deg,#72b8ff 1px,transparent 1px);background-size:50px 50px;opacity:.05;mask-image:linear-gradient(90deg,transparent,#000)}
 .orb{position:absolute;width:50%;aspect-ratio:1;right:-5%;top:-19%;border-radius:50%;filter:blur(4px);pointer-events:none;animation:drift 20s ease-in-out infinite}
 .discord .orb{background:radial-gradient(circle,#91aaff33,transparent 65%)}
 .invite .orb{background:radial-gradient(circle,#ffd4703b,transparent 65%)}
 .challenges .orb{background:radial-gradient(circle,#5effb43a,transparent 65%)}
 .tournaments .orb{background:radial-gradient(circle,#ff5a6a38,transparent 65%)}
+.ambassadors .orb{background:radial-gradient(circle,#ffd44e40,transparent 65%)}
 .copy{position:absolute;left:6.5%;top:50%;width:49%;transform:translateY(-50%);z-index:3;animation:reveal .8s ease-out both}
 .tag{display:inline-flex;align-items:center;gap:8px;color:#a6bbff;font-size:clamp(9px,1.2cqw,12px);font-weight:bold;letter-spacing:.19em;text-transform:uppercase}
 .tag::before{content:"";width:21px;height:2px;background:currentColor}
 .invite .tag{color:#f7ca72}
 .challenges .tag{color:#7df0b6}
 .tournaments .tag{color:#ff9aa4}
+.ambassadors .tag{color:#ffdf8e}
 .copy h2{margin:16px 0 12px;color:#fff;font-size:clamp(26px,5.8cqw,58px);line-height:.98;font-weight:900;letter-spacing:-.04em;text-transform:uppercase;text-shadow:0 3px 16px #0008}
 .copy h2 em{font-style:normal;color:#a8b7ff}
 .invite .copy h2 em{color:#ffcb6b}
 .challenges .copy h2 em{color:#59e8a6}
 .tournaments .copy h2 em{color:#ffb84d}
+.ambassadors .copy h2 em{background:linear-gradient(180deg,#ffe9ab,#f2c14e 55%,#9a6510);-webkit-background-clip:text;background-clip:text;color:transparent}
 .copy p{max-width:370px;margin:0;color:#c3d2e7;font-size:clamp(11px,1.5cqw,15px);line-height:1.6}
 .cta{display:inline-flex;align-items:center;gap:22px;margin-top:24px;padding:13px 17px;border-radius:3px;background:#627af4;color:#fff;text-decoration:none;font-size:clamp(10px,1.2cqw,12px);font-weight:bold;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 22px #202d8b88;transition:transform .2s,filter .2s}
 .invite .cta{background:#e2a947;color:#0b1520;box-shadow:0 8px 22px #6c460b88}
 .challenges .cta{background:#2bd98b;color:#042116;box-shadow:0 8px 22px #0a4f3188}
 .tournaments .cta{background:#e6323f;color:#fff;box-shadow:0 8px 22px #6b0d1888}
+.ambassadors .cta{background:linear-gradient(180deg,#ffdf8e,#e0a020);color:#231600;box-shadow:0 8px 22px #7a5a1088}
 .cta:hover,.cta:focus-visible{transform:translateY(-2px);filter:brightness(1.16);outline:2px solid #fff;outline-offset:3px}
 .visual{position:absolute;width:43%;right:4%;top:7%;height:86%;display:grid;place-items:center;animation:float 20s ease-in-out infinite;pointer-events:none}
 .halo{position:absolute;width:80%;aspect-ratio:1;border:1px solid #aebeff44;border-radius:50%;box-shadow:0 0 50px #778bff44,inset 0 0 50px #778bff22}
@@ -38,6 +43,8 @@
 .challenges .halo::before,.challenges .halo::after{border-color:#7df5bd44}
 .tournaments .halo{border-color:#ff8c6b55;box-shadow:0 0 50px #ff5b6b33,inset 0 0 50px #ff3c4c22}
 .tournaments .halo::before,.tournaments .halo::after{border-color:#ffa08344}
+.ambassadors .halo{border-color:#ffdf8e55;box-shadow:0 0 50px #f2c14e33,inset 0 0 50px #e0a02022}
+.ambassadors .halo::before,.ambassadors .halo::after{border-color:#ffe9ab44}
 .emblem{position:relative;display:grid;place-items:center;width:53%;aspect-ratio:1;border-radius:28%;border:1px solid #c8d2ff88;background:linear-gradient(145deg,#8394ff,#394dc4 75%);box-shadow:0 25px 55px #03071fbb,inset 0 1px 3px #fff9;transform:rotate(-7deg)}
 .emblem svg{width:60%;fill:#fff;filter:drop-shadow(0 3px 5px #27378288)}
 .invite .emblem{width:54%;border-radius:50%;background:linear-gradient(145deg,#ffe4a0,#b98229 58%,#563813);border-color:#ffdea0;transform:rotate(7deg)}
@@ -46,6 +53,8 @@
 .challenges .emblem svg{width:64%;filter:drop-shadow(0 4px 4px #03301e88)}
 .tournaments .emblem{background:linear-gradient(145deg,#ff8f6b,#c21f30 62%,#5c0b16);border-color:#ffc2a6;transform:rotate(-6deg)}
 .tournaments .emblem svg{width:62%;fill:#fff3d8;filter:drop-shadow(0 4px 4px #43050c88)}
+.ambassadors .emblem{border-radius:50%;background:linear-gradient(145deg,#ffe9ab,#c7921f 58%,#4e3407);border-color:#ffe9ab;transform:rotate(6deg)}
+.ambassadors .emblem svg{width:64%;fill:#fff8e4;filter:drop-shadow(0 4px 4px #3a260388)}
 .signal{position:absolute;padding:8px 11px;background:#0a1735e8;border:1px solid #7d93e97a;color:#dde6ff;font-size:clamp(8px,1.1cqw,11px);font-weight:bold;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 9px 22px #0006;white-space:nowrap}
 .signal.one{top:18%;right:2%;transform:rotate(4deg)}
 .signal.two{bottom:17%;left:0;transform:rotate(-3deg)}
@@ -53,6 +62,7 @@
 .invite .signal{background:#271c0dea;border-color:#d4a55480;color:#ffe8b4}
 .challenges .signal{background:#0a271aea;border-color:#54d4a080;color:#c8ffe4}
 .tournaments .signal{background:#270a0eea;border-color:#d4546380;color:#ffd0d6}
+.ambassadors .signal{background:#271d06ea;border-color:#d4a53480;color:#ffe9ab}
 .bottom{position:absolute;left:6.5%;right:6.5%;bottom:6%;display:flex;justify-content:space-between;align-items:center;color:#8aa2bc;font-size:clamp(8px,1cqw,10px);font-weight:bold;letter-spacing:.13em;text-transform:uppercase}
 .bottom strong{color:#d8e9f9}
 .progress{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#ffffff1a}
@@ -60,8 +70,40 @@
 .invite .progress::after{background:#edb956}
 .challenges .progress::after{background:#3fe095}
 .tournaments .progress::after{background:#f0566b}
+.ambassadors .progress::after{background:#f2c14e}
 .scene:focus-within .progress::after{animation-play-state:paused}
 @keyframes reveal{from{opacity:0;transform:translate(-12px,-50%)}to{opacity:1;transform:translate(0,-50%)}}
+
+/* centered layout (invite) */
+.copyCenter{position:absolute;left:50%;top:50%;width:70%;transform:translate(-50%,-50%);text-align:center;z-index:3;animation:revealC .8s ease-out both}
+.copyCenter .tag{display:inline-flex;align-items:center;gap:8px;color:#f7ca72;font-size:clamp(9px,1.2cqw,12px);font-weight:bold;letter-spacing:.19em;text-transform:uppercase}
+.copyCenter h2{margin:14px 0 10px;color:#fff;font-size:clamp(26px,5.4cqw,54px);line-height:1;font-weight:900;letter-spacing:-.04em;text-transform:uppercase;text-shadow:0 3px 16px #0008}
+.copyCenter h2 em{font-style:normal;color:#ffcb6b}
+.copyCenter p{max-width:460px;margin:0 auto;color:#c3d2e7;font-size:clamp(11px,1.5cqw,15px);line-height:1.6}
+.copyCenter .cta{display:inline-flex;align-items:center;gap:14px;margin-top:20px;padding:13px 20px;border-radius:3px;background:#e2a947;color:#0b1520;text-decoration:none;font-size:clamp(10px,1.2cqw,12px);font-weight:bold;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 8px 22px #6c460b88;transition:transform .2s,filter .2s}
+.copyCenter .cta:hover,.copyCenter .cta:focus-visible{transform:translateY(-2px);filter:brightness(1.16);outline:2px solid #fff;outline-offset:3px}
+@keyframes revealC{from{opacity:0;transform:translate(-50%,-44%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.avatars{display:flex;justify-content:center;gap:0;margin-bottom:16px}
+.avatars span{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;border:2px solid #ffce6b;background:linear-gradient(145deg,#1b2d44,#0b1726);color:#ffe8b4;font-size:14px;font-weight:900;box-shadow:0 8px 20px #000a}
+.avatars span+span{margin-left:-12px}
+.avatars .avMid{background:linear-gradient(145deg,#ffe4a0,#b98229);color:#231600;z-index:1;transform:translateY(-8px) scale(1.12)}
+
+/* challenge checklist (challenges) */
+.missions{position:absolute;width:37%;right:5.5%;top:50%;transform:translateY(-50%) rotate(2deg);display:flex;flex-direction:column;gap:9px;pointer-events:none;animation:floatM 18s ease-in-out infinite}
+.missionHead{color:#7df0b6;font-size:clamp(8px,1cqw,11px);font-weight:900;letter-spacing:.18em}
+.mission{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:8px;background:#06120cdd;border:1px solid #2a6b4a;box-shadow:0 10px 24px #0008}
+.mission i{display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:6px;border:1.5px solid #3fd792;color:#06120c;background:transparent;font-style:normal;font-size:13px;font-weight:900}
+.missionDone i{background:#3fd792}
+.mission span{color:#d7f3e4;font-size:clamp(10px,1.3cqw,13.5px);font-weight:bold}
+.missionDone span{color:#8fc4aa;text-decoration:line-through}
+.missionReward{margin-top:3px;padding:8px 12px;border-radius:6px;background:#11240bdd;border:1px dashed #6b9b3a;color:#d8f0a8;font-size:clamp(9px,1.1cqw,12px);font-weight:bold;align-self:flex-start}
+@keyframes floatM{0%,100%{transform:translateY(-50%) rotate(2deg)}50%{transform:translateY(-54%) rotate(2deg)}}
+
+/* bracket backdrop (tournaments) */
+.bracket{position:absolute;right:2%;top:6%;height:88%;width:44%;opacity:.5;pointer-events:none}
+
+/* gold beams (ambassadors) */
+.beams{position:absolute;width:62%;aspect-ratio:1;right:-8%;top:50%;transform:translateY(-50%);background:conic-gradient(from 0deg,#f2c14e22 0 14deg,transparent 14deg 40deg,#f2c14e18 40deg 52deg,transparent 52deg 96deg,#f2c14e22 96deg 110deg,transparent 110deg 160deg,#f2c14e18 160deg 172deg,transparent 172deg 230deg,#f2c14e22 230deg 244deg,transparent 244deg 300deg,#f2c14e18 300deg 312deg,transparent 312deg);border-radius:50%;filter:blur(2px);animation:spin 60s linear infinite;pointer-events:none}
 @keyframes drift{0%,100%{transform:scale(1)}50%{transform:scale(1.16) translate(-3%,4%)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -74,5 +116,9 @@
   .visual{width:48%;right:-6%;opacity:.8}
   .signal{display:none}
   .bottom{font-size:8px}
+  .missions{display:none}
+  .copyCenter{width:88%}
+  .avatars span{width:40px;height:40px;font-size:11px}
+  .bracket{opacity:.25}
 }
 @media(prefers-reduced-motion:reduce){.copy,.visual,.orb,.halo::after,.progress::after{animation:none}.progress::after{transform:scaleX(1)}}

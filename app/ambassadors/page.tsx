@@ -75,8 +75,9 @@ export default function AmbassadorsPage() {
         <span className="kicker">Creator Program</span>
         <h1>GB <em>Ambassadors</em></h1>
         <p>
-          The streamers and creators building the GameBattles community. Ambassadors get their own tracked
-          recruit link, exclusive awards, a gold profile and events hosted in their name.
+          The streamers and creators building the GameBattles community. Ambassadors earn 5 credits for every
+          player they bring in - and their recruits get 5 free credits too - plus exclusive awards, a gold
+          profile and events hosted in their name.
         </p>
         <div className="cta-row">
           <Link className="btn-gold" href="/support">Apply to become an Ambassador</Link>
@@ -88,8 +89,8 @@ export default function AmbassadorsPage() {
         <div className="strip">
           <div><b>{rows.length}</b><span>Active Ambassadors</span></div>
           <div><b>{totalRecruits}</b><span>Players recruited</span></div>
-          <div><b>3</b><span>Program tiers</span></div>
-          <div><b>★</b><span>Exclusive awards</span></div>
+          <div><b>+5</b><span>Credits per recruit</span></div>
+          <div><b>+5</b><span>Free credits for recruits</span></div>
         </div>
 
         {featured && (
@@ -161,6 +162,8 @@ export default function AmbassadorsPage() {
             <div className="req">The first step for active creators</div>
             <ul>
               <li>Personal recruit link, every signup tracked</li>
+              <li>You earn 5 credits per qualified recruit</li>
+              <li>Your recruits get 5 free credits when they qualify</li>
               <li>GB Affiliate award on your profile</li>
               <li>Listed on this page with your stream links</li>
             </ul>
@@ -168,7 +171,7 @@ export default function AmbassadorsPage() {
           <div className="tier t2">
             <span className="pop">Gold status</span>
             <h5>Ambassador</h5>
-            <div className="req">Proven recruiters and consistent creators</div>
+            <div className="req">Auto-promoted at 25 qualified recruits</div>
             <ul>
               <li>Everything in Affiliate</li>
               <li>GB Ambassador award</li>
@@ -178,7 +181,7 @@ export default function AmbassadorsPage() {
           </div>
           <div className="tier t3">
             <h5>Icon</h5>
-            <div className="req">The faces of GameBattles</div>
+            <div className="req">Auto-promoted at 75 qualified recruits</div>
             <ul>
               <li>Everything in Ambassador</li>
               <li>Exclusive GB Icon award</li>

@@ -194,6 +194,23 @@ export default function ChallengesPage() {
             </ol>
           </section>
 
+          <section className="pc-section pc-ranks">
+            <h2 className="pc-title">Player Ranks</h2>
+            <div className="pc-ranks-row">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ranks/rookie.png?v=3" alt="Rookie rank emblem" width={84} height={84} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ranks/veteran.png?v=3" alt="Veteran rank emblem" width={84} height={84} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ranks/legend.png?v=3" alt="Legend rank emblem" width={84} height={84} />
+              <div className="pc-ranks-copy">
+                <strong>Climb from Rookie to Legend</strong>
+                <span>Every ladder match earns XP: +25 per win, +5 per loss. 50 levels across 10 ranks, with your emblem building up on your profile as you go.</span>
+              </div>
+              <Link className="pc-ranks-btn" href="/ranks">View all ranks ›</Link>
+            </div>
+          </section>
+
           <p className="pc-foot">Trophies are awarded automatically and appear on your profile. Past activity counts too, but voided matches or hidden posts do not. <Link href="/awards">See all awards</Link> · <Link href="/suggestions">Suggest a challenge</Link></p>
         </>}
       </div>
@@ -299,6 +316,12 @@ const PAGE_CSS = `
 .pc-muted{color:#93a9be;font-size:13px}
 .pc-error{margin:12px 0;padding:10px;border-radius:10px;border:1px solid #a83e3e;color:#ffd5d5}
 .pc-foot{margin:18px 0 0;color:#93a9be;font-size:11px;line-height:1.6;text-align:center}
+.pc-ranks-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:12px;border:1px solid #2b4a68;background:linear-gradient(115deg,#101d2e,#0a1420)}
+.pc-ranks-row img{filter:drop-shadow(0 4px 10px #0008)}
+.pc-ranks-copy{flex:1;min-width:220px}
+.pc-ranks-copy strong{display:block;color:#ffd96b;font-size:15px;margin-bottom:4px}
+.pc-ranks-copy span{color:#a8bdcd;font-size:12px;line-height:1.6}
+.pc-ranks-btn{padding:10px 18px;border-radius:6px;background:linear-gradient(180deg,#ffdf8e,#e0a020);color:#231600;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;text-decoration:none}
 @media (max-width:820px){.pc-top{grid-template-columns:1fr}.pc-week{grid-template-columns:repeat(4,1fr)}}
 @media (max-width:560px){.pc-live{grid-template-columns:1fr}.pc-live-art{max-width:140px;margin:0 auto}.pc-cal-row{grid-template-columns:48px 1fr auto}.pc-cal-date{display:none}}
 `;

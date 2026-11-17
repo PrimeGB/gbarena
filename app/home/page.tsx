@@ -452,6 +452,16 @@ export default function Home() {
           background:#173a56;
           box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);
         }
+        .side-link-amb{
+          color:#ffdf8e;
+          background:linear-gradient(to bottom,#1d1503,#0b0d08);
+          border-bottom-color:#5a4410;
+        }
+        .side-link-amb:hover{
+          background:#2c2206;
+          box-shadow:inset 0 0 0 1px rgba(242,193,78,.5);
+        }
+        .side-link-amb .arrow{ color:#ffdf8e; }
 
         .arrow{
           color:#e6f7ff;
@@ -918,6 +928,7 @@ export default function Home() {
               <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
               <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
               <Link className="side-link" href="/members">Members <span className="arrow">›</span></Link>
+              <Link className="side-link side-link-amb" href="/ambassadors">GB Ambassadors <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
               <div className="section-title">Awards &amp; Achievements</div>
@@ -925,7 +936,6 @@ export default function Home() {
               <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
               <Link className="side-link" href="/champions">Hall of Fame <span className="arrow">›</span></Link>
               <Link className="side-link" href="/challenges">Player Challenges <span className="arrow">›</span></Link>
-              <Link className="side-link" href="/ranks">Player Ranks <span className="arrow">›</span></Link>
 
               <div className="section-title">About GameBattles</div>
 

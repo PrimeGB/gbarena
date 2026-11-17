@@ -11,7 +11,7 @@ export const CURATED_SLIDES: string[] = [
   "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg",
 ];
 
-export type HeroPromoKind = "discord" | "invite" | "challenges" | "tournaments";
+export type HeroPromoKind = "discord" | "invite" | "challenges" | "tournaments" | "ambassadors";
 
 export type HeroSlide =
   | { kind: "image"; src: string }
@@ -20,8 +20,8 @@ export type HeroSlide =
 export function buildHeroRotation(images: string[]): HeroSlide[] {
   const slides: HeroSlide[] = images.map((src) => ({ kind: "image", src }));
   // Spread the promo slides out across the image rotation.
-  const step = Math.max(2, Math.floor(slides.length / 4) + 1);
-  const promos: HeroPromoKind[] = ["tournaments", "discord", "challenges", "invite"];
+  const step = Math.max(1, Math.floor(slides.length / 5));
+  const promos: HeroPromoKind[] = ["tournaments", "ambassadors", "discord", "challenges", "invite"];
   promos.forEach((kind, index) => {
     slides.splice(Math.min(2 + index * (step + 1), slides.length), 0, { kind });
   });
