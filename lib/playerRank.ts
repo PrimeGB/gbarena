@@ -12,15 +12,15 @@ export type RankTier = {
 };
 
 export const RANK_TIERS: RankTier[] = [
-  { key: "recruit", name: "Recruit", light: "#a9b6c4", dark: "#3c4652", glow: "rgba(169,182,196,.35)" },
-  { key: "private", name: "Private", light: "#e0a466", dark: "#6b3f1d", glow: "rgba(224,164,102,.4)" },
-  { key: "corporal", name: "Corporal", light: "#ff9466", dark: "#7a2f17", glow: "rgba(255,148,102,.4)" },
-  { key: "sergeant", name: "Sergeant", light: "#f2f6fa", dark: "#6e7b88", glow: "rgba(230,240,250,.45)" },
-  { key: "lieutenant", name: "Lieutenant", light: "#ffd96b", dark: "#9a6510", glow: "rgba(255,217,107,.5)" },
-  { key: "captain", name: "Captain", light: "#6bf5bb", dark: "#0c6b47", glow: "rgba(107,245,187,.45)" },
-  { key: "major", name: "Major", light: "#7fd0ff", dark: "#173f8c", glow: "rgba(127,208,255,.5)" },
-  { key: "colonel", name: "Colonel", light: "#d2a8ff", dark: "#4f2290", glow: "rgba(210,168,255,.5)" },
-  { key: "general", name: "General", light: "#ff7a7a", dark: "#7e1020", glow: "rgba(255,122,122,.55)" },
+  { key: "recruit", name: "Rookie", light: "#a9b6c4", dark: "#3c4652", glow: "rgba(169,182,196,.35)" },
+  { key: "private", name: "Contender", light: "#e0a466", dark: "#6b3f1d", glow: "rgba(224,164,102,.4)" },
+  { key: "corporal", name: "Challenger", light: "#ff9466", dark: "#7a2f17", glow: "rgba(255,148,102,.4)" },
+  { key: "sergeant", name: "Striker", light: "#f2f6fa", dark: "#6e7b88", glow: "rgba(230,240,250,.45)" },
+  { key: "lieutenant", name: "Veteran", light: "#ffd96b", dark: "#9a6510", glow: "rgba(255,217,107,.5)" },
+  { key: "captain", name: "Ace", light: "#6bf5bb", dark: "#0c6b47", glow: "rgba(107,245,187,.45)" },
+  { key: "major", name: "Commander", light: "#7fd0ff", dark: "#173f8c", glow: "rgba(127,208,255,.5)" },
+  { key: "colonel", name: "Phantom", light: "#d2a8ff", dark: "#4f2290", glow: "rgba(210,168,255,.5)" },
+  { key: "general", name: "Titan", light: "#ff7a7a", dark: "#7e1020", glow: "rgba(255,122,122,.55)" },
   { key: "legend", name: "Legend", light: "#fff1a8", dark: "#a8326e", glow: "rgba(255,214,120,.7)" },
 ];
 

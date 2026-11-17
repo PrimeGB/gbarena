@@ -15,7 +15,7 @@ export default function RanksPage() {
             <span className="rk-kicker">Player progression</span>
             <h1>Player Ranks</h1>
             <p>
-              Every ladder match earns XP toward your GameBattles rank. Climb 50 levels across 10 ranks, from Recruit
+              Every ladder match earns XP toward your GameBattles rank. Climb 50 levels across 10 ranks, from Rookie
               to Legend. Your rank badge shows on your profile for everyone to see.
             </p>
           </div>
@@ -34,7 +34,7 @@ export default function RanksPage() {
           <div><b>+{XP_PER_WIN} XP</b><span>for every ladder win</span></div>
           <div><b>+{XP_PER_LOSS} XP</b><span>for every ladder loss</span></div>
           <div><b>5 divisions</b><span>per rank, I to V</span></div>
-          <div><b>50 levels</b><span>from Recruit to Legend</span></div>
+          <div><b>50 levels</b><span>from Rookie to Legend</span></div>
         </section>
 
         <h2>All ranks</h2>
