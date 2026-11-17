@@ -1597,9 +1597,9 @@ function ProfilePageContent() {
         .pf-award-art .award-art ~ .pf-spark{ display:none; }
         @keyframes pfTwinkle{ 0%,100%{ opacity:0; transform:scale(.3) rotate(0deg) } 15%{ opacity:0; transform:scale(.3) rotate(0deg) } 40%{ opacity:.95; transform:scale(1) rotate(20deg) } 50%{ opacity:.6; transform:scale(.8) rotate(30deg) } 58%{ opacity:.9; transform:scale(.95) rotate(40deg) } 80%{ opacity:0; transform:scale(.4) rotate(60deg) } }
         @media (hover:hover) and (pointer:fine){
-          .pf-award-art .award-art,.pf-award-art .award-sprite,.pf-award-art           .award-emblem{ animation-duration:4s; }
-                    .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.4s; }
-                    .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-2.6s; }
+          .pf-award-art .award-art,.pf-award-art .award-sprite,.pf-award-art                     .award-emblem{ animation-duration:5s; }
+                    .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.7s; }
+                    .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-3.3s; }
         }
         .pf-friend-row{ display:flex; flex-wrap:wrap; gap:14px; }
         .pf-friend{ width:72px; text-align:center; font-size:11px; color:#d7eaff; }
