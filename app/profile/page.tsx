@@ -135,8 +135,10 @@ function ProfilePageContent() {
   const [gbRankDisplay, setGbRankDisplay] = useState("Unranked");
   const [statsPublic, setStatsPublic] = useState(true);
   const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
-  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null; qualified: number } | null>(null);
+  const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null; qualified: number; live: boolean } | null>(null);
   const [ambLinkCopied, setAmbLinkCopied] = useState(false);
+  const [ambLiveBusy, setAmbLiveBusy] = useState(false);
+  const [ambLiveMsg, setAmbLiveMsg] = useState("");
 
   useEffect(() => {
     if (!viewedUserId) return;
@@ -154,6 +156,7 @@ function ProfilePageContent() {
         kick: row.kick,
         recruits: typeof row.recruits === "number" ? row.recruits : null,
         qualified: typeof row.qualified === "number" ? row.qualified : 0,
+        live: row.live === true,
       } : null);
     });
     return () => {
@@ -641,6 +644,29 @@ function ProfilePageContent() {
     } catch {
       /* clipboard unavailable */
     }
+  }
+
+  async function toggleAmbLive() {
+    if (!ambassador || ambLiveBusy) return;
+    setAmbLiveBusy(true);
+    setAmbLiveMsg("");
+    const next = !ambassador.live;
+    const { data, error: liveError } = await supabase.rpc("gb_ambassador_go_live", { p_live: next });
+    setAmbLiveBusy(false);
+    if (liveError) {
+      setAmbLiveMsg(liveError.message);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    setAmbassador({ ...ambassador, live: row?.is_live === true });
+    if (row?.is_live && typeof row.alerted === "number" && row.alerted > 0) {
+      setAmbLiveMsg(`You're live! ${row.alerted} follower${row.alerted === 1 ? "" : "s"} emailed.`);
+    } else if (row?.is_live) {
+      setAmbLiveMsg("You're live!");
+    } else {
+      setAmbLiveMsg("Stream ended.");
+    }
+    window.setTimeout(() => setAmbLiveMsg(""), 4000);
   }
   const elitePosition =
     rankTier.index === 9 && Number.isFinite(rankNumber) && rankNumber >= 1 && rankNumber <= ELITE_LIMIT
@@ -1691,6 +1717,14 @@ function ProfilePageContent() {
         .amb-link{ display:block; width:100%; margin-top:11px; padding:8px; border-radius:6px; border:1px dashed #6e5213; background:#050c13; color:#8fa9c2; font-size:10.5px; text-align:center; cursor:pointer; font-family:inherit; }
         .amb-link b{ color:#ffdf8e; }
         .amb-link:hover{ border-color:#f2c14e; }
+        .amb-live-btn{ display:block; width:100%; margin:4px 0 10px; padding:11px; border:none; border-radius:6px; background:linear-gradient(180deg,#ff5a5a,#c81414); color:#fff; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; font-family:inherit; box-shadow:0 6px 16px rgba(200,20,20,.35); }
+        .amb-live-btn:hover{ filter:brightness(1.12); }
+        .amb-live-btn:disabled{ opacity:.6; cursor:default; }
+        .amb-live-btn.is-live{ background:#161d26; border:1px solid #e91916; color:#ff9aa4; box-shadow:0 0 14px rgba(233,25,22,.35); }
+        .amb-live-msg{ margin:-4px 0 10px; color:#7df0b6; font-size:11px; text-align:center; }
+        .pf-amb-live{ background:#e91916 !important; box-shadow:0 0 16px rgba(233,25,22,.6); }
+        .pf-live-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#fff; margin-right:2px; animation:pfLiveDot 1.3s infinite; }
+        @keyframes pfLiveDot{ 50%{ opacity:.25; } }
         .pf-role-shimmer{
           background:linear-gradient(100deg,#d4a637 0%,#f2c14e 38%,#fff6d8 50%,#f2c14e 62%,#d4a637 100%);
           background-size:240% 100%;
@@ -2053,12 +2087,12 @@ function ProfilePageContent() {
                         </Link>
                         {(ambassador.twitch || ambassador.youtube || ambassador.kick) && (
                           <a
-                            className="pf-amb-stream"
+                            className={`pf-amb-stream${ambassador.live ? " pf-amb-live" : ""}`}
                             href={ambassador.twitch || ambassador.youtube || ambassador.kick}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            ▶ WATCH STREAM
+                            {ambassador.live ? <><i className="pf-live-dot" /> LIVE — WATCH NOW</> : <>▶ WATCH STREAM</>}
                           </a>
                         )}
                       </>
@@ -2221,6 +2255,19 @@ function ProfilePageContent() {
                   <div className="box amb-box">
                     <div className="box-title">★ Ambassador</div>
                     <div className="amb-body">
+                      {isViewingOwnProfile && (
+                        <>
+                          <button
+                            className={`amb-live-btn${ambassador.live ? " is-live" : ""}`}
+                            type="button"
+                            onClick={() => void toggleAmbLive()}
+                            disabled={ambLiveBusy}
+                          >
+                            {ambLiveBusy ? "..." : ambassador.live ? "● LIVE — End stream" : "▶ Go Live"}
+                          </button>
+                          {ambLiveMsg && <div className="amb-live-msg" role="status">{ambLiveMsg}</div>}
+                        </>
+                      )}
                       <div className="amb-row"><span>Tier</span><b>{ambTierLabel}</b></div>
                       <div className="amb-row"><span>Players recruited</span><b>{(ambassador.recruits ?? 0).toLocaleString()}</b></div>
                       <div className="amb-row"><span>Credits given out</span><b>{(ambassador.qualified * 5).toLocaleString()}</b></div>

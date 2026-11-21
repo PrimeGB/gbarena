@@ -257,16 +257,16 @@ export default function Home() {
           background:transparent;
           border:none;
           outline:none;
-          color:#fff;
-          font-size:clamp(10px,1vw,15px);
-          font-weight:700;
+          color:#e6eefc;
+          font-size:clamp(9px,.85vw,13px);
+          font-weight:400;
           padding-left:8%;
           padding-right:16%;
           font-family:Tahoma,Verdana,Arial,sans-serif;
-          text-shadow:0 1px 2px #000;
+          text-shadow:none;
         }
 
-        .search-box input::placeholder{color:transparent;}
+        .search-box input::placeholder{color:transparent;opacity:1;}
 
         .search-button{
           position:absolute;
@@ -281,8 +281,8 @@ export default function Home() {
 
         .search-box:hover,
         .search-box:focus-within{
-          background:rgba(0,120,210,.13);
-          box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);
+          background:transparent;
+          box-shadow:none;
         }
 
         .drop-wrap{

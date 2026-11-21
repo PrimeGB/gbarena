@@ -42,6 +42,19 @@ function buildTemplate(type: string, subject: string, body: string, relatedType:
   const matchLabel = subject.replace(/^(Match accepted|Confirm the score|Score submitted|Score disputed|Dispute opened|Dispute resolved|Match completed|Match cancellation requested|Match cancellation accepted|Match cancellation denied):?\s*/i, "");
   const matchDetails = [matchLabel && `Match: ${matchLabel}`, details].filter(Boolean).join("\n");
 
+  if (type === "ambassador_live") {
+    const name = subject.replace(/ is LIVE right now$/i, "").trim() || "A creator you follow";
+    const streamUrl = (body.trim().split(/\s+/)[0] || inboxHref).slice(0, 300);
+    return make(
+      `🔴 ${name} is LIVE on GameBattles`,
+      `${name} is LIVE right now!`,
+      `${name}, a GameBattles Ambassador you follow, just went live. Jump in, watch the stream and play along with the community.`,
+      "Watch the Stream",
+      streamUrl,
+      "#e91916",
+      "",
+    );
+  }
   if (type === "welcome") {
     return make(
       "Welcome to GameBattles — your account is ready",

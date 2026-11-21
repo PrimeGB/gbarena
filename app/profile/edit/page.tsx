@@ -44,6 +44,41 @@ function EditProfileContent() {
     const tab = searchParams.get("tab");
     return tab === "awards" || tab === "friends" || tab === "settings" ? tab : "main";
   });
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    let active = true;
+    void supabase.rpc("gb_my_streams").then(({ data }) => {
+      if (!active) return;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) {
+        setStreams({
+          twitch: row.twitch || "", youtube: row.youtube || "", tiktok: row.tiktok || "", kick: row.kick || "",
+          announce_twitch: row.announce_twitch !== false, announce_youtube: row.announce_youtube !== false,
+          announce_tiktok: row.announce_tiktok !== false, announce_kick: row.announce_kick !== false,
+        });
+      }
+    });
+    return () => { active = false; };
+  }, [currentUser?.id]);
+
+  async function saveStreams() {
+    setStreamsBusy(true);
+    setStreamsMsg("");
+    const { error: streamsError } = await supabase.rpc("gb_set_my_streams", {
+      p_twitch: streams.twitch.trim(),
+      p_youtube: streams.youtube.trim(),
+      p_tiktok: streams.tiktok.trim(),
+      p_kick: streams.kick.trim(),
+      p_announce_twitch: streams.announce_twitch,
+      p_announce_youtube: streams.announce_youtube,
+      p_announce_tiktok: streams.announce_tiktok,
+      p_announce_kick: streams.announce_kick,
+    });
+    setStreamsBusy(false);
+    setStreamsMsg(streamsError ? streamsError.message : "Streams saved.");
+    window.setTimeout(() => setStreamsMsg(""), 3500);
+  }
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -76,6 +111,9 @@ function EditProfileContent() {
   const [dragSource, setDragSource] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
+  const [streams, setStreams] = useState({ twitch: "", youtube: "", tiktok: "", kick: "", announce_twitch: true, announce_youtube: true, announce_tiktok: true, announce_kick: true });
+  const [streamsBusy, setStreamsBusy] = useState(false);
+  const [streamsMsg, setStreamsMsg] = useState("");
   const [friends, setFriends] = useState<FriendOption[]>([]);
   const [displayFriends, setDisplayFriends] = useState<string[]>([]);
   const [friendDrag, setFriendDrag] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
