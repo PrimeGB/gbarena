@@ -35,13 +35,11 @@ export const metadata: Metadata = {
     url: "/home",
     siteName: "GameBattles",
     type: "website",
-    images: [{ url: "/homepage.png", alt: "GameBattles" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GameBattles - Where Gaming Finds Its Edge",
     description: siteDescription,
-    images: ["/homepage.png"],
   },
 };
 
