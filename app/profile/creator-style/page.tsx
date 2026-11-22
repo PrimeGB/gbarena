@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { CREATOR_THEMES, isCreatorTheme, type CreatorStyle, type CreatorTheme } from "@/lib/creatorProfileStyles";
 import StylePreview from "./StylePreview";
+import CreatorConceptGallery from "./CreatorConceptGallery";
 
 export default function CreatorStylePage() {
   const { user, loading } = useUser();
@@ -76,6 +77,7 @@ export default function CreatorStylePage() {
       {error && <p className="vault-error" role="alert">{error}</p>}
       {notice && <p className="vault-notice" role="status">{notice}</p>}
       {current?.error && <p className="vault-error" role="alert">Creator access could not be loaded: {current.error}</p>}
+      <CreatorConceptGallery />
       <div className="vault-layout">
         <section>
           <div className="vault-section-heading"><div><h2>Preview your look</h2><p>{canSave ? "Uses your current profile name and logo." : "Example preview. Active creators can save a style."}</p></div>
@@ -85,7 +87,7 @@ export default function CreatorStylePage() {
           <p className="vault-scope">Ambassadors receive the full profile treatment. Affiliates receive the themed top section only.</p>
         </section>
         <section className="vault-controls">
-          <h2>Choose a preset</h2><p>Choose your colors and finishing details.</p>
+          <h2>Choose an available preset</h2><p>Choose your colors and finishing details.</p>
           <div className="vault-options">{CREATOR_THEMES.map((item) => <button key={item.id} type="button" className={`vault-option vault-option-${item.id}${theme === item.id ? " selected" : ""}`} aria-pressed={theme === item.id} onClick={() => setTheme(item.id)}>
             <i aria-hidden="true" /><span><b>{item.name}</b><small>{item.description}</small></span><strong>{theme === item.id ? "✓" : ""}</strong>
           </button>)}</div>

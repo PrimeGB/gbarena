@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
 import { CREATOR_THEMES, isCreatorTheme, type CreatorTheme } from "@/lib/creatorProfileStyles";
 import StylePreview from "@/app/profile/creator-style/StylePreview";
+import CreatorConceptGallery from "@/app/profile/creator-style/CreatorConceptGallery";
 import StaffPlayerPicker from "../dashboard/StaffPlayerPicker";
 import "./creator-management.css";
 
@@ -250,6 +251,7 @@ function CreatorManagement() {
               <button className="creator-primary" disabled={busy || !rows}>Apply profile style</button>
             </form>
           </div>
+          <CreatorConceptGallery />
           <h3 className="creator-request-title">Custom design requests {requests && `(${requests.filter((request) => request.status === "new").length} new)`}</h3>
           {!requests ? <p>Loading requests...</p> : requests.length === 0 ? <p>No custom design requests yet.</p> : requests.map((request) => <article className="creator-request" key={request.id}>
             <div className="creator-section-head"><div><Link href={`/profile?userId=${request.user_id}`}>{request.username}</Link>
