@@ -530,7 +530,7 @@ function ProfilePageContent() {
   const playerRole = rawRole === "owner"
     ? ((profile?.username || "").toLowerCase() === "prime" ? "Founder" : "Staff")
     : isAmbassador
-      ? (ambassador.tier === "icon" ? "GB Icon" : "Ambassador")
+      ? (ambassador.tier === "affiliate" ? "Affiliate" : "Ambassador")
       : rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : "Member";
   const avatarUrl = profile?.avatar_url || "";
   const logoUrl = profile?.logo_url || "";
@@ -629,12 +629,10 @@ function ProfilePageContent() {
     </>
   );
 
-  const ambTierLabel = ambassador?.tier === "icon" ? "GB Icon" : ambassador?.tier === "ambassador" ? "Ambassador (Gold)" : "Affiliate";
-  const ambNext = ambassador?.tier === "icon"
+  const ambTierLabel = ambassador?.tier === "ambassador" ? "Ambassador (Gold)" : "Affiliate";
+  const ambNext = ambassador?.tier === "ambassador"
     ? { label: "Status", value: "Top tier" }
-    : ambassador?.tier === "ambassador"
-      ? { label: "Next: Icon at", value: "75 qualified" }
-      : { label: "Next: Ambassador at", value: "25 qualified" };
+    : { label: "Next: Ambassador at", value: "65 qualified" };
 
   async function copyAmbLink() {
     if (!ambassador) return;
@@ -2101,7 +2099,7 @@ function ProfilePageContent() {
                     {ambassador?.userId === viewedUserId && (
                       <>
                         <Link className="pf-amb-chip" href="/ambassadors" title="GameBattles Ambassador Program">
-                          ★ {ambassador.tier === "icon" ? "GB Icon" : ambassador.tier === "ambassador" ? "Ambassador" : "Affiliate"}
+                          ★ {ambassador.tier === "ambassador" ? "Ambassador" : "Affiliate"}
                         </Link>
                         {(ambassador.twitch || ambassador.youtube || ambassador.kick) && (
                           <a
@@ -2271,7 +2269,7 @@ function ProfilePageContent() {
 
                 {isAmbassador && ambassador ? (
                   <div className="box amb-box">
-                    <div className="box-title">★ Ambassador</div>
+                    <div className="box-title">★ {ambassador.tier === "ambassador" ? "Ambassador" : "Affiliate"}</div>
                     <div className="amb-body">
                       {isViewingOwnProfile && (
                         <>
@@ -2288,7 +2286,7 @@ function ProfilePageContent() {
                       )}
                       <div className="amb-row"><span>Tier</span><b>{ambTierLabel}</b></div>
                       <div className="amb-row"><span>Players recruited</span><b>{(ambassador.recruits ?? 0).toLocaleString()}</b></div>
-                      <div className="amb-row"><span>Credits given out</span><b>{(ambassador.qualified * 5).toLocaleString()}</b></div>
+                      <div className="amb-row"><span>Qualified recruits</span><b>{ambassador.qualified.toLocaleString()}</b></div>
                       <div className="amb-row"><span>{ambNext.label}</span><b>{ambNext.value}</b></div>
                       <button className="amb-link" type="button" onClick={() => void copyAmbLink()} title="Copy recruit link">
                         {ambLinkCopied ? "Link copied!" : <>gamebattles.app/amb/<b>{ambassador.slug}</b></>}

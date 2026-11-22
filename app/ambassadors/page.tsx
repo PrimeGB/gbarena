@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 type Ambassador = {
   user_id: string;
   username: string | null;
-  tier: "affiliate" | "ambassador" | "icon";
+  tier: "affiliate" | "ambassador";
   slug: string;
   tagline: string;
   blurb: string;
@@ -23,51 +23,27 @@ type Ambassador = {
   since: string;
 };
 
-const TIER_LABEL = { affiliate: "Affiliate", ambassador: "Ambassador", icon: "Icon" } as const;
-const TIER = {
-  affiliate: { c: "#9fc2e2", ring: "conic-gradient(#e8f4ff,#9fc2e2,#37536e,#e8f4ff)" },
-  ambassador: { c: "#f2c14e", ring: "conic-gradient(#ffe9ab,#f2c14e,#7a4a08,#ffe9ab)" },
-  icon: { c: "#ff7a3c", ring: "conic-gradient(#ffd9a0,#ff7a3c,#73380f,#ffd9a0)" },
-} as const;
-
-function socialLinks(a: Ambassador) {
-  return [
-    { label: "Twitch", short: "TW", url: a.twitch },
-    { label: "YouTube", short: "YT", url: a.youtube },
-    { label: "TikTok", short: "TT", url: a.tiktok },
-    { label: "Kick", short: "KC", url: a.kick },
-    { label: "Instagram", short: "IG", url: a.instagram },
-    { label: "Discord", short: "DC", url: a.discord },
-  ].filter((s) => s.url);
-}
-
 export default function AmbassadorsPage() {
   const [rows, setRows] = useState<Ambassador[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
-    void supabase.rpc("gb_ambassador_directory").then(({ data }) => {
+    void supabase.rpc("gb_ambassador_directory").then(({ data, error: rpcError }) => {
       if (!active) return;
-      setRows((data || []) as Ambassador[]);
+      if (rpcError) setError("Unable to load program members. Please try again later.");
+      else setRows((data || []) as Ambassador[]);
       setLoading(false);
     });
     return () => { active = false; };
   }, []);
 
-  const featured = rows.find((r) => r.featured);
-  const totalRecruits = rows.reduce((n, r) => n + r.recruits, 0);
-
-  async function copyLink(a: Ambassador) {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/amb/${a.slug}`);
-      setCopied(a.slug);
-      window.setTimeout(() => setCopied(""), 1800);
-    } catch {
-      /* clipboard unavailable */
-    }
-  }
+  const featured = rows.find((r) => r.featured && r.tier === "ambassador");
+  const groups = [
+    { tier: "ambassador" as const, label: "Ambassadors", credits: 3 },
+    { tier: "affiliate" as const, label: "Affiliates", credits: 2 },
+  ];
 
   return (
     <main className="ambp">
@@ -75,23 +51,32 @@ export default function AmbassadorsPage() {
         <span className="kicker">Creator Program</span>
         <h1>GB <em>Ambassadors &amp; Affiliates</em></h1>
         <p>
-          The streamers and creators building the GameBattles community. Every player who joins through an
-          ambassador link gets 5 free credits - and ambassadors earn exclusive awards, a gold profile,
-          spotlight placement and events hosted in their name.
+          Help grow GameBattles with your friends and community. Share your link, earn credits for
+          qualified recruits, and unlock exclusive recognition as an Affiliate or Ambassador.
         </p>
         <div className="cta-row">
-          <Link className="btn-gold" href="/ambassadors/apply">Apply to become an Ambassador</Link>
-          <Link className="btn-ghost" href="/home">Back to Home</Link>
+          <Link className="btn-gold" href="/ambassadors/apply">Apply Here</Link>
+          <Link className="btn-gold" href="/ambassadors/perks">Perks of being an Ambassador / Affiliate</Link>
         </div>
       </section>
 
       <div className="shell">
-        <div className="strip">
-          <div><b>{rows.length}</b><span>Active Ambassadors</span></div>
-          <div><b>{totalRecruits}</b><span>Players recruited</span></div>
-          <div><b>+5</b><span>Free credits for recruits</span></div>
-          <div><b>★</b><span>Exclusive awards</span></div>
-        </div>
+        {error && <p className="error" role="alert">{error}</p>}
+        {groups.map((group) => {
+          const members = rows.filter((row) => row.tier === group.tier);
+          return (
+            <section key={group.tier} aria-label={`${group.label} statistics`}>
+              <h2 className="sec">{group.label} at a glance</h2>
+              <div className="strip">
+                <Link className="stat-link" href={`/ambassadors/members/${group.tier}`}><b>{loading ? "..." : error ? "—" : members.length}</b><span>Active {group.label} →</span></Link>
+                <div><b>{loading ? "..." : error ? "—" : members.reduce((n, r) => n + r.recruits, 0)}</b><span>Players recruited</span></div>
+                <div><b>+{group.credits}</b><span>Credits per qualified recruit</span></div>
+                <div><b>★</b><span>Exclusive awards</span></div>
+              </div>
+            </section>
+          );
+        })}
+        <p className="qualification">Recruits earn their welcome credits after verifying their email and linking a qualifying gaming account. Their Affiliate or Ambassador earns 1 credit per qualified recruit.</p>
 
         {featured && (
           <>
@@ -113,54 +98,12 @@ export default function AmbassadorsPage() {
           </>
         )}
 
-        <h2 className="sec">Our Ambassadors</h2>
-        {loading ? (
-          <p className="muted">Loading ambassadors...</p>
-        ) : rows.length === 0 ? (
-          <div className="empty">
-            <h3>The first class is being selected</h3>
-            <p>
-              We&apos;re hand-picking the streamers and creators who will represent GameBattles.
-              Think that&apos;s you? <Link href="/ambassadors/apply">Apply here</Link> with your channel
-              and the games you play.
-            </p>
-          </div>
-        ) : (
-          <div className="grid">
-            {rows.map((a) => {
-              const t = TIER[a.tier];
-              return (
-                <article key={a.user_id} className="card" style={{ ["--tier" as string]: t.c, ["--ring" as string]: t.ring }}>
-                  <div className="av"><div className="ph">{(a.username || "GB").slice(0, 2).toUpperCase()}</div></div>
-                  <span className="tier-tag">{TIER_LABEL[a.tier]}</span>
-                  <h4><Link href={`/profile?userId=${a.user_id}`}>{a.username}</Link></h4>
-                  {a.tagline && <div className="game">{a.tagline}</div>}
-                  <div className="stats">
-                    <div><b>{a.recruits}</b><span>Recruits</span></div>
-                    <div><b>{a.qualified}</b><span>Qualified</span></div>
-                  </div>
-                  {socialLinks(a).length > 0 && (
-                    <div className="socials">
-                      {socialLinks(a).map((s) => (
-                        <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" title={s.label}>{s.short}</a>
-                      ))}
-                    </div>
-                  )}
-                  <button className="code" onClick={() => void copyLink(a)} title="Copy their recruit link">
-                    {copied === a.slug ? "Link copied!" : <>Recruit link: <b>/amb/{a.slug}</b></>}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        )}
-
         <h2 className="sec">How we treat our Ambassadors</h2>
         <div className="perks">
           <div className="perk">
             <span className="perk-ic">🏆</span>
             <b>Tournaments in your name</b>
-            <p>We build and run official tournaments named after you - "The Sharpz Showdown" - you just show up and play with your community.</p>
+            <p>We can build and run tournaments named after you, so you can play with your community.</p>
           </div>
           <div className="perk">
             <span className="perk-ic">📅</span>
@@ -175,12 +118,12 @@ export default function AmbassadorsPage() {
           <div className="perk">
             <span className="perk-ic">📣</span>
             <b>Front-page spotlight</b>
-            <p>Your name, stream and recruit link featured on this page and in the home page slideshow.</p>
+            <p>Opportunities to spotlight your community and stream on GameBattles.</p>
           </div>
           <div className="perk">
             <span className="perk-ic">🎁</span>
             <b>Perks for your people</b>
-            <p>Everyone who joins through your link gets 5 free credits - your community gets treated well too.</p>
+            <p>Qualified recruits receive 2 credits through an Affiliate link or 3 through an Ambassador link. You earn 1 credit for each qualified recruit.</p>
           </div>
           <div className="perk">
             <span className="perk-ic">🤝</span>
@@ -196,30 +139,21 @@ export default function AmbassadorsPage() {
             <div className="req">The first step for active creators</div>
             <ul>
               <li>Personal recruit link, every signup tracked</li>
-              <li>Your recruits get 5 free credits when they qualify</li>
+              <li>Qualified recruits get 2 credits; you earn 1</li>
               <li>GB Affiliate award on your profile</li>
-              <li>Listed on this page with your stream links</li>
+              <li>Listed in the Affiliate directory with your stream links</li>
             </ul>
           </div>
           <div className="tier t2">
             <span className="pop">Gold status</span>
             <h5>Ambassador</h5>
-            <div className="req">Auto-promoted at 25 qualified recruits</div>
+            <div className="req">Auto-promoted at 65 qualified recruits</div>
             <ul>
               <li>Everything in Affiliate</li>
+              <li>Qualified recruits get 3 credits; you earn 1</li>
               <li>GB Ambassador award</li>
               <li>Gold ambassador badge on your profile</li>
               <li>Spotlight placement on this page</li>
-            </ul>
-          </div>
-          <div className="tier t3">
-            <h5>Icon</h5>
-            <div className="req">Auto-promoted at 75 qualified recruits</div>
-            <ul>
-              <li>Everything in Ambassador</li>
-              <li>Exclusive GB Icon award</li>
-              <li>Events hosted in your name</li>
-              <li>Featured spotlight with your stream</li>
             </ul>
           </div>
         </div>
@@ -231,23 +165,25 @@ export default function AmbassadorsPage() {
       </div>
       <style>{`
         .ambp{min-height:100vh;background:#05090f;color:#d7e2ee;font-family:Tahoma,Verdana,Arial,sans-serif;padding-bottom:60px}
-        .hero{position:relative;padding:54px 24px 56px;text-align:center;background:radial-gradient(ellipse at 50% -20%,#3a2b06 0%,transparent 55%),radial-gradient(ellipse at 15% 110%,#200909 0%,transparent 50%),radial-gradient(ellipse at 85% 110%,#09131f 0%,transparent 55%),linear-gradient(180deg,#0d1726,#070d15)}
+        .hero{position:relative;padding:30px 24px 32px;text-align:center;background:radial-gradient(ellipse at 50% -20%,#3a2b06 0%,transparent 55%),radial-gradient(ellipse at 15% 110%,#200909 0%,transparent 50%),radial-gradient(ellipse at 85% 110%,#09131f 0%,transparent 55%),linear-gradient(180deg,#0d1726,#070d15)}
         .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(#f2c14e11 1px,transparent 1px),linear-gradient(90deg,#f2c14e11 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 75%);pointer-events:none}
         .kicker{display:inline-flex;align-items:center;gap:10px;color:#f2c14e;font-size:11px;font-weight:900;letter-spacing:.3em;text-transform:uppercase}
         .kicker::before,.kicker::after{content:"";width:34px;height:2px;background:linear-gradient(90deg,transparent,#f2c14e)}
         .kicker::after{transform:scaleX(-1)}
-        .hero h1{margin:14px 0 6px;font-size:46px;color:#fff;letter-spacing:.02em;text-transform:uppercase;text-shadow:0 0 34px #f2c14e55}
+        .hero h1{margin:10px 0 4px;font-size:38px;color:#fff;letter-spacing:.02em;text-transform:uppercase;text-shadow:0 0 34px #f2c14e55}
         .hero h1 em{font-style:normal;background:linear-gradient(180deg,#ffe9ab,#f2c14e 55%,#9a6510);-webkit-background-clip:text;background-clip:text;color:transparent}
         .hero p{max-width:620px;margin:10px auto 0;color:#9fb4c8;font-size:14px;line-height:1.7}
-        .cta-row{margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+        .cta-row{margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
         .btn-gold{padding:13px 26px;border-radius:4px;background:linear-gradient(180deg,#ffdf8e,#e0a020);color:#231600;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;box-shadow:0 10px 26px #e0a02044}
-        .btn-ghost{padding:13px 26px;border-radius:4px;border:1px solid #37536e;color:#cfe0f0;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
         .shell{max-width:1060px;margin:0 auto;padding:0 20px}
-        .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:-28px;position:relative;z-index:2}
-        .strip div{background:linear-gradient(180deg,#0f1f31,#0a1522);border:1px solid #23415d;border-radius:10px;padding:16px 18px;text-align:center}
-        .strip b{display:block;color:#f2c14e;font-size:22px}
+        .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+        .qualification{color:#a8bdcd;font-size:12px;line-height:1.6;margin:18px 0}
+        .error{color:#ff9aa4;border:1px solid #7a2733;background:#2a0b0f;padding:12px;border-radius:8px}
+        .strip div,.strip .stat-link{background:linear-gradient(180deg,#0f1f31,#0a1522);border:1px solid #23415d;border-radius:8px;padding:10px 12px;text-align:center}
+        .strip .stat-link{text-decoration:none;transition:border-color .2s,background .2s}.strip .stat-link:hover,.strip .stat-link:focus-visible{border-color:#f2c14e;background:#172b3f}
+        .strip b{display:block;color:#f2c14e;font-size:19px}
         .strip span{color:#8fa9c2;font-size:10px;font-weight:bold;letter-spacing:.08em;text-transform:uppercase}
-        .sec{display:flex;align-items:center;gap:14px;margin:48px 0 18px;color:#e5c573;font-size:14px;letter-spacing:.14em;text-transform:uppercase}
+        .sec{display:flex;align-items:center;gap:14px;margin:26px 0 12px;color:#e5c573;font-size:14px;letter-spacing:.14em;text-transform:uppercase}
         .sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#44341033,#f2c14e55,transparent)}
         .muted{color:#7f9ab3;font-size:13px}
         .empty{padding:34px;border-radius:12px;border:1px dashed #37536e;background:#0a1522;text-align:center}
@@ -255,7 +191,7 @@ export default function AmbassadorsPage() {
         .empty p{margin:0 auto;max-width:480px;color:#a8bdcd;font-size:13px;line-height:1.7}
         .empty a,.note a{color:#67bdff}
         .perks{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-        .perk{padding:18px;border-radius:12px;border:1px solid #23415d;background:linear-gradient(180deg,#0e1d2e,#081220);transition:border-color .2s,transform .2s}
+        .perk{padding:14px;border-radius:10px;border:1px solid #23415d;background:linear-gradient(180deg,#0e1d2e,#081220);transition:border-color .2s,transform .2s}
         .perk:hover{border-color:#6e5213;transform:translateY(-3px)}
         .perk-ic{display:grid;place-items:center;width:40px;height:40px;margin-bottom:10px;border-radius:10px;background:linear-gradient(145deg,#2c2206,#171103);border:1px solid #6e5213;font-size:18px}
         .perk b{display:block;color:#ffdf8e;font-size:13.5px;margin-bottom:6px}
@@ -297,7 +233,7 @@ export default function AmbassadorsPage() {
         .card .code{display:block;width:100%;margin-top:12px;padding:8px;border-radius:6px;background:#050c13;border:1px dashed #2b4a68;color:#8fa9c2;font-size:10.5px;cursor:pointer;font-family:inherit}
         .card .code b{color:#f2c14e;letter-spacing:.04em}
         .card .code:hover{border-color:#f2c14e}
-        .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .tiers{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
         .tier{border-radius:12px;padding:22px;border:1px solid #23415d;background:linear-gradient(180deg,#0e1d2e,#081220);position:relative}
         .tier h5{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.08em}
         .tier .req{color:#8fa9c2;font-size:10.5px;font-weight:bold;margin:3px 0 12px}
@@ -306,7 +242,6 @@ export default function AmbassadorsPage() {
         .tier li::before{content:"✦";position:absolute;left:2px;color:var(--tc)}
         .t1{--tc:#9fc2e2}.t1 h5{color:#9fc2e2}
         .t2{--tc:#f2c14e}.t2 h5{color:#f2c14e}.t2{border-color:#6e5213;background:linear-gradient(180deg,#171103,#0b0e14)}
-        .t3{--tc:#ff7a3c}.t3 h5{color:#ff7a3c}.t3{border-color:#73380f}
         .tier .pop{position:absolute;top:-10px;right:14px;background:#f2c14e;color:#231600;font-size:8.5px;font-weight:900;letter-spacing:.1em;padding:4px 9px;border-radius:999px;text-transform:uppercase}
         .note{margin-top:22px;color:#7f9ab3;font-size:12px;text-align:center}
         @media(max-width:820px){.grid,.tiers{grid-template-columns:1fr 1fr}.strip{grid-template-columns:1fr 1fr}.perks{grid-template-columns:1fr 1fr}}

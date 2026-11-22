@@ -8,7 +8,7 @@ import StaffPlayerPicker from "../dashboard/StaffPlayerPicker";
 type Ambassador = {
   user_id: string;
   username: string | null;
-  tier: "affiliate" | "ambassador" | "icon";
+  tier: "affiliate" | "ambassador";
   slug: string;
   tagline: string;
   blurb: string;
@@ -65,8 +65,8 @@ const EMPTY: FormState = {
   featured: false, active: true,
 };
 
-const TIER_LABEL = { affiliate: "Affiliate", ambassador: "Ambassador", icon: "Icon" } as const;
-const TIER_COLOR = { affiliate: "#9fc2e2", ambassador: "#f2c14e", icon: "#ff7a3c" } as const;
+const TIER_LABEL = { affiliate: "Affiliate", ambassador: "Ambassador" } as const;
+const TIER_COLOR = { affiliate: "#9fc2e2", ambassador: "#f2c14e" } as const;
 
 export default function StaffAmbassadorsPage() {
   const [rows, setRows] = useState<Ambassador[]>([]);
@@ -130,7 +130,7 @@ export default function StaffAmbassadorsPage() {
     });
     setBusy(false);
     if (rpcError) { setError(rpcError.message); return; }
-    setNotice(`${form.username.trim()} saved as ${TIER_LABEL[form.tier]}. Their award, gold profile and /amb/${form.slug.trim().toLowerCase()} link are live.`);
+    setNotice(`${form.username.trim()} saved as ${TIER_LABEL[form.tier]}. Their award and /amb/${form.slug.trim().toLowerCase()} link are live.`);
     setForm(EMPTY);
     setEditing(false);
     await load();
@@ -242,7 +242,6 @@ export default function StaffAmbassadorsPage() {
               <select value={form.tier} onChange={(e) => set({ tier: e.target.value as FormState["tier"] })}>
                 <option value="affiliate">Affiliate (entry)</option>
                 <option value="ambassador">Ambassador (gold)</option>
-                <option value="icon">Icon (top tier)</option>
               </select>
             </label>
             <label>Link name
