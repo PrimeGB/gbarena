@@ -961,10 +961,9 @@ export default function Home() {
               <div className="panel-title">Community</div>
 
               <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
-              <Link className="side-link" href="/activity">Live Community <span className="arrow">›</span></Link>
               <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
               <Link className="side-link" href="/members">Members <span className="arrow">›</span></Link>
-              <Link className="side-link side-link-amb" href="/ambassadors">GB Ambassadors <span className="arrow">›</span></Link>
+              <Link className="side-link side-link-amb" href="/ambassadors">GB Ambassadors / Affiliates <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
               <div className="section-title">Awards &amp; Achievements</div>

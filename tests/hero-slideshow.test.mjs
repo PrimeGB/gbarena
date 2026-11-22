@@ -8,24 +8,20 @@ const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.Modu
 const exports = {};
 new Function("exports", compiled)(exports);
 
-test("community slides are separated by existing images in the rotation", () => {
+test("rotation preserves images and includes each new promotion once", () => {
   const images = Array.from({ length: 9 }, (_, index) => `image-${index}`);
   const slides = exports.buildHeroRotation(images);
-  const discord = slides.findIndex((slide) => slide.kind === "discord");
-  const invite = slides.findIndex((slide) => slide.kind === "invite");
-  assert.ok(slides.slice(discord + 1, invite).some((slide) => slide.kind === "image"));
-  assert.ok(slides.slice(invite + 1).concat(slides.slice(0, discord)).some((slide) => slide.kind === "image"));
   assert.deepEqual(slides.filter((slide) => slide.kind === "image").map((slide) => slide.src), images);
+  for (const kind of exports.NEW_PROMO_KINDS) {
+    assert.equal(slides.filter((slide) => slide.kind === kind).length, 1);
+    assert.ok(exports.NEW_PROMOS[kind].href);
+  }
 });
 
-test("rotation skips unavailable images but keeps both community slides", () => {
-  const slides = exports.buildHeroRotation(["first", "broken", "last"]);
-  const loaded = new Set(["first", "last"]);
-  let index = 0;
-  const visited = [];
-  for (let count = 0; count < 4; count += 1) {
-    index = exports.nextHeroSlideIndex(slides, index, loaded);
-    visited.push(slides[index].kind === "image" ? slides[index].src : slides[index].kind);
-  }
-  assert.deepEqual(visited, ["discord", "last", "invite", "first"]);
+test("manual and automatic navigation skip failed images in both directions", () => {
+  const slides = [{ kind: "rivalry" }, { kind: "image", src: "broken" }, { kind: "friends" }, { kind: "image", src: "loaded" }];
+  const loaded = new Set(["loaded"]);
+  assert.equal(exports.nextHeroSlideIndex(slides, 0, loaded), 2);
+  assert.equal(exports.nextHeroSlideIndex(slides, 2, loaded, -1), 0);
+  assert.equal(exports.nextHeroSlideIndex(slides, 0, loaded, -1), 3);
 });

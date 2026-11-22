@@ -156,6 +156,13 @@ Additional titles may be added based on community demand.
 ### Hosting
 - Vercel
 
+### Friendly tournament requests
+Signed-in players can request a friendly event at `/tournaments/request`.
+Requests go to the Founder as replyable inbox messages, with a shortcut on the
+staff dashboard. Staff discuss availability and details before arranging an
+event; submitting a request does not create or guarantee a tournament. Apply
+`20261122223000_friendly_tournament_requests.sql` before deploying this flow.
+
 ### Feedback email notifications
 Signed-in players' suggestions and bug reports are saved for staff review in
 `/staff/feedback` and sent to the Prime owner inbox. Bug reports require a

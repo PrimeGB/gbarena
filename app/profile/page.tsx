@@ -17,6 +17,7 @@ import { EliteEmblem, ELITE_LIMIT, getEliteBand } from "./EliteEmblem";
 import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
 import { supabase } from "../../lib/supabase";
 import { ladderPlatformLabel } from "../../lib/ladderCatalog";
+import { NEW_PROMOS, NEW_PROMO_KINDS } from "../../lib/heroSlides";
 import {
   GamingAccount,
 } from "../../lib/gamingAccounts";
@@ -174,7 +175,7 @@ function ProfilePageContent() {
 
   useEffect(() => {
     if (bannerHovered || bannerFocused) return;
-    const timer = window.setInterval(() => setPromoIndex((current) => (current + 1) % 6), 15000);
+    const timer = window.setInterval(() => setPromoIndex((current) => (current + 1) % (6 + NEW_PROMO_KINDS.length)), 15000);
     return () => window.clearInterval(timer);
   }, [bannerHovered, bannerFocused]);
 
@@ -895,6 +896,10 @@ function ProfilePageContent() {
         .promo-building{
           background:linear-gradient(115deg,#0b3246 0%,#1879a8 55%,#0a2838 100%);
         }
+        .promo-rivalry{background:linear-gradient(110deg,#3b0d17,#a12c32)}
+        .promo-event{background:linear-gradient(110deg,#321514,#90502b)}
+        .promo-construction{background:repeating-linear-gradient(135deg,#313333 0 16px,#3c3b2b 16px 32px)}
+        .promo-affiliate{background:linear-gradient(110deg,#261c09,#806018)}
         .promo-icon{
           display:flex;
           align-items:center;
@@ -920,8 +925,8 @@ function ProfilePageContent() {
         .promo-tournaments .promo-eyebrow{color:#ffc9cf}
         .promo-ambassadors .promo-eyebrow{color:#ffe9ab}
         .promo-building .promo-eyebrow{color:#b4e6ff}
-        .promo-title{display:block;margin-top:3px;font-size:14px;font-weight:900;color:#fff;white-space:nowrap}
-        .promo-sub{display:block;margin-top:3px;font-size:10px;color:#f1f3ff;white-space:nowrap}
+        .promo-title{display:block;margin-top:3px;font-size:14px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .promo-sub{display:block;margin-top:3px;font-size:10px;color:#f1f3ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .promo-action{flex:none;padding:6px 8px;border-radius:4px;background:#fff;color:#303d91;font-size:10px;font-weight:900;white-space:nowrap}
         .promo-invite .promo-action{background:#ffdb7b;color:#382100}
         .promo-challenges .promo-action{background:#8ff5c4;color:#043019}
@@ -1957,7 +1962,20 @@ function ProfilePageContent() {
             </div>
 
             <div className="header-ad" onMouseEnter={() => setBannerHovered(true)} onMouseLeave={() => setBannerHovered(false)} onFocus={() => setBannerFocused(true)} onBlur={() => setBannerFocused(false)}>
-              {promoIndex === 1 ? (
+              {promoIndex >= 6 ? (() => {
+                const promo = NEW_PROMOS[NEW_PROMO_KINDS[promoIndex - 6]];
+                return (
+                  <Link className={`promo-banner promo-${promo.category}`} href={promo.href}>
+                    <span className="promo-icon"><Image src="/logo-emblem.png" alt="" width={40} height={40} /></span>
+                    <span className="promo-copy">
+                      <span className="promo-eyebrow">{promo.tag}</span>
+                      <span className="promo-title">{promo.bannerTitle}</span>
+                      <span className="promo-sub">{promo.bannerText}</span>
+                    </span>
+                    <span className="promo-action">GO &#8594;</span>
+                  </Link>
+                );
+              })() : promoIndex === 1 ? (
                 <Link className="promo-banner promo-invite" href="/profile/awards#invite-rewards">
                   <span className="promo-icon"><Image src="/logo-emblem.png" alt="" width={40} height={40} /></span>
                   <span className="promo-copy">

@@ -42,7 +42,7 @@ export default function MobileHome() {
       </section>
 
       <section className={styles.feature}>
-        <div><p className={styles.eyebrow}>PLAY TOGETHER</p><h2>Find your squad.</h2><p>Create a team or see who is leading the competition.</p></div>
+        <div><p className={styles.eyebrow}>FRIENDS OR RIVALS</p><h2>Ready for a 1v1?</h2><p>Create a team for a solos ladder and challenge your friends.</p></div>
         <div className={styles.featureLinks}><Link href="/teams/create">Create a team →</Link><Link href="/teams/top">Top teams →</Link></div>
       </section>
 
@@ -50,7 +50,8 @@ export default function MobileHome() {
         <div className={styles.sectionHead}><div><p className={styles.eyebrow}>MORE TO EXPLORE</p><h2 id="mobile-discover">The community</h2></div></div>
         <nav className={styles.list} aria-label="Community">
           <Link href="/tournaments"><span><strong>Tournaments</strong><small>Explore events and free weekly cups</small></span><b aria-hidden="true">→</b></Link>
-          <Link href="/activity"><span><strong>Community activity</strong><small>See what players are up to</small></span><b aria-hidden="true">→</b></Link>
+          <Link href="/tournaments/request"><span><strong>Host a friendly tournament</strong><small>Tell staff about your event idea</small></span><b aria-hidden="true">→</b></Link>
+          <Link href="/ambassadors"><span><strong>GB Ambassadors / Affiliates</strong><small>Help grow the community and earn recognition</small></span><b aria-hidden="true">→</b></Link>
           <Link href="/forums"><span><strong>Forums</strong><small>Join the conversation</small></span><b aria-hidden="true">→</b></Link>
           <Link href="/latest-news"><span><strong>Latest news</strong><small>Catch up on GameBattles</small></span><b aria-hidden="true">→</b></Link>
         </nav>

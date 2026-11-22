@@ -73,7 +73,7 @@ export default function AmbassadorsPage() {
     <main className="ambp">
       <section className="hero">
         <span className="kicker">Creator Program</span>
-        <h1>GB <em>Ambassadors</em></h1>
+        <h1>GB <em>Ambassadors &amp; Affiliates</em></h1>
         <p>
           The streamers and creators building the GameBattles community. Every player who joins through an
           ambassador link gets 5 free credits - and ambassadors earn exclusive awards, a gold profile,
