@@ -18,6 +18,9 @@ import AwardArt, { AWARD_CSS } from "../awards/AwardArt";
 import { supabase } from "../../lib/supabase";
 import { ladderPlatformLabel } from "../../lib/ladderCatalog";
 import { NEW_PROMOS, NEW_PROMO_KINDS } from "../../lib/heroSlides";
+import { isCreatorTheme, type CreatorStyle } from "../../lib/creatorProfileStyles";
+import CreatorFrameArt from "./creator-style/CreatorFrameArt";
+import "./creator-styles.css";
 import {
   GamingAccount,
 } from "../../lib/gamingAccounts";
@@ -137,6 +140,7 @@ function ProfilePageContent() {
   const [statsPublic, setStatsPublic] = useState(true);
   const [playerXp, setPlayerXp] = useState<{ userId: string; xp: number } | null>(null);
   const [ambassador, setAmbassador] = useState<{ userId: string; tier: string; slug: string; twitch: string; youtube: string; tiktok: string; kick: string; recruits: number | null; qualified: number; live: boolean } | null>(null);
+  const [creatorStyle, setCreatorStyle] = useState<{ userId: string; style: CreatorStyle | null; error: string } | null>(null);
   const [ambLinkCopied, setAmbLinkCopied] = useState(false);
   const [ambLiveBusy, setAmbLiveBusy] = useState(false);
   const [ambLiveMsg, setAmbLiveMsg] = useState("");
@@ -163,6 +167,18 @@ function ProfilePageContent() {
     return () => {
       active = false;
     };
+  }, [viewedUserId]);
+  useEffect(() => {
+    if (!viewedUserId) return;
+    let active = true;
+    void supabase.rpc("gb_creator_profile_style", { p_user: viewedUserId }).then(({ data, error: styleError }) => {
+      if (!active) return;
+      const row = Array.isArray(data) ? data[0] : null;
+      const style = row && (row.tier === "affiliate" || row.tier === "ambassador") && isCreatorTheme(row.theme)
+        ? { tier: row.tier, theme: row.theme, show_name: row.show_name === true, show_logo: row.show_logo === true } : null;
+      setCreatorStyle({ userId: viewedUserId, style, error: styleError?.message || "" });
+    });
+    return () => { active = false; };
   }, [viewedUserId]);
   const [promoIndex, setPromoIndex] = useState(0);
   const [bannerHovered, setBannerHovered] = useState(false);
@@ -527,6 +543,7 @@ function ProfilePageContent() {
   const favoriteSystem = profile?.favorite_system || "PlayStation";
   const rawRole = (profile?.role || "").toLowerCase();
   const isAmbassador = ambassador?.userId === viewedUserId;
+  const currentCreatorStyle = creatorStyle?.userId === viewedUserId ? creatorStyle.style : null;
   const playerRole = rawRole === "owner"
     ? ((profile?.username || "").toLowerCase() === "prime" ? "Founder" : "Staff")
     : isAmbassador
@@ -1947,7 +1964,7 @@ function ProfilePageContent() {
         }
       `}</style>
 
-      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}${ambassador?.userId === viewedUserId ? " amb-gold-frame" : ""}`}>
+      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}${isAmbassador ? " amb-gold-frame" : ""}${currentCreatorStyle && currentCreatorStyle.theme !== "classic" ? ` creator-style-${currentCreatorStyle.theme}${currentCreatorStyle.tier === "ambassador" ? " creator-full" : ""}` : ""}`}>
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">
@@ -2079,6 +2096,12 @@ function ProfilePageContent() {
 
           {profile ? (
             <div className={`pf-banner${ambassador?.userId === viewedUserId ? " pf-banner-amb" : ""}`}>
+              {currentCreatorStyle && <CreatorFrameArt theme={currentCreatorStyle.theme} />}
+              {currentCreatorStyle && currentCreatorStyle.theme !== "classic" && <div className="creator-watermark" aria-hidden="true">
+                {currentCreatorStyle.show_name && <span>{playerName}</span>}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {currentCreatorStyle.show_logo && logoUrl && <img src={logoUrl} alt="" />}
+              </div>}
               <div className="pf-banner-top">
                 <div className={`pf-avatar${ambassador?.userId === viewedUserId ? " pf-avatar-amb" : ""}`}>
                   {logoUrl || avatarUrl ? (
@@ -2273,6 +2296,7 @@ function ProfilePageContent() {
                     <div className="amb-body">
                       {isViewingOwnProfile && (
                         <>
+                          <Link className="amb-link" href="/profile/creator-style">Customize profile style</Link>
                           <button
                             className={`amb-live-btn${ambassador.live ? " is-live" : ""}`}
                             type="button"
@@ -2285,6 +2309,7 @@ function ProfilePageContent() {
                         </>
                       )}
                       <div className="amb-row"><span>Tier</span><b>{ambTierLabel}</b></div>
+                      {creatorStyle?.userId === viewedUserId && creatorStyle.error && <div className="error" role="alert">Creator style could not be loaded: {creatorStyle.error}</div>}
                       <div className="amb-row"><span>Players recruited</span><b>{(ambassador.recruits ?? 0).toLocaleString()}</b></div>
                       <div className="amb-row"><span>Qualified recruits</span><b>{ambassador.qualified.toLocaleString()}</b></div>
                       <div className="amb-row"><span>{ambNext.label}</span><b>{ambNext.value}</b></div>

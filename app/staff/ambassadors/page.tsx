@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/useUser";
+import { CREATOR_THEMES, isCreatorTheme, type CreatorTheme } from "@/lib/creatorProfileStyles";
+import StylePreview from "@/app/profile/creator-style/StylePreview";
 import StaffPlayerPicker from "../dashboard/StaffPlayerPicker";
 import "./creator-management.css";
 
@@ -19,6 +21,7 @@ type Application = {
   audience: string; pitch: string; status: "pending" | "approved" | "declined"; created_at: string;
 };
 type Idea = { tier: Tier; notes: string };
+type StyleRequest = { id: number; user_id: string; username: string; tier: Tier; idea: string; status: "new" | "reviewed"; created_at: string };
 const labels: Record<Tier, string> = { affiliate: "Affiliate", ambassador: "Ambassador" };
 const errorMessage = (message: string) => message.startsWith("permission denied for function")
   ? "Your session cannot access this tool. Sign in again with your Founder account."
@@ -39,6 +42,11 @@ function CreatorManagement() {
   const [apps, setApps] = useState<Application[] | null>(null);
   const [ideas, setIdeas] = useState<Record<Tier, string>>({ affiliate: "", ambassador: "" });
   const [ideasLoaded, setIdeasLoaded] = useState(false);
+  const [requests, setRequests] = useState<StyleRequest[] | null>(null);
+  const [styleUsername, setStyleUsername] = useState("");
+  const [styleTheme, setStyleTheme] = useState<CreatorTheme>("gold");
+  const [styleName, setStyleName] = useState(true);
+  const [styleLogo, setStyleLogo] = useState(true);
   const [username, setUsername] = useState("");
   const [tier, setTier] = useState<Tier>("affiliate");
   const [editing, setEditing] = useState<Creator | null>(null);
@@ -47,14 +55,16 @@ function CreatorManagement() {
   const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
-    const [membersResult, appsResult] = await Promise.all([
+    const [membersResult, appsResult, requestsResult] = await Promise.all([
       supabase.rpc("staff_ambassador_list"),
       supabase.rpc("staff_ambassador_applications"),
+      supabase.rpc("staff_creator_profile_requests"),
     ]);
-    const errors = [membersResult.error, appsResult.error].filter(Boolean);
+    const errors = [membersResult.error, appsResult.error, requestsResult.error].filter(Boolean);
     if (errors.length) setError(errors.map((item) => errorMessage(item!.message)).join(" · "));
     if (!membersResult.error) setRows((membersResult.data || []) as Creator[]);
     if (!appsResult.error) setApps((appsResult.data || []) as Application[]);
+    if (!requestsResult.error) setRequests((requestsResult.data || []) as StyleRequest[]);
   }, []);
 
   useEffect(() => {
@@ -146,6 +156,26 @@ function CreatorManagement() {
   }
 
   const active = rows?.filter((row) => row.active) || [];
+  const selectedStyleMember = active.find((row) => row.username?.toLowerCase() === styleUsername.trim().toLowerCase());
+  async function assignStyle(event: FormEvent) {
+    event.preventDefault();
+    if (!selectedStyleMember) { setError("Choose an active Affiliate or Ambassador."); return; }
+    setBusy(true); setError(""); setNotice("");
+    const { error: rpcError } = await supabase.rpc("gb_save_creator_profile_style", {
+      p_user: selectedStyleMember.user_id, p_theme: styleTheme, p_show_name: styleName, p_show_logo: styleLogo,
+    });
+    if (rpcError) setError(errorMessage(rpcError.message));
+    else setNotice(`${selectedStyleMember.username}'s profile style was saved.`);
+    setBusy(false);
+  }
+  async function reviewRequest(request: StyleRequest) {
+    setBusy(true); setError(""); setNotice("");
+    const next = request.status === "new" ? "reviewed" : "new";
+    const { error: rpcError } = await supabase.rpc("staff_review_creator_profile_request", { p_id: request.id, p_status: next });
+    if (rpcError) setError(errorMessage(rpcError.message));
+    else { setNotice("Design request updated."); await load(); }
+    setBusy(false);
+  }
   const pending = apps?.filter((app) => app.status === "pending") || [];
   const selected = rows?.find((row) => row.username?.toLowerCase() === username.trim().toLowerCase());
   const updateEditing = (patch: Partial<Creator>) => setEditing((current) => current ? { ...current, ...patch } : null);
@@ -203,6 +233,31 @@ function CreatorManagement() {
             </div>)}
           </section>
         </div>
+
+        <section className="creator-section creator-vault">
+          <div className="creator-section-head"><div><h2>Creator style vault</h2><p>Preview presets and assign a look. Affiliates receive the top section; Ambassadors receive the full profile styling.</p></div>
+            <Link href="/profile/creator-style">Open member vault ↗</Link></div>
+          <div className="creator-vault-grid">
+            <StylePreview theme={styleTheme} name={selectedStyleMember?.username || "Example Player"} showName={styleName} showLogo={styleLogo} tier={selectedStyleMember?.tier || "ambassador"} />
+            <form className="creator-form" onSubmit={assignStyle}>
+              <div><label>Find an active creator</label><StaffPlayerPicker value={styleUsername} onChange={setStyleUsername} />
+                {selectedStyleMember && <small>{labels[selectedStyleMember.tier]} · existing profile and logo are preserved</small>}</div>
+              <label>Preset<select value={styleTheme} onChange={(event) => { if (isCreatorTheme(event.target.value)) setStyleTheme(event.target.value); }}>
+                {CREATOR_THEMES.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select></label>
+              <div className="creator-checks"><label><input type="checkbox" checked={styleName} onChange={(event) => setStyleName(event.target.checked)} disabled={styleTheme === "classic"} /> Name in background</label>
+                <label><input type="checkbox" checked={styleLogo} onChange={(event) => setStyleLogo(event.target.checked)} disabled={styleTheme === "classic"} /> Profile logo in background</label></div>
+              <button className="creator-primary" disabled={busy || !rows}>Apply profile style</button>
+            </form>
+          </div>
+          <h3 className="creator-request-title">Custom design requests {requests && `(${requests.filter((request) => request.status === "new").length} new)`}</h3>
+          {!requests ? <p>Loading requests...</p> : requests.length === 0 ? <p>No custom design requests yet.</p> : requests.map((request) => <article className="creator-request" key={request.id}>
+            <div className="creator-section-head"><div><Link href={`/profile?userId=${request.user_id}`}>{request.username}</Link>
+              <small> · {labels[request.tier]} · {request.status === "new" ? "New" : "Reviewed"} · {new Date(request.created_at).toLocaleDateString()}</small></div>
+              <button type="button" disabled={busy} onClick={() => void reviewRequest(request)}>{request.status === "new" ? "Mark reviewed" : "Mark new"}</button></div>
+            <p>{request.idea}</p>
+          </article>)}
+        </section>
 
         <section className="creator-section creator-members">
           <div className="creator-section-head"><div><h2>Program members</h2><p>Change a tier above, or edit a member&apos;s profile details below.</p></div></div>

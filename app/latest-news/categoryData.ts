@@ -31,6 +31,20 @@ export const newsCategories: NewsCategory[] = [
     intro: "Recent launches and upcoming GameBattles improvements.",
     items: [
       {
+        label: "In Progress",
+        title: "More ways to settle it 1v1",
+        description: "We are putting more focus on 1v1 competition: challenge a friend or rival, build your record, and show who came out on top. More improvements are on the way.",
+        link: "/teams/create",
+        linkLabel: "Create a team and get started",
+      },
+      {
+        label: "Creator Program",
+        title: "Affiliate and Ambassador profile styles",
+        description: "We are building distinctive creator looks: Affiliates can style their profile's top section, while Ambassadors can customize the full profile finish. The existing profile layout and information stay in place.",
+        link: "/profile/creator-style",
+        linkLabel: "Preview the Creator Style Vault",
+      },
+      {
         label: "Available Now",
         title: "Community feed and follows",
         description: "Follow players and teams, see following and follower counts on player profiles, and react to and share match results, team wins, awards, and other community moments.",

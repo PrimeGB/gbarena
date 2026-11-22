@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { newsMenuCategories } from "./categoryData";
 
 export default function LatestNewsPage() {
@@ -22,7 +23,8 @@ export default function LatestNewsPage() {
         }
 
         .wrapper{
-          width:1240px;
+          width:100%;
+          max-width:1240px;
           margin:0 auto;
         }
 
@@ -53,7 +55,7 @@ export default function LatestNewsPage() {
         .layout{
           margin-top:8px;
           display:grid;
-          grid-template-columns:240px 1fr 260px;
+          grid-template-columns:minmax(150px,240px) minmax(0,1fr) minmax(150px,260px);
           gap:10px;
         }
 
@@ -125,6 +127,14 @@ export default function LatestNewsPage() {
           line-height:1.5;
           color:#d7e2ee;
         }
+        .news-feature{padding:16px;line-height:1.65;font-size:12px}
+        .news-feature p{margin:0 0 10px}
+        .news-feature a{color:#8ed0ff;font-weight:bold}
+        .news-concepts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
+        .news-concepts figure{margin:0;min-width:0}
+        .news-concepts img{display:block;width:100%;height:auto;border:1px solid #6c5830}
+        .news-concepts figcaption{padding:6px;color:#c9d6e0;font-size:10px;background:#101b25}
+        .news-concept-note{color:#aabdc9;font-size:10px}
 
         .tag{
           display:inline-block;
@@ -168,6 +178,7 @@ export default function LatestNewsPage() {
             gap:6px;
           }
           .news-title{overflow-wrap:anywhere;}
+          .news-concepts{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
       `}</style>
 
@@ -197,6 +208,22 @@ export default function LatestNewsPage() {
             <div className="panel-title">Latest News</div>
 
             <div className="news-feed">
+              <article className="news-post">
+                <div className="news-head"><div className="news-title"><span className="tag">In Progress</span> 1v1 Rivals &amp; Creator Profiles</div><div className="news-date">November 22, 2026</div></div>
+                <div className="news-body news-feature">
+                  <p><b>Take it to 1v1.</b> Challenge a friend, settle a rivalry, and keep track of the results. We&apos;re putting more focus on making those head-to-head moments a bigger part of GameBattles.</p>
+                  <p><Link href="/teams/create">Create a team and get started →</Link></p>
+                  <p><b>Creators, make it yours.</b> Affiliates can personalize their profile&apos;s top section; Ambassadors can give the entire profile a new finish. Your existing layout and information stay in place. Here&apos;s a look at the creative direction we&apos;re exploring:</p>
+                  <div className="news-concepts">
+                    {[["gold", "Gold Elite"], ["ice", "Ice Commander"], ["red", "Inferno"], ["steel", "Legacy Steel"]].map(([image, label]) => <figure key={image}>
+                      <Image src={`/news/creator-concepts/${image}.webp`} width={384} height={384} alt={`${label} creator profile concept`} />
+                      <figcaption>{label}</figcaption>
+                    </figure>)}
+                  </div>
+                  <p className="news-concept-note">Concept artwork with example information. The illustrated details are a preview of ideas being explored, not screenshots of finished profiles.</p>
+                  <p><Link href="/profile/creator-style">Explore creator profile styles →</Link> · <Link href="/ambassadors">Learn about the creator program →</Link></p>
+                </div>
+              </article>
               <div className="news-post">
                 <div className="news-head">
                   <div className="news-title">
@@ -337,7 +364,7 @@ export default function LatestNewsPage() {
 
             <div className="mini-note">
               <b>Newest updates</b><br />
-              Follow players and teams, catch community moments, and find free weekly cups.
+              Explore 1v1 rivalries and preview upcoming creator profile looks.
             </div>
 
             <div className="mini-note">
