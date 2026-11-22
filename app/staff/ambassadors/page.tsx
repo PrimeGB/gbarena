@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/lib/useUser";
 import StaffPlayerPicker from "../dashboard/StaffPlayerPicker";
 import "./creator-management.css";
 
@@ -19,8 +20,21 @@ type Application = {
 };
 type Idea = { tier: Tier; notes: string };
 const labels: Record<Tier, string> = { affiliate: "Affiliate", ambassador: "Ambassador" };
+const errorMessage = (message: string) => message.startsWith("permission denied for function")
+  ? "Your session cannot access this tool. Sign in again with your Founder account."
+  : message;
 
 export default function StaffAmbassadorsPage() {
+  const { user, loading } = useUser();
+  if (loading || !user) return <main className="creator-admin"><div className="creator-shell">
+    <Link href="/staff/dashboard" className="creator-back">← Staff dashboard</Link>
+    <header className="creator-heading"><h1>Affiliate &amp; Ambassador management</h1></header>
+    {loading ? <p>Checking your account...</p> : <p>Please <Link href="/login">sign in</Link> with your Founder account to manage the creator program.</p>}
+  </div></main>;
+  return <CreatorManagement />;
+}
+
+function CreatorManagement() {
   const [rows, setRows] = useState<Creator[] | null>(null);
   const [apps, setApps] = useState<Application[] | null>(null);
   const [ideas, setIdeas] = useState<Record<Tier, string>>({ affiliate: "", ambassador: "" });
@@ -38,7 +52,7 @@ export default function StaffAmbassadorsPage() {
       supabase.rpc("staff_ambassador_applications"),
     ]);
     const errors = [membersResult.error, appsResult.error].filter(Boolean);
-    if (errors.length) setError(errors.map((item) => item!.message).join(" · "));
+    if (errors.length) setError(errors.map((item) => errorMessage(item!.message)).join(" · "));
     if (!membersResult.error) setRows((membersResult.data || []) as Creator[]);
     if (!appsResult.error) setApps((appsResult.data || []) as Application[]);
   }, []);
@@ -46,7 +60,7 @@ export default function StaffAmbassadorsPage() {
   useEffect(() => {
     void Promise.resolve().then(load);
     void supabase.rpc("staff_creator_ideas").then(({ data, error: ideasError }) => {
-      if (ideasError) { setError(ideasError.message); return; }
+      if (ideasError) { setError(errorMessage(ideasError.message)); return; }
       const saved = (data || []) as Idea[];
       setIdeas({
         affiliate: saved.find((item) => item.tier === "affiliate")?.notes || "",
@@ -63,7 +77,7 @@ export default function StaffAmbassadorsPage() {
     const { error: rpcError } = await supabase.rpc("staff_set_creator_tier", {
       p_username: username.trim(), p_tier: tier,
     });
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(errorMessage(rpcError.message));
     else {
       setNotice(`${username.trim()} is now an active ${labels[tier]}.`);
       setUsername("");
@@ -83,7 +97,7 @@ export default function StaffAmbassadorsPage() {
       p_instagram: editing.instagram, p_discord: editing.discord,
       p_featured: editing.featured, p_active: editing.active,
     });
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(errorMessage(rpcError.message));
     else { setNotice(`${editing.username}'s details were saved.`); setEditing(null); await load(); }
     setBusy(false);
   }
@@ -92,7 +106,7 @@ export default function StaffAmbassadorsPage() {
     if (!window.confirm(`Remove ${row.username} from the program? Their listing and link will stop working; earned awards stay.`)) return;
     setBusy(true); setError(""); setNotice("");
     const { error: rpcError } = await supabase.rpc("staff_ambassador_remove", { p_user: row.user_id });
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(errorMessage(rpcError.message));
     else { setNotice(`${row.username} was removed from the program.`); setEditing(null); await load(); }
     setBusy(false);
   }
@@ -108,7 +122,7 @@ export default function StaffAmbassadorsPage() {
     const { error: rpcError } = await supabase.rpc("staff_ambassador_application_review", {
       p_id: app.id, p_status: status, p_note: note,
     });
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(errorMessage(rpcError.message));
     else {
       if (status === "approved") {
         setUsername(app.username || "");
@@ -126,7 +140,7 @@ export default function StaffAmbassadorsPage() {
     const { error: rpcError } = await supabase.rpc("staff_save_creator_idea", {
       p_tier: ideaTier, p_notes: ideas[ideaTier],
     });
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(errorMessage(rpcError.message));
     else setNotice(`${labels[ideaTier]} ideas saved.`);
     setBusy(false);
   }
