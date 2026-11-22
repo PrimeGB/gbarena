@@ -27,6 +27,18 @@ export function seasonBoardHref(season: string, kind: CompetitionKind, scope = "
   return `/players/top?${new URLSearchParams({ board: "season", season, kind, scope })}`;
 }
 
+export function latestGlobalTeamChampions(honours: SeasonHonour[]) {
+  const champions = honours.filter((honour) =>
+    honour.kind === "teams" && honour.scope === "global" && honour.honour === "champion");
+  const latest = champions[0];
+  if (!latest) return null;
+  return {
+    seasonId: latest.season_id,
+    season: latest.season_name,
+    names: champions.filter((honour) => honour.season_id === latest.season_id).map((honour) => honour.name),
+  };
+}
+
 export function groupSeasonChampions(rows: SeasonHonour[]) {
   const groups = new Map<string, { honour: SeasonHonour; categories: { scope: string; label: string }[] }>();
   for (const honour of rows) {

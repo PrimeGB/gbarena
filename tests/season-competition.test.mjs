@@ -11,7 +11,7 @@ const compiled = ts.transpileModule(readFileSync("lib/seasonCompetition.ts", "ut
 }).outputText;
 const exports = {};
 new Function("require", "exports", compiled)(require, exports);
-const { seasonBoardHref, seasonPreviewHonours, competitionActivityLabel, groupSeasonChampions } = exports;
+const { seasonBoardHref, seasonPreviewHonours, competitionActivityLabel, groupSeasonChampions, latestGlobalTeamChampions } = exports;
 
 test("archive drilldowns preserve season, competitor type and category", () => {
   const url = new URL(seasonBoardHref("season-id", "teams", "ladder:game:team"), "https://example.test");
@@ -47,6 +47,20 @@ test("champions combine category titles without merging teams, players or season
   const player = groups.find(group => group.honour.kind === "players" && group.honour.season_id === "preview");
   assert.equal(player.honour.id, "global");
   assert.deepEqual(player.categories.map(category => category.scope), ["game:mw2", "global"]);
+});
+
+test("the awards hall selects the latest global team champions including ties", () => {
+  const [champion, top10] = seasonPreviewHonours("Example Season", "teams");
+  const rows = [
+    { ...champion, kind: "players", name: "Player" },
+    { ...champion, scope: "game:mw2", name: "Category winner" },
+    top10,
+    { ...champion, name: "First team" },
+    { ...champion, id: "tie", name: "Tied team" },
+    { ...champion, season_id: "older", name: "Older champion" },
+  ];
+  assert.deepEqual(latestGlobalTeamChampions(rows), { seasonId: "preview", season: "Example Season", names: ["First team", "Tied team"] });
+  assert.equal(latestGlobalTeamChampions([top10]), null);
 });
 
 const artCompiled = ts.transpileModule(readFileSync("app/components/SeasonAwardArt.tsx", "utf8"), {
