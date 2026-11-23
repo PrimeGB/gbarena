@@ -385,6 +385,10 @@ function TournamentListing() {
         @media(max-width:560px){
           .t-page{padding:14px 10px 26px;}
           .t-hero-side,.t-coming-grid{grid-template-columns:minmax(0,1fr);}
+          .t-request-box{flex-direction:column;align-items:stretch;gap:12px;padding:14px;}
+          .t-request-box h2{font-size:12px;}
+          .t-request-box p{font-size:12px;}
+          .t-request-link{min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-size:11px;}
           .t-stats{grid-template-columns:minmax(0,1fr);}
           .t-name{font-size:14px;}
           .t-meta{padding:12px 12px 2px;}

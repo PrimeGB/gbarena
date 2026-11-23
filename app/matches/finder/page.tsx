@@ -656,12 +656,23 @@ function MatchFinderContent() {
         @media(max-width:700px){
           .page{padding:8px;}
           .content{padding:8px;}
-          .header{gap:12px;}
+          .header{min-height:76px;gap:12px;padding:10px 12px;}
           .game-header{gap:9px;}
           .game-cover{width:66px;height:46px;flex:none;}
           .ladder-name{font-size:18px;}
-          .header-badge{font-size:10px;padding:8px;}
-          .title-bar h1{font-size:19px;}
+          .header-badge{min-height:44px;display:flex;align-items:center;justify-content:center;font-size:10px;padding:8px;}
+          .nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px;}
+          .nav a{min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 4px;border-radius:6px;background:#0d2030;font-size:10px;text-align:center;}
+          .title-bar{padding:14px 12px;}
+          .title-bar h1{font-size:21px;}
+          .title-bar p{font-size:12px;line-height:1.45;}
+          .panel{border-radius:10px;overflow:hidden;}
+          .panel-header{min-height:40px;font-size:12px;}
+          .side-body,.main-body{padding:12px;}
+          .ladder-card{padding:12px;margin-bottom:8px;}
+          .ladder-card .ladder-title{font-size:12px;}
+          .ladder-line{font-size:12px;line-height:1.65;}
+          .help-box,.quick-create{height:44px;min-height:44px;font-size:11px;margin-top:8px;}
           .board-head{display:none;}
           .match-row{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:8px;}
           .match-cell{border:0;justify-content:flex-start;text-align:left;}
