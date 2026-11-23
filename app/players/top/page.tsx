@@ -7,7 +7,7 @@ import { supabase } from "../../../lib/supabase";
 import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
 import type { SeasonScope } from "../../../lib/seasonCompetition";
 
-type Board = "overall" | "week" | "month" | "season";
+type Board = "overall" | "week" | "month" | "year" | "season";
 type RankingKind = "players" | "teams";
 type PlayerRow = {
   id: string;
@@ -34,6 +34,7 @@ const boards: { id: Board; label: string; detail: string }[] = [
   { id: "overall", label: "Overall", detail: "All-time GB points" },
   { id: "week", label: "Weekly", detail: "This week's matches" },
   { id: "month", label: "Monthly", detail: "This month's matches" },
+  { id: "year", label: "Yearly", detail: "This year's matches" },
   { id: "season", label: "Season", detail: "Current & past seasons" },
 ];
 
@@ -82,7 +83,7 @@ function LeaderboardRoute() {
 function LeaderboardContent() {
   const searchParams = useSearchParams();
   const requestedBoard = searchParams.get("board");
-  const [board, setBoard] = useState<Board>(requestedBoard === "season" || requestedBoard === "week" || requestedBoard === "month" ? requestedBoard : "overall");
+  const [board, setBoard] = useState<Board>(requestedBoard === "season" || requestedBoard === "week" || requestedBoard === "month" || requestedBoard === "year" ? requestedBoard : "overall");
   const [kind, setKind] = useState<RankingKind>(searchParams.get("kind") === "teams" ? "teams" : "players");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
@@ -280,7 +281,7 @@ function LeaderboardContent() {
         .tp-kind-button{min-width:100px;padding:9px 16px;border:1px solid #416987;background:#0b1c2a;color:#c5d8e7;font:700 12px Tahoma,Verdana,Arial,sans-serif;cursor:pointer;text-transform:uppercase;}
         .tp-kind-button:hover{background:#173852;}
         .tp-kind-button[aria-pressed="true"]{background:#25516e;border-color:#76b9e8;color:#fff;box-shadow:inset 0 -2px #f2c14e;}
-        .tp-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px;}
+        .tp-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:16px;}
         .tp-tab{min-width:0;text-align:left;background:linear-gradient(#122b40,#091826);border:1px solid #294e6c;border-top:2px solid #355f7d;color:#d7eaff;padding:11px 13px;cursor:pointer;font:inherit;}
         .tp-tab:hover{background:#173852;border-color:#6292b5;}
         .tp-tab[aria-pressed="true"]{background:linear-gradient(#274e69,#10273a);border-color:#5c9dcc;border-top-color:#f2c14e;box-shadow:inset 0 -2px 0 #f2c14e;}
@@ -369,7 +370,7 @@ function LeaderboardContent() {
                       : "Ranked by all-time GB points, then wins and losses. Game and ladder show a player's team."
                     : board === "season"
                       ? "Finalized ladder matches only. Most wins, then fewer losses; tied records share a place. Seasons follow UTC calendar months."
-                      : `Ranked by wins, then fewer losses, from completed matches ${board === "week" ? "this week" : "this month"}.`}</p>
+                      : `Ranked by wins, then fewer losses, from completed matches ${board === "week" ? "this week" : board === "month" ? "this month" : "this year"}.`}</p>
                 </div>
                 {board === "season" && seasons.length > 0 && (
                   <label className="tp-season-picker">

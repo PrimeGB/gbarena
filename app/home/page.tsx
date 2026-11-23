@@ -229,11 +229,6 @@ export default function Home() {
         .pc{ left:33.83%; width:7.39%; }
         .mobile{ left:41.22%; width:9.67%; }
         .tournaments{ left:50.89%; width:11.94%; }
-        .forums{ left:62.83%; width:9.67%; }
-        .staff-zone{
-          left:72.5%;
-          width:7.05%;
-        }
         .nav-label{
           position:absolute;
           inset:0;
@@ -909,13 +904,6 @@ export default function Home() {
           <Link className="hotspot nav-zone tournaments" href="/tournaments">
             <span className="nav-label">TOURNAMENTS</span>
           </Link>
-          <Link className="hotspot nav-zone forums" href="/forums">
-            <span className="nav-label">FORUMS</span>
-          </Link>
-          <Link className="hotspot nav-zone staff-zone" href="/staff">
-            <span className="nav-label">STAFF</span>
-          </Link>
-
           <form className="search-box" action="/search">
             <input name="q" placeholder="Search..." autoComplete="off" aria-label="Search GameBattles" />
             <button className="search-button" type="submit" aria-label="Search"></button>
@@ -926,7 +914,7 @@ export default function Home() {
               <div className="panel-title">Community</div>
 
               <Link className="side-link" href="/latest-news">Latest News <span className="arrow">›</span></Link>
-              <Link className="side-link" href="/players/top">Top Players <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/forums">Forums <span className="arrow">›</span></Link>
               <Link className="side-link" href="/members">Members <span className="arrow">›</span></Link>
               <Link className="side-link side-link-amb" href="/ambassadors">GB Ambassadors / Affiliates <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
@@ -947,6 +935,7 @@ export default function Home() {
 
               <Link className="side-link" href="/contact">Contact Page <span className="arrow">›</span></Link>
               <Link className="side-link" href="/support">Support Center <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/staff">Staff <span className="arrow">›</span></Link>
 
               <div className="section-title">Social Links</div>
 
