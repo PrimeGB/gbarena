@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
@@ -35,8 +36,44 @@ type EditTab = "main" | "awards" | "friends" | "settings";
 
 function EditProfileContent() {
   const searchParams = useSearchParams();
-  const { user, loading } = useUser() as any;
+  const steamGame = useSyncExternalStore(subscribeToSteamGame, getSteamGame, () => null);
+  const steamId = searchParams.get("steam_id") || "";
+  const platformParam = searchParams.get("platform");
+  return <EditProfileForm key={`${platformParam}:${steamId}:${steamGame}`} savedSteamGame={steamGame} />;
+}
+
+function subscribeToSteamGame(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getSteamGame() {
+  return sessionStorage.getItem("gb_steam_game");
+}
+
+function parseSteamGame(value: string | null): { category: string; game: string } | null {
+  if (!value) return null;
+  try {
+    const saved: unknown = JSON.parse(value);
+    if (saved && typeof saved === "object" && "category" in saved && "game" in saved &&
+      typeof saved.category === "string" && typeof saved.game === "string") {
+      return { category: saved.category, game: saved.game };
+    }
+    console.error("Saved Steam game selection is invalid.");
+  } catch (error) {
+    console.error("Saved Steam game selection could not be read:", error);
+  }
+  return null;
+}
+
+function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) {
+  const searchParams = useSearchParams();
+  const { user, loading } = useUser();
   const currentUser = user as AppUser | null;
+  const platformParam = searchParams.get("platform");
+  const initialPlatform = platformParam === "ea" || platformParam === "pc" ? platformParam : "xbox";
+  const initialSteamId = initialPlatform !== "xbox" ? searchParams.get("steam_id") || "" : "";
+  const initialSteamGame = initialSteamId ? parseSteamGame(savedSteamGame) : null;
   const gamingAccountSectionRef = useRef<HTMLDivElement | null>(null);
   const gamingAccountIdInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -45,40 +82,6 @@ function EditProfileContent() {
     return tab === "awards" || tab === "friends" || tab === "settings" ? tab : "main";
   });
 
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    let active = true;
-    void supabase.rpc("gb_my_streams").then(({ data }) => {
-      if (!active) return;
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row) {
-        setStreams({
-          twitch: row.twitch || "", youtube: row.youtube || "", tiktok: row.tiktok || "", kick: row.kick || "",
-          announce_twitch: row.announce_twitch !== false, announce_youtube: row.announce_youtube !== false,
-          announce_tiktok: row.announce_tiktok !== false, announce_kick: row.announce_kick !== false,
-        });
-      }
-    });
-    return () => { active = false; };
-  }, [currentUser?.id]);
-
-  async function saveStreams() {
-    setStreamsBusy(true);
-    setStreamsMsg("");
-    const { error: streamsError } = await supabase.rpc("gb_set_my_streams", {
-      p_twitch: streams.twitch.trim(),
-      p_youtube: streams.youtube.trim(),
-      p_tiktok: streams.tiktok.trim(),
-      p_kick: streams.kick.trim(),
-      p_announce_twitch: streams.announce_twitch,
-      p_announce_youtube: streams.announce_youtube,
-      p_announce_tiktok: streams.announce_tiktok,
-      p_announce_kick: streams.announce_kick,
-    });
-    setStreamsBusy(false);
-    setStreamsMsg(streamsError ? streamsError.message : "Streams saved.");
-    window.setTimeout(() => setStreamsMsg(""), 3500);
-  }
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -93,12 +96,26 @@ function EditProfileContent() {
   const [gtNintendo, setGtNintendo] = useState("");
   const [gtPc, setGtPc] = useState("");
   const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
-  const [gamingAccountPlatform, setGamingAccountPlatform] = useState<string>("xbox");
-  const [gamingAccountCategory, setGamingAccountCategory] = useState<string>("call-of-duty");
-  const [gamingAccountGame, setGamingAccountGame] = useState<string>("modern-warfare-4");
-  const [gamingAccountId, setGamingAccountId] = useState("");
-  const [gamingAccountError, setGamingAccountError] = useState("");
-  const [steamPrefill, setSteamPrefill] = useState("");
+  const [gamingAccountPlatform, setGamingAccountPlatform] = useState<string>(initialPlatform);
+  const [gamingAccountCategory, setGamingAccountCategory] = useState<string>(initialSteamGame?.category || "call-of-duty");
+  const [gamingAccountGame, setGamingAccountGame] = useState<string>(initialSteamGame?.game || "modern-warfare-4");
+  const [gamingAccountDraft, setGamingAccountDraft] = useState<{ key: string; value: string } | null>(null);
+  const [gamingAccountError, setGamingAccountError] = useState(() => {
+    const error = initialPlatform !== "xbox" && searchParams.get("steam_error");
+    return error ? error === "unavailable"
+      ? "Steam could not be reached. Please try again."
+      : "Steam sign-in could not be verified. Please try again." : "";
+  });
+  const [steamPrefill, setSteamPrefill] = useState(initialSteamId);
+  const gamingAccountKey = JSON.stringify([gamingAccountPlatform, gamingAccountCategory, gamingAccountGame]);
+  const existingAccount = gamingAccounts.find((account) =>
+    account.platform === gamingAccountPlatform &&
+    account.category === gamingAccountCategory &&
+    account.game === gamingAccountGame,
+  );
+  const gamingAccountId = gamingAccountDraft?.key === gamingAccountKey
+    ? gamingAccountDraft.value
+    : (gamingAccountPlatform === "pc" ? steamPrefill : "") || existingAccount?.account_id || "";
   const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
   const [earnedAwards, setEarnedAwards] = useState<EarnedAward[]>([]);
@@ -111,9 +128,6 @@ function EditProfileContent() {
   const [dragSource, setDragSource] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
-  const [streams, setStreams] = useState({ twitch: "", youtube: "", tiktok: "", kick: "", announce_twitch: true, announce_youtube: true, announce_tiktok: true, announce_kick: true });
-  const [streamsBusy, setStreamsBusy] = useState(false);
-  const [streamsMsg, setStreamsMsg] = useState("");
   const [friends, setFriends] = useState<FriendOption[]>([]);
   const [displayFriends, setDisplayFriends] = useState<string[]>([]);
   const [friendDrag, setFriendDrag] = useState<{ from: "pool" | "slot"; key: string } | null>(null);
@@ -137,54 +151,15 @@ function EditProfileContent() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const platformParam = searchParams.get("platform");
     if (platformParam !== "ea" && platformParam !== "pc") return;
-
-    setGamingAccountPlatform(platformParam);
-
-    const steamError = searchParams.get("steam_error");
-    if (steamError) {
-      setGamingAccountError(
-        steamError === "unavailable"
-          ? "Steam could not be reached. Please try again."
-          : "Steam sign-in could not be verified. Please try again.",
-      );
-    }
-
-    const steamId = searchParams.get("steam_id");
-    if (steamId) {
-      try {
-        const saved = JSON.parse(sessionStorage.getItem("gb_steam_game") || "null");
-        if (saved?.category && saved?.game) {
-          setGamingAccountCategory(saved.category);
-          setGamingAccountGame(saved.game);
-        }
-      } catch {}
-      setSteamPrefill(steamId);
-      setGamingAccountId(steamId);
-    }
-
     if (searchParams.get("focus") !== "gaming-account" || loading) return;
 
-    requestAnimationFrame(() => {
+    const frame = requestAnimationFrame(() => {
       gamingAccountSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       gamingAccountIdInputRef.current?.focus({ preventScroll: true });
     });
-  }, [searchParams, loading]);
-
-  useEffect(() => {
-    const existingAccount = gamingAccounts.find(
-      (account) =>
-        account.platform === gamingAccountPlatform &&
-        account.category === gamingAccountCategory &&
-        account.game === gamingAccountGame,
-    );
-    setGamingAccountId(
-      (gamingAccountPlatform === "pc" ? steamPrefill : "") ||
-        existingAccount?.account_id ||
-        "",
-    );
-  }, [gamingAccounts, gamingAccountPlatform, gamingAccountCategory, gamingAccountGame, steamPrefill]);
+    return () => cancelAnimationFrame(frame);
+  }, [searchParams, loading, platformParam]);
 
   useEffect(() => {
     function warnBeforeLeave(event: BeforeUnloadEvent) {
@@ -294,12 +269,15 @@ function EditProfileContent() {
           : Array.from(new Set(savedFriends.filter((id) => loadedFriends.some((f) => f.id === id)))).slice(0, 4));
         setFriendsReady(true);
       } catch (err) {
-        // ignore load errors for now
+        console.error("Profile could not be loaded:", err);
+        setSettingsMessage({ ok: false, text: "Profile details could not be loaded. Please try again." });
+        setAwardSaveStatus({ state: "error", message: "Profile details could not be loaded. Please try again." });
+        setFriendsMessage("Could not load profile details. Please try again.");
       }
     }
 
     if (!loading) loadProfileAndRelations();
-  }, [loading, user?.id]);
+  }, [loading, currentUser?.id]);
 
   useEffect(() => {
     const userId = currentUser?.id;
@@ -362,7 +340,7 @@ function EditProfileContent() {
         data as GamingAccount,
       ]);
       setSteamPrefill("");
-      setGamingAccountId("");
+      setGamingAccountDraft(null);
     }
 
     setSavingGamingAccount(false);
@@ -688,7 +666,17 @@ function EditProfileContent() {
         logoUrl = logoPublicData.publicUrl;
       }
 
-      const updateData: any = {
+      const updateData: {
+        profile_glow: string | null;
+        gt_xbox: string | null;
+        gt_playstation: string | null;
+        gt_nintendo: string | null;
+        gt_pc: string | null;
+        avatar_url?: string;
+        logo_url?: string;
+        location?: string | null;
+        location_locked?: boolean;
+      } = {
         profile_glow: profileGlow || null,
         gt_xbox: gtXbox || null,
         gt_playstation: gtPlaystation || null,
@@ -712,27 +700,12 @@ function EditProfileContent() {
       setHasChanges(false);
       setSavedMessage("Profile saved.");
       if (!initialLocation || initialLocation === "") setLocationLocked(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Profile save error:", err);
-      // fallback: fake save to localStorage
-      try {
-        const fallback = {
-          profileGlow,
-          gtXbox,
-          gtPlaystation,
-          gtNintendo,
-          gtPc,
-          location,
-          savedAt: new Date().toISOString(),
-        };
-        localStorage.setItem("gb_profile_preview", JSON.stringify(fallback));
-        setSavedMessage(
-          `Saved locally (preview). Supabase unavailable: ${err?.message || ""}`
-        );
-      } catch (inner) {
-        console.error("Local fallback save failed:", inner);
-        setSavedMessage("Save failed: " + (err?.message || String(err)));
-      }
+      const message = err && typeof err === "object" && "message" in err && typeof err.message === "string"
+        ? err.message
+        : String(err);
+      setSavedMessage("Save failed: " + message);
     }
 
     setSaving(false);
@@ -1302,7 +1275,7 @@ function EditProfileContent() {
           <header className="header">
             <div className="logo-box">
               <div className="logo-circle">
-                {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "GB"}
+                {logoPreview ? <Image unoptimized width={100} height={100} loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "GB"}
               </div>
 
               <div>
@@ -1337,7 +1310,7 @@ function EditProfileContent() {
                 <div className="box-body">
                   <label className="editor-box">
                     <input type="file" accept="image/*" onChange={handleLogoChange} />
-                    {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "LOGO PREVIEW"}
+                    {logoPreview ? <Image unoptimized width={240} height={180} loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "LOGO PREVIEW"}
                   </label>
 
                   <label className="edit-button">
@@ -1356,7 +1329,7 @@ function EditProfileContent() {
                 <div className="box-body">
                   <label className="editor-box">
                     <input type="file" accept="image/*" onChange={handleAvatarChange} />
-                    {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} alt="Avatar Preview" /> : "AVATAR PREVIEW"}
+                    {avatarPreview ? <Image unoptimized width={240} height={180} loading="lazy" decoding="async" src={avatarPreview} alt="Avatar Preview" /> : "AVATAR PREVIEW"}
                   </label>
 
                   <label className="edit-button">
@@ -1366,11 +1339,11 @@ function EditProfileContent() {
 
                   <div className="profile-preview">
                     <div className="avatar-mini">
-                      {avatarPreview ? <img loading="lazy" decoding="async" src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
+                      {avatarPreview ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
                     </div>
 
                     <div className="logo-mini">
-                      {logoPreview ? <img loading="lazy" decoding="async" src={logoPreview} alt="Mini Logo Preview" /> : "LOGO"}
+                      {logoPreview ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={logoPreview} alt="Mini Logo Preview" /> : "LOGO"}
                     </div>
 
                     <div>
@@ -1453,12 +1426,12 @@ function EditProfileContent() {
                     </div>
 
                     <div className="save-row">
-                      <button className="save-button" type="button" onClick={handleSave}>
-                        Save Changes
+                      <button className="save-button" type="button" disabled={saving} onClick={handleSave}>
+                        {saving ? "Saving..." : "Save Changes"}
                       </button>
 
                       {savedMessage && (
-                        <div className="saved-message">
+                        <div className={savedMessage.startsWith("Save failed:") ? "error-text" : "saved-message"} role={savedMessage.startsWith("Save failed:") ? "alert" : "status"}>
                           {savedMessage}
                         </div>
                       )}
@@ -1492,6 +1465,7 @@ function EditProfileContent() {
                             (game) => game.category === nextCategory,
                           );
                           setGamingAccountPlatform(nextPlatform);
+                          setGamingAccountDraft(null);
                           setGamingAccountCategory(nextCategory);
                           setGamingAccountGame(
                             nextGames.some((game) => game.value === gamingAccountGame)
@@ -1512,6 +1486,7 @@ function EditProfileContent() {
                         onChange={(event) => {
                           const nextCategory = event.target.value;
                           setGamingAccountCategory(nextCategory);
+                          setGamingAccountDraft(null);
                           setGamingAccountGame(
                             availableGamingGames.find((game) => game.category === nextCategory)?.value || "",
                           );
@@ -1526,7 +1501,7 @@ function EditProfileContent() {
                       <label>Game</label>
                       <select
                         value={gamingAccountGame}
-                        onChange={(event) => setGamingAccountGame(event.target.value)}
+                        onChange={(event) => { setGamingAccountGame(event.target.value); setGamingAccountDraft(null); }}
                       >
                         {availableCategoryGames.map((game) => (
                           <option key={game.value} value={game.value}>{game.label}</option>
@@ -1539,7 +1514,7 @@ function EditProfileContent() {
                         ref={gamingAccountIdInputRef}
                         value={gamingAccountId}
                         maxLength={80}
-                        onChange={(event) => setGamingAccountId(event.target.value)}
+                        onChange={(event) => setGamingAccountDraft({ key: gamingAccountKey, value: event.target.value })}
                         placeholder={
                           gamingAccountPlatform === "ea"
                             ? "Enter your EA ID"
@@ -1723,7 +1698,7 @@ function EditProfileContent() {
                             {friend ? (
                               <>
                                 <div className="friend-avatar">
-                                  {friend.avatar_url ? <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                                  {friend.avatar_url ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
                                 </div>
                                 <div className="slot-name">{friend.username}</div>
                                 <button type="button" className="slot-remove" onClick={() => changeFriends(displayFriends.filter((_, i) => i !== idx))} aria-label={`Remove ${friend.username}`}>×</button>
@@ -1777,7 +1752,7 @@ function EditProfileContent() {
                               title={`${friend.username}. Click or drag to add.`}
                             >
                               <div className="friend-avatar">
-                                {friend.avatar_url ? <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
+                                {friend.avatar_url ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} /> : friend.username.slice(0, 2).toUpperCase()}
                               </div>
                               <div className="slot-name">{friend.username}</div>
                               {used && <div className="pool-badge">On profile</div>}

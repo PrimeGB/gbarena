@@ -278,8 +278,9 @@ function DisputeTicketPageContent() {
 
         if (alreadySubmitted) {
           setSubmitted(true);
+          const filingDeadline = matchTicketDeadline(loadedMatch.match_time);
           setMessage(
-            windowClosed
+            filingDeadline === null || Date.now() >= filingDeadline
               ? "Your team has submitted its story and proof. The filing window has closed, so staff can now review the case."
               : "Your team has submitted its story and proof. The case goes to staff as soon as the opposing team submits its ticket, or when the filing window ends."
           );

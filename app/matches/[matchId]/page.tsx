@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
@@ -148,11 +149,6 @@ function getMatchProofPath(proofUrl: string) {
   return markerIndex >= 0 ? proofUrl.slice(markerIndex + marker.length) : proofUrl;
 }
 
-function clean(value: string | null | undefined, fallback = "TBD") {
-  if (!value) return fallback;
-  return value;
-}
-
 function prettyText(value: string | null | undefined) {
   if (!value) return "Unknown";
   value = rapidRoyalDisplayName(value);
@@ -275,7 +271,7 @@ function matchTimeHasPassed(matchTime: string | null | undefined) {
 export default function MatchDetailsPage() {
   const params = useParams();
   const matchId = String(params?.matchId || "");
-  const { user } = useUser() as any;
+  const { user } = useUser();
   const currentUser = user as AppUser | null;
 
   const [match, setMatch] = useState<MatchRow | null>(null);
@@ -346,7 +342,7 @@ export default function MatchDetailsPage() {
     if (!match?.posting_team_id || !match?.accepting_team_id || match.id === "preview") return;
     supabase
       .rpc("gb_head_to_head", { p_team_a: match.posting_team_id, p_team_b: match.accepting_team_id })
-      .then(({ data }) => setH2h((data as any) || null));
+      .then(({ data }) => setH2h((data as { a_wins: number; b_wins: number; total: number } | null) || null));
     let cancelled = false;
     void supabase
       .from("match_proofs")
@@ -602,9 +598,47 @@ export default function MatchDetailsPage() {
     if (matchId) loadMatch();
   }, [matchId, currentUser?.id]);
 
-  useEffect(() => {
-    if (matchId && !(process.env.NODE_ENV === "development" && matchId === "preview")) loadComments();
+  const loadComments = useCallback(async () => {
+    if (!matchId) return;
+
+    const { data, error } = await supabase.rpc("get_match_comments", {
+      match_uuid: matchId,
+    });
+
+    if (error) {
+      setCommentMessage("Comments could not be loaded: " + error.message);
+      return;
+    }
+
+    const rows = ((data || []) as MatchCommentRow[])
+      .filter((row) => row.comment)
+      .map((row) => ({
+        ...row,
+        username: row.username || "Player",
+      }));
+
+    setComments(rows);
+
+    if (!currentUser?.id) {
+      setCommentAccess(null);
+      return;
+    }
+    const { data: access, error: accessError } = await supabase.rpc("get_match_comment_access", {
+      match_uuid: matchId,
+    });
+    if (accessError) {
+      setCommentAccess(null);
+      setCommentMessage("Comment permissions could not be checked: " + accessError.message);
+      return;
+    }
+    setCommentAccess(access as { team_id: string | null; staff: boolean; has_comment: boolean });
   }, [matchId, currentUser?.id]);
+
+  useEffect(() => {
+    // The state updates occur after the comment request completes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (matchId && !(process.env.NODE_ENV === "development" && matchId === "preview")) void loadComments();
+  }, [matchId, loadComments]);
 
   const pageTitle = useMemo(() => {
     if (!match) return "Match Details";
@@ -798,53 +832,6 @@ export default function MatchDetailsPage() {
       if (action === "accept") await reloadMatch();
     }
     setCancellationBusy(false);
-  }
-
-  async function loadComments() {
-    if (!matchId) return;
-
-    const { data, error } = await supabase.rpc("get_match_comments", {
-      match_uuid: matchId,
-    });
-
-    if (error) {
-      setCommentMessage("Comments could not be loaded: " + error.message);
-      return;
-    }
-
-    const rows = ((data || []) as MatchCommentRow[])
-      .filter((row) => row.comment)
-      .map((row) => ({
-        ...row,
-        username: row.username || "Player",
-      }));
-
-    setComments(rows);
-
-    if (!currentUser?.id) {
-      setCommentAccess(null);
-      return;
-    }
-    const { data: access, error: accessError } = await supabase.rpc("get_match_comment_access", {
-      match_uuid: matchId,
-    });
-    if (accessError) {
-      setCommentAccess(null);
-      setCommentMessage("Comment permissions could not be checked: " + accessError.message);
-      return;
-    }
-    setCommentAccess(access as { team_id: string | null; staff: boolean; has_comment: boolean });
-  }
-
-  async function getTeamMemberUserIds(teamId: string) {
-    const { data } = await supabase
-      .from("team_members")
-      .select("user_id")
-      .eq("team_id", teamId);
-
-    return (data || [])
-      .map((member: any) => member.user_id)
-      .filter(Boolean) as string[];
   }
 
   async function handlePostComment() {
@@ -1893,7 +1880,7 @@ export default function MatchDetailsPage() {
                       <Link className="team-logo-link" href={`/teams/${postingTeam.id}`}>
                         <div className="team-logo">
                           {postingTeam?.logo_url ? (
-                            <img loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
+                            <Image unoptimized width={68} height={68} loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
                           ) : (
                             postingTeam?.tag || "GB"
                           )}
@@ -1902,7 +1889,7 @@ export default function MatchDetailsPage() {
                     ) : (
                       <div className="team-logo">
                         {postingTeam?.logo_url ? (
-                          <img loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
+                          <Image unoptimized width={68} height={68} loading="lazy" decoding="async" src={postingTeam.logo_url} alt="Posting Team Logo" />
                         ) : (
                           postingTeam?.tag || "GB"
                         )}
@@ -1963,7 +1950,7 @@ export default function MatchDetailsPage() {
                       <Link className="team-logo-link" href={`/teams/${acceptingTeam.id}`}>
                         <div className="team-logo">
                           {acceptingTeam?.logo_url ? (
-                            <img loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                            <Image unoptimized width={68} height={68} loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
                           ) : (
                             acceptingTeam?.tag || "GB"
                           )}
@@ -1972,7 +1959,7 @@ export default function MatchDetailsPage() {
                     ) : (
                       <div className="team-logo">
                         {acceptingTeam?.logo_url ? (
-                          <img loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
+                          <Image unoptimized width={68} height={68} loading="lazy" decoding="async" src={acceptingTeam.logo_url} alt="Accepting Team Logo" />
                         ) : (
                           acceptingTeam?.tag || "GB"
                         )}

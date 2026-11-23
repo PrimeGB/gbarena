@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,9 +77,15 @@ export default function CreateMatchPage() {
 }
 
 function CreateMatchContent() {
+  const searchParams = useSearchParams();
+  const formKey = ["teamId", "platform", "category", "game", "ladder"].map((key) => searchParams.get(key)).join(":");
+  return <CreateMatchForm key={formKey} />;
+}
+
+function CreateMatchForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser() as any;
+  const { user } = useUser();
 
   const teamId = searchParams.get("teamId") || "";
   const platform = searchParams.get("platform") || "xbox";
@@ -109,7 +116,7 @@ function CreateMatchContent() {
   );
 
   const [gameMode, setGameMode] = useState(
-    isRedSec ? "RedSec" : isRapidRoyal ? "Rapid Royal" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
+    isRedSec ? "RedSec" : isRapidRoyal ? "Rapid Royal" : isBf6Solos ? "Team Deathmatch" : gameRules ? gameRules.modes[0].value : "Search and Destroy"
   );
   const currentMode = gameRules
     ? gameRules.modes.find((mode) => mode.value === gameMode) || gameRules.modes[0]
@@ -186,24 +193,7 @@ function CreateMatchContent() {
   );
 
   useEffect(() => {
-    if (isBf6Solos) setGameMode("Team Deathmatch");
-  }, [isBf6Solos]);
-
-  useEffect(() => {
-    setPlayers(playerOptions[0]);
-    setSelectedRosterPlayers([]);
-  }, [playerOptions]);
-
-  useEffect(() => {
-    setSelectedRosterPlayers([]);
-  }, [players, teamId]);
-
-  useEffect(() => {
-    if (!teamId) {
-      setTeamRoster([]);
-      setSelectedRosterPlayers([]);
-      return;
-    }
+    if (!teamId) return;
 
     async function loadTeamRoster() {
       const { data: memberRows, error: memberError } = await supabase
@@ -225,7 +215,7 @@ function CreateMatchContent() {
       }
 
       const memberIds = memberRows
-        .map((member: any) => member.user_id)
+        .map((member) => member.user_id)
         .filter(Boolean) as string[];
 
       if (memberIds.length === 0) {
@@ -267,7 +257,7 @@ function CreateMatchContent() {
           account.account_id,
         ]),
       );
-      const roster = (profiles || []).map((profile: any) => ({
+      const roster = (profiles || []).map((profile) => ({
         id: profile.id,
         username: profile.username || "Player",
         gaming_id: resolveGamingAccountId(
@@ -290,23 +280,13 @@ function CreateMatchContent() {
     loadTeamRoster();
   }, [teamId, platform, category, game]);
 
-  useEffect(() => {
-    if (isRedSec || isRapidRoyal) {
-      setGameMode(killRaceName);
-      setRulesType("GB Variant");
-      setBestOf((current) => (current === "Best of 1" || current === "Best of 2" ? current : "Best of 1"));
-    }
-  }, [isRedSec, isRapidRoyal, killRaceName]);
-
   const bestOfOptions = isRapidRoyal
     ? ["Best of 1", "Best of 3"]
     : isRedSec
     ? ["Best of 1", "Best of 2"]
     : gameRules?.bestOf || ["Best of 1", "Best of 3", "Best of 5", "Best of 7"];
 
-  useEffect(() => {
-    setBestOf((current) => (bestOfOptions.includes(current) ? current : bestOfOptions[0]));
-  }, [bestOfOptions]);
+  const activeBestOf = bestOfOptions.includes(bestOf) ? bestOf : bestOfOptions[0];
   const rosterLimit = getRequiredRosterSize(ladder, players);
 
   useEffect(() => {
@@ -457,7 +437,7 @@ function CreateMatchContent() {
       game_mode: gameMode,
       players,
       match_time: scheduledIso,
-      best_of: bestOf,
+      best_of: activeBestOf,
       preset: isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules ? gameRules.presetName : rulesType,
       crossplay: crossplay === "On",
       perks: slot("perks", perks),
@@ -666,7 +646,7 @@ function CreateMatchContent() {
             <div className="game-header">
               <div className="game-cover">
                 {gameImage && (
-                  <img loading="lazy" decoding="async" src={gameImage} alt={gameName} />
+                  <Image unoptimized width={460} height={215} loading="lazy" decoding="async" src={gameImage} alt={gameName} />
                 )}
               </div>
 
@@ -923,7 +903,7 @@ function CreateMatchContent() {
                           <select
                             className="small-select"
                             value={players}
-                            onChange={(e) => setPlayers(e.target.value)}
+                            onChange={(e) => { setPlayers(e.target.value); setSelectedRosterPlayers([]); }}
                           >
                             <option>2v2</option>
                             <option>3v3</option>
@@ -940,7 +920,7 @@ function CreateMatchContent() {
                           <select
                             className="small-select"
                             value={players}
-                            onChange={(e) => setPlayers(e.target.value)}
+                            onChange={(e) => { setPlayers(e.target.value); setSelectedRosterPlayers([]); }}
                           >
                             {playerOptions.map((option) => (
                               <option key={option}>{option}</option>
@@ -1017,7 +997,7 @@ function CreateMatchContent() {
                             <button
                               key={option}
                               type="button"
-                              className={bestOf === option ? "best-of-option active" : "best-of-option"}
+                              className={activeBestOf === option ? "best-of-option active" : "best-of-option"}
                               onClick={() => setBestOf(option)}
                             >
                               {option}
@@ -1326,7 +1306,7 @@ function CreateMatchContent() {
                 <h3>Keep It Simple</h3>
 
                 <p>
-                  That's really all there is to it.
+                  That&apos;s really all there is to it.
                 </p>
 
                 <p>

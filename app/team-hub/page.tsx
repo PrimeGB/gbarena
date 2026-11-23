@@ -161,12 +161,14 @@ function TeamHubContent() {
     buildRosterSlots(extraRosterSlots)
   );
 
-  useEffect(() => {
+  const [rosterSlotCount, setRosterSlotCount] = useState(extraRosterSlots);
+  if (rosterSlotCount !== extraRosterSlots) {
+    setRosterSlotCount(extraRosterSlots);
     setRoster(buildRosterSlots(extraRosterSlots));
     setSelectedSlot(null);
     setSearchPlayer("");
     setPlayerResults([]);
-  }, [extraRosterSlots]);
+  }
 
   useEffect(() => {
     async function loadTeams() {
@@ -183,8 +185,8 @@ function TeamHubContent() {
         .select("team_id, teams(id, name, created_at, platform, category, game, ladder)")
         .eq("user_id", currentUser.id);
 
-      const memberTeams =
-        data?.map((item: any) => item.teams).filter(Boolean) as TeamRow[];
+      const memberTeams = (data || [])
+        .flatMap((item) => Array.isArray(item.teams) ? item.teams : item.teams ? [item.teams] : []);
 
       const { data: ownedTeams, error: ownedError } = await supabase
         .from("teams")
@@ -352,7 +354,7 @@ function TeamHubContent() {
       }
 
       const activeUserIds = activeMembers
-        ? activeMembers.map((member: any) => member.user_id)
+        ? activeMembers.map((member) => member.user_id)
         : [];
 
       const results = [...resultsById.values()]
@@ -581,8 +583,8 @@ function TeamHubContent() {
     }
 
     router.push(`/teams/${newTeam.id}`);
-  } catch (error: any) {
-    setCreateError(error?.message || "Team could not be created.");
+  } catch (error) {
+    setCreateError(error instanceof Error ? error.message : "Team could not be created.");
     setCreatingTeam(false);
   }
 }
