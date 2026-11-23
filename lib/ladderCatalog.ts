@@ -117,7 +117,7 @@ const gameImages: Record<string, Record<string, string>> = {
     brawlhalla: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/291550/header.jpg",
     "tekken-8": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1778820/header.jpg",
     "mortal-kombat-1": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1971870/header.jpg",
-    "super-smash-bros-ultimate": "https://assets.nintendo.com/image/upload/f_auto/q_auto/dpr_2.0/store/software/switch/70010000012332/ac4d1fc9824876ce756406f0525d50c57ded4b2a666f6dfe40a6ac5c3563fad9",
+    "super-smash-bros-ultimate": "https://www.smashbros.com/assets_v2/img/sns/en.png?180613",
   },
   "sports-games": {
     "ea-sports-fc-27": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4080220/ff6a3779f1ca83aae8ad3878454f6c11008ea24d/header.jpg?t=1793610006",
@@ -184,6 +184,18 @@ export function gamesForCategory(category: string, platform?: string) {
       game.category === category &&
       (!platform || !game.platforms || game.platforms.includes(platform)),
   );
+}
+
+export const standaloneGameCategories = ["fighting-games", "sports-games", "tactical-shooters", "hero-shooters", "strategy-games"] as const;
+
+export function additionalLadderGamesForPlatform(platform: string) {
+  const games = standaloneGameCategories.flatMap((category) =>
+    isCategoryOnPlatform(platform, category) ? gamesForCategory(category, platform) : [],
+  );
+  const boxFights = isCategoryOnPlatform(platform, "fortnite")
+    ? gamesForCategory("fortnite", platform).find((game) => game.value === "box-fights")
+    : undefined;
+  return boxFights ? [boxFights, ...games] : games;
 }
 
 export function ladderGameLabel(category: string, game: string) {

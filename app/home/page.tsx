@@ -1,7 +1,9 @@
 import AuthNav from "../components/AuthNav";
 import HeroSlides from "../components/HeroSlides";
 import Link from "next/link";
+import Image from "next/image";
 import MobileHome from "../components/MobileHome";
+import PlatformGameLinks from "../components/PlatformGameLinks";
 
 export default function Home() {
   return (
@@ -321,7 +323,7 @@ export default function Home() {
           cursor:pointer;
         }
 
-        .drop-wrap:hover .dropdown{display:block;}
+        .drop-wrap:hover .dropdown,.drop-wrap:focus-within .dropdown{display:grid;}
 
         .drop-click{
           position:absolute;
@@ -334,11 +336,26 @@ export default function Home() {
           position:absolute;
           top:100%;
           left:0;
-          width:235px;
+          width:min(460px,85vw);
+          max-height:min(60vh,46vw,520px);
+          grid-template-columns:repeat(2,minmax(0,1fr));
+          overflow-y:auto;
+          overscroll-behavior:contain;
           background:#07111b;
           border:1px solid #2f78af;
           box-shadow:0 6px 14px rgba(0,0,0,.6);
           z-index:120;
+        }
+        .mobile .dropdown{left:auto;right:0;}
+        .dropdown-new{border-left:1px solid #2f78af;}
+        .dropdown-heading{
+          padding:9px;
+          color:#f2c665;
+          background:#0b2235;
+          font-size:10px;
+          font-weight:900;
+          letter-spacing:.08em;
+          text-transform:uppercase;
         }
 
         .dropdown a{
@@ -386,6 +403,7 @@ export default function Home() {
         .coc-icon{ background:#9a7030; }
         .cr-icon{ background:#37649c; }
         .uno-icon{ background:#9a3434; }
+        .more-game-icon{ background:linear-gradient(135deg,#286184,#17334a); }
 
         .lower-layout{
           position:absolute;
@@ -834,9 +852,9 @@ export default function Home() {
         <div className="homepage">
           <div className="dark-blue-blend"></div>
 
-          <img className="logo-emblem" src="/logo-emblem.png" alt="" aria-hidden="true" />
+          <Image className="logo-emblem" src="/logo-emblem.png" width={200} height={200} alt="" aria-hidden="true" />
           <div className="controller-spin-ring"></div>
-          <img className="logo-emblem logo-emblem-text" src="/logo-emblem.png" alt="" aria-hidden="true" />
+          <Image className="logo-emblem logo-emblem-text" src="/logo-emblem.png" width={200} height={200} alt="" aria-hidden="true" />
 
           <div className="real-top-bar">
             <div className="auth-holder">
@@ -854,9 +872,11 @@ export default function Home() {
           <div className="main-nav-cover" aria-hidden="true" />
 
           <div className="drop-wrap nav-zone playstation">
-            <Link className="drop-click" href="/ladders/playstation"></Link>
+            <Link className="drop-click" href="/ladders/playstation" aria-label="Browse PlayStation ladders"></Link>
             <span className="nav-label">PLAYSTATION</span>
             <div className="dropdown">
+              <div>
+              <div className="dropdown-heading">Popular Ladders</div>
               <Link href="/ladders/playstation/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
               <Link href="/ladders/playstation/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
               <Link href="/ladders/playstation/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
@@ -864,13 +884,17 @@ export default function Home() {
               <Link href="/ladders/playstation/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
               <Link href="/ladders/playstation/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
             <Link href="/ladders/playstation/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
+              </div>
+              <PlatformGameLinks platform="playstation" />
             </div>
           </div>
 
           <div className="drop-wrap nav-zone xbox">
-            <Link className="drop-click" href="/ladders/xbox"></Link>
+            <Link className="drop-click" href="/ladders/xbox" aria-label="Browse Xbox ladders"></Link>
             <span className="nav-label">XBOX</span>
             <div className="dropdown">
+              <div>
+              <div className="dropdown-heading">Popular Ladders</div>
               <Link href="/ladders/xbox/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
               <Link href="/ladders/xbox/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
               <Link href="/ladders/xbox/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
@@ -878,23 +902,31 @@ export default function Home() {
               <Link href="/ladders/xbox/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
               <Link href="/ladders/xbox/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
             <Link href="/ladders/xbox/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
+              </div>
+              <PlatformGameLinks platform="xbox" />
             </div>
           </div>
 
           <div className="drop-wrap nav-zone nintendo">
-            <Link className="drop-click" href="/ladders/nintendo"></Link>
+            <Link className="drop-click" href="/ladders/nintendo" aria-label="Browse Nintendo ladders"></Link>
             <span className="nav-label">NINTENDO</span>
             <div className="dropdown">
+              <div>
+              <div className="dropdown-heading">Popular Ladders</div>
               <Link href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
               <Link href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
               <Link href="/ladders/nintendo/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
+              </div>
+              <PlatformGameLinks platform="nintendo" />
             </div>
           </div>
 
           <div className="drop-wrap nav-zone pc">
-            <Link className="drop-click" href="/ladders/pc"></Link>
+            <Link className="drop-click" href="/ladders/pc" aria-label="Browse PC ladders"></Link>
             <span className="nav-label">PC</span>
             <div className="dropdown">
+              <div>
+              <div className="dropdown-heading">Popular Ladders</div>
               <Link href="/ladders/pc/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
               <Link href="/ladders/pc/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
               <Link href="/ladders/pc/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
@@ -902,17 +934,23 @@ export default function Home() {
               <Link href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
               <Link href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
               <Link href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
+              </div>
+              <PlatformGameLinks platform="pc" />
             </div>
           </div>
 
           <div className="drop-wrap nav-zone mobile">
-            <Link className="drop-click" href="/ladders/mobile"></Link>
+            <Link className="drop-click" href="/ladders/mobile" aria-label="Browse mobile ladders"></Link>
             <span className="nav-label">MOBILE</span>
             <div className="dropdown">
+              <div>
+              <div className="dropdown-heading">Popular Ladders</div>
               <Link href="/ladders/mobile/clash-of-clans"><span className="game-icon coc-icon">CoC</span>Clash of Clans</Link>
               <Link href="/ladders/mobile/clash-royale"><span className="game-icon cr-icon">CR</span>Clash Royale</Link>
               <Link href="/ladders/mobile/cod-mobile"><span className="game-icon cod-icon">CODM</span>Call of Duty: Mobile</Link>
               <Link href="/ladders/mobile/uno"><span className="game-icon uno-icon">UNO</span>UNO</Link>
+              </div>
+              <PlatformGameLinks platform="mobile" />
             </div>
           </div>
 

@@ -81,7 +81,6 @@ export const gamingGames: readonly GamingGame[] = [
   { category: "hero-shooters", value: "marvel-rivals", label: "Marvel Rivals", platforms: ["xbox", "playstation", "pc"] },
   { category: "hero-shooters", value: "overwatch-2", label: "Overwatch 2", platforms: ["xbox", "playstation", "pc", "nintendo"] },
   { category: "strategy-games", value: "chess", label: "Chess", platforms: ["pc", "mobile"] },
-  { category: "fortnite", value: "box-fights", label: "Box Fights", platforms: ["xbox", "playstation", "pc", "nintendo"] },
 ];
 
 export const gamingCategories = [

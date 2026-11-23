@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import {
   categoriesForPlatform,
   categoryImage,
+  additionalLadderGamesForPlatform,
   ladderCategoryLabel,
+  ladderGameImage,
   ladderPlatformLabel,
+  standaloneGameCategories,
 } from "../../../lib/ladderCatalog";
 
 export default function LadderPlatformPage() {
@@ -37,7 +41,9 @@ export default function LadderPlatformPage() {
           <p>Choose a game to view its ladders, teams, matches, and rankings.</p>
         </div>
         <div className="grid">
-          {categoriesForPlatform(platform).map((category) => (
+          {categoriesForPlatform(platform).filter((category) =>
+            !standaloneGameCategories.some((value) => value === category.value)
+          ).map((category) => (
             <Link
               className="card"
               key={category.value}
@@ -45,11 +51,25 @@ export default function LadderPlatformPage() {
             >
               {categoryImage(category.value) && (
                 <span className="category-image">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src={categoryImage(category.value)!} alt="" />
+                  <Image unoptimized width={460} height={215} loading="lazy" decoding="async" src={categoryImage(category.value)!} alt="" />
                 </span>
               )}
               <span className="category-name">{ladderCategoryLabel(category.value)}</span>
+              <span className="category-action">View Ladders →</span>
+            </Link>
+          ))}
+          {additionalLadderGamesForPlatform(platform).map((game) => (
+            <Link
+              className="card"
+              key={`${game.category}/${game.value}`}
+              href={`/ladders/${platform}/${game.category}/${game.value}`}
+            >
+              {ladderGameImage(game.category, game.value) && (
+                <span className="category-image">
+                  <Image unoptimized width={460} height={215} loading="lazy" decoding="async" src={ladderGameImage(game.category, game.value)!} alt="" />
+                </span>
+              )}
+              <span className="category-name">{game.value === "box-fights" ? "Fortnite Box Fights" : game.label}</span>
               <span className="category-action">View Ladders →</span>
             </Link>
           ))}
