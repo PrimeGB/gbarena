@@ -27,6 +27,16 @@ begin
   if not exists (select 1 from public.gb_creator_profile_style(creator) where tier = 'affiliate' and theme = 'ice' and show_name and not show_logo) then
     raise exception 'Member style and options must be saved and readable';
   end if;
+  perform public.gb_save_creator_profile_style('sovereign', true, true);
+  if not exists (select 1 from public.gb_creator_profile_style(creator) where theme = 'sovereign') then
+    raise exception 'New Ambassador styles must be saved and readable';
+  end if;
+  perform public.gb_save_creator_profile_style('aftershock', true, true);
+  perform public.gb_save_creator_profile_style('rival', true, true);
+  perform public.gb_save_creator_profile_style('spotlight', true, true);
+  if not exists (select 1 from public.gb_creator_profile_style(creator) where theme = 'spotlight') then
+    raise exception 'New profile styles must remain selectable';
+  end if;
   begin
     perform public.gb_save_creator_profile_style('gold', true, true, other_creator);
     raise exception 'Members must not change another player style';

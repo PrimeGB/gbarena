@@ -5,6 +5,10 @@
 .profile-page.creator-style-viper { --creator-accent: #93e976; --creator-glow: #52b932; --creator-dark: #213c18; --creator-panel: #101b13; --creator-pattern: repeating-linear-gradient(90deg, transparent 0 37px, #a5ff7314 38px 39px), repeating-linear-gradient(0deg, transparent 0 37px, #a5ff7310 38px 39px); }
 .profile-page.creator-style-eclipse { --creator-accent: #d4a0ff; --creator-glow: #934be6; --creator-dark: #30204a; --creator-panel: #171328; --creator-pattern: repeating-radial-gradient(ellipse at 70% -30%, transparent 0 35px, #e0b5ff18 36px 37px, transparent 38px 54px); }
 .profile-page.creator-style-champion { --creator-accent: #e6ac78; --creator-glow: #bc7039; --creator-dark: #493022; --creator-panel: #1c1714; --creator-pattern: repeating-linear-gradient(160deg, transparent 0 18px, #e8ab7620 19px 20px, transparent 21px 38px); }
+.profile-page.creator-style-sovereign { --creator-accent: #ebca78; --creator-glow: #be8d32; --creator-dark: #392b12; --creator-panel: #17150f; --creator-pattern: repeating-linear-gradient(45deg, transparent 0 30px, #f1d17a16 31px 32px, transparent 33px 52px); }
+.profile-page.creator-style-aftershock { --creator-accent: #8fe6ff; --creator-glow: #0888d7; --creator-dark: #0b344b; --creator-panel: #0b1c28; --creator-pattern: repeating-linear-gradient(165deg, transparent 0 22px, #b5edff1c 23px 24px, transparent 25px 55px); }
+.profile-page.creator-style-rival { --creator-accent: #ff8c7d; --creator-glow: #cc312a; --creator-dark: #481a19; --creator-panel: #201315; --creator-pattern: repeating-linear-gradient(115deg, transparent 0 12px, #ff6a5022 13px 15px, transparent 16px 49px); }
+.profile-page.creator-style-spotlight { --creator-accent: #b6d6ee; --creator-glow: #3b7fc2; --creator-dark: #172d40; --creator-panel: #0b1c2d; --creator-pattern: repeating-linear-gradient(90deg, transparent 0 39px, #a5d5ff18 40px 41px, transparent 42px 60px); }
 
 .profile-page[class*="creator-style-"] .pf-banner {
   position: relative;

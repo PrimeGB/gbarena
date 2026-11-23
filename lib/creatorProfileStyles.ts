@@ -7,6 +7,10 @@ export const CREATOR_THEMES = [
   { id: "viper", name: "Viper Circuit", description: "Tactical green with digital circuit details." },
   { id: "eclipse", name: "Royal Eclipse", description: "Violet energy and a deep-space finish." },
   { id: "champion", name: "Champion's Forge", description: "Burnished bronze and a battle-worn finish." },
+  { id: "sovereign", name: "Sovereign", description: "A championship crest with brushed-gold details." },
+  { id: "aftershock", name: "Aftershock", description: "Electric-blue energy and a lightning-mark finish." },
+  { id: "rival", name: "Rival", description: "A fierce red signature with a competitive edge." },
+  { id: "spotlight", name: "Spotlight", description: "A cool silver-blue identity with broadcast polish." },
 ] as const;
 
 export type CreatorTheme = typeof CREATOR_THEMES[number]["id"];

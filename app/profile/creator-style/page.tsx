@@ -77,7 +77,7 @@ export default function CreatorStylePage() {
       {error && <p className="vault-error" role="alert">{error}</p>}
       {notice && <p className="vault-notice" role="status">{notice}</p>}
       {current?.error && <p className="vault-error" role="alert">Creator access could not be loaded: {current.error}</p>}
-      <CreatorConceptGallery />
+      <CreatorConceptGallery onSelect={setTheme} />
       <div className="vault-layout">
         <section>
           <div className="vault-section-heading"><div><h2>Preview your look</h2><p>{canSave ? "Uses your current profile name and logo." : "Example preview. Active creators can save a style."}</p></div>

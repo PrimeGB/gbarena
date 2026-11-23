@@ -7,6 +7,11 @@ import { useUser } from "../../../lib/useUser";
 
 export default function TournamentRequestPage() {
   const { user, loading } = useUser();
+  const [game, setGame] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [players, setPlayers] = useState("");
+  const [format, setFormat] = useState("");
+  const [schedule, setSchedule] = useState("");
   const [details, setDetails] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -19,9 +24,23 @@ export default function TournamentRequestPage() {
       setError("Sign in to send a tournament request.");
       return;
     }
-    const text = details.trim();
-    if (text.length < 20 || text.length > 4000) {
-      setError("Describe your tournament in 20 to 4,000 characters.");
+    const gameName = game.trim();
+    const playerCount = Number(players);
+    if (!gameName || !Number.isInteger(playerCount) || playerCount < 2) {
+      setError("Enter a game and a player count of at least 2.");
+      return;
+    }
+    const text = [
+      "Friendly tournament request",
+      `Game: ${gameName}`,
+      `Platform: ${platform || "No preference"}`,
+      `Players: ${playerCount}`,
+      `Format: ${format || "No preference"}`,
+      `Preferred date/time: ${schedule.trim() || "Flexible"}`,
+      `Additional details: ${details.trim() || "None provided"}`,
+    ].join("\n");
+    if (text.length > 4000) {
+      setError("Shorten your additional details so the full request is under 4,000 characters.");
       return;
     }
     setSending(true);
@@ -33,6 +52,11 @@ export default function TournamentRequestPage() {
         setError(`Your request could not be sent: ${requestError.message}`);
         return;
       }
+      setGame("");
+      setPlatform("");
+      setPlayers("");
+      setFormat("");
+      setSchedule("");
       setDetails("");
       setSent(true);
     } catch (requestError) {
@@ -59,6 +83,10 @@ export default function TournamentRequestPage() {
         .event-request h2{margin:0 0 10px;color:#fff;font-size:19px}
         .event-request-form p,.event-request-guide p,.event-request-guide li{color:#bdd0df;font-size:13px;line-height:1.7}
         .event-request label{display:block;margin:22px 0 8px;color:#f2c46a;font-size:13px;font-weight:bold}
+        .event-request-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+        .event-request input,.event-request select{box-sizing:border-box;width:100%;padding:11px;border:1px solid #42637c;background:#030a11;color:#fff;font:inherit;font-size:14px}
+        .event-request input:focus,.event-request select:focus{outline:2px solid #8bcfff;outline-offset:2px}
+        .event-request .event-request-details{grid-column:1/-1}
         .event-request textarea{width:100%;min-height:210px;padding:13px;border:1px solid #42637c;background:#030a11;color:#fff;font:inherit;font-size:14px;line-height:1.55;resize:vertical}
         .event-request textarea:focus{outline:2px solid #8bcfff;outline-offset:2px}
         .event-request button{margin-top:16px;padding:13px 20px;border:1px solid #ffdb8d;background:#e6b353;color:#211706;font-weight:900;text-transform:uppercase;cursor:pointer}
@@ -79,13 +107,19 @@ export default function TournamentRequestPage() {
         <div className="event-request-grid">
           <section className="event-request-form">
             <h2>Tell us about your tournament</h2>
-            <p>Include your game, platform, player count, preferred format and any dates or details you already have.</p>
+            <p>Share the basics and we&apos;ll review your idea. The Founder will decide whether we can host it and reply in your inbox.</p>
             {!loading && !user && <p className="event-request-message"><Link href="/login?next=%2Ftournaments%2Frequest">Sign in</Link> to send your request.</p>}
             {error && <p role="alert" className="event-request-message">{error}</p>}
             {sent && <p role="status" className="event-request-message event-request-success">Request sent to the Founder. Watch your <Link href="/profile/inbox">inbox</Link> for a reply. Hosting is subject to discussion and availability.</p>}
             <form onSubmit={submitRequest}>
-              <label htmlFor="event-details">Your tournament idea</label>
-              <textarea id="event-details" value={details} onChange={(event) => setDetails(event.target.value)} minLength={20} maxLength={4000} required placeholder="What would you like to play, and how should your tournament work?" />
+              <div className="event-request-fields">
+                <div><label htmlFor="event-game">Game</label><input id="event-game" value={game} onChange={(event) => setGame(event.target.value)} maxLength={100} required placeholder="e.g. Battlefield 6" /></div>
+                <div><label htmlFor="event-platform">Platform</label><select id="event-platform" value={platform} onChange={(event) => setPlatform(event.target.value)}><option value="">No preference</option><option>Xbox</option><option>PlayStation</option><option>PC</option><option>Nintendo</option><option>Other</option></select></div>
+                <div><label htmlFor="event-players">Number of players</label><input id="event-players" type="number" value={players} onChange={(event) => setPlayers(event.target.value)} min={2} step={1} required placeholder="e.g. 16" /></div>
+                <div><label htmlFor="event-format">Format</label><select id="event-format" value={format} onChange={(event) => setFormat(event.target.value)}><option value="">No preference</option><option>Single elimination</option><option>Double elimination</option><option>Round robin</option><option>Other / not sure</option></select></div>
+                <div className="event-request-details"><label htmlFor="event-schedule">Preferred date or time</label><input id="event-schedule" value={schedule} onChange={(event) => setSchedule(event.target.value)} maxLength={120} placeholder="e.g. Saturday evening, or flexible" /></div>
+                <div className="event-request-details"><label htmlFor="event-details">Anything else we should know?</label><textarea id="event-details" value={details} onChange={(event) => setDetails(event.target.value)} maxLength={2500} placeholder="Rules, team size, or other details (optional)" /></div>
+              </div>
               <button type="submit" disabled={loading || !user || sending}>{sending ? "Sending..." : "Send request to staff"}</button>
             </form>
           </section>
@@ -96,8 +130,8 @@ export default function TournamentRequestPage() {
               <li>The Founder reviews your request and replies in your inbox.</li>
               <li>Discuss the details and availability before anything is arranged.</li>
             </ol>
-            <h2>Example request</h2>
-            <div className="event-request-example">We&apos;d like a 16-player, single-elimination tournament for our friends. We play on Xbox and are hoping for a weekend event.</div>
+            <h2>What happens next?</h2>
+              <div className="event-request-example">Your request goes to the Founder&apos;s inbox. They&apos;ll review the details and let you know whether GameBattles can host it.</div>
           </aside>
         </div>
       </div>

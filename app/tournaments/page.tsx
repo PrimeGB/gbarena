@@ -250,6 +250,11 @@ function TournamentListing() {
         .t-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(380px,.85fr);align-items:center;gap:22px;background:linear-gradient(135deg,#101d2a,#07111b 72%);border:1px solid #263d52;border-left:3px solid #b51c24;border-radius:14px;padding:22px;margin-bottom:16px;}
         .t-hero-text{min-width:0;}
         .t-hero-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch;}
+        .t-request-box{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(120deg,#13283a,#0a1723);border:1px solid #3c617d;border-radius:10px;padding:12px;color:#c8d8e8;}
+        .t-request-box h2{margin:0 0 5px;color:#f2c14e;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+        .t-request-box p{margin:0;max-width:none;color:#b8c8d6;font-size:11px;line-height:1.5;}
+        .t-request-link{flex:none;padding:9px 11px;border:1px solid #85bce5;border-radius:6px;background:#1a4568;color:#fff;font-size:10px;font-weight:bold;text-decoration:none;text-align:center;text-transform:uppercase;}
+        .t-request-link:hover{background:#245d88;}
         .td-box{width:auto;background:#09131d;border:1px solid #263d52;border-radius:10px;padding:12px;font-size:12px;color:#c8d8e8;}
         .td-head{color:#e7edf3;font-weight:bold;text-transform:uppercase;font-size:11px;letter-spacing:.04em;margin-bottom:6px;}
         .td-box p{margin:0 0 8px;max-width:none;font-size:12px;}
@@ -400,6 +405,10 @@ function TournamentListing() {
           <div className="t-hero-side">
             <GetCreditsBox />
             <TournamentDisclaimerBox />
+            <section className="t-request-box">
+              <div><h2>Want us to host a tournament?</h2><p>Send your game, player count and format. The Founder will review your idea and reply with a decision.</p></div>
+              <Link className="t-request-link" href="/tournaments/request">Submit a request</Link>
+            </section>
           </div>
         </div>
 

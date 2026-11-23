@@ -40,5 +40,27 @@ export default function CreatorFrameArt({ theme }: { theme: CreatorTheme }) {
       <path opacity=".38" d="M149 22 169 34 189 22 185 63 169 76 153 63ZM155 31 159 60 169 68 179 60 183 31 169 40Z" />
       <path opacity=".23" d="M46 150 115 81 124 81 55 150ZM76 150 145 81 151 81 82 150ZM220 0 289 69 296 69 227 0Z" />
     </g>}
+    {theme === "sovereign" && <g fill="none" stroke="currentColor">
+      <path opacity=".32" strokeWidth="3" d="M180 18 204 31 226 27 219 68 180 91 141 68 134 27 156 31Z" />
+      <path opacity=".42" strokeWidth="2" d="M146 54Q116 43 112 72Q110 94 145 113M214 54Q244 43 248 72Q250 94 215 113" />
+      <path opacity=".4" strokeWidth="2" d="m160 43 7-13 13 9 13-9 7 13-20 13Z" />
+      <path opacity=".22" strokeWidth="7" d="M108 127H252" />
+    </g>}
+    {theme === "aftershock" && <g fill="currentColor">
+      <path opacity=".4" d="m222 6-84 81h48l-33 58 112-105h-51l25-34Z" />
+      <path opacity=".28" d="M25 135 94 67h20l-68 68ZM53 148l60-60h13l-48 60Z" />
+      <path opacity=".5" d="M283 19h28v4h-28zM297 7h4v28h-4zM72 30h18v3H72zM80 22h3v19h-3z" />
+    </g>}
+    {theme === "rival" && <g fill="none" stroke="currentColor">
+      <path opacity=".35" strokeWidth="3" d="m186 10 54 15-12 57-46 36-46-36-12-57 54-15Z" />
+      <path opacity=".45" strokeWidth="5" d="M240 24 120 126M272 26 170 142M328 10 221 116" />
+      <path opacity=".28" strokeWidth="2" d="M27 29h63M58 14v31M284 124h48M308 100v48" />
+    </g>}
+    {theme === "spotlight" && <g fill="none" stroke="currentColor">
+      <circle opacity=".33" strokeWidth="2" cx="239" cy="73" r="44" />
+      <circle opacity=".18" strokeWidth="12" cx="239" cy="73" r="67" />
+      <path opacity=".4" strokeWidth="2" d="M239 4v25M239 117v25M170 73h25M283 73h25M190 24l18 18M270 104l18 18M288 24l-18 18M208 104l-18 18" />
+      <path opacity=".26" strokeWidth="7" d="M18 127 96 49M44 145 126 63" />
+    </g>}
   </svg>;
 }

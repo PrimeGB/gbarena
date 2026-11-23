@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { CreatorTheme } from "@/lib/creatorProfileStyles";
 import "./creator-concepts.css";
 
 const concepts = [
@@ -19,7 +20,7 @@ function ExampleLogo({ className }: { className: string }) {
   </svg>;
 }
 
-export default function CreatorConceptGallery() {
+export default function CreatorConceptGallery({ onSelect }: { onSelect: (theme: CreatorTheme) => void }) {
   const [selected, setSelected] = useState<(typeof concepts)[number]["id"]>("sovereign");
   const concept = concepts.find((item) => item.id === selected)!;
   return <section id="concepts" className="concept-gallery" aria-labelledby="concept-gallery-title">
@@ -27,12 +28,12 @@ export default function CreatorConceptGallery() {
       <div>
         <p className="concept-kicker">CREATOR DESIGN LAB</p>
         <h2 id="concept-gallery-title">Your name. Your mark. Your arena.</h2>
-        <p>Imagine your logo and colors across a GameBattles profile. Explore four original directions below.</p>
+        <p>Explore four additional styles. Choose one to load it into your preview, then save it to your profile.</p>
       </div>
-      <span className="concept-label">CONCEPTS ONLY</span>
+      <span className="concept-label">EXTRA SELECTABLE STYLES</span>
     </div>
     <div className="concept-picker" aria-label="Profile concept examples">
-      {concepts.map((item, index) => <button key={item.id} type="button" className={`concept-pick concept-pick-${item.id}`} aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}>
+      {concepts.map((item, index) => <button key={item.id} type="button" className={`concept-pick concept-pick-${item.id}`} aria-pressed={selected === item.id} onClick={() => { setSelected(item.id); onSelect(item.id); }}>
         <span className="concept-pick-number">0{index + 1}</span><span><b>{item.name}</b><small>{item.tier}</small></span><i aria-hidden="true" />
       </button>)}
     </div>
@@ -60,6 +61,6 @@ export default function CreatorConceptGallery() {
         </div>
       </div>
     </div>
-    <p className="concept-disclaimer">Illustrative mockup with a fictional player and logo. These are ideas to explore, not selectable profile styles. Affiliate concepts customize only the top section; Ambassador concepts show a full-profile finish. Your existing profile layout and information stay in place.</p>
+    <p className="concept-disclaimer">Illustrative mockups with fictional player details. Choose a direction to load that selectable preset into the preview above; save it to apply the look. Affiliate profiles customize the top section, while Ambassador profiles receive the full-profile finish. Your existing profile layout and information stay in place.</p>
   </section>;
 }

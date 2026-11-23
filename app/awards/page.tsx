@@ -8,7 +8,7 @@ import "./awards-hall.css";
 
 const destinations = [
   { title: "Season Top 10 Players", lines: ["SEASON", "TOP 10", "PLAYERS"], href: "/players/top?board=season&kind=players&scope=global", className: "players", symbol: "✦" },
-  { title: "Season Top Teams Site-Wide", lines: ["SEASON", "TOP TEAMS", "SITE-WIDE"], href: "/players/top?board=season&kind=teams&scope=global", className: "teams", symbol: "✦" },
+  { title: "Season Top Teams", lines: ["SEASON", "TOP", "TEAMS"], href: "/players/top?board=season&kind=teams", className: "teams", symbol: "✦" },
   { title: "Player Challenges", lines: ["PLAYER", "CHALLENGES"], href: "/challenges", className: "challenges", symbol: "✦" },
   { title: "More Awards", lines: ["MORE", "AWARDS"], href: "/awards/catalog", className: "catalog", symbol: "✦" },
 ];
