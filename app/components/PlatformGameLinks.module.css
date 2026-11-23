@@ -1,0 +1,85 @@
+.column {
+  min-width: 0;
+  padding: 6px;
+}
+
+.heading {
+  padding: 5px 5px 8px;
+  color: #e9c777;
+  font: 900 10px Tahoma, Verdana, Arial, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.card {
+  --accent: #53b8ef;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px;
+  margin-bottom: 5px;
+  padding: 8px 10px;
+  overflow: hidden;
+  border: 1px solid rgba(135, 174, 202, .25);
+  border-left: 3px solid var(--accent);
+  background-color: #0c1a28;
+  background-size: cover;
+  background-position: center right;
+  color: #fff;
+  text-decoration: none;
+  transition: border-color .16s ease, filter .16s ease;
+}
+
+.card[data-category="fortnite"],
+.card[data-category="clash-royale"] { --accent: #9c79ff; }
+.card[data-category="apex"],
+.card[data-category="fighting-games"] { --accent: #ff7868; }
+.card[data-category="battlefield"],
+.card[data-category="old-school"],
+.card[data-category="clash-of-clans"] { --accent: #e9bb60; }
+.card[data-category="sports-games"] { --accent: #74dd94; }
+.card[data-category="tactical-shooters"],
+.card[data-category="uno"] { --accent: #ff6a74; }
+.card[data-category="hero-shooters"] { --accent: #f0ad5a; }
+.card[data-category="strategy-games"] { --accent: #dfc890; }
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--accent);
+  filter: brightness(1.2);
+}
+
+.card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}
+
+.cardContent {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  text-shadow: 0 1px 3px #000;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font: 900 9px Tahoma, Verdana, Arial, sans-serif;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: #fff;
+  font: 900 11px/1.2 Tahoma, Verdana, Arial, sans-serif;
+}
+
+.arrow {
+  position: relative;
+  align-self: flex-end;
+  margin-left: 4px;
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 3px #000;
+}

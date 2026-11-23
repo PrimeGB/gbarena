@@ -336,10 +336,12 @@ export default function Home() {
           position:absolute;
           top:100%;
           left:0;
-          width:min(460px,85vw);
+          width:min(520px,85vw);
           max-height:min(60vh,46vw,520px);
           grid-template-columns:repeat(2,minmax(0,1fr));
           overflow-y:auto;
+          scrollbar-color:#3577a0 #07111b;
+          scrollbar-width:thin;
           overscroll-behavior:contain;
           background:#07111b;
           border:1px solid #2f78af;
@@ -347,64 +349,6 @@ export default function Home() {
           z-index:120;
         }
         .mobile .dropdown{left:auto;right:0;}
-        .dropdown-new{border-left:1px solid #2f78af;}
-        .dropdown-heading{
-          padding:9px;
-          color:#f2c665;
-          background:#0b2235;
-          font-size:10px;
-          font-weight:900;
-          letter-spacing:.08em;
-          text-transform:uppercase;
-        }
-
-        .dropdown a{
-          display:flex;
-          align-items:center;
-          gap:8px;
-          height:36px;
-          padding:0 9px;
-          color:#f3fbff;
-          background:linear-gradient(to bottom,#0a1724,#050d15);
-          border-bottom:1px solid #13293d;
-          font-size:11px;
-          font-weight:900;
-          text-transform:uppercase;
-          font-family:Tahoma,Verdana,Arial,sans-serif;
-          text-shadow:0 1px 2px #000;
-        }
-
-        .dropdown a:hover{
-          background:linear-gradient(to bottom,#19486b,#0b2235);
-          color:#fff;
-        }
-
-        .game-icon{
-          width:24px;
-          height:24px;
-          border-radius:3px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-size:8px;
-          font-weight:700;
-          letter-spacing:.2px;
-          color:#fff;
-          flex-shrink:0;
-          opacity:.92;
-        }
-
-        .cod-icon{ background:#7a6a3a; }
-        .fortnite-icon{ background:#3a5f94; }
-        .apex-icon{ background:#8a3a34; }
-        .rainbow-icon{ background:#4d5560; }
-        .rocket-icon{ background:#2f5f9a; }
-        .battlefield-icon{ background:#4f6a3a; }
-        .coc-icon{ background:#9a7030; }
-        .cr-icon{ background:#37649c; }
-        .uno-icon{ background:#9a3434; }
-        .more-game-icon{ background:linear-gradient(135deg,#286184,#17334a); }
-
         .lower-layout{
           position:absolute;
           left:0.85%;
@@ -875,17 +819,7 @@ export default function Home() {
             <Link className="drop-click" href="/ladders/playstation" aria-label="Browse PlayStation ladders"></Link>
             <span className="nav-label">PLAYSTATION</span>
             <div className="dropdown">
-              <div>
-              <div className="dropdown-heading">Popular Ladders</div>
-              <Link href="/ladders/playstation/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
-              <Link href="/ladders/playstation/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
-              <Link href="/ladders/playstation/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
-              <Link href="/ladders/playstation/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
-              <Link href="/ladders/playstation/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
-              <Link href="/ladders/playstation/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
-            <Link href="/ladders/playstation/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
-              </div>
-              <PlatformGameLinks platform="playstation" />
+              <PlatformGameLinks platform="playstation" includeOldSchool />
             </div>
           </div>
 
@@ -893,17 +827,7 @@ export default function Home() {
             <Link className="drop-click" href="/ladders/xbox" aria-label="Browse Xbox ladders"></Link>
             <span className="nav-label">XBOX</span>
             <div className="dropdown">
-              <div>
-              <div className="dropdown-heading">Popular Ladders</div>
-              <Link href="/ladders/xbox/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
-              <Link href="/ladders/xbox/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
-              <Link href="/ladders/xbox/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
-              <Link href="/ladders/xbox/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
-              <Link href="/ladders/xbox/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
-              <Link href="/ladders/xbox/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
-            <Link href="/ladders/xbox/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
-              </div>
-              <PlatformGameLinks platform="xbox" />
+              <PlatformGameLinks platform="xbox" includeOldSchool />
             </div>
           </div>
 
@@ -911,12 +835,6 @@ export default function Home() {
             <Link className="drop-click" href="/ladders/nintendo" aria-label="Browse Nintendo ladders"></Link>
             <span className="nav-label">NINTENDO</span>
             <div className="dropdown">
-              <div>
-              <div className="dropdown-heading">Popular Ladders</div>
-              <Link href="/ladders/nintendo/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
-              <Link href="/ladders/nintendo/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
-              <Link href="/ladders/nintendo/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
-              </div>
               <PlatformGameLinks platform="nintendo" />
             </div>
           </div>
@@ -925,16 +843,6 @@ export default function Home() {
             <Link className="drop-click" href="/ladders/pc" aria-label="Browse PC ladders"></Link>
             <span className="nav-label">PC</span>
             <div className="dropdown">
-              <div>
-              <div className="dropdown-heading">Popular Ladders</div>
-              <Link href="/ladders/pc/call-of-duty"><span className="game-icon cod-icon">COD</span>Call of Duty</Link>
-              <Link href="/ladders/pc/fortnite"><span className="game-icon fortnite-icon">FN</span>Fortnite</Link>
-              <Link href="/ladders/pc/apex"><span className="game-icon apex-icon">APX</span>Apex Legends</Link>
-              <Link href="/ladders/pc/rainbow-six"><span className="game-icon rainbow-icon">R6</span>Rainbow Six Siege</Link>
-              <Link href="/ladders/pc/rocket-league"><span className="game-icon rocket-icon">RL</span>Rocket League</Link>
-              <Link href="/ladders/pc/battlefield"><span className="game-icon battlefield-icon">BF</span>Battlefield</Link>
-              <Link href="/ladders/pc/old-school"><span className="game-icon cod-icon">OS</span>Old School</Link>
-              </div>
               <PlatformGameLinks platform="pc" />
             </div>
           </div>
@@ -943,13 +851,6 @@ export default function Home() {
             <Link className="drop-click" href="/ladders/mobile" aria-label="Browse mobile ladders"></Link>
             <span className="nav-label">MOBILE</span>
             <div className="dropdown">
-              <div>
-              <div className="dropdown-heading">Popular Ladders</div>
-              <Link href="/ladders/mobile/clash-of-clans"><span className="game-icon coc-icon">CoC</span>Clash of Clans</Link>
-              <Link href="/ladders/mobile/clash-royale"><span className="game-icon cr-icon">CR</span>Clash Royale</Link>
-              <Link href="/ladders/mobile/cod-mobile"><span className="game-icon cod-icon">CODM</span>Call of Duty: Mobile</Link>
-              <Link href="/ladders/mobile/uno"><span className="game-icon uno-icon">UNO</span>UNO</Link>
-              </div>
               <PlatformGameLinks platform="mobile" />
             </div>
           </div>

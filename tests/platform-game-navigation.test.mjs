@@ -20,7 +20,10 @@ function load(path, mocks = {}) {
 test("both homepage dropdowns show each new game only on supported platforms", () => {
   const accounts = load("lib/gamingAccounts.ts");
   const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts });
-  const GameLinks = load("app/components/PlatformGameLinks.tsx", { "../../lib/ladderCatalog": catalog }).default;
+  const GameLinks = load("app/components/PlatformGameLinks.tsx", {
+    "../../lib/ladderCatalog": catalog,
+    "./PlatformGameLinks.module.css": { default: {} },
+  }).default;
   const expected = {
     xbox: ["fortnite/box-fights", "fighting-games/street-fighter-6", "fighting-games/brawlhalla", "fighting-games/tekken-8", "fighting-games/mortal-kombat-1", "sports-games/ea-sports-fc-27", "sports-games/nba-2k27", "sports-games/efootball", "tactical-shooters/valorant", "hero-shooters/marvel-rivals", "hero-shooters/overwatch-2"],
     playstation: ["fortnite/box-fights", "fighting-games/street-fighter-6", "fighting-games/brawlhalla", "fighting-games/tekken-8", "fighting-games/mortal-kombat-1", "sports-games/ea-sports-fc-27", "sports-games/nba-2k27", "sports-games/efootball", "tactical-shooters/valorant", "hero-shooters/marvel-rivals", "hero-shooters/overwatch-2"],
@@ -30,13 +33,22 @@ test("both homepage dropdowns show each new game only on supported platforms", (
   };
   for (const [platform, games] of Object.entries(expected)) {
     const markup = renderToStaticMarkup(React.createElement(GameLinks, { platform }));
-    const hrefs = [...markup.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+    const hrefs = [...markup.matchAll(/href="([^"]+)"/g)]
+      .map((match) => match[1])
+      .filter((href) => href.split("/").length === 5);
     assert.deepEqual(hrefs.sort(), games.map((game) => `/ladders/${platform}/${game}`).sort());
+    assert.ok(markup.includes(`href="/ladders/${platform}/${platform === "mobile" ? "clash-of-clans" : "fortnite"}"`));
+    assert.match(markup, /background-image:linear-gradient/);
+    for (const game of catalog.additionalLadderGamesForPlatform(platform)) {
+      assert.ok(markup.includes(catalog.ladderGameImage(game.category, game.value).replaceAll("&", "&amp;")), game.value);
+    }
   }
+  const homePlayStation = renderToStaticMarkup(React.createElement(GameLinks, { platform: "playstation", includeOldSchool: true }));
+  assert.ok(homePlayStation.includes('href="/ladders/playstation/old-school"'));
   for (const path of ["app/page.tsx", "app/home/page.tsx"]) {
     const source = readFileSync(path, "utf8");
     for (const platform of Object.keys(expected)) {
-      assert.match(source, new RegExp(`<PlatformGameLinks platform="${platform}"\\s*/>`), path);
+      assert.match(source, new RegExp(`<PlatformGameLinks platform="${platform}"(?: includeOldSchool)?\\s*/>`), path);
     }
     assert.match(source, /overflow-y:auto/, path);
     assert.match(source, /\.drop-wrap:focus-within \.dropdown/, path);
