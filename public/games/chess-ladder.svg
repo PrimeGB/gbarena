@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="background" x1="120" y1="30" x2="1050" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173f3b"/>
+      <stop offset="1" stop-color="#07111b"/>
+    </linearGradient>
+    <pattern id="board" width="110" height="110" patternUnits="userSpaceOnUse">
+      <rect width="110" height="110" fill="#d5c49e"/>
+      <path d="M0 0h55v55H0zM55 55h55v55H55z" fill="#31544b"/>
+    </pattern>
+    <linearGradient id="piece" x1="650" y1="160" x2="900" y2="550" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff3cd"/>
+      <stop offset="1" stop-color="#c5a75f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <circle cx="845" cy="320" r="290" fill="#d8b667" fill-opacity=".08"/>
+  <rect x="76" y="80" width="444" height="444" rx="8" fill="url(#board)" stroke="#f1d89d" stroke-width="8"/>
+  <path d="M793 104c-37 25-63 63-74 112-7 32-2 60 15 85l-42 51-38 94c-8 20-5 41 8 57l27 34h241l-12-47c-6-21-19-39-37-52l-38-27 56-75c23-30 32-62 26-95-7-39-31-76-68-104l-20-15-2-29-42-34z" fill="url(#piece)" stroke="#fff1c6" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M752 258c25 15 53 24 83 25 10-28 10-54 1-79-31-11-60-15-87-10-11 20-10 42 3 64z" fill="#173f3b"/>
+  <path d="M680 482h238l25 45H650l30-45z" fill="#b9954e" stroke="#fff1c6" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M647 527h309l14 40H632l15-40z" fill="#8f743e" stroke="#fff1c6" stroke-width="8" stroke-linejoin="round"/>
+  <text x="590" y="136" fill="#f3d37e" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="8">THE ORIGINAL STRATEGY GAME</text>
+  <text x="584" y="603" fill="#f4f0e5" font-family="Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="12">CHESS</text>
+</svg>

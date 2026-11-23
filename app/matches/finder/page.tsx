@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import { gamingCategoryLabel, gamingGameLabel, resolveGamingAccountId } from "../../../lib/gamingAccounts";
-import { ladderGameImage } from "../../../lib/ladderCatalog";
+import { ladderGameImage, ladderTitleForGame } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
 import { getGameRules } from "../../../lib/matchRules";
@@ -87,18 +87,21 @@ function GameCover({ image, name }: { image: string; name: string }) {
   return <Image loading="lazy" decoding="async" src={image} alt={name} width={126} height={78} unoptimized={image.startsWith("https://")} />;
 }
 
-function getLadderName(ladder: string | null) {
+function getLadderName(category: string, game: string, ladder: string | null) {
+  const gameSpecificTitle = ladder && ladderTitleForGame(category, game, ladder);
+  if (gameSpecificTitle) return `${gameSpecificTitle} Ladder`;
   if (ladder === "singles") return "Solo Ladder";
   if (ladder === "duos") return "Duos Ladder";
   if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
   return "Team Ladder";
 }
 
-function getRosterText(ladder: string) {
+function getRosterText(ladder: string, category: string, game: string) {
   if (ladder === "singles") return "1 Player";
   if (ladder === "duos") return "2 Players";
-  if (ladder === "rapid-royal-duos") return "3 Players";
-  return "8 Players";
+  if (ladder === "rapid-royal-duos") return "2v2 or 3v3";
+  const teamSizes = getGameRules(category, game, ladder)?.teamSizes;
+  return teamSizes?.length ? teamSizes.join(" / ") : "Up to 8 Players";
 }
 
 function normalizeRole(value: string | null | undefined): TeamRole {
@@ -177,12 +180,15 @@ function MatchFinderContent() {
   const viewerTeamId = searchParams.get("teamId") || "";
 
   const platformName = prettyText(platform);
-  const gameName = ["rocket-league", "rainbow-six", "apex", "fortnite"].includes(category)
+  const gameName = [
+    "rocket-league", "rainbow-six", "apex", "fortnite",
+    "fighting-games", "sports-games", "tactical-shooters", "hero-shooters", "strategy-games",
+  ].includes(category)
     ? `${gamingCategoryLabel(category)}: ${gamingGameLabel(category, game)}`
     : prettyText(game);
   const gameImage = getGameImage(game, category);
-  const ladderName = getLadderName(ladder);
-  const rosterText = getRosterText(ladder);
+  const ladderName = getLadderName(category, game, ladder);
+  const rosterText = getRosterText(ladder, category, game);
   const createUrl = `/matches/create?teamId=${viewerTeamId}&platform=${platform}&category=${category}&game=${game}&ladder=${ladder}`;
   const viewTeamUrl = viewerTeamId ? `/teams/${viewerTeamId}` : "/profile/teams";
   const ladderUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;

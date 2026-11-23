@@ -9,10 +9,11 @@ export type NewPromoKind =
   | "rivalry" | "teammate" | "friends" | "rematch"
   | "event-bracket" | "event-night" | "event-community"
   | "construction" | "blueprint"
+  | "game-showcase"
   | "affiliate-awards" | "affiliate-community" | "affiliate-creator";
 
 export const NEW_PROMOS: Record<NewPromoKind, {
-  category: "rivalry" | "event" | "construction" | "affiliate";
+  category: "rivalry" | "event" | "construction" | "games" | "affiliate";
   tag: string;
   title: string;
   highlight: string;
@@ -67,6 +68,11 @@ export const NEW_PROMOS: Record<NewPromoKind, {
     body: "We're still working on the site. Your feedback helps us make GameBattles better.",
     href: "/suggestions", action: "Send feedback", bannerTitle: "WORK IN PROGRESS", bannerText: "We're building for the community.",
   },
+  "game-showcase": {
+    category: "games", tag: "New ladders, more ways to compete", title: "Your game.", highlight: "Your ladder.",
+    body: "Explore new game-specific ladders, team formats, settings and standings across GameBattles.",
+    href: "/ladders", action: "Explore the ladders", bannerTitle: "MORE GAMES. MORE LADDERS.", bannerText: "Find your next competition.",
+  },
   "affiliate-awards": {
     category: "affiliate", tag: "Ambassadors & affiliates", title: "Help us grow.", highlight: "Earn recognition.",
     body: "Represent GameBattles and work toward exclusive profile awards and program badges.",
@@ -98,7 +104,7 @@ export function isNewPromoKind(kind: HeroPromoKind | NewPromoKind): kind is NewP
 
 export function buildHeroRotation(images: string[]): HeroSlide[] {
   const promos: (HeroPromoKind | NewPromoKind)[] = [
-    "rivalry", "event-bracket", "affiliate-awards", "teammate", "construction",
+    "rivalry", "event-bracket", "affiliate-awards", "teammate", "game-showcase", "construction",
     "tournaments", "event-night", "friends", "affiliate-community", "discord",
     "rematch", "blueprint", "event-community", "challenges", "affiliate-creator",
     "ambassadors", "invite", "building",

@@ -7,6 +7,7 @@ import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import { getGameRules } from "../../../lib/matchRules";
 import { gamingCategoryLabel, gamingGameLabel } from "../../../lib/gamingAccounts";
+import { ladderTitleForGame } from "../../../lib/ladderCatalog";
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { matchReportingOpensAt } from "../../../lib/matchTiming";
 import { AdditionalMatchRules, postedRuleSettings } from "../../../lib/postedMatchRules";
@@ -168,7 +169,15 @@ function prettyText(value: string | null | undefined) {
     .join(" ");
 }
 
-function ladderName(value: string | null | undefined) {
+function ladderName(
+  value: string | null | undefined,
+  category?: string | null,
+  game?: string | null,
+) {
+  const gameSpecificTitle = category && game && value
+    ? ladderTitleForGame(category, game, value)
+    : null;
+  if (gameSpecificTitle) return `${gameSpecificTitle} Ladder`;
   if (value === "singles") return "Solo Ladder";
   if (value === "duos") return "Duos Ladder";
   if (value === "rapid-royal-duos") return "Rapid Royal Ladder";
@@ -599,7 +608,7 @@ export default function MatchDetailsPage() {
 
   const pageTitle = useMemo(() => {
     if (!match) return "Match Details";
-    return `${prettyText(match.game)} - ${prettyText(match.game_mode)} - ${ladderName(match.ladder)}`;
+    return `${prettyText(match.game)} - ${prettyText(match.game_mode)} - ${ladderName(match.ladder, match.category, match.game)}`;
   }, [match]);
 
   const bestOfNumber = getBestOfNumber(match?.best_of);
@@ -631,7 +640,7 @@ export default function MatchDetailsPage() {
         { label: "Date & Time", value: formatMatchTime(match.match_time) },
         { label: "Game", value: gameTitle },
         { label: "Platform", value: prettyText(match.platform) },
-        { label: "Match Type", value: ladderName(match.ladder) },
+        { label: "Match Type", value: ladderName(match.ladder, match.category, match.game) },
         { label: isSolo ? "Format" : "Players", value: match.players?.trim() || "" },
         { label: "Games (Best of...)", value: String(bestOfNumber) },
         { label: "Game Mode", value: match.game_mode ? prettyText(match.game_mode) : "" },
@@ -643,7 +652,7 @@ export default function MatchDetailsPage() {
   const ladderRules = match
     ? [
         {
-          title: `${ladderName(match.ladder)} Format`,
+          title: `${ladderName(match.ladder, match.category, match.game)} Format`,
           items: [
             match.ladder === "rapid-royal-duos"
               ? rapidRoyalRules.teams
@@ -651,7 +660,9 @@ export default function MatchDetailsPage() {
               ? "This is a solo match. Only the one player on each side may compete."
               : match.ladder === "duos"
               ? "This is a duos match. Each side must play with its locked duo roster."
-              : "Teams may play with 3, 4, 5 or 6 players. Players are not locked to a set team size.",
+              : match.players
+              ? `Each side fields exactly ${match.players} rostered players.`
+              : "Each side must use the roster size selected for the match.",
             "Only players listed in the Match Roster may play.",
             "Every player must use the account and system shown in the roster.",
             match.crossplay && match.crossplay.toLowerCase() !== "off"
@@ -674,6 +685,8 @@ export default function MatchDetailsPage() {
               ? "Follow the full 10-minute and next-kill tiebreak rules below."
               : isBombMode
               ? "Round-based bomb mode: a game is won by reaching the score limit. Plant, defuse and bomb timers must match the settings below."
+              : modeDef
+              ? `${modeDef.value} follows the match settings shown below.`
               : "A game ends when the score limit or time limit in the settings below is reached.",
             ...(modeDef ? modeDef.rules : []),
             ...(match.ladder === "rapid-royal-duos" ? [rapidRoyalRules.winning, rapidRoyalRules.proof] : []),
@@ -2335,7 +2348,7 @@ export default function MatchDetailsPage() {
           <div className="rules-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-title">
               <span>
-                {prettyText(match.game)} Â· {ladderName(match.ladder)} Rules
+                {prettyText(match.game)} Â· {ladderName(match.ladder, match.category, match.game)} Rules
               </span>
               <button className="modal-close" type="button" onClick={() => setRulesOpen(false)}>
                 X

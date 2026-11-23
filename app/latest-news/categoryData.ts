@@ -87,6 +87,13 @@ export const newsCategories: NewsCategory[] = [
     intro: "Ladder availability and competition updates across supported platforms.",
     items: [
       {
+        label: "New Ladders",
+        title: "More games, more ways to compete",
+        description: "New game-specific ladders are available for fighting, sports, tactical and hero shooters, chess, and eFootball. Fortnite Box Fights also has a dedicated 1v1 ladder, with formats and match settings tailored to each game.",
+        link: "/ladders",
+        linkLabel: "Find your game",
+      },
+      {
         label: "Ladder Catalog",
         title: "Browse games and platforms",
         description: "The catalog groups available ladders by platform, game, and category.",

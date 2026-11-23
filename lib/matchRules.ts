@@ -483,6 +483,71 @@ const rules: Record<string, GameRuleSet> = {
     presetName: "Official UNO Rules",
     notes: ["Use a private room. All players must be in the same lobby."],
   },
+  "fighting-games": {
+    modes: [
+      { value: "Street Fighter 6 Ranked", fields: [field("score_limit", "Series Format", ["Best of 3 Games", "Best of 5 Games"]), field("round_length", "Stage", ["Random (Tournament Legal)", "Agreed Tournament Stage"])], rules: ["Use a private Battle Hub or custom room. No gameplay-altering mods or macros."] },
+      { value: "Brawlhalla 1v1", fields: [field("score_limit", "Stocks", ["3 Stocks"]), field("round_length", "Match Time", ["8 Minutes"]), field("spectating", "Map Set", ["Tournament Legal Stages"])], rules: ["Use a private custom lobby, tournament settings, and the agreed legend and stage-ban process."] },
+      { value: "Brawlhalla 2v2", fields: [field("score_limit", "Stocks", ["3 Stocks"]), field("round_length", "Match Time", ["8 Minutes"]), field("spectating", "Map Set", ["Tournament Legal Stages"])], rules: ["Both teammates must be rostered. Use a private custom lobby and tournament settings."] },
+      { value: "Tekken 8 Ranked", fields: [field("score_limit", "Games", ["First to 2 Games", "First to 3 Games"]), field("round_length", "Rounds", ["3 Rounds"]), field("spectating", "Stage", ["Random"])], rules: ["Use a private player match. Character and side selection follow the agreed tournament procedure."] },
+      { value: "Mortal Kombat 1 Ranked", fields: [field("score_limit", "Games", ["First to 2 Games", "First to 3 Games"]), field("round_length", "Rounds", ["2 Rounds"]), field("spectating", "Stage", ["Random"])], rules: ["Use a private match. Agree on character and Kameo selection before starting."] },
+      { value: "Smash Ultimate 1v1", fields: [field("score_limit", "Stocks", ["3 Stocks"]), field("round_length", "Time Limit", ["7 Minutes"]), field("spectating", "Stage", ["Tournament Legal Stages"]), field("perks", "Items", ["Off"])], rules: ["Use a private arena. Items off, 3 stocks, and tournament-legal stages."] },
+    ],
+    teamSizes: ["1v1", "2v2"],
+    bestOf: ["Best of 1", "Best of 3", "Best of 5"],
+    presetName: "GameBattles Fighting Game Standard",
+    notes: ["Use private/custom matches and agree on legal characters, stages, and match settings before play."],
+  },
+  "sports-games": {
+    modes: [
+      { value: "FC 27 Online Friendlies", fields: [field("score_limit", "Match Length", ["6 Minute Halves"]), field("round_length", "Squad Type", ["Online Squads"]), field("perks", "Controls", ["Any"])], rules: ["Use Online Friendlies. No guests, co-op partners, or gameplay-altering exploits."] },
+      { value: "FC 27 Clubs", fields: [field("score_limit", "Match Length", ["6 Minute Halves"]), field("round_length", "Club Format", ["11v11"]), field("spectating", "Matchmaking", ["Private Friendly"])], rules: ["Each side fields its club roster in a private Clubs friendly. Only registered players may compete."] },
+      { value: "NBA 2K27 1v1", fields: [field("score_limit", "Game Format", ["First to 21", "Pro-Am Rules"]), field("round_length", "Court", ["Half Court"]), field("spectating", "Matchmaking", ["Private Match"])], rules: ["Use a private 1v1 match. Agree to the court and scoring format before tip-off."] },
+      { value: "NBA 2K27 3v3", fields: [field("score_limit", "Game Format", ["First to 21", "Pro-Am Rules"]), field("round_length", "Court", ["Half Court"]), field("spectating", "Matchmaking", ["Private Match"])], rules: ["Use a private 3v3 match. Agree to the court and scoring format before tip-off."] },
+      { value: "NBA 2K27 5v5", fields: [field("score_limit", "Quarter Length", ["5 Minutes", "6 Minutes"]), field("round_length", "Game Mode", ["Pro-Am", "Private Match"]), field("spectating", "Difficulty", ["Superstar"])], rules: ["Use a private 5v5 lobby. Rosters, difficulty, and quarter length must match for both teams."] },
+      { value: "eFootball 1v1", fields: [field("score_limit", "Match Length", ["10 Minutes", "15 Minutes"]), field("round_length", "Squad Rules", ["Dream Team", "Authentic Team"]), field("spectating", "Extra Time", ["On", "Off"])], rules: ["Create a private 1v1 match. Agree on team selection and connection region before kickoff."] },
+      { value: "eFootball Co-op 2v2", fields: [field("score_limit", "Match Length", ["10 Minutes", "15 Minutes"]), field("round_length", "Squad Rules", ["Dream Team", "Authentic Team"]), field("spectating", "Extra Time", ["On", "Off"])], rules: ["All four players join the same private co-op match. Each player must be on the match roster."] },
+      { value: "eFootball Co-op 3v3", fields: [field("score_limit", "Match Length", ["10 Minutes", "15 Minutes"]), field("round_length", "Squad Rules", ["Dream Team", "Authentic Team"]), field("spectating", "Extra Time", ["On", "Off"])], rules: ["All six players join the same private co-op match. Each player must be on the match roster."] },
+    ],
+    teamSizes: ["1v1", "2v2", "3v3", "5v5", "11v11"],
+    bestOf: ["Best of 1", "Best of 3", "Best of 5"],
+    presetName: "GameBattles Sports Standard",
+    notes: ["Use private or friendly modes where available, and agree on game length, team type, and competition settings before playing."],
+  },
+  "tactical-shooters": {
+    modes: [
+      { value: "Counter-Strike 2 1v1", fields: [field("score_limit", "Rounds", ["First to 13", "First to 16"]), field("round_length", "Map", ["Agreed Aim Map", "Agreed Competitive Map"]), field("friendly_fire", "Overtime", ["Play to a winner"])], rules: ["Use a private server with identical settings for both players. No cheats, scripts, or external assistance."] },
+      { value: "Counter-Strike 2 5v5", fields: [field("score_limit", "Rounds", ["MR12 (First to 13)"]), field("round_length", "Map Pool", ["Active Duty Map Pool"]), field("bomb_timer", "Freeze Time", ["15 Seconds"]), field("friendly_fire", "Overtime", ["MR3, win by 2"])], rules: ["Play a private 5v5 match on an agreed competitive map. Teams switch sides at halftime."] },
+      { value: "VALORANT 1v1", fields: [field("score_limit", "Rounds", ["First to 13"]), field("round_length", "Map", ["Agreed Map"]), field("spectating", "Mode", ["Custom Game"])], rules: ["Use a custom game. This duel ladder is separate from the 5v5 competitive format."] },
+      { value: "VALORANT 5v5", fields: [field("score_limit", "Rounds", ["First to 13"]), field("round_length", "Overtime", ["Win by 2"]), field("spectating", "Map", ["Agreed Competitive Map"])], rules: ["Use a custom 5v5 game on a competitive map. PC and console players cannot be mixed in one match."] },
+    ],
+    teamSizes: ["1v1", "5v5"],
+    bestOf: ["Best of 1", "Best of 3"],
+    presetName: "GameBattles Tactical Standard",
+    notes: ["Use private/custom matches with a shared map pool and settings. Crossplay compatibility depends on each game's supported system pool."],
+  },
+  "hero-shooters": {
+    modes: [
+      { value: "Marvel Rivals 3v3 Custom", fields: [field("score_limit", "Match Format", ["Best of 3 Rounds"]), field("round_length", "Mode", ["Custom Match"]), field("spectating", "Map", ["Agreed Map"])], rules: ["Use a custom lobby and agree on the mode, heroes, and map before the match."] },
+      { value: "Marvel Rivals 6v6", fields: [field("score_limit", "Match Format", ["Best of 3 Maps"]), field("round_length", "Mode", ["Competitive Rules"]), field("spectating", "Map", ["Competitive Map Pool"])], rules: ["The standard team format is six players per side. All players must use the same competitive system pool."] },
+      { value: "Overwatch 2 5v5", fields: [field("score_limit", "Match Format", ["Best of 3 Maps", "Best of 5 Maps"]), field("round_length", "Mode", ["Role Queue", "Open Queue"]), field("spectating", "Map Pool", ["Competitive Map Pool"])], rules: ["Use a custom 5v5 lobby with matching mode and map settings for both teams."] },
+      { value: "Overwatch 2 6v6", fields: [field("score_limit", "Match Format", ["Best of 3 Maps", "Best of 5 Maps"]), field("round_length", "Mode", ["6v6 Custom"]), field("spectating", "Map Pool", ["Agreed Map Pool"])], rules: ["Use a custom 6v6 lobby and agree on rules before play; this is a community format, not a separate ranked queue."] },
+    ],
+    teamSizes: ["3v3", "5v5", "6v6"],
+    bestOf: ["Best of 1", "Best of 3", "Best of 5"],
+    presetName: "GameBattles Hero Shooter Standard",
+    notes: ["Use custom lobbies. Competitive formats and crossplay pools differ by title and game mode."],
+  },
+  "strategy-games": {
+    modes: [
+      { value: "Chess Blitz", fields: [field("round_length", "Time Control", ["5 + 0", "3 + 2"]), field("score_limit", "Game Format", ["Single Game", "Best of 3"]), field("spectating", "Draws", ["Draws stand", "Replay the game"])], rules: ["Play in a private challenge. No outside assistance or engine use."] },
+      { value: "Chess Rapid", fields: [field("round_length", "Time Control", ["10 + 0", "10 + 5", "15 + 10"]), field("score_limit", "Game Format", ["Single Game", "Best of 3"]), field("spectating", "Draws", ["Draws stand", "Replay the game"])], rules: ["Play in a private challenge. No outside assistance or engine use."] },
+      { value: "Chess Classical", fields: [field("round_length", "Time Control", ["30 + 0", "30 + 20"]), field("score_limit", "Game Format", ["Single Game"]), field("spectating", "Draws", ["Draws stand"])], rules: ["Play in a private challenge. No outside assistance or engine use."] },
+    ],
+    teamSizes: ["1v1"],
+    bestOf: ["Best of 1", "Best of 3"],
+    presetName: "GameBattles Chess Standard",
+    notes: ["Agree on the time control and draw policy before starting a private challenge."],
+  },
 };
 
 export function getGameRules(category: string, game: string, ladder?: string | null): GameRuleSet | null {
@@ -507,8 +572,15 @@ export function getGameRules(category: string, game: string, ladder?: string | n
 
   if (category === "fortnite") {
     if (game === "zero-build") return { ...set, modes: set.modes.filter((m) => m.value === "Zero Build") };
-    if (game === "reload") return { ...set, modes: set.modes.filter((m) => m.value === "Reload" || m.value === "Box Fights") };
-    return { ...set, modes: set.modes.filter((m) => m.value === "Battle Royale" || m.value === "Box Fights") };
+    if (game === "reload") return { ...set, modes: set.modes.filter((m) => m.value === "Reload") };
+    if (game === "box-fights") {
+      return {
+        ...set,
+        modes: set.modes.filter((m) => m.value === "Box Fights"),
+        teamSizes: ["1v1"],
+      };
+    }
+    return { ...set, modes: set.modes.filter((m) => m.value === "Battle Royale") };
   }
 
   if (category === "apex") {
@@ -535,6 +607,70 @@ export function getGameRules(category: string, game: string, ladder?: string | n
   if (category === "clash-royale") {
     return { ...set, teamSizes: game === "2v2" ? ["2v2"] : ["1v1"] };
   }
+
+  const selectMode = (mode: string, teamSizes?: string[]) => ({
+    ...set,
+    modes: set.modes.filter((item) => item.value === mode),
+    ...(teamSizes ? { teamSizes } : {}),
+  });
+
+  if (category === "fighting-games") {
+    if (game === "street-fighter-6") return selectMode("Street Fighter 6 Ranked", ["1v1"]);
+    if (game === "brawlhalla") {
+      return ladder === "duos"
+        ? selectMode("Brawlhalla 2v2", ["2v2"])
+        : selectMode("Brawlhalla 1v1", ["1v1"]);
+    }
+    if (game === "tekken-8") return selectMode("Tekken 8 Ranked", ["1v1"]);
+    if (game === "mortal-kombat-1") return selectMode("Mortal Kombat 1 Ranked", ["1v1"]);
+    if (game === "super-smash-bros-ultimate") return selectMode("Smash Ultimate 1v1", ["1v1"]);
+  }
+
+  if (category === "sports-games") {
+    if (game === "ea-sports-fc-27") {
+      return ladder === "team"
+        ? selectMode("FC 27 Clubs", ["11v11"])
+        : selectMode("FC 27 Online Friendlies", ["1v1"]);
+    }
+    if (game === "nba-2k27") {
+      if (ladder === "singles") return selectMode("NBA 2K27 1v1", ["1v1"]);
+      if (ladder === "team-3v3") return selectMode("NBA 2K27 3v3", ["3v3"]);
+      return selectMode("NBA 2K27 5v5", ["5v5"]);
+    }
+    if (game === "efootball") {
+      if (ladder === "co-op-2v2") return selectMode("eFootball Co-op 2v2", ["2v2"]);
+      if (ladder === "co-op-3v3") return selectMode("eFootball Co-op 3v3", ["3v3"]);
+      return selectMode("eFootball 1v1", ["1v1"]);
+    }
+  }
+
+  if (category === "tactical-shooters") {
+    if (game === "counter-strike-2") {
+      return ladder === "team"
+        ? selectMode("Counter-Strike 2 5v5", ["5v5"])
+        : selectMode("Counter-Strike 2 1v1", ["1v1"]);
+    }
+    if (game === "valorant") {
+      return ladder === "team"
+        ? selectMode("VALORANT 5v5", ["5v5"])
+        : selectMode("VALORANT 1v1", ["1v1"]);
+    }
+  }
+
+  if (category === "hero-shooters") {
+    if (game === "marvel-rivals") {
+      return ladder === "team-3v3"
+        ? selectMode("Marvel Rivals 3v3 Custom", ["3v3"])
+        : selectMode("Marvel Rivals 6v6", ["6v6"]);
+    }
+    if (game === "overwatch-2") {
+      return ladder === "team-5v5"
+        ? selectMode("Overwatch 2 5v5", ["5v5"])
+        : selectMode("Overwatch 2 6v6", ["6v6"]);
+    }
+  }
+
+  if (category === "strategy-games" && game === "chess") return set;
 
   return set;
 }

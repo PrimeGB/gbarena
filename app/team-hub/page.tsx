@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
+import { ladderTitleForGame } from "../../lib/ladderCatalog";
 
 type AppUser = {
   id: string;
@@ -59,7 +60,9 @@ function prettyText(value: string | null) {
     .join(" ");
 }
 
-function getLadderName(ladder: string | null) {
+function getLadderName(category: string, game: string, ladder: string | null) {
+  const gameSpecificTitle = ladder && ladderTitleForGame(category, game, ladder);
+  if (gameSpecificTitle) return `${gameSpecificTitle} Ladder`;
   if (ladder === "redsec") return "RedSec Ladder";
   if (ladder === "singles") return "Solo Ladder";
   if (ladder === "duos") return "Duos Ladder";
@@ -68,18 +71,24 @@ function getLadderName(ladder: string | null) {
   return "Team Ladder";
 }
 
-function getRosterLimit(ladder: string | null) {
+function getRosterLimit(category: string, game: string, ladder: string | null) {
   if (ladder === "singles") return 1;
   if (ladder === "duos") return 2;
   if (ladder === "rapid-royal-duos") return 3;
+  const fixedLadderSizes: Record<string, number> = {
+    "team-3v3": 3,
+    "team-5v5": 5,
+    "team-6v6": 6,
+    "co-op-2v2": 2,
+    "co-op-3v3": 3,
+  };
+  if (ladder && fixedLadderSizes[ladder]) return fixedLadderSizes[ladder];
+  if (category === "sports-games" && game === "ea-sports-fc-27" && ladder === "team") return 11;
   return 8;
 }
 
-function getExtraRosterSlots(ladder: string | null) {
-  if (ladder === "singles") return 0;
-  if (ladder === "duos") return 1;
-  if (ladder === "rapid-royal-duos") return 2;
-  return 7;
+function getExtraRosterSlots(category: string, game: string, ladder: string | null) {
+  return getRosterLimit(category, game, ladder) - 1;
 }
 
 function buildRosterSlots(count: number): RosterSlot[] {
@@ -113,9 +122,9 @@ function TeamHubContent() {
   const platformName = prettyText(platform);
   const gameName = prettyText(game);
   const categoryName = prettyText(category);
-  const ladderName = getLadderName(ladder);
-  const rosterLimit = getRosterLimit(ladder);
-  const extraRosterSlots = getExtraRosterSlots(ladder);
+  const ladderName = getLadderName(category, game, ladder);
+  const rosterLimit = getRosterLimit(category, game, ladder);
+  const extraRosterSlots = getExtraRosterSlots(category, game, ladder);
 
   const rankingsUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;
   const rulesUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rules`;
@@ -1510,7 +1519,7 @@ function TeamHubContent() {
                               <div className="small-note">
                                 {ladder === "duos"
                                   ? "Duos Ladder allows 1 partner slot besides yourself."
-                                  : "Team Ladder allows up to 7 roster slots besides yourself."}
+                                  : `${ladderName} allows ${extraRosterSlots} roster slots besides yourself.`}
                               </div>
 
                               <div className="role-list">

@@ -3,6 +3,14 @@ export function getPlayerOptions(ladder: string | null, isRedSec: boolean, teamS
   if (ladder === "rapid-royal-duos") return ["2v2", "3v3"];
   if (ladder === "singles") return ["1v1"];
   if (ladder === "duos") return ["2v2"];
+  const fixedLadderSizes: Record<string, string> = {
+    "team-3v3": "3v3",
+    "team-5v5": "5v5",
+    "team-6v6": "6v6",
+    "co-op-2v2": "2v2",
+    "co-op-3v3": "3v3",
+  };
+  if (ladder && fixedLadderSizes[ladder]) return [fixedLadderSizes[ladder]];
   return teamSizes?.length ? teamSizes : ["3v3", "4v4", "5v5", "6v6", "7v7", "8v8"];
 }
 

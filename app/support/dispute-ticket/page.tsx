@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../lib/useUser";
 import { matchReportingOpensAt, matchTicketDeadline } from "../../../lib/matchTiming";
+import { ladderTitleForGame } from "../../../lib/ladderCatalog";
 
 type MatchRow = {
   id: string;
@@ -15,6 +16,7 @@ type MatchRow = {
   accepting_team_id?: string | null;
   platform?: string | null;
   game?: string | null;
+  category?: string | null;
   game_mode?: string | null;
   players?: string | null;
   preset?: string | null;
@@ -53,7 +55,11 @@ function prettyText(value: string | null | undefined) {
     .join(" ");
 }
 
-function ladderName(value: string | null | undefined) {
+function ladderName(value: string | null | undefined, category?: string | null, game?: string | null) {
+  const gameSpecificTitle = category && game && value
+    ? ladderTitleForGame(category, game, value)
+    : null;
+  if (gameSpecificTitle) return `${gameSpecificTitle} Ladder`;
   if (value === "singles") return "Solo Ladder";
   if (value === "duos") return "Duos Ladder";
   if (value === "rapid-royal-duos") return "Rapid Royal Ladder";
@@ -786,7 +792,7 @@ function DisputeTicketPageContent() {
                 </div>
                 <div className="case-sub">
                   Match ID: {shortMatchId(match?.id || "")} / {prettyText(match?.game)} /{" "}
-                  {ladderName(match?.ladder)} / {prettyText(match?.platform)}
+                  {ladderName(match?.ladder, match?.category, match?.game)} / {prettyText(match?.platform)}
                 </div>
               </div>
 

@@ -14,7 +14,7 @@ import {
   resolveGamingAccountId,
 } from "../../../lib/gamingAccounts";
 import { bf6SolosMaps, getGameRules, isBattlefieldSolos } from "../../../lib/matchRules";
-import { ladderGameImage } from "../../../lib/ladderCatalog";
+import { ladderGameImage, ladderTitleForGame } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
 import { rapidRoyalRules } from "../../../lib/rapidRoyal";
@@ -45,11 +45,8 @@ function getGameImage(game: string | null, category?: string) {
   return category ? ladderGameImage(category, game || "") || "" : "";
 }
 
-function getLadderName(ladder: string | null) {
-  if (ladder === "singles") return "Solo Ladder";
-  if (ladder === "duos") return "Duos Ladder";
-  if (ladder === "rapid-royal-duos") return "Rapid Royal Ladder";
-  return "Team Ladder";
+function getLadderName(category: string, game: string, ladder: string) {
+  return `${ladderTitleForGame(category, game, ladder) || "Team"} Ladder`;
 }
 
 function toLocalDateTimeValue(date: Date) {
@@ -102,7 +99,7 @@ function CreateMatchContent() {
     : gameRules
       ? `${gamingCategoryLabel(category)}: ${gamingGameLabel(category, game)}`
       : prettyText(game);
-  const ladderName = getLadderName(ladder);
+  const ladderName = getLadderName(category, game, ladder);
   const gameImage = getGameImage(game, category);
   const viewTeamUrl = teamId ? `/teams/${teamId}` : "/profile/teams";
 

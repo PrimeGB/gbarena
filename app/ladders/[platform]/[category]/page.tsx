@@ -43,7 +43,7 @@ export default function LadderCategoryPage() {
         </section>
         <section className="content">
           <div className="games-grid">
-            {gamesForCategory(category).map((game) => {
+            {gamesForCategory(category, platform).map((game) => {
               const gameUrl = `/ladders/${platform}/${category}/${game.value}`;
               const image = ladderGameImage(category, game.value);
 

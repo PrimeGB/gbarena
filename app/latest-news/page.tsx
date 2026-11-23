@@ -209,6 +209,23 @@ export default function LatestNewsPage() {
 
             <div className="news-feed">
               <article className="news-post">
+                <div className="news-head">
+                  <div className="news-title">
+                    <span className="tag">New Ladders</span>
+                    More Games. More Ways to Compete.
+                  </div>
+                  <div className="news-date">November 24, 2026</div>
+                </div>
+                <div className="news-body">
+                  New game-specific ladders are here for Street Fighter 6, EA Sports FC 27,
+                  NBA 2K27, Brawlhalla, Tekken 8, Counter-Strike 2, VALORANT, Marvel Rivals,
+                  Overwatch 2, Super Smash Bros. Ultimate, Mortal Kombat 1, Chess and
+                  eFootball. Fortnite Box Fights now has its own 1v1 ladder, too. Each game
+                  has formats and match settings shaped around how people play it.
+                  <p><Link href="/ladders">Find your game and explore the ladders →</Link></p>
+                </div>
+              </article>
+              <article className="news-post">
                 <div className="news-head"><div className="news-title"><span className="tag">In Progress</span> 1v1 Rivals &amp; Creator Profiles</div><div className="news-date">November 22, 2026</div></div>
                 <div className="news-body news-feature">
                   <p><b>Take it to 1v1.</b> Challenge a friend, settle a rivalry, and keep track of the results. We&apos;re putting more focus on making those head-to-head moments a bigger part of GameBattles.</p>

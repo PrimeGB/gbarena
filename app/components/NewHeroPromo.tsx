@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { NEW_PROMOS, type NewPromoKind } from "../../lib/heroSlides";
+import { featuredGameArtwork } from "../../lib/ladderCatalog";
 import styles from "./NewHeroPromo.module.css";
 
 export default function NewHeroPromo({ kind, onFocusChange }: {
@@ -11,7 +12,7 @@ export default function NewHeroPromo({ kind, onFocusChange }: {
   const promo = NEW_PROMOS[kind];
   return (
     <div
-      className={`${styles.scene} ${styles[promo.category]} ${styles[kind]}`}
+      className={`${styles.scene} ${styles[promo.category]} ${styles[kind] || ""}`}
       onFocus={() => onFocusChange(true)}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) onFocusChange(false);
@@ -48,6 +49,16 @@ export default function NewHeroPromo({ kind, onFocusChange }: {
             <strong>{kind === "blueprint" ? "GB / 01" : "WORK IN PROGRESS"}</strong>
             <span>BUILDING A BETTER GAMEBATTLES</span>
             <div className={styles.stripes} />
+          </div>
+        )}
+        {promo.category === "games" && (
+          <div className={styles.gameArtworkGrid}>
+            {featuredGameArtwork.slice(0, 6).map((game) => (
+              game.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={game.title} src={game.image} alt="" loading="lazy" decoding="async" />
+              ) : null
+            ))}
           </div>
         )}
         {promo.category === "affiliate" && (

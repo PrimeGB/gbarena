@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { bf6PortalSetup, bf6SolosMaps, bf6SolosSources, getGameRules, isBattlefieldSolos } from "../../../../../../../lib/matchRules";
+import { ladderTitleForGame } from "../../../../../../../lib/ladderCatalog";
 import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
 
 type LadderRulesPageProps = {
@@ -23,7 +24,9 @@ function prettyText(value: string) {
     .join(" ");
 }
 
-function ladderName(ladder: string) {
+function ladderName(category: string, game: string, ladder: string) {
+  const gameSpecificTitle = ladderTitleForGame(category, game, ladder);
+  if (gameSpecificTitle) return gameSpecificTitle;
   if (ladder === "redsec") return "RedSec";
   if (ladder === "rapid-royal-duos") return "Rapid Royal";
   if (ladder === "singles") return "Solo";
@@ -36,9 +39,9 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   const { platform, category, game, ladder } = await params;
   const gameName = prettyText(game);
   const categoryName = prettyText(category);
-  const currentLadderName = ladderName(ladder);
-  const mobileRuleSet = platform === "mobile" ? getGameRules(category, game) : null;
   const bf6Rules = isBattlefieldSolos(category, game, ladder) ? getGameRules(category, game, ladder) : null;
+  const currentLadderName = ladderName(category, game, ladder);
+  const gameRuleSet = bf6Rules ? null : getGameRules(category, game, ladder);
 
   return (
     <main className="page">
@@ -195,10 +198,10 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           </section>
         )}
 
-        {mobileRuleSet && (
+        {gameRuleSet && (
           <section className="rule-section">
             <h2>{gameName} Match Rules</h2>
-            {mobileRuleSet.modes.map((mode) => (
+            {gameRuleSet.modes.map((mode) => (
               <div key={mode.value}>
                 <h3>{mode.value}</h3>
                 <ul>
@@ -213,7 +216,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
                 </ul>
               </div>
             ))}
-            {mobileRuleSet.notes.map((note) => (
+            {gameRuleSet.notes.map((note) => (
               <p key={note}>{note}</p>
             ))}
           </section>

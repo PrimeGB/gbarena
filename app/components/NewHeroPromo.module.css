@@ -16,6 +16,7 @@
 .affiliate{background:radial-gradient(circle at 78% 45%,#966c20,#34250c 35%,#0e111c 75%)}
 .affiliate-community{background:radial-gradient(circle at 75% 50%,#396c6a,#122d38 35%,#0d1420 75%)}
 .affiliate-creator{background:radial-gradient(circle at 80% 42%,#774d91,#2c1c46 38%,#101021 75%)}
+.games{background:radial-gradient(circle at 78% 48%,#254b68,#10263d 38%,#070d17 78%)}
 .copy{position:absolute;left:6.5%;top:48%;width:51%;transform:translateY(-50%);z-index:2}
 .tag{display:block;color:#ffca66;font-size:clamp(9px,1.25cqw,12px);font-weight:900;letter-spacing:.18em;text-transform:uppercase}
 .tag::before{content:"";display:inline-block;width:22px;height:2px;margin:0 9px 3px 0;background:currentColor}
@@ -28,6 +29,8 @@
 .rivalry .cta{background:#d53540;border-color:#ff8b89;color:#fff}
 .cta:hover,.cta:focus-visible{filter:brightness(1.15);outline:2px solid #fff;outline-offset:3px}
 .art{position:absolute;right:4%;top:13%;width:42%;height:72%;display:grid;place-items:center;pointer-events:none}
+.gameArtworkGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:7px;width:100%;height:100%;padding:7px;transform:rotate(4deg);filter:drop-shadow(0 12px 18px #000b)}
+.gameArtworkGrid img{width:100%;height:100%;min-width:0;object-fit:cover;border:1px solid #a9d9f6aa;box-shadow:0 6px 12px #0009}
 .versus{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;transform:rotate(-5deg);filter:drop-shadow(0 10px 20px #000b)}
 .versus strong{font-size:clamp(45px,9cqw,90px);font-style:italic;line-height:1;color:#fff;text-shadow:4px 4px #d63340}
 .player{padding:9px 8px;border-block:1px solid #ffffff99;color:#e3edf8;font-size:clamp(8px,1cqw,10px);font-weight:900;letter-spacing:.08em;white-space:nowrap}

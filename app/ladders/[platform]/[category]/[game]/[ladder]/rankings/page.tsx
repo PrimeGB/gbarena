@@ -11,6 +11,7 @@ import {
   ladderGameLabel,
   ladderPlatformLabel,
   isValidLadder,
+  ladderTitleForGame,
 } from "../../../../../../../lib/ladderCatalog";
 
 type TeamRow = {
@@ -29,14 +30,6 @@ type RosterIdentity = {
   userId: string;
   username: string;
   accountId: string;
-};
-
-const ladderTitles: Record<string, string> = {
-  redsec: "RedSec",
-  "rapid-royal-duos": "Rapid Royal",
-  singles: "Solo",
-  duos: "Duos",
-  team: "Team",
 };
 
 function winPercentage(wins: number, losses: number) {
@@ -61,7 +54,9 @@ export default function LadderRankingsPage() {
   const platformName = ladderPlatformLabel(platform);
   const categoryName = ladderCategoryLabel(category);
   const gameName = ladderGameLabel(category, game);
-  const ladderName = isValidLadder(category, game, ladder) ? ladderTitles[ladder] : null;
+  const ladderName = isValidLadder(category, game, ladder)
+    ? ladderTitleForGame(category, game, ladder)
+    : null;
 
   const rankedTeams = useMemo(
     () =>

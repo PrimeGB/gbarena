@@ -14,6 +14,7 @@ import {
   ladderGameImage,
   ladderPlatformLabel,
   ladderPlatforms,
+  ladderTitleForGame,
   laddersForGame,
 } from "../../../lib/ladderCatalog";
 
@@ -57,7 +58,7 @@ function ChooseTeamLadder() {
   const { user, loading: userLoading } = useUser();
   const groups = categoriesForPlatform(platform).map((category) => ({
     ...category,
-    games: gamesForCategory(category.value).map((game) => ({
+    games: gamesForCategory(category.value, platform).map((game) => ({
       value: `${category.value}/${game.value}`,
       category: category.value,
       game: game.value,
@@ -278,7 +279,7 @@ function CreateTeamContent() {
     (gamingGames.some((g) => g.category === categorySlug && g.value === gameSlug)
       ? `${gamingCategoryLabel(categorySlug)}: ${gamingGameLabel(categorySlug, gameSlug)}`
       : cleanName(gameSlug));
-  const ladderName = cleanName(ladderSlug);
+  const ladderName = ladderTitleForGame(categorySlug, gameSlug, ladderSlug) || cleanName(ladderSlug);
   const platformName = ladderPlatformLabel(platformSlug) || cleanName(platformSlug);
 
   const [teamName, setTeamName] = useState("");

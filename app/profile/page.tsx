@@ -914,6 +914,7 @@ function ProfilePageContent() {
         .promo-rivalry{background:linear-gradient(110deg,#3b0d17,#a12c32)}
         .promo-event{background:linear-gradient(110deg,#321514,#90502b)}
         .promo-construction{background:repeating-linear-gradient(135deg,#313333 0 16px,#3c3b2b 16px 32px)}
+        .promo-games{background:linear-gradient(110deg,#10283a,#246184)}
         .promo-affiliate{background:linear-gradient(110deg,#261c09,#806018)}
         .promo-icon{
           display:flex;

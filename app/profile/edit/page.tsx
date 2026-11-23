@@ -9,8 +9,8 @@ import { supabase } from "../../../lib/supabase";
 import AwardArt, { AWARD_CSS } from "../../awards/AwardArt";
 import {
   GamingAccount,
-  gamingCategories,
-  gamingGames,
+  gamingCategoriesForPlatform,
+  gamingGamesForPlatform,
   gamingPlatformLabel,
   gamingPlatforms,
 } from "../../../lib/gamingAccounts";
@@ -369,6 +369,11 @@ function EditProfileContent() {
   }
 
   const steamLinked = Boolean(steamPrefill) || gamingAccounts.some((account) => account.platform === "pc");
+  const availableGamingCategories = gamingCategoriesForPlatform(gamingAccountPlatform);
+  const availableGamingGames = gamingGamesForPlatform(gamingAccountPlatform);
+  const availableCategoryGames = availableGamingGames.filter(
+    (game) => game.category === gamingAccountCategory,
+  );
 
   function linkWithSteam() {
     sessionStorage.setItem(
@@ -1477,7 +1482,23 @@ function EditProfileContent() {
                       <label>Platform</label>
                       <select
                         value={gamingAccountPlatform}
-                        onChange={(event) => setGamingAccountPlatform(event.target.value)}
+                        onChange={(event) => {
+                          const nextPlatform = event.target.value;
+                          const nextCategories = gamingCategoriesForPlatform(nextPlatform);
+                          const nextCategory = nextCategories.some((category) => category.value === gamingAccountCategory)
+                            ? gamingAccountCategory
+                            : nextCategories[0]?.value || "";
+                          const nextGames = gamingGamesForPlatform(nextPlatform).filter(
+                            (game) => game.category === nextCategory,
+                          );
+                          setGamingAccountPlatform(nextPlatform);
+                          setGamingAccountCategory(nextCategory);
+                          setGamingAccountGame(
+                            nextGames.some((game) => game.value === gamingAccountGame)
+                              ? gamingAccountGame
+                              : nextGames[0]?.value || "",
+                          );
+                        }}
                       >
                         {gamingPlatforms.map((platform) => (
                           <option key={platform.value} value={platform.value}>{platform.label}</option>
@@ -1492,11 +1513,11 @@ function EditProfileContent() {
                           const nextCategory = event.target.value;
                           setGamingAccountCategory(nextCategory);
                           setGamingAccountGame(
-                            gamingGames.find((game) => game.category === nextCategory)?.value || "",
+                            availableGamingGames.find((game) => game.category === nextCategory)?.value || "",
                           );
                         }}
                       >
-                        {gamingCategories.map((category) => (
+                        {availableGamingCategories.map((category) => (
                           <option key={category.value} value={category.value}>{category.label}</option>
                         ))}
                       </select>
@@ -1507,7 +1528,7 @@ function EditProfileContent() {
                         value={gamingAccountGame}
                         onChange={(event) => setGamingAccountGame(event.target.value)}
                       >
-                        {gamingGames.filter((game) => game.category === gamingAccountCategory).map((game) => (
+                        {availableCategoryGames.map((game) => (
                           <option key={game.value} value={game.value}>{game.label}</option>
                         ))}
                       </select>

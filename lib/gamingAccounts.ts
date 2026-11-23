@@ -8,6 +8,13 @@ export type GamingAccount = {
   locked_until?: string | null;
 };
 
+export type GamingGame = {
+  category: string;
+  value: string;
+  label: string;
+  platforms?: readonly string[];
+};
+
 export const gamingPlatforms = [
   { value: "xbox", label: "Xbox Gamertag" },
   { value: "playstation", label: "PlayStation Online ID" },
@@ -17,7 +24,7 @@ export const gamingPlatforms = [
   { value: "ea", label: "EA Account ID" },
 ] as const;
 
-export const gamingGames = [
+export const gamingGames: readonly GamingGame[] = [
   { category: "call-of-duty", value: "modern-warfare-4", label: "Modern Warfare (2019)" },
   { category: "call-of-duty", value: "modern-warfare-ii", label: "Modern Warfare II" },
   { category: "call-of-duty", value: "modern-warfare-iii", label: "Modern Warfare III" },
@@ -38,6 +45,7 @@ export const gamingGames = [
   { category: "fortnite", value: "zero-build", label: "Zero Build" },
   { category: "fortnite", value: "ranked", label: "Ranked" },
   { category: "fortnite", value: "reload", label: "Reload" },
+  { category: "fortnite", value: "box-fights", label: "Box Fights", platforms: ["xbox", "playstation", "pc", "nintendo"] },
   { category: "rocket-league", value: "soccar", label: "Soccar" },
   { category: "rocket-league", value: "hoops", label: "Hoops" },
   { category: "rocket-league", value: "rumble", label: "Rumble" },
@@ -60,7 +68,21 @@ export const gamingGames = [
   { category: "cod-mobile", value: "battle-royale", label: "Battle Royale" },
   { category: "uno", value: "classic", label: "Classic" },
   { category: "uno", value: "2v2", label: "2v2 Team Play" },
-] as const;
+  { category: "fighting-games", value: "street-fighter-6", label: "Street Fighter 6", platforms: ["xbox", "playstation", "pc", "nintendo"] },
+  { category: "fighting-games", value: "brawlhalla", label: "Brawlhalla", platforms: ["xbox", "playstation", "pc", "nintendo", "mobile"] },
+  { category: "fighting-games", value: "tekken-8", label: "Tekken 8", platforms: ["xbox", "playstation", "pc"] },
+  { category: "fighting-games", value: "mortal-kombat-1", label: "Mortal Kombat 1", platforms: ["xbox", "playstation", "pc", "nintendo"] },
+  { category: "fighting-games", value: "super-smash-bros-ultimate", label: "Super Smash Bros. Ultimate", platforms: ["nintendo"] },
+  { category: "sports-games", value: "ea-sports-fc-27", label: "EA Sports FC 27", platforms: ["xbox", "playstation", "pc"] },
+  { category: "sports-games", value: "nba-2k27", label: "NBA 2K27", platforms: ["xbox", "playstation", "pc"] },
+  { category: "sports-games", value: "efootball", label: "eFootball", platforms: ["xbox", "playstation", "pc", "mobile"] },
+  { category: "tactical-shooters", value: "counter-strike-2", label: "Counter-Strike 2", platforms: ["pc"] },
+  { category: "tactical-shooters", value: "valorant", label: "VALORANT", platforms: ["xbox", "playstation", "pc"] },
+  { category: "hero-shooters", value: "marvel-rivals", label: "Marvel Rivals", platforms: ["xbox", "playstation", "pc"] },
+  { category: "hero-shooters", value: "overwatch-2", label: "Overwatch 2", platforms: ["xbox", "playstation", "pc", "nintendo"] },
+  { category: "strategy-games", value: "chess", label: "Chess", platforms: ["pc", "mobile"] },
+  { category: "fortnite", value: "box-fights", label: "Box Fights", platforms: ["xbox", "playstation", "pc", "nintendo"] },
+];
 
 export const gamingCategories = [
   { value: "call-of-duty", label: "Call of Duty" },
@@ -74,10 +96,36 @@ export const gamingCategories = [
   { value: "clash-royale", label: "Clash Royale" },
   { value: "cod-mobile", label: "Call of Duty: Mobile" },
   { value: "uno", label: "UNO" },
+  { value: "fighting-games", label: "Fighting Games" },
+  { value: "sports-games", label: "Sports Games" },
+  { value: "tactical-shooters", label: "Tactical Shooters" },
+  { value: "hero-shooters", label: "Hero Shooters" },
+  { value: "strategy-games", label: "Strategy Games" },
 ] as const;
 
 export function gamingPlatformLabel(platform: string) {
   return gamingPlatforms.find((item) => item.value === platform)?.label || platform;
+}
+
+export function gamingGamesForPlatform(platform: string) {
+  if (platform === "ea") {
+    return gamingGames.filter(
+      (game) =>
+        (game.category === "sports-games" && game.value === "ea-sports-fc-27") ||
+        game.category === "battlefield" ||
+        game.category === "apex",
+    );
+  }
+  return gamingGames.filter(
+    (game) => !game.platforms || game.platforms.includes(platform),
+  );
+}
+
+export function gamingCategoriesForPlatform(platform: string) {
+  const availableGames = gamingGamesForPlatform(platform);
+  return gamingCategories.filter((category) =>
+    availableGames.some((game) => game.category === category.value),
+  );
 }
 
 export function gamingCategoryLabel(category: string) {
