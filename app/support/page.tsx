@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const metadata = { title: "Support / Contact - GameBattles" };
+
 export default function SupportPage() {
   return (
     <>
@@ -233,25 +235,40 @@ export default function SupportPage() {
           <header className="header">
             <div>
               <div className="logo-main">GameBattles</div>
-              <div className="logo-sub">Support Center</div>
+              <div className="logo-sub">Support / Contact</div>
             </div>
 
-            <div className="header-badge">Support</div>
+            <div className="header-badge">Support / Contact</div>
           </header>
-          <nav className="top-strip" aria-label="Support links">
-            <Link href="/contact">Contact</Link>
+          <nav className="top-strip" aria-label="Support and contact links">
             <Link href="/suggestions">Suggestions</Link>
           </nav>
 
           <section className="title-bar">
-            <h1>Support Center</h1>
+            <h1>Support / Contact</h1>
             <p>
-              Use this page when you need help with your account, the website,
-              match issues, score problems, or something that needs staff attention.
+              Find help for your account, matches, reports, or website issues, or get in touch
+              with the GameBattles team about general questions and community topics.
             </p>
           </section>
 
           <section className="content">
+            <section className="panel">
+              <div className="panel-header">General Contact</div>
+              <div className="panel-body">
+                <p>
+                  For general questions, community topics, partnerships, staff questions,
+                  or one-on-one help that does not involve a match.
+                </p>
+                <p>
+                  To share an idea or report a small site issue, use the Suggestions Box.
+                </p>
+                <Link className="button" href="/suggestions">
+                  Suggestions Box
+                </Link>
+              </div>
+            </section>
+
             <section className="panel">
               <div className="panel-header">Account Help</div>
               <div className="panel-body">
@@ -336,9 +353,9 @@ export default function SupportPage() {
 
             <div className="warning full">
               <p>
-                <strong>Important:</strong> Support is for real help requests.
-                Do not spam staff, abuse tickets, fake reports, or use support to
-                harass other players. Misusing support can lead to warnings,
+                <strong>Important:</strong> Use match support for disputes and score issues.
+                Do not use general contact to avoid match procedures, request score changes,
+                spam staff, or file fake reports. Misusing support can lead to warnings,
                 restrictions, or account consequences.
               </p>
             </div>

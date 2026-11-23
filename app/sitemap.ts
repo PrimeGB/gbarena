@@ -23,7 +23,6 @@ const PAGES = [
   "/ranks",
   "/history",
   "/support",
-  "/contact",
   "/join",
   "/terms",
   "/privacy",

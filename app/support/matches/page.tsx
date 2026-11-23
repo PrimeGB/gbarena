@@ -5,7 +5,7 @@ export const metadata = { title: "Match Help - GameBattles" };
 
 export default function MatchSupportPage() {
   return (
-    <InfoPage title="Match Help" eyebrow="Support" backHref="/support" backLabel="Back to Support Center">
+    <InfoPage title="Match Help" eyebrow="Support" backHref="/support" backLabel="Back to Support / Contact">
       <h2>Posting and accepting</h2>
       <p>
         See <Link href="/matches/finder/help">How Match Finder Works</Link> for the full flow.

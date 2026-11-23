@@ -60,7 +60,7 @@ export default async function NewsCategoryPage({
         <Link href="/latest-news">Latest News</Link>
         <Link href="/forums">Forums</Link>
         <Link href="/profile">Profile</Link>
-        <Link href="/support">Support</Link>
+        <Link href="/support">Support / Contact</Link>
       </nav>
 
       <div className="nc-layout">

@@ -67,7 +67,7 @@ export default function PrivacyPage() {
       <p>
         Players under 13, or under the age of digital consent where they live, should only use GameBattles with a
         parent or guardian&apos;s permission. Credit purchases are for players 18 and over. If you believe a child has
-        given us information without permission, <Link href="/contact">contact us</Link> and we will remove it.
+        given us information without permission, <Link href="/support">contact us</Link> and we will remove it.
       </p>
 
       <h2>Security</h2>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
       <h2>Your Choices</h2>
       <p>
         You can view and edit most of your information from your profile. To ask for a copy of your data, a correction
-        or deletion, visit the <Link href="/contact">Contact page</Link> or the <Link href="/support">Support Center</Link>.
+        or deletion, visit <Link href="/support">Support / Contact</Link>.
       </p>
 
       <h2>Changes</h2>

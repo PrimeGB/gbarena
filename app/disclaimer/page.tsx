@@ -24,7 +24,7 @@ export default function DisclaimerPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Questions? Visit the <Link href="/contact">Contact page</Link> or the <Link href="/support">Support Center</Link>.
+        Questions? Visit <Link href="/support">Support / Contact</Link>.
       </p>
       <div className="info-links">
         <Link href="/terms">Terms of Service</Link>

@@ -62,7 +62,7 @@ export default function ReportPage() {
     <main style={styles.page}>
       <section style={styles.shell}>
         <nav style={styles.nav}>
-          <Link href="/support">Support Center</Link>
+          <Link href="/support">Support / Contact</Link>
           <Link href="/home">GameBattles Home</Link>
         </nav>
         <header style={styles.header}>

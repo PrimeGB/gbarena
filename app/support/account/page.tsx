@@ -5,7 +5,7 @@ export const metadata = { title: "Account Help - GameBattles" };
 
 export default function AccountSupportPage() {
   return (
-    <InfoPage title="Account Help" eyebrow="Support" backHref="/support" backLabel="Back to Support Center">
+    <InfoPage title="Account Help" eyebrow="Support" backHref="/support" backLabel="Back to Support / Contact">
       <h2>Login and password</h2>
       <p>
         Use the login page to sign in. If you forget your password, choose
@@ -22,7 +22,7 @@ export default function AccountSupportPage() {
       <p>Update your avatar, bio, and favorites from Edit Profile.</p>
       <h2>Still stuck?</h2>
       <p>
-        Send us a message from the <Link href="/contact">Contact page</Link> with your username and a
+        Visit <Link href="/support">Support / Contact</Link> with your username and a
         description of the problem.
       </p>
     </InfoPage>

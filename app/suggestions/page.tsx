@@ -215,7 +215,7 @@ export default function SuggestionsPage() {
                 <h3>What happens next?</h3>
                 <p>Feedback is sent to staff for review and to the founder&apos;s inbox. We also send an email notification to the founder.</p>
                 <h3>Need match help?</h3>
-                <p>For disputes, score issues, or urgent match help, visit <Link href="/support">Support</Link> instead.</p>
+                <p>For disputes, score issues, or urgent match help, visit <Link href="/support">Support / Contact</Link>.</p>
                 <Link href="/latest-news/accepted-suggestions">See accepted suggestions →</Link>
               </div>
             </aside>

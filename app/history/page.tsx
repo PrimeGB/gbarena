@@ -235,7 +235,7 @@ export default function HistoryPage() {
           <nav className="top-strip" aria-label="Information">
             <Link href="/about">About Us</Link>
             <Link href="/rules">Rules</Link>
-            <Link href="/support">Support</Link>
+            <Link href="/support">Support / Contact</Link>
           </nav>
 
           <section className="page-title">

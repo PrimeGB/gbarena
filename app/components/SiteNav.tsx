@@ -17,14 +17,14 @@ export default function SiteNav({
     { label: "Tournaments", href: tournamentHref },
     { label: "Create a Team", href: "/teams/create" },
     { label: "Find Players", href: "/players" },
-    { label: "Support", href: "/support" },
+    { label: "Support / Contact", href: "/support" },
   ] : [
     ...(showLadders ? [{ label: "Ladders", href: ladderHref }] : []),
     { label: "Tournaments", href: tournamentHref },
     { label: "Create a Team", href: "/teams/create" },
     { label: "Forums", href: "/forums" },
     { label: "Recruit", href: "/recruit" },
-    { label: "Support", href: "/support" },
+    { label: "Support / Contact", href: "/support" },
   ];
 
   return (

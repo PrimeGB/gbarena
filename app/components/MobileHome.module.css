@@ -36,5 +36,6 @@
   .footer nav { display: flex; flex-wrap: wrap; gap: 16px; }
   .footer a { color: #b9ccdb; font-size: 12px; text-decoration: none; }
   .footerSectionTitle { width: 100%; margin-top: 4px; color: #e8bc5c; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+  .footer a.footerLegalLink { color: #83caff; font-weight: 700; }
   .footer p { margin-top: 24px; font-size: 11px; }
 }

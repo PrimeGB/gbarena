@@ -193,6 +193,17 @@ export default function Home() {
           box-shadow:inset 0 0 0 1px rgba(85,185,255,.45);
         }
 
+        .main-nav-cover{
+          position:absolute;
+          left:.85%;
+          top:24.25%;
+          width:78.7%;
+          height:5.45%;
+          z-index:85;
+          background:linear-gradient(to bottom,#153957,#092039);
+          border-top:1px solid rgba(74,145,205,.55);
+        }
+
         .nav-zone{
           top:24.25%;
           height:5.45%;
@@ -200,12 +211,12 @@ export default function Home() {
           border-right:1px solid rgba(74,145,205,.55);
         }
 
-        .playstation{ left:.85%; width:11.94%; }
-        .xbox{ left:12.79%; width:9.67%; }
-        .nintendo{ left:22.46%; width:11.37%; }
-        .pc{ left:33.83%; width:7.39%; }
-        .mobile{ left:41.22%; width:9.67%; }
-        .tournaments{ left:50.89%; width:11.94%; }
+        .playstation{ left:.85%; width:13.117%; }
+        .xbox{ left:13.967%; width:13.117%; }
+        .nintendo{ left:27.083%; width:13.117%; }
+        .pc{ left:40.2%; width:13.117%; }
+        .mobile{ left:53.317%; width:13.117%; }
+        .tournaments{ left:66.433%; width:13.117%; }
         .nav-label{
           position:absolute;
           inset:0;
@@ -620,6 +631,7 @@ export default function Home() {
 
         .footer-cover .legal{display:inline-flex;gap:10px;margin-left:14px;font-size:.8em;font-weight:400}
         .footer-cover .legal a{color:#9fd4ff;text-decoration:none}
+        .footer-cover .legal .rules-footer-link{color:#83caff;font-weight:700}
         .footer-cover .legal a:hover{color:#fff;text-decoration:underline}
 
         .mobile-home{display:none;}
@@ -654,6 +666,7 @@ export default function Home() {
         .controller-overlay,
         .hotspot,
         .drop-wrap,
+        .main-nav-cover,
         .search-box,
         .lower-layout,
         .footer-cover{display:none;}
@@ -875,6 +888,8 @@ export default function Home() {
           <Link className="hotspot general" href="/general-info"></Link>
           <Link className="hotspot getting" href="/getting-started"></Link>
 
+          <div className="main-nav-cover" aria-hidden="true" />
+
           <div className="drop-wrap nav-zone playstation">
             <Link className="drop-click" href="/ladders/playstation"></Link>
             <span className="nav-label">PLAYSTATION</span>
@@ -964,12 +979,10 @@ export default function Home() {
 
               <Link className="side-link" href="/about">About Us <span className="arrow">›</span></Link>
               <Link className="side-link" href="/history">History <span className="arrow">›</span></Link>
-              <Link className="side-link" href="/rules">Rules <span className="arrow">›</span></Link>
 
               <div className="section-title">Contact Us</div>
 
-              <Link className="side-link" href="/contact">Contact Page <span className="arrow">›</span></Link>
-              <Link className="side-link" href="/support">Support Center <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/support">Support / Contact <span className="arrow">›</span></Link>
               <Link className="side-link" href="/staff">Staff <span className="arrow">›</span></Link>
 
               <div className="section-title">Social Links</div>
@@ -997,7 +1010,7 @@ export default function Home() {
           <MobileHome />
           <footer className="footer-cover">
             <span>© 2026 Competitive Gaming Network</span>
-            <span className="legal"><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/disclaimer">Disclaimer</Link></span>
+            <span className="legal"><Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/disclaimer">Disclaimer</Link><Link className="rules-footer-link" href="/rules">Rules</Link></span>
           </footer>
         </div>
       </main>
