@@ -54,6 +54,7 @@ iframe {
 
   body {
     font-size: 15px;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
 
   .wrapper,

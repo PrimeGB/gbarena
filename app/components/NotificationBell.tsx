@@ -73,6 +73,9 @@ export default function NotificationBell() {
           text-decoration: none;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
         }
+        @media (max-width: 768px) {
+          .notif-bell { bottom: calc(76px + env(safe-area-inset-bottom)); }
+        }
       `}</style>
     </>
   );

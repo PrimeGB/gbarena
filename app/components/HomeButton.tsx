@@ -35,6 +35,9 @@ export default function HomeButton() {
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(242, 193, 78, 0.25);
           transition: transform 0.15s, box-shadow 0.15s;
         }
+        @media (max-width: 768px) {
+          .floating-home { display: none; }
+        }
         .floating-home span { font-size: 15px; }
         .floating-home:hover {
           transform: translateY(-2px);

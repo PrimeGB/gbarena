@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import ChallengeCheckIn from "./components/ChallengeCheckIn";
 import DevelopmentNotice from "./components/DevelopmentNotice";
 import HomeButton from "./components/HomeButton";
+import MobileBottomNav from "./components/MobileBottomNav";
 import NotificationBell from "./components/NotificationBell";
 import RecoveryRedirect from "./components/RecoveryRedirect";
 import TopHomeBar from "./components/TopHomeBar";
@@ -56,6 +57,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <TopHomeBar />
         {children}
+        <MobileBottomNav />
         <RecoveryRedirect />
         <HomeButton />
         <NotificationBell />

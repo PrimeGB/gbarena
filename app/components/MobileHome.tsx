@@ -3,11 +3,11 @@ import Image from "next/image";
 import styles from "./MobileHome.module.css";
 
 const platforms = [
-  ["PlayStation", "/ladders/playstation"],
-  ["Xbox", "/ladders/xbox"],
-  ["Nintendo", "/ladders/nintendo"],
-  ["PC", "/ladders/pc"],
-  ["Mobile", "/ladders/mobile"],
+  { name: "PlayStation", shortName: "PS", href: "/ladders/playstation" },
+  { name: "Xbox", shortName: "XB", href: "/ladders/xbox" },
+  { name: "Nintendo", shortName: "NW", href: "/ladders/nintendo" },
+  { name: "PC", shortName: "PC", href: "/ladders/pc" },
+  { name: "Mobile", shortName: "MO", href: "/ladders/mobile" },
 ];
 
 export default function MobileHome() {
@@ -37,7 +37,13 @@ export default function MobileHome() {
           <Link href="/ladders">All ladders <span aria-hidden="true">→</span></Link>
         </div>
         <div className={styles.platforms}>
-          {platforms.map(([name, href]) => <Link key={href} href={href}>{name}<span aria-hidden="true">↗</span></Link>)}
+          {platforms.map(({ name, shortName, href }) => (
+            <Link className={styles.platform} key={href} href={href}>
+              <span className={styles.platformIcon} aria-hidden="true">{shortName}</span>
+              <span className={styles.platformName}>{name}<small>Browse ladders</small></span>
+              <span className={styles.platformArrow} aria-hidden="true">→</span>
+            </Link>
+          ))}
         </div>
       </section>
 
