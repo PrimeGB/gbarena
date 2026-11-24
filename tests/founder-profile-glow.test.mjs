@@ -18,3 +18,11 @@ test("RGB is enabled only for Prime's Founder profile when selected", () => {
   assert.equal(glow.hasFounderRgbGlow("owner", "Other", "RGB"), false);
   assert.equal(glow.hasFounderRgbGlow(null, null, "RGB"), false);
 });
+
+test("Founder RGB keeps the animated full border and glow treatment", () => {
+  const css = readFileSync("app/profile/founder-glow.css", "utf8");
+  assert.match(css, /\.profile-page\.founder-rgb \.wrapper::before\s*\{/);
+  assert.match(css, /animation:\s*founder-rgb-flow 8s linear infinite/);
+  assert.match(css, /@keyframes founder-glow/);
+  assert.doesNotMatch(css, /founder-rgb-fade/);
+});
