@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { bf6PortalSetup, bf6SolosMaps, bf6SolosSources, getGameRules, isBattlefieldSolos } from "../../../../../../../lib/matchRules";
-import { ladderTitleForGame } from "../../../../../../../lib/ladderCatalog";
+import { fullLadderTitle, ladderGameLabel, ladderPlatformLabel, ladderTitleForGame } from "../../../../../../../lib/ladderCatalog";
 import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
+import LadderDetailHeader from "../../../../../../components/LadderDetailHeader";
 
 type LadderRulesPageProps = {
   params: Promise<{
@@ -37,8 +38,8 @@ function ladderName(category: string, game: string, ladder: string) {
 
 export default async function LadderRulesPage({ params }: LadderRulesPageProps) {
   const { platform, category, game, ladder } = await params;
-  const gameName = prettyText(game);
-  const categoryName = prettyText(category);
+  const gameName = ladderGameLabel(category, game) || prettyText(game);
+  const platformName = ladderPlatformLabel(platform) || prettyText(platform);
   const bf6Rules = isBattlefieldSolos(category, game, ladder) ? getGameRules(category, game, ladder) : null;
   const currentLadderName = ladderName(category, game, ladder);
   const gameRuleSet = bf6Rules ? null : getGameRules(category, game, ladder);
@@ -53,10 +54,16 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           Back to {gameName} rankings
         </Link>
 
-        <header>
-          <p>{prettyText(platform)} {categoryName} Ladder Rules</p>
-          <h1>{gameName} {currentLadderName} Ladder</h1>
-        </header>
+        <div className="detail-banner">
+          <LadderDetailHeader
+            category={category}
+            game={game}
+            gameName={gameName}
+            platformName={platformName}
+            title={`${fullLadderTitle(gameName, currentLadderName)} Ladder`}
+            section="Rules"
+          />
+        </div>
 
         {bf6Rules ? (
           <section className="rule-section">
@@ -189,7 +196,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           <section className="rule-section">
             <h2>{currentLadderName} Ladder Match Rules</h2>
             <ul>
-              <li>This match is being played on the {gameName} {currentLadderName} Ladder.</li>
+              <li>This match is being played on the {fullLadderTitle(gameName, currentLadderName)} Ladder.</li>
               <li>Use the ladder&apos;s selected ruleset and the player count listed for the ladder.</li>
               <li>Maps are generated after the match is accepted based on the game, ladder, mode, ruleset, and Best Of.</li>
               <li>Report match results after the match.</li>
@@ -235,9 +242,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
         .rules-panel{max-width:900px;margin:0 auto;padding:24px;background:#07111b;border:1px solid #315f88;}
         .back-link,.community-link a{color:#7fc7ff;text-decoration:none;}
         .back-link:hover,.community-link a:hover{color:#d7ad4a;}
-        header{margin:24px -24px 0;padding:20px 24px;background:linear-gradient(to bottom,#173956,#07111b);border-top:1px solid #244b70;border-bottom:1px solid #244b70;}
-        header p{margin:0 0 8px;color:#f2c14e;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
-        h1{margin:0;color:#fff;font-size:26px;text-transform:uppercase;}
+        .detail-banner{margin-top:22px;}
         .rule-section{margin-top:24px;padding:18px;background:#050b12;border:1px solid #244b70;}
         h2{margin:0 0 12px;color:#d7ad4a;font-size:15px;text-transform:uppercase;}
         .rule-section h3{margin:14px 0 6px;color:#fff;font-size:13px;text-transform:uppercase;}

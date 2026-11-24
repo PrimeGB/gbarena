@@ -1,0 +1,54 @@
+.banner {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 180px;
+  overflow: hidden;
+  isolation: isolate;
+  border-bottom: 3px solid var(--game-accent);
+  background: #102030;
+}
+
+.image {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: linear-gradient(90deg, #06101af7 0%, #06101ad9 50%, #06101a54 100%),
+    linear-gradient(0deg, #06101aaf, transparent 80%);
+}
+
+.content { padding: 26px; }
+
+.label {
+  margin: 0 0 9px;
+  color: var(--game-accent);
+  font: 900 10px Tahoma, Verdana, Arial, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: #fff;
+  font: 900 clamp(24px, 3vw, 36px)/1.1 Tahoma, Verdana, Arial, sans-serif;
+  letter-spacing: -.03em;
+  text-shadow: 0 2px 10px #000b;
+}
+
+.subtitle {
+  margin: 9px 0 0;
+  color: #d7e3ed;
+  font: 700 11px Tahoma, Verdana, Arial, sans-serif;
+}
+
+@media (max-width: 600px) {
+  .banner { min-height: 150px; }
+  .content { padding: 22px 18px; }
+  .shade { background: linear-gradient(90deg, #06101af7, #06101a91); }
+}

@@ -6,7 +6,9 @@ import { useParams } from "next/navigation";
 import { supabase } from "../../../../../../../lib/supabase";
 import { ladderPlatforms, systemRankings } from "../../../../../../../lib/ladderStandings";
 import RankingSystemFilter from "../../../../../../components/RankingSystemFilter";
+import LadderDetailHeader from "../../../../../../components/LadderDetailHeader";
 import {
+  fullLadderTitle,
   ladderCategoryLabel,
   ladderGameLabel,
   ladderPlatformLabel,
@@ -194,9 +196,15 @@ export default function LadderRankingsPage() {
         <Link className="back-link" href={`/ladders/${platform}/${category}/${game}`}>
           Back to {gameName} ladders
         </Link>
-        <header>
-          <p>{categoryName} Ladder Rankings</p>
-          <h1>{gameName} {ladderName}</h1>
+        <LadderDetailHeader
+          category={category}
+          game={game}
+          gameName={gameName}
+          platformName={platformName}
+          title={fullLadderTitle(gameName, ladderName)}
+          section="Rankings"
+        />
+        <div className="ranking-controls">
           <RankingSystemFilter systems={systems} value={systemFilter} onChange={setSystemFilter} />
           <Link
             className="create-link"
@@ -204,13 +212,13 @@ export default function LadderRankingsPage() {
           >
             View/Create Team
           </Link>
-        </header>
+        </div>
         {loading ? (
           <p className="state">Loading standings…</p>
         ) : error ? (
           <p className="state error">{error}</p>
         ) : rankedTeams.every((team) => systemFilter !== "all" && team.platform !== systemFilter) ? (
-          <p className="state">No ranked teams yet.</p>
+          <p className="state">No teams in the standings yet.</p>
         ) : (
           <div className="table-wrap">
             <table>
@@ -270,7 +278,7 @@ export default function LadderRankingsPage() {
           background: #071522;
           box-shadow: 0 0 34px #000c;
         }
-        .back-link {
+        .panel :global(.back-link) {
           display: inline-block;
           margin: 18px;
           color: #9bd8ff;
@@ -278,8 +286,8 @@ export default function LadderRankingsPage() {
           font-weight: 700;
           text-decoration: none;
         }
-        .back-link:hover,
-        td a:hover {
+        .panel :global(.back-link:hover),
+        td :global(a:hover) {
           color: #f2c14e;
         }
         .roster-identities {
@@ -291,17 +299,9 @@ export default function LadderRankingsPage() {
           font-size: 10px;
           line-height: 15px;
         }
-        header {
-          padding: 8px 20px 18px;
-          border-bottom: 1px solid #2d6f9f;
-          background: linear-gradient(#153a57, #071522);
-        }
-        header p {
-          margin: 0 0 6px;
-          color: #b8dfff;
-          font-size: 11px;
-          font-weight: 700;
-          text-transform: uppercase;
+        .ranking-controls {
+          padding: 18px 20px;
+          border-bottom: 1px solid #24445b;
         }
         .system-label {
           display: inline-flex;
@@ -316,13 +316,7 @@ export default function LadderRankingsPage() {
           letter-spacing: .01em;
           text-transform: none;
         }
-        h1 {
-          margin: 0 0 14px;
-          color: #f2c14e;
-          font-size: 26px;
-          text-transform: uppercase;
-        }
-        .create-link {
+        .ranking-controls :global(.create-link) {
           color: #9bd8ff;
           font-size: 12px;
           font-weight: 700;
@@ -356,7 +350,7 @@ export default function LadderRankingsPage() {
           background: #7db6d8;
           text-transform: uppercase;
         }
-        td a {
+        td :global(a) {
           color: #9bd8ff;
           font-weight: 700;
           text-decoration: none;

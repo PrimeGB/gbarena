@@ -76,7 +76,7 @@ const gameImages: Record<string, Record<string, string>> = {
     "zero-build": "/games/fn-4.jpg",
     ranked: "/games/fn-1.jpg",
     reload: "/games/fn-2.jpg",
-    "box-fights": "/games/fn-5.jpg",
+    "box-fights": "/games/fn-2.jpg",
   },
   "rocket-league": {
     soccar: categoryImages["rocket-league"],
@@ -126,7 +126,7 @@ const gameImages: Record<string, Record<string, string>> = {
   },
   "tactical-shooters": {
     "counter-strike-2": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/header.jpg",
-    valorant: "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/cbf4460132cdfeb2a97fad5f9dd25ba0bc058f76-128x128.png?accountingTag=VAL",
+    valorant: "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/083baed63d306ee9ba41df4971ac0f6bb0222032-1920x1080.jpg?accountingTag=VAL",
   },
   "hero-shooters": {
     "marvel-rivals": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2767030/header.jpg",
@@ -266,4 +266,8 @@ export function isValidLadder(category: string, game: string, ladder: string) {
 
 export function ladderTitleForGame(category: string, game: string, ladder: string) {
   return laddersForGame(category, game).find((item) => item.slug === ladder)?.title || null;
+}
+
+export function fullLadderTitle(game: string, ladder: string) {
+  return ladder.toLowerCase().startsWith(game.toLowerCase()) ? ladder : `${game} ${ladder}`;
 }
