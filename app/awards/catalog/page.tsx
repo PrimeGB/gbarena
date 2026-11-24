@@ -49,7 +49,7 @@ export default function AwardsPage() {
       <style>{AWARD_CSS}</style>
       <section style={styles.shell}>
         <header style={styles.header}>
-          <Link href="/awards" style={{ color: "#e5c573", fontSize: 12 }}>← Awards Hall</Link>
+          <Link href="/awards" style={{ color: "#e5c573", fontSize: 12 }}>← Awards &amp; Achievements</Link>
           <p style={styles.eyebrow}>GAMEBATTLES AWARDS</p>
           <h1 style={styles.title}>Awards &amp; Achievements</h1>
           <p style={styles.subheading}>
