@@ -7,7 +7,9 @@ import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "rea
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import { isFounderProfile } from "../../../lib/profileGlow";
 import AwardArt, { AWARD_CSS } from "../../awards/AwardArt";
+import "../founder-glow.css";
 import {
   GamingAccount,
   gamingCategoriesForPlatform,
@@ -88,6 +90,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentStatus, setCurrentStatus] = useState("Dynamic");
   const [profileGlow, setProfileGlow] = useState("On");
+  const [isFounder, setIsFounder] = useState(false);
   const [location, setLocation] = useState("");
   const [initialLocation, setInitialLocation] = useState<string | null>(null);
   const [locationLocked, setLocationLocked] = useState(false);
@@ -185,7 +188,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select(
-            `username,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
+            `username,role,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
           )
           .eq("id", currentUser.id)
           .maybeSingle();
@@ -206,6 +209,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
         if (profileData) {
           setProfileGlow(profileData.profile_glow || "On");
+          setIsFounder(isFounderProfile(profileData.role, profileData.username));
           setAvatarPreview(profileData.avatar_url || null);
           setLogoPreview(profileData.logo_url || null);
           setInitialLocation(profileData.location || "");
@@ -1393,7 +1397,11 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
                       <select value={profileGlow} onChange={(event) => { setProfileGlow(event.target.value); markChanged(); }}>
                         <option>On</option>
                         <option>Off</option>
+                        {isFounder && <option value="RGB">Founder RGB</option>}
                       </select>
+                      {isFounder && profileGlow === "RGB" && <div className="founder-rgb-preview">
+                        <div><strong>Founder RGB</strong><span>Flowing color surrounds your profile.</span></div>
+                      </div>}
                     </div>
 
                     <div className="form-row">

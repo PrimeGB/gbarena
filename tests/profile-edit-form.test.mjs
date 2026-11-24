@@ -15,10 +15,14 @@ function compile(path, extra = "") {
 
 const accountExports = {};
 new Function("require", "exports", compile("lib/gamingAccounts.ts"))(require, accountExports);
+const glowExports = {};
+new Function("require", "exports", compile("lib/profileGlow.ts"))(require, glowExports);
 const source = compile("app/profile/edit/page.tsx", "\nexport { EditProfileForm };\n");
 
-function harness(params, savedSteamGame = null, saveError = null) {
+function harness(params, savedSteamGame = null, saveError = null, profile = null) {
   const states = [];
+  const effects = [];
+  const savedProfiles = [];
   let index = 0;
   const react = {
     ...React,
@@ -34,7 +38,27 @@ function harness(params, savedSteamGame = null, saveError = null) {
       if (!(position in states)) states[position] = { current: initial };
       return states[position];
     },
-    useEffect() {},
+    useEffect(effect) {
+      if (profile && effect.toString().includes("loadProfileAndRelations") && effects.length === 0) effects.push(effect);
+    },
+  };
+  const supabase = {
+    from() {
+      let columns = "";
+      const builder = {
+        select(value) { columns = value; return builder; },
+        eq() { return builder; },
+        async maybeSingle() {
+          if (columns.includes("profile_glow")) return { data: profile, error: null };
+          return { data: { friends_public: true }, error: null };
+        },
+        async upsert(value) { savedProfiles.push(value); return { error: saveError }; },
+      };
+      return builder;
+    },
+    async rpc(name) {
+      return { data: name === "gb_profile_friends" ? { friends: [] } : [], error: null };
+    },
   };
   const exports = {};
   const mocks = {
@@ -43,15 +67,20 @@ function harness(params, savedSteamGame = null, saveError = null) {
     "next/image": { __esModule: true, default: () => null },
     "next/navigation": { useSearchParams: () => new URLSearchParams(params) },
     "../../../lib/useUser": { useUser: () => ({ user: { id: "player" }, loading: false }) },
-    "../../../lib/supabase": { supabase: { from: () => ({ upsert: async () => ({ error: saveError }) }) } },
+    "../../../lib/supabase": { supabase },
     "../../../lib/gamingAccounts": accountExports,
+    "../../../lib/profileGlow": glowExports,
+    "../founder-glow.css": {},
     "../../awards/AwardArt": { __esModule: true, default: () => null, AWARD_CSS: "" },
   };
   new Function("require", "exports", source)((name) => mocks[name] || require(name), exports);
-  return () => {
+  const render = () => {
     index = 0;
     return exports.EditProfileForm({ savedSteamGame });
   };
+  render.load = () => effects[0]();
+  render.savedProfiles = savedProfiles;
+  return render;
 }
 
 function find(element, predicate) {
@@ -89,4 +118,24 @@ test("profile save failures are reported rather than presented as saved", async 
   } finally {
     console.error = originalError;
   }
+});
+
+test("only Prime can choose and save the Founder RGB glow", async () => {
+  const founder = harness("", null, null, { username: "Prime", role: "owner", profile_glow: "On", location: "set" });
+  founder();
+  founder.load();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const select = find(founder(), (element) => element.type === "select" && find(element, (child) => child.type === "option" && child.props.value === "RGB"));
+  assert.ok(select);
+  select.props.onChange({ target: { value: "RGB" } });
+  assert.ok(find(founder(), (element) => element.props?.className === "founder-rgb-preview"));
+  find(founder(), (element) => element.type === "button" && element.props.children === "Save Changes").props.onClick();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(founder.savedProfiles[0].profile_glow, "RGB");
+
+  const member = harness("", null, null, { username: "Other", role: "member", profile_glow: "On" });
+  member();
+  member.load();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(find(member(), (element) => element.type === "option" && element.props.value === "RGB"), null);
 });

@@ -19,8 +19,10 @@ import { supabase } from "../../lib/supabase";
 import { ladderPlatformLabel } from "../../lib/ladderCatalog";
 import { NEW_PROMOS, NEW_PROMO_KINDS } from "../../lib/heroSlides";
 import { isCreatorTheme, type CreatorStyle } from "../../lib/creatorProfileStyles";
+import { hasFounderRgbGlow } from "../../lib/profileGlow";
 import CreatorFrameArt from "./creator-style/CreatorFrameArt";
 import "./creator-styles.css";
+import "./founder-glow.css";
 import {
   GamingAccount,
 } from "../../lib/gamingAccounts";
@@ -1965,7 +1967,7 @@ function ProfilePageContent() {
         }
       `}</style>
 
-      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}${isAmbassador ? " amb-gold-frame" : ""}${currentCreatorStyle && currentCreatorStyle.theme !== "classic" ? ` creator-style-${currentCreatorStyle.theme}${currentCreatorStyle.tier === "ambassador" ? " creator-full" : ""}` : ""}`}>
+      <div className={`profile-page ${favoriteSystemClass(favoriteSystem)}${isAmbassador ? " amb-gold-frame" : ""}${currentCreatorStyle && currentCreatorStyle.theme !== "classic" ? ` creator-style-${currentCreatorStyle.theme}${currentCreatorStyle.tier === "ambassador" ? " creator-full" : ""}` : ""}${hasFounderRgbGlow(profile?.role, profile?.username, profile?.profile_glow) ? " founder-rgb" : ""}`}>
         <div className="wrapper">
           <header className="header">
             <div className="logo-box">
