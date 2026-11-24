@@ -65,7 +65,7 @@ export default function MobileHome() {
 
       <footer className={styles.footer}>
         <nav aria-label="More GameBattles links">
-          <Link href="/members">Members</Link><Link href="/awards">Awards</Link><Link href="/champions">Hall of Fame</Link><Link href="/general-info">General info</Link><Link href="/about">About</Link><Link href="/history">History</Link><Link href="/suggestions">Suggestions</Link><a href="https://discord.gg/nKZdS2BDS6">Discord</a>
+          <Link href="/members">Members</Link><Link href="/awards">Awards &amp; Achievements</Link><Link href="/champions">Hall of Fame</Link><Link href="/general-info">General info</Link><Link href="/about">About</Link><Link href="/history">History</Link><Link href="/suggestions">Suggestions</Link><a href="https://discord.gg/nKZdS2BDS6">Discord</a>
           <span className={styles.footerSectionTitle}>Contact Us</span>
           <Link href="/support">Support / Contact</Link><Link href="/staff">Staff</Link>
           <Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/disclaimer">Disclaimer</Link><Link className={styles.footerLegalLink} href="/rules">Rules</Link>

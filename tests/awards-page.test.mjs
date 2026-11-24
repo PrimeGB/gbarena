@@ -30,3 +30,11 @@ test("the awards page shows the original catalog with season and challenge links
   assert.match(markup, /href="\/challenges"/);
   assert.doesNotMatch(markup, /awards-hall/);
 });
+
+test("home and support links use the same name as the awards page", () => {
+  for (const path of ["app/page.tsx", "app/home/page.tsx", "app/components/MobileHome.tsx", "app/support/page.tsx"]) {
+    const source = readFileSync(path, "utf8");
+    assert.match(source, /href="\/awards"[^>]*>\s*Awards &amp; Achievements/, path);
+    assert.doesNotMatch(source, /Awards &amp; Trophies/, path);
+  }
+});

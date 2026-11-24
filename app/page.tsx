@@ -909,9 +909,9 @@ export default function Home() {
               <Link className="side-link side-link-amb" href="/ambassadors">GB Ambassadors / Affiliates <span className="arrow">›</span></Link>
               <Link className="side-link" href="/suggestions">Suggestions Box <span className="arrow">›</span></Link>
 
-              <div className="section-title">Awards &amp; Achievements</div>
+              <div className="section-title">Recognition</div>
 
-              <Link className="side-link" href="/awards">Awards &amp; Trophies <span className="arrow">›</span></Link>
+              <Link className="side-link" href="/awards">Awards &amp; Achievements <span className="arrow">›</span></Link>
               <Link className="side-link" href="/champions">Hall of Fame <span className="arrow">›</span></Link>
               <Link className="side-link" href="/challenges">Player Challenges <span className="arrow">›</span></Link>
 

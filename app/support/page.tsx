@@ -328,14 +328,14 @@ export default function SupportPage() {
             </section>
 
             <section className="panel">
-              <div className="panel-header">Awards &amp; Trophies</div>
+              <div className="panel-header">Awards &amp; Achievements</div>
               <div className="panel-body">
                 <p>
-                  Browse GameBattles awards and submit a request for staff review.
+                  Browse awards, trophies and achievements you can earn on GameBattles.
                 </p>
 
                 <Link className="button blue" href="/awards">
-                  Awards Center
+                  Awards &amp; Achievements
                 </Link>
               </div>
             </section>
