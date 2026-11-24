@@ -1,32 +1,41 @@
 .profile-page.founder-rgb .wrapper {
   position: relative;
   isolation: isolate;
-  animation: founder-glow 8s ease-in-out infinite !important;
+  box-shadow: none !important;
+  animation: none !important;
 }
 
-.profile-page.founder-rgb .wrapper::before {
+.profile-page.founder-rgb .wrapper::before,
+.profile-page.founder-rgb .wrapper::after,
+.founder-rgb-preview::before,
+.founder-rgb-preview::after {
   content: "";
   position: absolute;
-  inset: -4px;
-  z-index: 20;
-  padding: 4px;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff);
-  background-size: 100% 200%;
-  animation: founder-rgb-flow 8s linear infinite;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  filter: drop-shadow(0 0 7px #8ceeff);
+  color: #258dff;
+  background: linear-gradient(to bottom, transparent, currentColor 12%, currentColor 82%, transparent);
+  filter: blur(8px) drop-shadow(0 0 16px currentColor);
+  animation: founder-rgb-fade 36s ease-in-out infinite;
+}
+
+.profile-page.founder-rgb .wrapper::before,
+.founder-rgb-preview::before {
+  left: -12px;
+}
+
+.profile-page.founder-rgb .wrapper::after,
+.founder-rgb-preview::after {
+  right: -12px;
 }
 
 .founder-rgb-preview {
-  margin: 12px 4px 4px;
-  padding: 4px;
-  background: linear-gradient(180deg, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff);
-  background-size: 100% 200%;
-  box-shadow: 0 0 18px #65aaff80, 0 0 30px #c55bff50;
-  animation: founder-rgb-flow 8s linear infinite;
+  position: relative;
+  isolation: isolate;
+  margin: 12px 12px 4px;
 }
 
 .founder-rgb-preview div {
@@ -46,24 +55,18 @@
   font-size: 11px;
 }
 
-@keyframes founder-rgb-flow {
-  from { background-position: 0 0; }
-  to { background-position: 0 100%; }
-}
-
-@keyframes founder-glow {
-  0%, 100% { box-shadow: 0 0 28px 8px #176dcd80, 0 0 60px 12px #9a37e850; }
-  33% { box-shadow: 0 0 28px 8px #b33eff80, 0 0 60px 12px #ff5ba550; }
-  66% { box-shadow: 0 0 28px 8px #36dfd380, 0 0 60px 12px #368aff50; }
+@keyframes founder-rgb-fade {
+  0%, 100% { color: #258dff; }
+  25% { color: #12b9cb; }
+  50% { color: #42aa73; }
+  75% { color: #3764df; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .profile-page.founder-rgb .wrapper,
   .profile-page.founder-rgb .wrapper::before,
-  .founder-rgb-preview {
-    animation: none !important;
-  }
-  .profile-page.founder-rgb .wrapper {
-    box-shadow: 0 0 28px 8px #176dcd80, 0 0 60px 12px #9a37e850 !important;
+  .profile-page.founder-rgb .wrapper::after,
+  .founder-rgb-preview::before,
+  .founder-rgb-preview::after {
+    animation: none;
   }
 }

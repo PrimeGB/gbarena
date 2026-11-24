@@ -780,7 +780,7 @@ function ProfilePageContent() {
           margin-left:14px;
         }
 
-        .wrapper{ width:1040px; margin:0 auto; }
+        .wrapper{ width:min(1040px,calc(100% - 24px)); margin:0 auto; }
 
         .header{
           height:82px;
@@ -1964,6 +1964,7 @@ function ProfilePageContent() {
           .header{height:auto;flex-direction:column;align-items:flex-start;gap:8px;padding:8px 14px}
           .logo-box{width:100%;height:auto;min-height:50px}
           .header-ad{width:min(360px,100%);flex:none;align-self:center}
+          .pf-facts{flex-wrap:wrap;gap:8px 14px;margin-bottom:0}
         }
       `}</style>
 
