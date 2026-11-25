@@ -3,7 +3,7 @@ import Image from "next/image";
 import styles from "./MobileHome.module.css";
 
 const platforms = [
-  { name: "PlayStation", image: "/games/apex-1.jpg", href: "/ladders/playstation" },
+  { name: "PlayStation", image: "/games/r6-3.jpg", href: "/ladders/playstation" },
   { name: "Xbox", image: "/games/r6-1.jpg", href: "/ladders/xbox" },
   { name: "Nintendo", image: "/games/fn-3.jpg", href: "/ladders/nintendo" },
   { name: "PC", image: "/games/r6-2.jpg", href: "/ladders/pc" },
