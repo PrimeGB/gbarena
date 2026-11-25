@@ -3,11 +3,11 @@ import Image from "next/image";
 import styles from "./MobileHome.module.css";
 
 const platforms = [
-  { name: "PlayStation", shortName: "PS", href: "/ladders/playstation" },
-  { name: "Xbox", shortName: "XB", href: "/ladders/xbox" },
-  { name: "Nintendo", shortName: "NW", href: "/ladders/nintendo" },
-  { name: "PC", shortName: "PC", href: "/ladders/pc" },
-  { name: "Mobile", shortName: "MO", href: "/ladders/mobile" },
+  { name: "PlayStation", image: "/games/apex-1.jpg", href: "/ladders/playstation" },
+  { name: "Xbox", image: "/games/r6-1.jpg", href: "/ladders/xbox" },
+  { name: "Nintendo", image: "/games/fn-3.jpg", href: "/ladders/nintendo" },
+  { name: "PC", image: "/games/r6-2.jpg", href: "/ladders/pc" },
+  { name: "Mobile", image: "/games/cod-mobile.jpg", href: "/ladders/mobile" },
 ];
 
 export default function MobileHome() {
@@ -15,10 +15,12 @@ export default function MobileHome() {
     <div className={styles.home}>
       <header className={styles.hero}>
         <div className={styles.brand}>
-          <Image src="/logo-emblem.png" alt="" width={42} height={42} />
-          <span>GAMEBATTLES</span>
+          <Image src="/logo-emblem.png" alt="" width={100} height={100} priority />
+          <div className={styles.wordmark}>
+            <span>GAMEBATTLES</span>
+            <small>WHERE GAMING FINDS ITS EDGE</small>
+          </div>
         </div>
-        <p className={styles.eyebrow}>YOUR NEXT MATCH STARTS HERE</p>
         <h1>Find your game.<br />Make your mark.</h1>
         <p className={styles.intro}>Build your team, compete on the ladder, and join a community that loves the game.</p>
         <form action="/search" className={styles.search} role="search">
@@ -27,7 +29,6 @@ export default function MobileHome() {
         </form>
         <div className={styles.actions}>
           <Link className={styles.primary} href="/getting-started">Get started <span aria-hidden="true">→</span></Link>
-          <Link className={styles.secondary} href="/matches/finder">Find a match</Link>
         </div>
       </header>
 
@@ -37,10 +38,10 @@ export default function MobileHome() {
           <Link href="/ladders">All ladders <span aria-hidden="true">→</span></Link>
         </div>
         <div className={styles.platforms}>
-          {platforms.map(({ name, shortName, href }) => (
+          {platforms.map(({ name, image, href }) => (
             <Link className={styles.platform} key={href} href={href}>
-              <span className={styles.platformIcon} aria-hidden="true">{shortName}</span>
-              <span className={styles.platformName}>{name}<small>Browse ladders</small></span>
+              <Image className={styles.platformImage} src={image} alt="" fill sizes="(max-width: 768px) 50vw, 0px" />
+              <span className={styles.platformName}><small>Explore ladders</small>{name}</span>
               <span className={styles.platformArrow} aria-hidden="true">→</span>
             </Link>
           ))}
