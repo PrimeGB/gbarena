@@ -41,8 +41,10 @@ export default function MobileHome() {
           {platforms.map(({ name, image, href }) => (
             <Link className={styles.platform} key={href} href={href}>
               <Image className={styles.platformImage} src={image} alt="" fill sizes="(max-width: 768px) 50vw, 0px" />
-              <span className={styles.platformName}><small>Explore ladders</small>{name}</span>
-              <span className={styles.platformArrow} aria-hidden="true">→</span>
+              <span className={styles.platformLabel}>
+                <span className={styles.platformName}>{name}<small>Explore ladders</small></span>
+                <span className={styles.platformArrow} aria-hidden="true">→</span>
+              </span>
             </Link>
           ))}
         </div>

@@ -19,7 +19,8 @@
     padding: 14px 20px 26px;
     border-bottom: 1px solid #176095;
     background:
-      radial-gradient(ellipse at 50% 0, rgb(0 110 190 / 35%), transparent 58%),
+      radial-gradient(ellipse at 50% 0, rgb(0 110 190 / 35%), transparent 65%),
+      url("/hex-grid.svg") repeat,
       linear-gradient(145deg, #071b31, #030c17 85%);
   }
 
@@ -181,11 +182,9 @@
     position: relative;
     display: flex;
     min-width: 0;
-    min-height: 112px;
+    min-height: 138px;
     align-items: flex-end;
-    gap: 8px;
     overflow: hidden;
-    padding: 13px;
     border: 1px solid #205b83;
     border-radius: 8px;
     background: #102b40;
@@ -197,7 +196,7 @@
     position: absolute;
     inset: 0;
     content: "";
-    background: linear-gradient(180deg, rgb(3 14 25 / 8%) 0%, rgb(3 14 25 / 60%) 48%, #04111f 100%);
+    background: linear-gradient(180deg, rgb(3 14 25 / 5%) 0%, rgb(3 14 25 / 20%) 55%, rgb(3 14 25 / 55%) 100%);
   }
 
   .platform:active {
@@ -208,21 +207,32 @@
     object-fit: cover;
   }
 
-  .platformName {
+  .platformLabel {
     position: relative;
     z-index: 1;
+    display: flex;
+    width: 100%;
+    min-height: 53px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border-top: 1px solid #2585c2;
+    background: linear-gradient(110deg, rgb(5 42 73 / 97%), rgb(3 19 36 / 96%));
+  }
+
+  .platformName {
     min-width: 0;
     flex: 1;
     color: #fff;
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 900;
     line-height: 1.2;
     text-shadow: 0 2px 6px #000;
   }
 
   .platformName small {
     display: block;
-    margin-bottom: 4px;
+    margin-top: 3px;
     color: #8ed4ff;
     font-size: 9px;
     font-weight: 800;
@@ -231,8 +241,6 @@
   }
 
   .platformArrow {
-    position: relative;
-    z-index: 1;
     flex: none;
     color: #83caff;
     font-size: 16px;
@@ -361,10 +369,6 @@
   .section {
     padding-right: 14px;
     padding-left: 14px;
-  }
-
-  .platform {
-    padding: 10px;
   }
 
   .feature {
