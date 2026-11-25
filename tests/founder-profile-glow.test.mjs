@@ -19,6 +19,20 @@ test("RGB is enabled only for Prime's Founder profile when selected", () => {
   assert.equal(glow.hasFounderRgbGlow(null, null, "RGB"), false);
 });
 
+test("top friend rings follow the friend's profile frame, not the viewed profile", () => {
+  const member = { username: "Player", role: "member", profile_glow: "On", favorite_system: "Xbox" };
+  assert.equal(glow.friendProfileFrameClass(member, null), "favorite-xbox");
+  assert.equal(glow.friendProfileFrameClass({ ...member, favorite_system: "PlayStation" }, null), "favorite-playstation");
+  assert.equal(glow.friendProfileFrameClass({ ...member, favorite_system: "Nintendo Switch" }, null), "favorite-nintendo");
+  assert.equal(glow.friendProfileFrameClass({ ...member, favorite_system: "PC" }, null), "favorite-pc");
+  assert.equal(glow.friendProfileFrameClass({ ...member, favorite_system: null }, null), "favorite-playstation");
+  assert.equal(glow.friendProfileFrameClass(member, { tier: "affiliate", theme: "ice" }), "friend-gold");
+  assert.equal(glow.friendProfileFrameClass(member, { tier: "ambassador", theme: "ice" }), "creator-style-ice");
+  assert.equal(glow.friendProfileFrameClass(member, { tier: "ambassador", theme: "classic" }), "friend-gold");
+  assert.equal(glow.friendProfileFrameClass({ ...member, username: "Prime", role: "owner", profile_glow: "RGB" }, { tier: "ambassador", theme: "ice" }), "friend-rgb");
+  assert.equal(glow.friendProfileFrameClass({ ...member, profile_glow: "RGB" }, null), "favorite-xbox");
+});
+
 test("Founder RGB keeps the animated full border and glow treatment", () => {
   const css = readFileSync("app/profile/founder-glow.css", "utf8");
   assert.match(css, /\.profile-page\.founder-rgb \.wrapper::before\s*\{/);

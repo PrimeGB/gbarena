@@ -19,7 +19,7 @@ import { supabase } from "../../lib/supabase";
 import { ladderPlatformLabel } from "../../lib/ladderCatalog";
 import { NEW_PROMOS, NEW_PROMO_KINDS } from "../../lib/heroSlides";
 import { isCreatorTheme, type CreatorStyle } from "../../lib/creatorProfileStyles";
-import { hasFounderRgbGlow } from "../../lib/profileGlow";
+import { favoriteSystemClass, friendProfileFrameClass, hasFounderRgbGlow } from "../../lib/profileGlow";
 import CreatorFrameArt from "./creator-style/CreatorFrameArt";
 import "./creator-styles.css";
 import "./founder-glow.css";
@@ -91,6 +91,7 @@ type TopFriend = {
   id: string;
   username: string;
   avatar_url: string | null;
+  frameClass: string;
 };
 
 type TeamProfileRow = {
@@ -111,6 +112,13 @@ type FriendProfileRow = {
   id: string;
   username: string | null;
   avatar_url: string | null;
+};
+
+type FriendAppearance = FriendProfileRow & {
+  logo_url: string | null;
+  favorite_system: string | null;
+  profile_glow: string | null;
+  role: string | null;
 };
 
 function ProfilePageContent() {
@@ -257,17 +265,6 @@ function ProfilePageContent() {
       setStatsPublic(data?.stats_public !== false);
     });
   }, [viewedUserId]);
-  function favoriteSystemClass(system: string) {
-    const cleanSystem = system.toLowerCase();
-
-    if (cleanSystem.includes("xbox")) return "favorite-xbox";
-    if (cleanSystem.includes("playstation")) return "favorite-playstation";
-    if (cleanSystem.includes("nintendo")) return "favorite-nintendo";
-    if (cleanSystem.includes("pc")) return "favorite-pc";
-
-    return "favorite-default";
-  }
-
   function getTeamInitials(name: string) {
     return name
       .split(" ")
@@ -422,7 +419,7 @@ function ProfilePageContent() {
       });
 
     let active = true;
-    supabase.rpc("gb_profile_friends", { p_user: viewedUserId }).then(({ data, error: friendsLoadError }) => {
+    supabase.rpc("gb_profile_friends", { p_user: viewedUserId }).then(async ({ data, error: friendsLoadError }) => {
       if (!active) return;
       if (friendsLoadError || !data) {
         setFriendsResult({ userId: viewedUserId, friends: [], private: false, error: friendsLoadError ? `Friends could not be loaded: ${friendsLoadError.message}` : "Friends could not be loaded." });
@@ -433,11 +430,39 @@ function ProfilePageContent() {
       const orderedFriends = Array.isArray(result.top_ids)
         ? result.top_ids.map((id) => allFriends.find((friend) => friend.id === id)).filter((friend): friend is FriendProfileRow => !!friend)
         : allFriends;
-      const friends = orderedFriends.slice(0, 4).map((friend) => ({
-        id: friend.id,
-        username: friend.username || "Unknown Player",
-        avatar_url: friend.avatar_url || null,
-      }));
+      const topFriends = orderedFriends.slice(0, 4);
+      if (topFriends.length === 0) {
+        setFriendsResult({ userId: viewedUserId, friends: [], private: result.private, error: "" });
+        return;
+      }
+      const [appearancesResult, ...creatorResults] = await Promise.all([
+        supabase.from("profiles").select("id, username, avatar_url, logo_url, favorite_system, profile_glow, role").in("id", topFriends.map((friend) => friend.id)),
+        ...topFriends.map((friend) => supabase.rpc("gb_creator_profile_style", { p_user: friend.id })),
+      ]);
+      if (!active) return;
+      const appearanceError = appearancesResult.error || creatorResults.find((entry) => entry.error)?.error;
+      if (appearanceError) {
+        setFriendsResult({ userId: viewedUserId, friends: [], private: result.private, error: `Friend appearances could not be loaded: ${appearanceError.message}` });
+        return;
+      }
+      const appearances: FriendAppearance[] = appearancesResult.data || [];
+      const friends: TopFriend[] = [];
+      for (const [index, friend] of topFriends.entries()) {
+        const appearance = appearances.find((entry) => entry.id === friend.id);
+        if (!appearance) {
+          setFriendsResult({ userId: viewedUserId, friends: [], private: result.private, error: "A friend's profile could not be loaded. Please refresh and try again." });
+          return;
+        }
+        const creatorRow = Array.isArray(creatorResults[index].data) ? creatorResults[index].data[0] : null;
+        const creator = creatorRow && (creatorRow.tier === "affiliate" || creatorRow.tier === "ambassador") && isCreatorTheme(creatorRow.theme)
+          ? { tier: creatorRow.tier, theme: creatorRow.theme } : null;
+        friends.push({
+          id: friend.id,
+          username: appearance.username || "Unknown Player",
+          avatar_url: appearance.logo_url || appearance.avatar_url || null,
+          frameClass: friendProfileFrameClass(appearance, creator),
+        });
+      }
       setFriendsResult({ userId: viewedUserId, friends, private: result.private, error: "" });
     });
     return () => { active = false; };
@@ -1866,17 +1891,39 @@ function ProfilePageContent() {
                     .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.7s; }
                     .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-3.3s; }
         }
-        .pf-friend-row{ display:flex; flex-wrap:wrap; gap:14px; }
-        .pf-friend{ width:72px; text-align:center; font-size:11px; color:#d7eaff; }
+        .pf-friend-row{ display:flex; flex-wrap:wrap; gap:16px; }
+        .pf-friend{ width:122px; text-align:center; font-size:13px; font-weight:bold; color:#eef7ff; }
         .pf-friend-avatar{
-          width:54px; height:54px; margin:0 auto 4px; border-radius:50%;
-          background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%); border:2px solid #3b86c4;
+          width:112px; height:112px; margin:0 auto 6px; padding:3px; border-radius:50%;
+          background:#3b86c4;
           box-shadow:0 2px 8px rgba(0,0,0,.45);
-          display:flex; align-items:center; justify-content:center;
-          font-weight:bold; font-size:16px; color:#f2c14e; overflow:hidden;
         }
-        .pf-friend-avatar img{ width:100%; height:100%; object-fit:cover; }
-        .pf-friend span{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pf-friend-image{
+          width:100%; height:100%; border-radius:50%; overflow:hidden;
+          background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%);
+          display:flex; align-items:center; justify-content:center;
+          font-weight:bold; font-size:23px; color:#f2c14e;
+        }
+        .pf-friend-image.has-image{ background:#000; }
+        .pf-friend-image img{ width:70%; height:70%; object-fit:contain; }
+        .pf-friend > span{ display:block; overflow-wrap:anywhere; }
+        .pf-friend-avatar.favorite-xbox{ background:#2bd96b; box-shadow:0 0 12px rgba(0,255,100,.5); }
+        .pf-friend-avatar.favorite-playstation{ background:#2f91ff; box-shadow:0 0 12px rgba(0,120,255,.5); }
+        .pf-friend-avatar.favorite-nintendo{ background:#ff4b4b; box-shadow:0 0 12px rgba(255,45,45,.5); }
+        .pf-friend-avatar.favorite-pc{ background:#a56bff; box-shadow:0 0 12px rgba(170,95,255,.5); }
+        .pf-friend-avatar.friend-gold{ background:#f2c14e; box-shadow:0 0 12px rgba(242,193,78,.6); }
+        .pf-friend-avatar[class*="creator-style-"]{ background:var(--creator-accent); box-shadow:0 0 12px color-mix(in srgb,var(--creator-glow) 65%,transparent); }
+        .pf-friend-avatar.friend-rgb{
+          background:linear-gradient(180deg,#39f8ff,#4a86ff,#c55bff,#ff65bd,#39f8ff,#4a86ff,#c55bff,#ff65bd,#39f8ff);
+          background-size:100% 200%;
+          animation:founder-rgb-flow 8s linear infinite, friend-rgb-glow 8s ease-in-out infinite;
+        }
+        @keyframes friend-rgb-glow{
+          0%,100%{ box-shadow:0 0 12px #65aaff,0 0 20px #9a37e880; }
+          33%{ box-shadow:0 0 12px #c55bff,0 0 20px #ff5ba580; }
+          66%{ box-shadow:0 0 12px #36dfd3,0 0 20px #368aff80; }
+        }
+        @media (prefers-reduced-motion:reduce){ .pf-friend-avatar.friend-rgb{ animation:none; box-shadow:0 0 12px #65aaff; } }
         .pf-showall{
           display:block; margin-top:10px; text-align:center; padding:6px;
           background:#0b1d2c; border:1px solid #244b70; color:#d7eaff; font-size:12px; font-weight:bold;
@@ -1924,7 +1971,6 @@ function ProfilePageContent() {
         .pf-emblem{ width:180px; height:180px; display:block; margin:0 auto; }
         .pf-tier-name{ font-size:18px; font-weight:bold; text-transform:uppercase; letter-spacing:2px; margin:2px 0 6px; }
         .pf-rank-value{ font-size:28px; }
-        .pf-friend-avatar{ background:radial-gradient(circle at 30% 25%,#245f94,#0a1521 80%); }
         .pf-team-logo{ background:radial-gradient(circle at 30% 25%,#1d4a74,#0a1521 80%); }
         .pf-showall{ background:#0f2a43; margin-top:8px; }
         .pf-two-col{ gap:10px; }
@@ -2408,13 +2454,15 @@ function ProfilePageContent() {
                   <div className="pf-friend-row">
                     {currentFriends?.friends.map((friend) => (
                       <a className="pf-friend" href={`/profile?userId=${friend.id}`} key={friend.id}>
-                        <div className="pf-friend-avatar">
+                        <div className={`pf-friend-avatar ${friend.frameClass}`}>
+                          <div className={`pf-friend-image${friend.avatar_url ? " has-image" : ""}`}>
                           {friend.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt={friend.username} />
+                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt="" />
                           ) : (
                             friend.username.slice(0, 2).toUpperCase()
                           )}
+                          </div>
                         </div>
                         <span>{friend.username}</span>
                       </a>
