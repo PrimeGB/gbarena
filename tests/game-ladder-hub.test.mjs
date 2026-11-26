@@ -118,3 +118,26 @@ test("BF6 team ranking routes recognize each new ladder", () => {
     assert.match(markup, /Loading standings/);
   }
 });
+
+test("Battlefield platform options show each BF6 team ladder with its own links", () => {
+  const TeamOptions = load("app/components/Bf6TeamLadderOptions.tsx", {
+    "../../lib/bf6TeamLadders": bf6,
+  }).default;
+  for (const platform of ["pc", "xbox", "playstation"]) {
+    const Page = load(`app/ladders/${platform}/battlefield/page.tsx`, {
+      "../../../../lib/ladderCatalog": catalog,
+      "../../../components/Bf6TeamLadderOptions": { default: TeamOptions },
+    }).default;
+    const markup = renderToStaticMarkup(React.createElement(Page));
+    assert.match(markup, /Team Ladders/);
+    for (const [slug, ladder] of Object.entries(bf6.bf6TeamLadders)) {
+      assert.ok(markup.includes(ladder.title), `${platform}: ${ladder.title}`);
+      assert.ok(markup.includes(`platform=${platform}&amp;category=battlefield&amp;game=battlefield-6&amp;ladder=${slug}`));
+      assert.ok(markup.includes(`/ladders/${platform}/battlefield/battlefield-6/${slug}/rankings`));
+    }
+    if (platform === "playstation") {
+      assert.match(markup, /PlayStation Battlefield Ladders/);
+      assert.doesNotMatch(markup, /Xbox Battlefield Ladders/);
+    }
+  }
+});

@@ -113,6 +113,7 @@ test("secondary profile and team navigation keeps its links without a duplicate 
 test("the PC Battlefield ladder list has no secondary navigation bar", () => {
   const Page = load("app/ladders/pc/battlefield/page.tsx", {
     "../../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg" },
+    "../../../components/Bf6TeamLadderOptions": { default: () => null },
   });
   const markup = renderToStaticMarkup(React.createElement(Page));
   assert.doesNotMatch(markup, /<nav\b/);

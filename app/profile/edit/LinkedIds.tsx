@@ -58,10 +58,10 @@ export default function LinkedIds({ userId }: { userId: string }) {
     setBusy(false);
   }
 
-  return <section className="box linked-ids">
-    <div className="box-title">More Gamertags &amp; Usernames</div>
+  return <details className="box linked-ids compact-section" open={error ? true : undefined}>
+    <summary className="box-title">More Gamertags &amp; Usernames</summary>
     <div className="box-body">
-      <p className="section-intro">Add any service and username, such as Steam, Battle.net, Epic or EA. These IDs appear on your public profile; your system IDs above are used for matches.</p>
+      <p className="section-intro">Add a public username for any service, like Battle.net or EA.</p>
       <div className="linked-id-form">
         <label>Service<input value={service} maxLength={32} placeholder="e.g. Battle.net" onChange={(event) => setService(event.target.value)} /></label>
         <label>Gamertag or username<input value={accountId} maxLength={80} placeholder="Your ID" onChange={(event) => setAccountId(event.target.value)} /></label>
@@ -78,5 +78,5 @@ export default function LinkedIds({ userId }: { userId: string }) {
         </div>)}
       </div>}
     </div>
-  </section>;
+  </details>;
 }

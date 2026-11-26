@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Bf6TeamLadderOptions from "../../../components/Bf6TeamLadderOptions";
 import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 const battlefieldTitles = [
@@ -50,7 +51,7 @@ export default function XboxBattlefieldPage() {
         }
 
         .wrapper{
-          width:1080px;
+          width:min(1080px,100%);
           margin:0 auto;
           background:#07111b;
           border:1px solid #2f6f9f;
@@ -241,6 +242,19 @@ export default function XboxBattlefieldPage() {
           color:#a9c3db;
           font-size:11px;
         }
+        @media(max-width:820px){
+          .page{padding:12px;}
+          .content{padding:14px;}
+          .games-grid{grid-template-columns:1fr;}
+          .header{padding:12px 16px;gap:12px;}
+          .logo-main{font-size:clamp(23px,6vw,36px);line-height:1;}
+          .logo-sub{font-size:9px;letter-spacing:2px;}
+          .xbox-mark{min-width:60px;height:44px;font-size:17px;}
+          .title-bar h1{font-size:23px;}
+          .ladder-item{grid-template-columns:1fr 1fr;gap:8px 12px;padding:10px;}
+          .ladder-name{grid-column:1 / -1;}
+          .ladder-link{white-space:normal;}
+        }
       `}</style>
 
       <main className="page">
@@ -277,6 +291,7 @@ export default function XboxBattlefieldPage() {
 
                   <div className="card-body">
                     <div className="ladder-list">
+                      {game.slug === "battlefield-6" && <Bf6TeamLadderOptions platform="xbox" />}
                       {game.slug === "battlefield-6" && (
                         <div className="ladder-item" key={`${game.title}-rapid-royal-duos`}>
                           <div className="ladder-name">Rapid Royal</div>

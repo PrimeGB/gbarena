@@ -5,10 +5,10 @@ import StaffPlayerPicker from "../../staff/dashboard/StaffPlayerPicker";
 import { supabase } from "../../../lib/supabase";
 import { getProfileListVisibility, setProfileListVisibility, type ProfileList, type ProfileListVisibility } from "../../../lib/profileListVisibility";
 
-const lists: { key: ProfileList; label: string; detail: string }[] = [
-  { key: "awards", label: "All awards", detail: "Your featured awards remain on your profile." },
-  { key: "friends", label: "All friends", detail: "Your featured friends remain visible unless your separate friends privacy setting hides them." },
-  { key: "teams", label: "All teams", detail: "Your featured teams remain on your profile." },
+const lists: { key: ProfileList; label: string }[] = [
+  { key: "awards", label: "All awards" },
+  { key: "friends", label: "All friends" },
+  { key: "teams", label: "All teams" },
 ];
 
 export default function ProfileControls({ userId, isOwner }: { userId: string; isOwner: boolean }) {
@@ -66,22 +66,22 @@ export default function ProfileControls({ userId, isOwner }: { userId: string; i
   }
 
   return <>
-    <section className="box profile-list-controls">
-      <div className="box-title">Profile List Access</div>
+    <details className="box profile-list-controls compact-section" open={visibilityError ? true : undefined}>
+      <summary className="box-title">Profile List Access</summary>
       <div className="box-body">
-        <p className="section-intro">Choose who can open your full lists from your profile. Your featured selections stay on your profile, and public information elsewhere on GameBattles is unchanged.</p>
+        <p className="section-intro">Lock full lists on your profile. Featured items stay visible; friends also follow your Settings privacy. Other pages are unaffected.</p>
         {visibilityError && <p className="error-text" role="alert">{visibilityError}</p>}
         {!visibility && !visibilityError && <p className="field-note" role="status">Loading list settings...</p>}
         {visibility && <div className="visibility-list">
           {lists.map((list) => <label className="visibility-row" key={list.key}>
-            <span><strong>{list.label}</strong><small>{list.detail}</small></span>
+            <span><strong>{list.label}</strong></span>
             <span className="visibility-switch"><input type="checkbox" checked={visibility[list.key]} disabled={!!savingList} onChange={(event) => void changeVisibility(list.key, event.target.checked)} /><span>{visibility[list.key] ? "Public" : "Locked"}</span></span>
           </label>)}
         </div>}
       </div>
-    </section>
-    <section className="box special-profile">
-      <div className="box-title">Special Profile Studio</div>
+    </details>
+    <details className="box special-profile compact-section" open={specialError ? true : undefined}>
+      <summary className="box-title">Special Profile Studio {specialAccess === null ? "" : specialAccess ? "· Unlocked" : "· Locked"}</summary>
       <div className="box-body">
         <div className="special-profile-heading"><span aria-hidden="true">✦</span><div><strong>{specialAccess === null ? "Checking access..." : specialAccess ? "Special access unlocked" : "Special access locked"}</strong><p>Exclusive banners and profile looks are coming later.</p></div></div>
         {specialError && <p className="error-text" role="alert">{specialError}</p>}
@@ -97,6 +97,6 @@ export default function ProfileControls({ userId, isOwner }: { userId: string; i
           {grantMessage && <p className={grantMessage.startsWith("Access could not") ? "error-text" : "saved-message"} role={grantMessage.startsWith("Access could not") ? "alert" : "status"}>{grantMessage}</p>}
         </div>}
       </div>
-    </section>
+    </details>
   </>;
 }

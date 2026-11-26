@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Bf6TeamLadderOptions from "../../../components/Bf6TeamLadderOptions";
 import { ladderGameImage } from "../../../../lib/ladderCatalog";
 
 const battlefieldTitles = [
@@ -35,7 +36,7 @@ function ladderSlug(ladder: string) {
   return ladder.toLowerCase().replaceAll(" ", "-");
 }
 
-export default function XboxBattlefieldPage() {
+export default function PlayStationBattlefieldPage() {
   return (
     <>
       <style>{`
@@ -50,7 +51,7 @@ export default function XboxBattlefieldPage() {
         }
 
         .wrapper{
-          width:1080px;
+          width:min(1080px,100%);
           margin:0 auto;
           background:#07111b;
           border:1px solid #2f6f9f;
@@ -104,12 +105,12 @@ export default function XboxBattlefieldPage() {
           margin-top:7px;
         }
 
-        .xbox-mark{
+        .playstation-mark{
           min-width:132px;
           height:58px;
           border-radius:34px;
-          background:radial-gradient(circle at 30% 25%,#baffba 0,#28c928 38%,#062f06 100%);
-          border:2px solid #9aff9a;
+          background:linear-gradient(135deg,#82bbff,#1656a1 48%,#071d42);
+          border:2px solid #82bfff;
           display:flex;
           align-items:center;
           justify-content:center;
@@ -117,7 +118,7 @@ export default function XboxBattlefieldPage() {
           font-size:24px;
           font-weight:bold;
           text-transform:uppercase;
-          box-shadow:0 0 18px rgba(0,255,100,.35), inset 0 0 18px rgba(0,0,0,.7);
+          box-shadow:0 0 18px rgba(70,150,255,.35), inset 0 0 18px rgba(0,0,0,.7);
           text-shadow:0 2px 4px #000;
         }
 
@@ -241,6 +242,19 @@ export default function XboxBattlefieldPage() {
           color:#a9c3db;
           font-size:11px;
         }
+        @media(max-width:820px){
+          .page{padding:12px;}
+          .content{padding:14px;}
+          .games-grid{grid-template-columns:1fr;}
+          .header{padding:12px 16px;gap:12px;}
+          .logo-main{font-size:clamp(23px,6vw,36px);line-height:1;}
+          .logo-sub{font-size:9px;letter-spacing:2px;}
+          .playstation-mark{min-width:85px;height:44px;font-size:13px;}
+          .title-bar h1{font-size:23px;}
+          .ladder-item{grid-template-columns:1fr 1fr;gap:8px 12px;padding:10px;}
+          .ladder-name{grid-column:1 / -1;}
+          .ladder-link{white-space:normal;}
+        }
       `}</style>
 
       <main className="page">
@@ -251,11 +265,11 @@ export default function XboxBattlefieldPage() {
               <div className="logo-sub">Where Gaming Finds Its Edge</div>
             </div>
 
-            <div className="xbox-mark">Xbox</div>
+            <div className="playstation-mark">PlayStation</div>
           </header>
 
           <section className="title-bar">
-            <h1>Xbox Battlefield Ladders</h1>
+            <h1>PlayStation Battlefield Ladders</h1>
             <p>
               Choose a Battlefield title below. Each title has its own teams,
               ladders, matches, and standings.
@@ -277,6 +291,7 @@ export default function XboxBattlefieldPage() {
 
                   <div className="card-body">
                     <div className="ladder-list">
+                      {game.slug === "battlefield-6" && <Bf6TeamLadderOptions platform="playstation" />}
                       {game.slug === "battlefield-6" && (
                         <div className="ladder-item" key={`${game.title}-rapid-royal-duos`}>
                           <div className="ladder-name">Rapid Royal</div>

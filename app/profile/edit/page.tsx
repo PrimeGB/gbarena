@@ -48,6 +48,7 @@ function EditProfileForm() {
     const tab = searchParams.get("tab");
     return tab === "awards" || tab === "friends" || tab === "settings" ? tab : "main";
   });
+  const [gamertagsOpen, setGamertagsOpen] = useState(() => searchParams.get("focus") === "gaming-account" || !!initialSteamId || !!searchParams.get("steam_error"));
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -1091,7 +1092,7 @@ function EditProfileForm() {
         .logo-box{ height:auto; padding:0; background:transparent; border:0; box-shadow:none; }
         .logo-circle{ width:48px; height:48px; margin-right:12px; }
         .logo-text{ font-size:32px; line-height:30px; }
-        .title-bar{ position:relative; overflow:hidden; min-height:122px; margin:0; padding:25px 28px; border:1px solid #285577; border-radius:14px 14px 0 0; background:linear-gradient(100deg,rgba(13,54,85,.97),rgba(6,23,39,.94)),url('/hex-grid.svg') center/420px; }
+        .title-bar{ position:relative; overflow:hidden; min-height:0; margin:0; padding:18px 24px; border:1px solid #285577; border-radius:14px 14px 0 0; background:linear-gradient(100deg,rgba(13,54,85,.97),rgba(6,23,39,.94)),url('/hex-grid.svg') center/420px; }
         .title-bar:after{ content:""; position:absolute; inset:0; opacity:.17; pointer-events:none; background:url('/hex-grid.svg') right center/420px; }
         .title-bar > div{ position:relative; z-index:1; }
         .title-main{ font-size:27px; color:#fff; letter-spacing:.02em; }
@@ -1105,7 +1106,16 @@ function EditProfileForm() {
         .box{ background:linear-gradient(150deg,#10283a,#0a1724 70%); border:1px solid #28465c; border-radius:14px; box-shadow:0 10px 30px #0003; margin-bottom:18px; }
         .box-title{ height:auto; min-height:55px; padding:16px 20px; background:transparent; border-bottom:1px solid #294457; color:#f1f7fc; font-size:13px; letter-spacing:.08em; }
         .box-body{ padding:20px; }
-        .editor-box{ height:220px; background:radial-gradient(circle,#173650,#07111b); border:1px solid #396587; }
+        details.compact-section > summary{ cursor:pointer; list-style:none; display:flex; justify-content:space-between; gap:12px; }
+        details.compact-section > summary::-webkit-details-marker{ display:none; }
+        details.compact-section > summary::after{ content:"+"; color:#8cccff; font-size:20px; }
+        details.compact-section[open] > summary::after{ content:"−"; }
+        details.compact-section:not([open]) > summary{ border-bottom:0; }
+        details.compact-section > summary:focus-visible{ outline:2px solid #65baff; outline-offset:-3px; }
+        .form-grid .gamertags-section{ grid-column:1 / -1; margin-bottom:14px; border:1px solid #294457; border-radius:8px; }
+        .gamertags-section > summary{ padding:12px; color:#e4f0f8; font-weight:bold; font-size:12px; }
+        .gamertags-fields{ padding:12px; }
+        .editor-box{ height:180px; background:radial-gradient(circle,#173650,#07111b); border:1px solid #396587; }
         .profile-preview{ border-color:#294b64; background:#091725; }
         .form-row label{ color:#e4f0f8; }
         .form-row input,.form-row select,.form-row textarea{ background:#081522; border-color:#36566d; color:#f2f7fb; min-height:42px; }
@@ -1164,7 +1174,7 @@ function EditProfileForm() {
           .nav{ padding:8px; }
           .nav button{ flex:1 1 auto; padding:8px; }
           .box-body{ padding:16px; }
-          .editor-box{ height:190px; }
+          .editor-box{ height:145px; }
           .linked-id-form{ grid-template-columns:1fr; }
           .linked-id-row{ align-items:flex-start; }
         }
@@ -1190,7 +1200,7 @@ function EditProfileForm() {
               <Link className="profile-back" href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>← Back to profile</Link>
               <div className="title-main">Account / Profile</div>
               <div className="title-sub">
-                Your picture, gaming accounts, privacy and profile style, all in one place.
+                Your picture, usernames and profile settings.
               </div>
             </div>
           </div>
@@ -1218,31 +1228,9 @@ function EditProfileForm() {
                     Edit Avatar
                   </label>
 
-                  <div className="profile-preview">
-                    <div className="avatar-mini">
-                      {avatarPreview ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
-                    </div>
-
-                    <div>
-                      <div className="preview-name">Player Preview</div>
-                      <div className="preview-sub">Profile picture preview</div>
-                    </div>
-                  </div>
-
                   <div className="help-text">
-                    Choose an image, then save your changes to update your profile picture.
+                    Choose an image and save your changes.
                   </div>
-                </div>
-              </div>
-
-              <div className="box">
-                <div className="box-title">Save Reminder</div>
-                <div className="box-body">
-                  {hasChanges ? (
-                    <div className="warning-message">You have unsaved changes.</div>
-                  ) : (
-                    <div className="help-text">No unsaved changes.</div>
-                  )}
                 </div>
               </div>
             </aside>
@@ -1261,7 +1249,7 @@ function EditProfileForm() {
                         <option>Private</option>
                       </select>
                       <div className="field-note">
-                        Dynamic changes based on what you are doing on the site. Private displays private on your profile.
+                        Dynamic reflects your activity; Private hides it.
                       </div>
                     </div>
 
@@ -1290,8 +1278,9 @@ function EditProfileForm() {
                       )}
                     </div>
 
-                    <div className="form-row" ref={gamingAccountSectionRef}>
-                      <label>Gamertags</label>
+                    <details className="compact-section gamertags-section" open={gamertagsOpen} onToggle={(event) => setGamertagsOpen(event.currentTarget.open)}>
+                      <summary>System Gamertags &amp; Steam</summary>
+                      <div className="form-row gamertags-fields" ref={gamingAccountSectionRef}>
                       <input value={gtXbox} onChange={(e) => { setGtXbox(e.target.value); markChanged(); }} placeholder="Xbox GT" style={{marginBottom:8}} />
                       <input value={gtPlaystation} onChange={(e) => { setGtPlaystation(e.target.value); markChanged(); }} placeholder="PlayStation ID" style={{marginBottom:8}} />
                       <input value={gtNintendo} onChange={(e) => { setGtNintendo(e.target.value); markChanged(); }} placeholder="Nintendo ID" style={{marginBottom:8}} />
@@ -1303,12 +1292,14 @@ function EditProfileForm() {
                       >
                         Link with Steam
                       </button>
-                      <div className="field-note">Provide platform-specific IDs so friends and teams can find you. Steam players: use Link with Steam to sign in through Steam and pick up your ID automatically.</div>
+                      <div className="field-note">System IDs are used for matches. Link Steam to fill your PC ID.</div>
                       {initialSteamId && <div className="field-note">Steam verified. Save changes to use this as your PC ID.</div>}
                       {steamError && <div className="error-text" role="alert">{steamError}</div>}
-                    </div>
+                      </div>
+                    </details>
 
                     <div className="save-row">
+                      {hasChanges && <div className="warning-message" role="status">You have unsaved changes.</div>}
                       <button className="save-button" type="button" disabled={saving} onClick={handleSave}>
                         {saving ? "Saving..." : "Save Changes"}
                       </button>

@@ -119,6 +119,7 @@ test("Steam return fills the PC ID without requiring a game and allows edits", a
   render.load();
   await new Promise((resolve) => setTimeout(resolve, 0));
   let tree = render();
+  assert.equal(find(tree, (element) => element.type === "details" && element.props.className?.includes("gamertags-section")).props.open, true);
   assert.equal(input(tree).props.value, "1234");
   assert.equal(find(tree, (element) => element.props?.children === "Gaming Accounts"), null);
   input(tree).props.onChange({ target: { value: "edited-id" } });
@@ -131,6 +132,18 @@ test("Steam return fills the PC ID without requiring a game and allows edits", a
   } finally {
     globalThis.window = originalWindow;
   }
+});
+
+test("system IDs are compact by default and unsaved changes remain visible", () => {
+  const render = harness("");
+  let tree = render();
+  const section = find(tree, (element) => element.type === "details" && element.props.className?.includes("gamertags-section"));
+  assert.equal(section.props.open, false);
+  section.props.onToggle({ currentTarget: { open: true } });
+  tree = render();
+  assert.equal(find(tree, (element) => element.type === "details" && element.props.className?.includes("gamertags-section")).props.open, true);
+  find(tree, (element) => element.type === "input" && element.props.placeholder === "Xbox GT").props.onChange({ target: { value: "Player" } });
+  assert.ok(find(render(), (element) => element.props?.children === "You have unsaved changes."));
 });
 
 test("profile save failures are reported rather than presented as saved", async () => {
