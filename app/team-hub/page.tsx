@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../lib/useUser";
 import { supabase } from "../../lib/supabase";
 import { ladderTitleForGame } from "../../lib/ladderCatalog";
+import { getBf6TeamRosterSize } from "../../lib/bf6TeamLadders";
 
 type AppUser = {
   id: string;
@@ -72,6 +73,8 @@ function getLadderName(category: string, game: string, ladder: string | null) {
 }
 
 function getRosterLimit(category: string, game: string, ladder: string | null) {
+  const bf6RosterSize = getBf6TeamRosterSize(category, game, ladder);
+  if (bf6RosterSize) return bf6RosterSize;
   if (ladder === "singles") return 1;
   if (ladder === "duos") return 2;
   if (ladder === "rapid-royal-duos") return 3;

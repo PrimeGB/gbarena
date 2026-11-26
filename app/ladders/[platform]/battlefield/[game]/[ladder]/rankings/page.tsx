@@ -61,7 +61,7 @@ export default function BattlefieldRankingsPage() {
   const platformName = platformNames[platform];
   const gameName = battlefieldTitles[game];
   const ladderName =
-    ladder === "redsec"
+    ladderTitleForGame("battlefield", game, ladder) || (ladder === "redsec"
       ? "RedSec"
       : ladder === "rapid-royal-duos"
         ? "Rapid Royal"
@@ -71,7 +71,7 @@ export default function BattlefieldRankingsPage() {
           ? "Duos"
           : ladder === "team"
             ? "Team"
-            : null;
+            : null);
 
   const rankedTeams = useMemo(
     () =>

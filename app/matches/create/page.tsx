@@ -15,6 +15,7 @@ import {
   resolveGamingAccountId,
 } from "../../../lib/gamingAccounts";
 import { bf6SolosMaps, getGameRules, isBattlefieldSolos } from "../../../lib/matchRules";
+import { getBf6TeamLadder } from "../../../lib/bf6TeamLadders";
 import { ladderGameImage, ladderTitleForGame } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
@@ -97,6 +98,8 @@ function CreateMatchForm() {
   const isRapidRoyal = ladder === "rapid-royal-duos";
   const killRaceName = isRapidRoyal ? "Rapid Royal" : "RedSec";
   const isBf6Solos = isBattlefieldSolos(category, game, ladder);
+  const bf6Team = getBf6TeamLadder(category, game, ladder);
+  const [bf6Preset, setBf6Preset] = useState(() => bf6Team?.presets[0] || "");
   const gameRules = useMemo(() => getGameRules(category, game, ladder), [category, game, ladder]);
   const [mapSelection, setMapSelection] = useState("Random");
 
@@ -131,6 +134,8 @@ function CreateMatchForm() {
     });
     return values;
   }, [currentMode, ruleValues]);
+  const bf6Customized = !!bf6Team && Object.values(activeRuleValues).some((value) => value !== "Follow rules");
+  const selectedPreset = bf6Team ? (bf6Customized ? `Custom based on ${bf6Preset}` : bf6Preset) : gameRules?.presetName;
   const [rulesType, setRulesType] = useState<RulesType>("GB Variant");
   const [crossplay, setCrossplay] = useState<CrossPlayType>("Off");
   const [players, setPlayers] = useState(playerOptions[0]);
@@ -307,7 +312,7 @@ function CreateMatchForm() {
   const presetText = isRedSec || isRapidRoyal
     ? `${killRaceName} settings are controlled by the GameBattles ${killRaceName} ruleset.`
     : gameRules
-      ? `${gameRules.presetName} · Players ${players} · Cross Play ${crossplay} · ${currentMode?.fields
+      ? `${selectedPreset} · Players ${players} · Cross Play ${crossplay} · ${currentMode?.fields
           .map((item) => `${item.label} ${activeRuleValues[item.slot]}`)
           .join(" · ")}`
       : rulesType === "Custom"
@@ -438,7 +443,7 @@ function CreateMatchForm() {
       players,
       match_time: scheduledIso,
       best_of: activeBestOf,
-      preset: isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules ? gameRules.presetName : rulesType,
+      preset: isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules ? selectedPreset : rulesType,
       crossplay: crossplay === "On",
       perks: slot("perks", perks),
       launchers: slot("launchers", launchers),
@@ -747,6 +752,8 @@ function CreateMatchForm() {
                               ? "GameBattles draws from Saints Quarter and Empire State when accepted."
                               : "This map is shown to opponents before acceptance and used for every game."} Use the small TDM layout.</p>
                           </div>
+                        ) : bf6Team ? (
+                          <div className="rules-box">Agree the maps and Portal experience with your opponent before play. Check the selected ruleset for its current map pool and experience codes.</div>
                         ) : (
                           <div className="rules-box">
                             Where a game and mode has a supported map pool, maps are randomly assigned when the match is accepted.
@@ -797,9 +804,14 @@ function CreateMatchForm() {
                           </div>
                         ) : gameRules ? (
                           <div>
-                            <div className="locked-player-box">{gameRules.presetName}</div>
+                            {bf6Team && bf6Team.presets.length > 1 ? (
+                              <select className="rules-select" value={bf6Preset} onChange={(event) => { setBf6Preset(event.target.value); setRuleValues({}); }}>
+                                {bf6Team.presets.map((preset) => <option key={preset}>{preset}</option>)}
+                              </select>
+                            ) : <div className="locked-player-box">{selectedPreset}</div>}
                             <div className="small-note">{gameRules.notes[0]}</div>
                             {isBf6Solos && <p className="small-note"><Link className="rules-link" href={`/ladders/${platform}/${category}/${game}/${ladder}/rules`}>Portal setup and full rules</Link></p>}
+                            {bf6Team && <p className="small-note"><Link className="rules-link" href={`/ladders/${platform}/${category}/${game}/${ladder}/rules`}>Rules, sources and Portal setup</Link>{bf6Customized && <> · This match is custom, not an organizer preset.</>}</p>}
                           </div>
                         ) : (
                           <div>
@@ -834,7 +846,7 @@ function CreateMatchForm() {
                           <details className="settings-summary settings-details">
                             <summary>
                               <span className="settings-title">{currentMode.value} Settings</span>
-                              <span className="settings-copy">{isBf6Solos ? "Locked 10-minute 1v1 · next-kill tiebreak · no AI" : "Competitive defaults · customize if both teams agree"}</span>
+                              <span className="settings-copy">{isBf6Solos ? "Locked 10-minute 1v1 · next-kill tiebreak · no AI" : bf6Team ? "Follow the selected rules, or specify custom overrides before posting" : "Competitive defaults · customize if both teams agree"}</span>
                               <span className="settings-toggle">{isBf6Solos ? "View settings" : "Customize"}</span>
                             </summary>
                             <div className="settings-fields">

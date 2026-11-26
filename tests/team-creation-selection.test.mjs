@@ -19,7 +19,7 @@ function load(path, mocks = {}) {
 }
 
 const accounts = load("lib/gamingAccounts.ts");
-const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts });
+const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts, "./bf6TeamLadders": load("lib/bf6TeamLadders.ts") });
 
 function renderSelection(platform, game, ladder, user = null, availability = null, loading = false) {
   const state = ["", "", "", false, platform, game, ladder, availability, 0];

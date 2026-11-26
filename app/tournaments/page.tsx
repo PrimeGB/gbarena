@@ -420,6 +420,12 @@ function TournamentListing() {
           <div className="t-title">
             {scope ? `${scope.platform} · ${gameLabel} Events` : "Live & Upcoming Tournaments"}
           </div>
+          {(!scope || (scope.category === "battlefield" && scope.game === "battlefield-6")) && (
+            <div className="t-empty">
+              <strong>Battlefield 6 team tournaments coming soon</strong>
+              Small tournaments are planned for 5v5 Domination, 4v4 Squad Obliteration and 8v8, 12v12 and 32v32 Conquest. Dates, rules and registration will be announced when ready.
+            </div>
+          )}
           {message?.id === "" && <div className="t-msg err" role="alert">{message.text}</div>}
 
           {loading ? (

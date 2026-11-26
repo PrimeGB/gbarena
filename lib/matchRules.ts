@@ -1,3 +1,5 @@
+import { getBf6TeamLadder } from "./bf6TeamLadders";
+
 // Per-game match rules for every game except Call of Duty / Old School (which use the
 // COD-style form) and RedSec (which has its own locked ruleset).
 // Each field maps onto an existing match_posts / matches text column ("slot"), so no schema
@@ -552,6 +554,42 @@ const rules: Record<string, GameRuleSet> = {
 
 export function getGameRules(category: string, game: string, ladder?: string | null): GameRuleSet | null {
   if (isBattlefieldSolos(category, game, ladder)) return bf6Solos;
+  const bf6Team = getBf6TeamLadder(category, game, ladder);
+  if (bf6Team) {
+    const provisional = bf6Team.presets[0].includes("Provisional");
+    return {
+      modes: [{
+        value: bf6Team.mode,
+        fields: [
+          field("friendly_fire", "Friendly Fire", ["Follow rules", "On", "Off"]),
+          field("killstreaks", "Vehicles", ["Follow rules", "On", "Off"]),
+          field("perks", "AI Soldiers", ["Follow rules", "On", "Off"]),
+          field("radar", "Aim Assist", ["Follow rules", "On", "Off"]),
+          field("spectating", "Aim Assist Zoom Snap", ["Follow rules", "On", "Off"]),
+        ],
+        rules: [
+          "Only the selected match roster may compete. Agree the maps and Portal experience before play; GameBattles does not configure the server.",
+          "Use a password-protected Portal server and verify its settings and player capacity before starting. Keep scoreboards and other proof.",
+          ...(bf6Team.mode === "Squad Obliteration" ? [
+            "The ESB format uses two sides per map, a 15-minute timer and two destroyed MCOMs to end a side. Check the current ESB rules and experience for tiebreaks and restrictions.",
+          ] : bf6Team.mode === "Conquest" && !provisional ? [
+            "Play both sides of each map and follow the selected organizer's current scoring, map, vehicle and equipment restrictions.",
+          ] : bf6Team.mode === "Domination" ? [
+            "Provisional: the Nightcups test used two sides per map, 200 tickets, three flags and a 20-minute timer. Confirm a working Portal experience and agree the remaining rules before play.",
+          ] : [
+            "Provisional: use Conquest and agree the map, ticket count, time limit and scoring before play. Verify that the chosen Portal experience supports 32 human players per side.",
+          ]),
+        ],
+      }],
+      teamSizes: [bf6Team.players],
+      bestOf: ["Best of 1", "Best of 3"],
+      presetName: bf6Team.presets[0],
+      notes: [
+        "ESB and SnP are community organizers, not EA-official rules. Their rules and Portal experiences can change; consult the original rules before playing.",
+        "Changing a setting creates a custom match based on the selected ruleset, not an official organizer preset.",
+      ],
+    };
+  }
   if (category === "call-of-duty" || category === "old-school") return null;
   if (category === "battlefield" && game === "redsec") return null;
   const set = rules[category];

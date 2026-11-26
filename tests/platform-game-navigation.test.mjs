@@ -19,7 +19,7 @@ function load(path, mocks = {}) {
 
 test("both homepage dropdowns show each new game only on supported platforms", () => {
   const accounts = load("lib/gamingAccounts.ts");
-  const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts });
+  const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts, "./bf6TeamLadders": load("lib/bf6TeamLadders.ts") });
   const GameLinks = load("app/components/PlatformGameLinks.tsx", {
     "../../lib/ladderCatalog": catalog,
     "./PlatformGameLinks.module.css": { default: {} },
@@ -57,7 +57,7 @@ test("both homepage dropdowns show each new game only on supported platforms", (
 
 test("platform pages expose game names directly for mobile browsing", () => {
   const accounts = load("lib/gamingAccounts.ts");
-  const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts });
+  const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts, "./bf6TeamLadders": load("lib/bf6TeamLadders.ts") });
   for (const [platform, expected, absent] of [
     ["mobile", "sports-games/efootball", "sports-games/nba-2k27"],
     ["nintendo", "fighting-games/super-smash-bros-ultimate", "tactical-shooters/counter-strike-2"],

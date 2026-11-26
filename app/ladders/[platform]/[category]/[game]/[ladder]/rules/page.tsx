@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { bf6PortalSetup, bf6SolosMaps, bf6SolosSources, getGameRules, isBattlefieldSolos } from "../../../../../../../lib/matchRules";
+import { bf6TeamSources, getBf6TeamLadder } from "../../../../../../../lib/bf6TeamLadders";
 import { fullLadderTitle, ladderGameLabel, ladderPlatformLabel, ladderTitleForGame } from "../../../../../../../lib/ladderCatalog";
 import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
 import LadderDetailHeader from "../../../../../../components/LadderDetailHeader";
@@ -41,6 +42,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   const gameName = ladderGameLabel(category, game) || prettyText(game);
   const platformName = ladderPlatformLabel(platform) || prettyText(platform);
   const bf6Rules = isBattlefieldSolos(category, game, ladder) ? getGameRules(category, game, ladder) : null;
+  const bf6Team = getBf6TeamLadder(category, game, ladder);
   const currentLadderName = ladderName(category, game, ladder);
   const gameRuleSet = bf6Rules ? null : getGameRules(category, game, ladder);
 
@@ -198,7 +200,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
             <ul>
               <li>This match is being played on the {fullLadderTitle(gameName, currentLadderName)} Ladder.</li>
               <li>Use the ladder&apos;s selected ruleset and the player count listed for the ladder.</li>
-              <li>Maps are generated after the match is accepted based on the game, ladder, mode, ruleset, and Best Of.</li>
+              <li>{bf6Team ? "Agree maps and a compatible Portal experience before the match." : "Maps are generated after the match is accepted based on the game, ladder, mode, ruleset, and Best Of."}</li>
               <li>Report match results after the match.</li>
               <li>Keep screenshots or other proof in case a result is disputed.</li>
             </ul>
@@ -228,6 +230,14 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
             ))}
           </section>
         )}
+
+        {bf6Team && <section className="rule-section">
+          <h2>Battlefield Portal setup and sources</h2>
+          <p>These are community competition formats, not EA-endorsed presets. ESB and SnP publish different rules, restrictions and Portal experiences. Use the selected organizer&apos;s current rules and codes; GameBattles does not create or verify the experience.</p>
+          <p>In Portal Builder, hosts can configure teams and player limits, AI, friendly fire, soldier and vehicle modifiers, and restrictions. Available options depend on the experience. Check settings with your opponent; an override is a custom match and may no longer follow the organizer&apos;s rules.</p>
+          <p>ESB&apos;s Conquest page has conflicting capture-time information, and SnP&apos;s page has conflicting ticket examples. Follow the current organizer experience and resolve discrepancies before playing rather than assuming a number. The 5v5 and 32v32 GameBattles formats are provisional; confirm the mode and server capacity in-game.</p>
+          <ul>{bf6TeamSources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a></li>)}</ul>
+        </section>}
 
         <p className="community-link">
           For general conduct and platform-wide rules, see the{" "}

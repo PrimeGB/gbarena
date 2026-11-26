@@ -30,7 +30,7 @@ export default function BattlefieldGamePage() {
       categoryName="Battlefield"
       game={game}
       gameName={gameName}
-      showTournaments={false}
+      showTournaments={game === "battlefield-6"}
     />
   );
 }

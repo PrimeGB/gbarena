@@ -15,7 +15,8 @@ function loadModule(path, dependencies = {}) {
   return exports;
 }
 
-const gameRules = loadModule("../lib/matchRules.ts");
+const bf6 = loadModule("../lib/bf6TeamLadders.ts");
+const gameRules = loadModule("../lib/matchRules.ts", { "./bf6TeamLadders": bf6 });
 const { postedRuleSettings } = loadModule("../lib/postedMatchRules.ts", { "./matchRules": gameRules });
 
 test("custom settings and named item rules appear alongside stored settings", () => {
@@ -63,9 +64,9 @@ test("non-COD games use their configured field labels", () => {
 });
 
 test("BF6 Solos uses ladder-specific timed rules without changing other Battlefield ladders", () => {
-  const catalog = loadModule("../lib/ladderCatalog.ts", { "./gamingAccounts": { gamingCategories: [], gamingGames: [] } });
+  const catalog = loadModule("../lib/ladderCatalog.ts", { "./gamingAccounts": { gamingCategories: [], gamingGames: [] }, "./bf6TeamLadders": bf6 });
   assert.deepEqual(catalog.laddersForGame("battlefield", "battlefield-6").map((ladder) => ladder.slug),
-    ["singles", "rapid-royal-duos", "redsec"]);
+    ["singles", "rapid-royal-duos", "redsec", "domination-5v5", "obliteration-4v4", "conquest-8v8", "conquest-12v12", "conquest-32v32"]);
   const solos = gameRules.getGameRules("battlefield", "battlefield-6", "singles");
   assert.deepEqual(solos.teamSizes, ["1v1"]);
   assert.deepEqual(solos.modes.map((mode) => mode.value), ["Team Deathmatch"]);

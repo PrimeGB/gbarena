@@ -18,8 +18,9 @@ function load(path, mocks = {}) {
 }
 
 const accounts = load("lib/gamingAccounts.ts");
-const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts });
-const rules = load("lib/matchRules.ts");
+const bf6 = load("lib/bf6TeamLadders.ts");
+const catalog = load("lib/ladderCatalog.ts", { "./gamingAccounts": accounts, "./bf6TeamLadders": bf6 });
+const rules = load("lib/matchRules.ts", { "./bf6TeamLadders": bf6 });
 const roster = load("lib/matchCreationRoster.ts");
 const hubModule = load("app/components/GameLadderHub.tsx", {
   "../../lib/ladderCatalog": catalog,
@@ -86,6 +87,7 @@ test("game identity, formats and tournament links match the selected ladder", ()
 test("rules use game art and avoid repeating a game name in the ladder title", async () => {
   const Page = load("app/ladders/[platform]/[category]/[game]/[ladder]/rules/page.tsx", {
     "../../../../../../../lib/matchRules": rules,
+    "../../../../../../../lib/bf6TeamLadders": bf6,
     "../../../../../../../lib/ladderCatalog": catalog,
     "../../../../../../components/RapidRoyalRules": { default: () => null },
     "../../../../../../components/LadderDetailHeader": { default: DetailHeader },
@@ -99,4 +101,20 @@ test("rules use game art and avoid repeating a game name in the ladder title", a
   assert.match(markup, /\/games\/fn-2\.jpg/);
   assert.match(markup, /href="\/ladders\/nintendo\/fortnite\/box-fights\/singles\/rankings"/);
   assert.equal(catalog.fullLadderTitle("NBA 2K27", "3v3"), "NBA 2K27 3v3");
+});
+
+test("BF6 team ranking routes recognize each new ladder", () => {
+  for (const slug of Object.keys(bf6.bf6TeamLadders)) {
+    const Page = load("app/ladders/[platform]/battlefield/[game]/[ladder]/rankings/page.tsx", {
+      "next/navigation": { useParams: () => ({ platform: "pc", game: "battlefield-6", ladder: slug }) },
+      "../../../../../../../lib/supabase": { supabase: {} },
+      "../../../../../../../lib/ladderStandings": { systemRankings: (teams) => teams },
+      "../../../../../../../lib/ladderCatalog": catalog,
+      "../../../../../../components/RankingSystemFilter": { default: () => null },
+      "../../../../../../components/LadderDetailHeader": { default: () => null },
+    }).default;
+    const markup = renderToStaticMarkup(React.createElement(Page));
+    assert.doesNotMatch(markup, /Battlefield ladder not found/);
+    assert.match(markup, /Loading standings/);
+  }
 });
