@@ -10,6 +10,12 @@ for each row execute function public.gb_guard_bf6_team_ladders();
 
 do $$
 begin
+  if public.gb_ladder_platforms('battlefield', 'battlefield-6', 'pc') <> array['xbox', 'playstation', 'pc']
+    or public.gb_ladder_platforms('battlefield', 'battlefield-6', 'xbox') <> array['xbox', 'playstation', 'pc']
+    or public.gb_ladder_platforms('battlefield', 'battlefield-6', 'playstation') <> array['xbox', 'playstation', 'pc']
+    or public.gb_ladder_platforms('battlefield', 'battlefield-6', 'nintendo') <> array['nintendo'] then
+    raise exception 'BF6 compatible systems are incorrect';
+  end if;
   insert into bf6_team_guard_test values ('battlefield', 'battlefield-6', 'conquest-8v8', '8v8', 'Conquest',
     'SnP T8 Conquest', 'Best of 3', 'Follow rules', 'Follow rules', 'Follow rules', 'Follow rules', 'Follow rules', null, 'open');
   insert into bf6_team_guard_test values ('battlefield', 'battlefield-6', 'conquest-32v32', '32v32', 'Conquest',
