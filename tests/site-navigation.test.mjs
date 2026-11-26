@@ -44,7 +44,8 @@ test("Create Match keeps its form and action links without a secondary navigatio
     "../../../lib/supabase": { supabase: {} },
     "../../../lib/gamingAccounts": {},
     "../../../lib/matchRules": { getGameRules: () => null, isBattlefieldSolos: () => false, bf6SolosMaps: [] },
-    "../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg" },
+    "../../../lib/bf6TeamLadders": { getBf6TeamLadder: () => null },
+    "../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg", ladderTitleForGame: () => "Solo" },
     "../../../lib/ladderStandings": {},
     "../../../lib/rapidRoyal": {},
     "../../components/RapidRoyalRules": { __esModule: true, default: () => null },
@@ -61,6 +62,39 @@ test("Create Match keeps its form and action links without a secondary navigatio
   assert.match(markup, /<dt>Players<\/dt><dd>1v1<\/dd>/);
   assert.match(markup, /<dt>Rules<\/dt><dd>GB Variant<\/dd>/);
   assert.match(markup, /<dt>Cross Play<\/dt><dd>Off<\/dd>/);
+});
+
+test("BF6 match snapshot shows the selected custom ruleset", () => {
+  const bf6 = { presets: ["ESB Conquest Small", "SnP T8 Conquest"] };
+  const Page = load("app/matches/create/page.tsx", {
+    react: {
+      ...React,
+      useState(initial) {
+        const value = typeof initial === "function" ? initial() : initial;
+        if (value === "ESB Conquest Small") return React.useState("SnP T8 Conquest");
+        if (value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) {
+          return React.useState({ friendly_fire: "Off" });
+        }
+        return React.useState(value);
+      },
+    },
+    "next/navigation": { useRouter: () => ({}), useSearchParams: () => new URLSearchParams("platform=pc&category=battlefield&game=battlefield-6&ladder=conquest-8v8") },
+    "../../../lib/useUser": { useUser: () => ({ user: null }) },
+    "../../../lib/supabase": { supabase: {} },
+    "../../../lib/gamingAccounts": { gamingCategoryLabel: () => "Battlefield", gamingGameLabel: () => "Battlefield 6" },
+    "../../../lib/bf6TeamLadders": { getBf6TeamLadder: () => bf6 },
+    "../../../lib/matchRules": { isBattlefieldSolos: () => false, getGameRules: () => ({
+      presetName: "ESB Conquest Small", teamSizes: ["8v8"], bestOf: ["Best of 3"], notes: [],
+      modes: [{ value: "Conquest", fields: [{ slot: "friendly_fire", label: "Friendly Fire", options: ["Follow rules", "Off"], default: "Follow rules" }], rules: [] }],
+    }) },
+    "../../../lib/ladderCatalog": { ladderGameImage: () => "/game.jpg", ladderTitleForGame: () => "8v8 Conquest" },
+    "../../../lib/ladderStandings": {},
+    "../../../lib/rapidRoyal": {},
+    "../../components/RapidRoyalRules": { __esModule: true, default: () => null },
+    "../../../lib/matchCreationRoster": { getPlayerOptions: () => ["8v8"], getRequiredRosterSize: () => 8 },
+  });
+  const markup = renderToStaticMarkup(React.createElement(Page));
+  assert.match(markup, /<dt>Rules<\/dt><dd>Custom based on SnP T8 Conquest<\/dd>/);
 });
 
 test("secondary profile and team navigation keeps its links without a duplicate Home option", () => {

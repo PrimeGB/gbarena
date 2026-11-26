@@ -681,7 +681,7 @@ function CreateMatchForm() {
                 <dl className="snapshot-details">
                   <div className="snapshot-detail"><dt>Platform</dt><dd>{platformName}</dd></div>
                   <div className="snapshot-detail"><dt>Players</dt><dd>{players}</dd></div>
-                  <div className="snapshot-detail"><dt>Rules</dt><dd>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : gameRules?.presetName || rulesType}</dd></div>
+                  <div className="snapshot-detail"><dt>Rules</dt><dd>{isRedSec || isRapidRoyal ? `${killRaceName} Rules` : selectedPreset || rulesType}</dd></div>
                   <div className="snapshot-detail"><dt>Cross Play</dt><dd>{crossplay}</dd></div>
                 </dl>
               </aside>
