@@ -6,7 +6,12 @@
 .profile-page.founder-rgb .wrapper {
   position: relative;
   isolation: isolate;
+  border-radius: 18px;
   animation: founder-glow 8s ease-in-out infinite !important;
+}
+
+.profile-page.founder-rgb .header {
+  border-radius: 18px 18px 0 0;
 }
 
 .profile-page.founder-rgb .wrapper::before {
@@ -15,6 +20,7 @@
   inset: -4px;
   z-index: 20;
   padding: 4px;
+  border-radius: 22px;
   pointer-events: none;
   background: var(--founder-rgb-spectrum);
   background-size: 100% 200%;
@@ -28,6 +34,7 @@
 .founder-rgb-preview {
   margin: 12px 4px 4px;
   padding: 4px;
+  border-radius: 18px;
   background: var(--founder-rgb-spectrum);
   background-size: 100% 200%;
   box-shadow: 0 0 18px #65aaff80, 0 0 30px #c55bff50;
@@ -36,6 +43,7 @@
 
 .founder-rgb-preview div {
   padding: 14px;
+  border-radius: 14px;
   background: #0a1929;
   color: #e7f2ff;
 }

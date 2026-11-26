@@ -1723,7 +1723,7 @@ function ProfilePageContent() {
           overflow:hidden;
         }
         .pf-avatar .pf-avatar-bg{ display:none; }
-        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%;         object-fit:cover; object-position:center; }
+        .pf-avatar img.pf-avatar-img{ position:absolute; inset:0; width:100%; height:100%; padding:6px; object-fit:contain; object-position:center; }
         .pf-identity{ flex:1; min-width:0; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; }
         .pf-name-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
         .pf-name{

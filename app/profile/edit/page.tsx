@@ -815,6 +815,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .logo-circle img{
           width:100%;
           height:100%;
+          padding:8px;
           object-fit:contain;
         }
 
@@ -940,7 +941,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .editor-box img{
           width:100%;
           height:100%;
-          object-fit:cover;
+          object-fit:contain;
         }
 
         .editor-box input{ display:none; }
@@ -997,7 +998,8 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .avatar-mini img{
           width:100%;
           height:100%;
-          object-fit:cover;
+          padding:8px;
+          object-fit:contain;
         }
 
         .logo-mini{
@@ -1018,7 +1020,8 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .logo-mini img{
           width:100%;
           height:100%;
-          object-fit:cover;
+          padding:4px;
+          object-fit:contain;
         }
 
         .preview-name{
