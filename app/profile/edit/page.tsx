@@ -1020,7 +1020,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .logo-mini img{
           width:100%;
           height:100%;
-          padding:4px;
           object-fit:contain;
         }
 
