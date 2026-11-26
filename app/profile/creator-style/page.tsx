@@ -27,7 +27,7 @@ export default function CreatorStylePage() {
     let active = true;
     void Promise.all([
       supabase.rpc("gb_creator_profile_style", { p_user: user.id }),
-      supabase.from("profiles").select("username, logo_url").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("username, logo_url, avatar_url").eq("id", user.id).maybeSingle(),
     ]).then(([styleResult, profileResult]) => {
       if (!active) return;
       if (styleResult.error || profileResult.error) {
@@ -45,7 +45,7 @@ export default function CreatorStylePage() {
         setTheme(style.theme); setShowName(style.show_name); setShowLogo(style.show_logo); setPreviewTier(style.tier);
       }
       if (profileResult.data?.username) setName(profileResult.data.username);
-      if (profileResult.data?.logo_url) setLogo(profileResult.data.logo_url);
+      setLogo(profileResult.data?.logo_url || profileResult.data?.avatar_url || null);
     });
     return () => { active = false; };
   }, [user?.id]);
@@ -80,7 +80,7 @@ export default function CreatorStylePage() {
       <CreatorConceptGallery onSelect={setTheme} />
       <div className="vault-layout">
         <section>
-          <div className="vault-section-heading"><div><h2>Preview your look</h2><p>{canSave ? "Uses your current profile name and logo." : "Example preview. Active creators can save a style."}</p></div>
+          <div className="vault-section-heading"><div><h2>Preview your look</h2><p>{canSave ? "Uses your current profile name and picture." : "Example preview. Active creators can save a style."}</p></div>
             {!canSave && <label>Preview as <select value={previewTier} onChange={(event) => setPreviewTier(event.target.value === "affiliate" ? "affiliate" : "ambassador")}><option value="ambassador">Ambassador</option><option value="affiliate">Affiliate</option></select></label>}
           </div>
           <StylePreview theme={theme} name={name} logo={logo} showName={showName} showLogo={showLogo} tier={previewTier} />
@@ -93,9 +93,9 @@ export default function CreatorStylePage() {
           </button>)}</div>
           <div className="vault-toggles">
             <label><input type="checkbox" checked={showName} onChange={(event) => setShowName(event.target.checked)} disabled={theme === "classic"} /> Show my name in the background</label>
-            <label><input type="checkbox" checked={showLogo} onChange={(event) => setShowLogo(event.target.checked)} disabled={theme === "classic"} /> Show my profile logo in the background</label>
+            <label><input type="checkbox" checked={showLogo} onChange={(event) => setShowLogo(event.target.checked)} disabled={theme === "classic"} /> Show my profile picture in the background</label>
           </div>
-          <p className="vault-hint">Add or change your logo in <Link href="/profile/edit">Account / Profile</Link>. Original keeps your current look.</p>
+          <p className="vault-hint">Change your profile picture in <Link href="/profile/edit">Account / Profile</Link>. Original keeps your current look.</p>
           {loading || (user && !current) ? <p>Checking creator access...</p>
             : !user ? <p><Link href="/login">Sign in</Link> to save a creator style.</p>
               : !canSave ? <p>Style selection is available to active Affiliates and Ambassadors.</p>

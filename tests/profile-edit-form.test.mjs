@@ -23,6 +23,7 @@ function harness(params, savedSteamGame = null, saveError = null, profile = null
   const states = [];
   const effects = [];
   const savedProfiles = [];
+  const uploads = [];
   let index = 0;
   const react = {
     ...React,
@@ -43,6 +44,14 @@ function harness(params, savedSteamGame = null, saveError = null, profile = null
     },
   };
   const supabase = {
+    storage: {
+      from(bucket) {
+        return {
+          async upload(path, file) { uploads.push({ bucket, path, file }); return { error: null }; },
+          getPublicUrl(path) { return { data: { publicUrl: `https://example.test/${path}` } }; },
+        };
+      },
+    },
     from() {
       let columns = "";
       const builder = {
@@ -80,6 +89,7 @@ function harness(params, savedSteamGame = null, saveError = null, profile = null
   };
   render.load = () => effects[0]();
   render.savedProfiles = savedProfiles;
+  render.uploads = uploads;
   return render;
 }
 
@@ -118,6 +128,37 @@ test("profile save failures are reported rather than presented as saved", async 
   } finally {
     console.error = originalError;
   }
+});
+
+test("existing profile pictures stay until a new avatar replaces them", async () => {
+  const render = harness("", null, null, {
+    username: "Player", role: "member", profile_glow: "On", location: "set",
+    logo_url: "https://example.test/old-logo.png", avatar_url: "https://example.test/old-avatar.png",
+  });
+  render();
+  render.load();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  let tree = render();
+  assert.equal(find(tree, (element) => element.props?.alt === "Avatar Preview").props.src, "https://example.test/old-logo.png");
+  assert.equal(find(tree, (element) => element.props?.children === "Logo Editor"), null);
+
+  find(tree, (element) => element.type === "button" && element.props.children === "Save Changes").props.onClick();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal("logo_url" in render.savedProfiles[0], false);
+  assert.equal("avatar_url" in render.savedProfiles[0], false);
+
+  const file = new Blob(["image"], { type: "image/png" });
+  file.name = "avatar.png";
+  find(tree, (element) => element.type === "input" && element.props.type === "file").props.onChange({ target: { files: [file] } });
+  tree = render();
+  const preview = find(tree, (element) => element.props?.alt === "Avatar Preview").props.src;
+  find(tree, (element) => element.type === "button" && element.props.children === "Save Changes").props.onClick();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  URL.revokeObjectURL(preview);
+  assert.equal(render.uploads.length, 1);
+  assert.equal(render.uploads[0].bucket, "avatars");
+  assert.equal(render.savedProfiles[1].logo_url, null);
+  assert.equal(render.savedProfiles[1].avatar_url, `https://example.test/${render.uploads[0].path}`);
 });
 
 test("only Prime can choose and save the Founder RGB glow", async () => {

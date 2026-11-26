@@ -84,9 +84,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
     return tab === "awards" || tab === "friends" || tab === "settings" ? tab : "main";
   });
 
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentStatus, setCurrentStatus] = useState("Dynamic");
   const [profileGlow, setProfileGlow] = useState("On");
@@ -210,8 +208,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         if (profileData) {
           setProfileGlow(profileData.profile_glow || "On");
           setIsFounder(isFounderProfile(profileData.role, profileData.username));
-          setAvatarPreview(profileData.avatar_url || null);
-          setLogoPreview(profileData.logo_url || null);
+          setAvatarPreview(profileData.logo_url || profileData.avatar_url || null);
           setInitialLocation(profileData.location || "");
           setLocation(profileData.location || "");
           setLocationLocked(!!profileData.location_locked);
@@ -380,14 +377,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
     setGamingAccounts((current) =>
       current.filter((item) => item.id !== account.id),
     );
-  }
-
-  function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setLogoPreview(URL.createObjectURL(file));
-    setLogoFile(file);
-    markChanged();
   }
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -640,7 +629,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
     try {
       let avatarUrl: string | null = null;
-      let logoUrl: string | null = null;
 
       if (avatarFile) {
         const ext = avatarFile.name.split(".").pop() || "png";
@@ -656,20 +644,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         avatarUrl = avatarPublicData.publicUrl;
       }
 
-      if (logoFile) {
-        const ext = logoFile.name.split(".").pop() || "png";
-        const path = `${currentUser.id}/logos/logo-${Date.now()}.${ext}`;
-
-        const { error: logoUploadError } = await supabase.storage
-          .from("team-assets")
-          .upload(path, logoFile, { cacheControl: "3600", upsert: true });
-
-        if (logoUploadError) throw new Error("Logo upload failed: " + logoUploadError.message);
-
-        const { data: logoPublicData } = supabase.storage.from("team-assets").getPublicUrl(path);
-        logoUrl = logoPublicData.publicUrl;
-      }
-
       const updateData: {
         profile_glow: string | null;
         gt_xbox: string | null;
@@ -677,7 +651,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         gt_nintendo: string | null;
         gt_pc: string | null;
         avatar_url?: string;
-        logo_url?: string;
+        logo_url?: null;
         location?: string | null;
         location_locked?: boolean;
       } = {
@@ -688,8 +662,10 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         gt_pc: gtPc || null,
       };
 
-      if (avatarUrl) updateData.avatar_url = avatarUrl;
-      if (logoUrl) updateData.logo_url = logoUrl;
+      if (avatarUrl) {
+        updateData.avatar_url = avatarUrl;
+        updateData.logo_url = null;
+      }
 
       // Location: only save if initial location was empty (first save)
       if (!initialLocation || initialLocation === "") {
@@ -982,7 +958,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         .avatar-mini{
           width:58px;
           height:58px;
-          border-radius:50%;
+          border-radius:9px;
           background:#050c14;
           border:2px solid #74b4e6;
           display:flex;
@@ -996,28 +972,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         }
 
         .avatar-mini img{
-          width:100%;
-          height:100%;
-          padding:8px;
-          object-fit:contain;
-        }
-
-        .logo-mini{
-          width:58px;
-          height:58px;
-          background:#050c14;
-          border:2px solid #74b4e6;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          overflow:hidden;
-          margin-right:12px;
-          color:#8aa7c0;
-          font-size:10px;
-          font-weight:bold;
-        }
-
-        .logo-mini img{
           width:100%;
           height:100%;
           object-fit:contain;
@@ -1281,7 +1235,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
           <header className="header">
             <div className="logo-box">
               <div className="logo-circle">
-                {logoPreview ? <Image unoptimized width={100} height={100} loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "GB"}
+                <Image width={100} height={100} src="/logo-emblem.png" alt="" />
               </div>
 
               <div>
@@ -1312,25 +1266,6 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
             {activeTab === "main" && (
             <aside>
               <div className="box">
-                <div className="box-title">Logo Editor</div>
-                <div className="box-body">
-                  <label className="editor-box">
-                    <input type="file" accept="image/*" onChange={handleLogoChange} />
-                    {logoPreview ? <Image unoptimized width={240} height={180} loading="lazy" decoding="async" src={logoPreview} alt="Logo Preview" /> : "LOGO PREVIEW"}
-                  </label>
-
-                  <label className="edit-button">
-                    <input type="file" accept="image/*" onChange={handleLogoChange} />
-                    Edit Logo
-                  </label>
-
-                  <div className="help-text">
-                    This is the larger profile logo/banner-style image preview.
-                  </div>
-                </div>
-              </div>
-
-              <div className="box">
                 <div className="box-title">Avatar Editor</div>
                 <div className="box-body">
                   <label className="editor-box">
@@ -1348,18 +1283,14 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
                       {avatarPreview ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={avatarPreview} alt="Mini Avatar Preview" /> : "AVATAR"}
                     </div>
 
-                    <div className="logo-mini">
-                      {logoPreview ? <Image unoptimized width={80} height={80} loading="lazy" decoding="async" src={logoPreview} alt="Mini Logo Preview" /> : "LOGO"}
-                    </div>
-
                     <div>
                       <div className="preview-name">Player Preview</div>
-                      <div className="preview-sub">Avatar and logo preview</div>
+                      <div className="preview-sub">Profile picture preview</div>
                     </div>
                   </div>
 
                   <div className="help-text">
-                    Avatar preview works instantly while building. Permanent saving comes later.
+                    Choose an image, then save your changes to update your profile picture.
                   </div>
                 </div>
               </div>

@@ -2173,7 +2173,7 @@ function ProfilePageContent() {
               {currentCreatorStyle && currentCreatorStyle.theme !== "classic" && <div className="creator-watermark" aria-hidden="true">
                 {currentCreatorStyle.show_name && <span>{playerName}</span>}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {currentCreatorStyle.show_logo && logoUrl && <img src={logoUrl} alt="" />}
+                {currentCreatorStyle.show_logo && (logoUrl || avatarUrl) && <img src={logoUrl || avatarUrl} alt="" />}
               </div>}
               <div className="pf-banner-top">
                 <div className={`pf-avatar${ambassador?.userId === viewedUserId ? " pf-avatar-amb" : ""}`}>
