@@ -1891,10 +1891,10 @@ function ProfilePageContent() {
                     .pf-award:nth-child(2n) .award-art,.pf-award:nth-child(2n) .award-sprite,.pf-award:nth-child(2n) .award-emblem{ animation-delay:-1.7s; }
                     .pf-award:nth-child(3n) .award-art,.pf-award:nth-child(3n) .award-sprite,.pf-award:nth-child(3n) .award-emblem{ animation-delay:-3.3s; }
         }
-        .pf-friend-row{ display:flex; flex-wrap:wrap; gap:16px; }
-        .pf-friend{ width:122px; text-align:center; font-size:13px; font-weight:bold; color:#eef7ff; }
+        .pf-friend-row{ display:flex; flex-wrap:wrap; gap:14px; }
+        .pf-friend{ width:90px; text-align:center; font-size:13px; font-weight:bold; color:#eef7ff; }
         .pf-friend-avatar{
-          width:112px; height:112px; margin:0 auto 6px; padding:3px; border-radius:50%;
+          width:74px; height:74px; margin:0 auto 6px; padding:2px; border-radius:50%;
           background:#3b86c4;
           box-shadow:0 2px 8px rgba(0,0,0,.45);
         }
@@ -1905,7 +1905,9 @@ function ProfilePageContent() {
           font-weight:bold; font-size:23px; color:#f2c14e;
         }
         .pf-friend-image.has-image{ background:#000; }
-        .pf-friend-image img{ width:70%; height:70%; object-fit:contain; }
+        .pf-friend-image img{ width:70%; height:70%; object-fit:contain; filter:brightness(1.12) contrast(1.1); }
+        .pf-friend-image img.landscape{ width:78%; height:60%; }
+        .pf-friend-image img.portrait{ width:60%; height:78%; }
         .pf-friend > span{ display:block; overflow-wrap:anywhere; }
         .pf-friend-avatar.favorite-xbox{ background:#2bd96b; box-shadow:0 0 12px rgba(0,255,100,.5); }
         .pf-friend-avatar.favorite-playstation{ background:#2f91ff; box-shadow:0 0 12px rgba(0,120,255,.5); }
@@ -1914,16 +1916,37 @@ function ProfilePageContent() {
         .pf-friend-avatar.friend-gold{ background:#f2c14e; box-shadow:0 0 12px rgba(242,193,78,.6); }
         .pf-friend-avatar[class*="creator-style-"]{ background:var(--creator-accent); box-shadow:0 0 12px color-mix(in srgb,var(--creator-glow) 65%,transparent); }
         .pf-friend-avatar.friend-rgb{
-          background:linear-gradient(180deg,#39f8ff,#4a86ff,#c55bff,#ff65bd,#39f8ff,#4a86ff,#c55bff,#ff65bd,#39f8ff);
+          position:relative;
+          isolation:isolate;
+          background:transparent;
+          animation:friend-rgb-glow 12s ease-in-out infinite;
+        }
+        .pf-friend-avatar.friend-rgb::before{
+          content:"";
+          position:absolute;
+          inset:0;
+          z-index:-1;
+          border-radius:50%;
+          background:var(--founder-rgb-spectrum);
           background-size:100% 200%;
-          animation:founder-rgb-flow 8s linear infinite, friend-rgb-glow 8s ease-in-out infinite;
+          filter:saturate(.75) brightness(.85);
+          animation:founder-rgb-flow 8s linear infinite, friend-rgb-hue 12s linear infinite;
+        }
+        @keyframes friend-rgb-hue{
+          from{ filter:saturate(.75) brightness(.85) hue-rotate(0deg); }
+          to{ filter:saturate(.75) brightness(.85) hue-rotate(360deg); }
         }
         @keyframes friend-rgb-glow{
-          0%,100%{ box-shadow:0 0 12px #65aaff,0 0 20px #9a37e880; }
-          33%{ box-shadow:0 0 12px #c55bff,0 0 20px #ff5ba580; }
-          66%{ box-shadow:0 0 12px #36dfd3,0 0 20px #368aff80; }
+          0%,100%{ box-shadow:0 0 8px #39f8ff99,0 0 14px #368aff55; }
+          20%{ box-shadow:0 0 8px #4a86ff99,0 0 14px #9a37e855; }
+          40%{ box-shadow:0 0 8px #c55bff99,0 0 14px #ff5ba555; }
+          60%{ box-shadow:0 0 8px #ff454599,0 0 14px #ffad3d55; }
+          80%{ box-shadow:0 0 8px #62ff6299,0 0 14px #39f8ff55; }
         }
-        @media (prefers-reduced-motion:reduce){ .pf-friend-avatar.friend-rgb{ animation:none; box-shadow:0 0 12px #65aaff; } }
+        @media (prefers-reduced-motion:reduce){
+          .pf-friend-avatar.friend-rgb{ animation:none; box-shadow:0 0 8px #39f8ff99; }
+          .pf-friend-avatar.friend-rgb::before{ animation:none; }
+        }
         .pf-showall{
           display:block; margin-top:10px; text-align:center; padding:6px;
           background:#0b1d2c; border:1px solid #244b70; color:#d7eaff; font-size:12px; font-weight:bold;
@@ -2458,7 +2481,11 @@ function ProfilePageContent() {
                           <div className={`pf-friend-image${friend.avatar_url ? " has-image" : ""}`}>
                           {friend.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt="" />
+                            <img loading="lazy" decoding="async" src={friend.avatar_url} alt="" onLoad={(event) => {
+                              const image = event.currentTarget;
+                              image.classList.toggle("landscape", image.naturalWidth > image.naturalHeight * 1.15);
+                              image.classList.toggle("portrait", image.naturalHeight > image.naturalWidth * 1.15);
+                            }} />
                           ) : (
                             friend.username.slice(0, 2).toUpperCase()
                           )}

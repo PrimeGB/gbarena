@@ -1,3 +1,8 @@
+.profile-page,
+.founder-rgb-preview {
+  --founder-rgb-spectrum: linear-gradient(180deg, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff);
+}
+
 .profile-page.founder-rgb .wrapper {
   position: relative;
   isolation: isolate;
@@ -11,7 +16,7 @@
   z-index: 20;
   padding: 4px;
   pointer-events: none;
-  background: linear-gradient(180deg, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff);
+  background: var(--founder-rgb-spectrum);
   background-size: 100% 200%;
   animation: founder-rgb-flow 8s linear infinite;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -23,7 +28,7 @@
 .founder-rgb-preview {
   margin: 12px 4px 4px;
   padding: 4px;
-  background: linear-gradient(180deg, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff, #4a86ff, #c55bff, #ff65bd, #39f8ff);
+  background: var(--founder-rgb-spectrum);
   background-size: 100% 200%;
   box-shadow: 0 0 18px #65aaff80, 0 0 30px #c55bff50;
   animation: founder-rgb-flow 8s linear infinite;

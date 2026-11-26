@@ -38,5 +38,7 @@ test("Founder RGB keeps the animated full border and glow treatment", () => {
   assert.match(css, /\.profile-page\.founder-rgb \.wrapper::before\s*\{/);
   assert.match(css, /animation:\s*founder-rgb-flow 8s linear infinite/);
   assert.match(css, /@keyframes founder-glow/);
+  assert.match(css, /--founder-rgb-spectrum:[^;]*#39f8ff[^;]*#4a86ff[^;]*#c55bff/);
+  assert.match(readFileSync("app/profile/page.tsx", "utf8"), /background:var\(--founder-rgb-spectrum\)/);
   assert.doesNotMatch(css, /founder-rgb-fade/);
 });
