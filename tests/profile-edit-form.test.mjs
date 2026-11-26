@@ -80,6 +80,8 @@ function harness(params, savedSteamGame = null, saveError = null, profile = null
     "../../../lib/gamingAccounts": accountExports,
     "../../../lib/profileGlow": glowExports,
     "../founder-glow.css": {},
+    "./ProfileControls": { __esModule: true, default: () => null },
+    "./LinkedIds": { __esModule: true, default: () => null },
     "../../awards/AwardArt": { __esModule: true, default: () => null, AWARD_CSS: "" },
   };
   new Function("require", "exports", source)((name) => mocks[name] || require(name), exports);
@@ -103,18 +105,32 @@ function find(element, predicate) {
   return null;
 }
 
-test("Steam return restores the selected game and account ID while allowing edits", () => {
-  const render = harness("platform=pc&steam_id=1234", JSON.stringify({ category: "fighting-games", game: "street-fighter-6" }));
-  const input = (tree) => find(tree, (element) => element.type === "input" && element.props.placeholder === "Steam, Battle.net, Epic or EA ID");
+test("Steam return fills the PC ID without requiring a game and allows edits", async () => {
+  const originalWindow = globalThis.window;
+  let replacedUrl = "";
+  globalThis.window = {
+    location: { href: "https://gamebattles.app/profile/edit?platform=pc&focus=gaming-account&steam_id=1234" },
+    history: { replaceState(_state, _title, url) { replacedUrl = url; } },
+  };
+  try {
+  const render = harness("platform=pc&steam_id=1234", null, null, { username: "Player", role: "member", gt_pc: "old-id", location: "set" });
+  const input = (tree) => find(tree, (element) => element.type === "input" && element.props.placeholder === "PC / Steam ID");
+  render();
+  render.load();
+  await new Promise((resolve) => setTimeout(resolve, 0));
   let tree = render();
   assert.equal(input(tree).props.value, "1234");
-  assert.ok(find(tree, (element) => element.type === "select" && element.props.value === "street-fighter-6"));
+  assert.equal(find(tree, (element) => element.props?.children === "Gaming Accounts"), null);
   input(tree).props.onChange({ target: { value: "edited-id" } });
   tree = render();
   assert.equal(input(tree).props.value, "edited-id");
-  find(tree, (element) => element.type === "select" && element.props.value === "street-fighter-6")
-    .props.onChange({ target: { value: "brawlhalla" } });
-  assert.equal(input(render()).props.value, "1234");
+  find(tree, (element) => element.type === "button" && element.props.children === "Save Changes").props.onClick();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(render.savedProfiles[0].gt_pc, "edited-id");
+  assert.equal(replacedUrl, "/profile/edit");
+  } finally {
+    globalThis.window = originalWindow;
+  }
 });
 
 test("profile save failures are reported rather than presented as saved", async () => {

@@ -9,6 +9,7 @@ import { ladderGameLabel, ladderPlatformLabel } from "../../../lib/ladderCatalog
 import { rankedLadderTeams } from "../../../lib/ladderStandings";
 import { useUser } from "../../../lib/useUser";
 import { rapidRoyalDisplayName } from "../../../lib/rapidRoyal";
+import { getProfileListVisibility } from "../../../lib/profileListVisibility";
 
 type TeamRow = {
   id: string;
@@ -54,11 +55,13 @@ function ProfileTeamsContent() {
   const [loadError, setLoadError] = useState("");
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState("");
+  const [privateList, setPrivateList] = useState(false);
   const requestId = useRef(0);
 
   const loadTeams = useCallback(async (targetUserId: string, viewerUserId: string | null) => {
     const currentRequest = ++requestId.current;
     setLoading(true);
+    setPrivateList(false);
 
     const viewingOwnTeams = targetUserId === viewerUserId;
     if (viewingOwnTeams) {
@@ -77,6 +80,28 @@ function ProfileTeamsContent() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles").select("username").eq("id", targetUserId).maybeSingle();
+
+    if (!viewingOwnTeams && !profileError && profile) {
+      try {
+        const visibility = await getProfileListVisibility(targetUserId);
+        if (currentRequest !== requestId.current) return;
+        if (!visibility.teams) {
+          setTeams([]);
+          setPendingInvites([]);
+          setPlayerName(profile.username || "Player");
+          setPrivateList(true);
+          setLoadedUserId(targetUserId);
+          setLoading(false);
+          return;
+        }
+      } catch (reason) {
+        if (currentRequest !== requestId.current) return;
+        setLoadError(`Teams visibility could not be loaded: ${reason instanceof Error ? reason.message : String(reason)}`);
+        setLoadedUserId(targetUserId);
+        setLoading(false);
+        return;
+      }
+    }
 
     const { data: ownedTeams, error: ownedError } = await supabase
       .from("teams")
@@ -337,6 +362,8 @@ function ProfileTeamsContent() {
               </div>
             ) : loadError ? (
               <div className="empty-message" role="alert">{loadError}</div>
+            ) : privateList ? (
+              <div className="empty-message">This player&apos;s full teams list is private.</div>
             ) : teams.length === 0 ? (
               <div className="empty-message">
                 <strong>{isOwn ? "Looks lonely in here." : "No teams yet."}</strong>

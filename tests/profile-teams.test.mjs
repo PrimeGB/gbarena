@@ -11,7 +11,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
 }).outputText;
 
-function harness(initialTarget) {
+function harness(initialTarget, visibility = true) {
   const states = [];
   const effects = [];
   const calls = [];
@@ -77,6 +77,10 @@ function harness(initialTarget) {
     if (name.endsWith("/ladderCatalog")) return { ladderGameLabel: () => "Battlefield 6", ladderPlatformLabel: () => "PC" };
     if (name.endsWith("/ladderStandings")) return { rankedLadderTeams: async () => [{ id: "other-team" }] };
     if (name.endsWith("/rapidRoyal")) return { rapidRoyalDisplayName: (value) => value };
+    if (name.endsWith("/profileListVisibility")) return { getProfileListVisibility: async () => {
+      if (visibility === "error") throw new Error("visibility unavailable");
+      return { teams: visibility, friends: true, awards: true };
+    } };
     return require(name);
   }, exports);
   return {
@@ -115,4 +119,26 @@ test("switching from another player to your teams loads your own invitations and
   assert.match(markup, /My Teams/);
   assert.match(markup, /My Team/);
   assert.equal(page.calls.find((call) => call.table === "team_invites").filters.user_id, "me");
+});
+
+test("locked team pages do not load the full team list, while the owner can still view theirs", async () => {
+  const page = harness("other", false);
+  page.render();
+  await flush();
+  let markup = renderToStaticMarkup(page.render());
+  assert.match(markup, /full teams list is private/);
+  assert.equal(page.calls.some((call) => call.table === "teams" || call.table === "team_members"), false);
+  page.setTarget("");
+  page.render();
+  await flush();
+  markup = renderToStaticMarkup(page.render());
+  assert.match(markup, /My Team/);
+});
+
+test("team list visibility failures are reported without loading the list", async () => {
+  const page = harness("other", "error");
+  page.render();
+  await flush();
+  assert.match(renderToStaticMarkup(page.render()), /Teams visibility could not be loaded: visibility unavailable/);
+  assert.equal(page.calls.some((call) => call.table === "teams" || call.table === "team_members"), false);
 });

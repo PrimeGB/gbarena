@@ -8,6 +8,7 @@ import { supabase } from "../../../lib/supabase";
 import AwardArt, { AWARD_CSS, awardAccent } from "../../awards/AwardArt";
 import AwardDetailsDialog, { type EarnedAwardDetails } from "../../components/AwardDetailsDialog";
 import SeasonHonours from "../../components/SeasonHonours";
+import { getProfileListVisibility } from "../../../lib/profileListVisibility";
 
 type PlayerAward = {
   id: number;
@@ -39,27 +40,55 @@ function PlayerAwardsContent() {
   const [referralCopied, setReferralCopied] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [privateList, setPrivateList] = useState(false);
+  const [loadedUserId, setLoadedUserId] = useState("");
 
   useEffect(() => {
     if (loading || !viewedUserId) return;
     let cancelled = false;
 
     async function loadAwards() {
+      setReady(false);
+      setError("");
+      setPrivateList(false);
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("username")
         .eq("id", viewedUserId)
         .maybeSingle();
       if (profileError) {
-        if (!cancelled) setError(`Profile could not be loaded: ${profileError.message}`);
+        if (!cancelled) { setError(`Profile could not be loaded: ${profileError.message}`); setLoadedUserId(viewedUserId); setReady(true); }
         return;
       }
       if (!profile?.username) {
         if (!cancelled) {
           setError("Player not found.");
+          setLoadedUserId(viewedUserId);
           setReady(true);
         }
         return;
+      }
+
+      if (user?.id !== viewedUserId) {
+        try {
+          const visibility = await getProfileListVisibility(viewedUserId);
+          if (cancelled) return;
+          if (!visibility.awards) {
+            setUsername(profile.username);
+            setAwards([]);
+            setPrivateList(true);
+            setLoadedUserId(viewedUserId);
+            setReady(true);
+            return;
+          }
+        } catch (reason) {
+          if (!cancelled) {
+            setError(`Awards visibility could not be loaded: ${reason instanceof Error ? reason.message : String(reason)}`);
+            setLoadedUserId(viewedUserId);
+            setReady(true);
+          }
+          return;
+        }
       }
 
       const { data, error: awardsError } = await supabase.rpc("staff_player_award_history", {
@@ -69,6 +98,7 @@ function PlayerAwardsContent() {
       setUsername(profile.username);
       if (awardsError) setError(`Awards could not be loaded: ${awardsError.message}`);
       else setAwards(((data || []) as PlayerAward[]).filter((award) => !award.revoked_at));
+      setLoadedUserId(viewedUserId);
       setReady(true);
     }
 
@@ -76,7 +106,7 @@ function PlayerAwardsContent() {
     return () => {
       cancelled = true;
     };
-  }, [loading, viewedUserId]);
+  }, [loading, viewedUserId, user?.id]);
 
   useEffect(() => {
     if (loading || !user || viewedUserId !== user.id) return;
@@ -110,6 +140,7 @@ function PlayerAwardsContent() {
   }
 
   const backHref = requestedUserId ? `/profile?userId=${encodeURIComponent(requestedUserId)}` : "/profile";
+  const currentReady = ready && loadedUserId === viewedUserId;
 
   return (
     <main className="pa-page">
@@ -142,10 +173,10 @@ function PlayerAwardsContent() {
       `}</style>
       <div className="pa-shell">
         <Link className="pa-back" href={backHref}>← Back to profile</Link>
-        <h1 className="pa-title">{ready ? `${username}'s Awards` : "Player Awards"}</h1>
+        <h1 className="pa-title">{currentReady && username ? `${username}'s Awards` : "Player Awards"}</h1>
         <p className="pa-sub">Awards earned on GameBattles.</p>
         <Link className="pa-catalog" href="/awards">Browse the award catalog →</Link>
-        {viewedUserId && <SeasonHonours entityId={viewedUserId} kind="players" />}
+        {viewedUserId && currentReady && !privateList && !error && <SeasonHonours entityId={viewedUserId} kind="players" />}
         {(!requestedUserId || (user && viewedUserId === user.id)) && (
           <section className="pa-invite" id="invite-rewards">
             <h2>Invite players. Earn community awards.</h2>
@@ -184,10 +215,11 @@ function PlayerAwardsContent() {
         )}
         {error && <p className="pa-error" role="alert">{error}</p>}
         {!viewedUserId && !loading && <p className="pa-empty">Sign in to view your awards.</p>}
-        {!ready && viewedUserId && <p className="pa-empty">Loading awards...</p>}
-        {ready && !error && awards.length === 0 && <p className="pa-empty">No awards earned yet.</p>}
+        {!currentReady && viewedUserId && <p className="pa-empty">Loading awards...</p>}
+        {currentReady && privateList && <p className="pa-empty">This player&apos;s full awards list is private.</p>}
+        {currentReady && !privateList && !error && awards.length === 0 && <p className="pa-empty">No awards earned yet.</p>}
         <section className="pa-grid">
-          {awards.map((award) => (
+          {currentReady && !privateList && !error && awards.map((award) => (
             <article
               className="award-card pa-card"
               key={award.id}

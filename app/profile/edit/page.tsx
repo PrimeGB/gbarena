@@ -3,20 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 
-import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
 import { isFounderProfile } from "../../../lib/profileGlow";
 import AwardArt, { AWARD_CSS } from "../../awards/AwardArt";
 import "../founder-glow.css";
-import {
-  GamingAccount,
-  gamingCategoriesForPlatform,
-  gamingGamesForPlatform,
-  gamingPlatformLabel,
-  gamingPlatforms,
-} from "../../../lib/gamingAccounts";
+import ProfileControls from "./ProfileControls";
+import LinkedIds from "./LinkedIds";
 
 type AppUser = { id: string; email?: string | null };
 
@@ -37,45 +32,15 @@ type EarnedAward = {
 type EditTab = "main" | "awards" | "friends" | "settings";
 
 function EditProfileContent() {
-  const searchParams = useSearchParams();
-  const steamGame = useSyncExternalStore(subscribeToSteamGame, getSteamGame, () => null);
-  const steamId = searchParams.get("steam_id") || "";
-  const platformParam = searchParams.get("platform");
-  return <EditProfileForm key={`${platformParam}:${steamId}:${steamGame}`} savedSteamGame={steamGame} />;
+  return <EditProfileForm />;
 }
 
-function subscribeToSteamGame(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
-
-function getSteamGame() {
-  return sessionStorage.getItem("gb_steam_game");
-}
-
-function parseSteamGame(value: string | null): { category: string; game: string } | null {
-  if (!value) return null;
-  try {
-    const saved: unknown = JSON.parse(value);
-    if (saved && typeof saved === "object" && "category" in saved && "game" in saved &&
-      typeof saved.category === "string" && typeof saved.game === "string") {
-      return { category: saved.category, game: saved.game };
-    }
-    console.error("Saved Steam game selection is invalid.");
-  } catch (error) {
-    console.error("Saved Steam game selection could not be read:", error);
-  }
-  return null;
-}
-
-function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) {
+function EditProfileForm() {
   const searchParams = useSearchParams();
   const { user, loading } = useUser();
   const currentUser = user as AppUser | null;
   const platformParam = searchParams.get("platform");
-  const initialPlatform = platformParam === "ea" || platformParam === "pc" ? platformParam : "xbox";
-  const initialSteamId = initialPlatform !== "xbox" ? searchParams.get("steam_id") || "" : "";
-  const initialSteamGame = initialSteamId ? parseSteamGame(savedSteamGame) : null;
+  const initialSteamId = platformParam === "pc" ? searchParams.get("steam_id") || "" : "";
   const gamingAccountSectionRef = useRef<HTMLDivElement | null>(null);
   const gamingAccountIdInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -89,6 +54,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
   const [currentStatus, setCurrentStatus] = useState("Dynamic");
   const [profileGlow, setProfileGlow] = useState("On");
   const [isFounder, setIsFounder] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [location, setLocation] = useState("");
   const [initialLocation, setInitialLocation] = useState<string | null>(null);
   const [locationLocked, setLocationLocked] = useState(false);
@@ -96,28 +62,12 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
   const [gtPlaystation, setGtPlaystation] = useState("");
   const [gtNintendo, setGtNintendo] = useState("");
   const [gtPc, setGtPc] = useState("");
-  const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
-  const [gamingAccountPlatform, setGamingAccountPlatform] = useState<string>(initialPlatform);
-  const [gamingAccountCategory, setGamingAccountCategory] = useState<string>(initialSteamGame?.category || "call-of-duty");
-  const [gamingAccountGame, setGamingAccountGame] = useState<string>(initialSteamGame?.game || "modern-warfare-4");
-  const [gamingAccountDraft, setGamingAccountDraft] = useState<{ key: string; value: string } | null>(null);
-  const [gamingAccountError, setGamingAccountError] = useState(() => {
-    const error = initialPlatform !== "xbox" && searchParams.get("steam_error");
+  const [steamError] = useState(() => {
+    const error = searchParams.get("steam_error");
     return error ? error === "unavailable"
       ? "Steam could not be reached. Please try again."
       : "Steam sign-in could not be verified. Please try again." : "";
   });
-  const [steamPrefill, setSteamPrefill] = useState(initialSteamId);
-  const gamingAccountKey = JSON.stringify([gamingAccountPlatform, gamingAccountCategory, gamingAccountGame]);
-  const existingAccount = gamingAccounts.find((account) =>
-    account.platform === gamingAccountPlatform &&
-    account.category === gamingAccountCategory &&
-    account.game === gamingAccountGame,
-  );
-  const gamingAccountId = gamingAccountDraft?.key === gamingAccountKey
-    ? gamingAccountDraft.value
-    : (gamingAccountPlatform === "pc" ? steamPrefill : "") || existingAccount?.account_id || "";
-  const [savingGamingAccount, setSavingGamingAccount] = useState(false);
   const [displayAwards, setDisplayAwards] = useState<string[]>([]);
   const [earnedAwards, setEarnedAwards] = useState<EarnedAward[]>([]);
   const [awardsReady, setAwardsReady] = useState(false);
@@ -186,7 +136,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select(
-            `username,role,profile_glow,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
+            `username,role,profile_glow,profile_status_private,avatar_url,logo_url,location,location_locked,gt_xbox,gt_playstation,gt_nintendo,gt_pc,display_awards`
           )
           .eq("id", currentUser.id)
           .maybeSingle();
@@ -207,7 +157,9 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
         if (profileData) {
           setProfileGlow(profileData.profile_glow || "On");
+          setCurrentStatus(profileData.profile_status_private ? "Private" : "Dynamic");
           setIsFounder(isFounderProfile(profileData.role, profileData.username));
+          setIsOwner(profileData.role === "owner");
           setAvatarPreview(profileData.logo_url || profileData.avatar_url || null);
           setInitialLocation(profileData.location || "");
           setLocation(profileData.location || "");
@@ -215,7 +167,8 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
           setGtXbox(profileData.gt_xbox || "");
           setGtPlaystation(profileData.gt_playstation || "");
           setGtNintendo(profileData.gt_nintendo || "");
-          setGtPc(profileData.gt_pc || "");
+          setGtPc((current) => current || initialSteamId || profileData.gt_pc || "");
+          if (initialSteamId) setHasChanges(true);
           const hasSavedSlots = Array.isArray(profileData.display_awards);
           const saved = hasSavedSlots ? (profileData.display_awards as string[]) : [];
           const resolved = saved
@@ -278,105 +231,11 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
     }
 
     if (!loading) loadProfileAndRelations();
-  }, [loading, currentUser?.id]);
-
-  useEffect(() => {
-    const userId = currentUser?.id;
-    if (!userId) return;
-
-    async function loadGamingAccounts() {
-      const { data, error } = await supabase
-        .from("gaming_accounts")
-        .select("id,user_id,platform,category,game,account_id,locked_until")
-        .eq("user_id", userId)
-        .order("platform")
-        .order("game");
-
-      if (error) {
-        setGamingAccountError("Gaming accounts could not be loaded: " + error.message);
-        return;
-      }
-
-      setGamingAccounts((data || []) as GamingAccount[]);
-    }
-
-    void loadGamingAccounts();
-  }, [currentUser?.id]);
-
-  async function saveGamingAccount() {
-    const cleanId = gamingAccountId.trim();
-    if (!currentUser?.id || !cleanId) {
-      setGamingAccountError("Enter a gaming ID before saving.");
-      return;
-    }
-
-    setSavingGamingAccount(true);
-    setGamingAccountError("");
-
-    const { data, error } = await supabase
-      .from("gaming_accounts")
-      .upsert(
-        {
-          user_id: currentUser.id,
-          platform: gamingAccountPlatform,
-          category: gamingAccountCategory,
-          game: gamingAccountGame,
-          account_id: cleanId,
-        },
-        { onConflict: "user_id,platform,category,game" },
-      )
-      .select("id,user_id,platform,category,game,account_id,locked_until")
-      .single();
-
-    if (error) {
-      setGamingAccountError(error.message);
-    } else {
-      setGamingAccounts((current) => [
-        ...current.filter(
-          (account) =>
-            account.platform !== gamingAccountPlatform ||
-            account.category !== gamingAccountCategory ||
-            account.game !== gamingAccountGame,
-        ),
-        data as GamingAccount,
-      ]);
-      setSteamPrefill("");
-      setGamingAccountDraft(null);
-    }
-
-    setSavingGamingAccount(false);
-  }
-
-  const steamLinked = Boolean(steamPrefill) || gamingAccounts.some((account) => account.platform === "pc");
-  const availableGamingCategories = gamingCategoriesForPlatform(gamingAccountPlatform);
-  const availableGamingGames = gamingGamesForPlatform(gamingAccountPlatform);
-  const availableCategoryGames = availableGamingGames.filter(
-    (game) => game.category === gamingAccountCategory,
-  );
+  }, [loading, currentUser?.id, initialSteamId]);
 
   function linkWithSteam() {
-    sessionStorage.setItem(
-      "gb_steam_game",
-      JSON.stringify({ category: gamingAccountCategory, game: gamingAccountGame }),
-    );
+    if (hasChanges && !window.confirm("You have unsaved changes. Continue to Steam without saving?")) return;
     window.location.href = "/api/steam/login";
-  }
-
-  async function removeGamingAccount(account: GamingAccount) {
-    setGamingAccountError("");
-    const { error } = await supabase
-      .from("gaming_accounts")
-      .delete()
-      .eq("id", account.id);
-
-    if (error) {
-      setGamingAccountError(error.message);
-      return;
-    }
-
-    setGamingAccounts((current) =>
-      current.filter((item) => item.id !== account.id),
-    );
   }
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -646,6 +505,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
       const updateData: {
         profile_glow: string | null;
+        profile_status_private: boolean;
         gt_xbox: string | null;
         gt_playstation: string | null;
         gt_nintendo: string | null;
@@ -656,6 +516,7 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         location_locked?: boolean;
       } = {
         profile_glow: profileGlow || null,
+        profile_status_private: currentStatus === "Private",
         gt_xbox: gtXbox || null,
         gt_playstation: gtPlaystation || null,
         gt_nintendo: gtNintendo || null,
@@ -679,6 +540,11 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
       setHasChanges(false);
       setSavedMessage("Profile saved.");
+      if (initialSteamId) {
+        const url = new URL(window.location.href);
+        for (const key of ["steam_id", "steam_error", "platform", "focus"]) url.searchParams.delete(key);
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      }
       if (!initialLocation || initialLocation === "") setLocationLocked(true);
     } catch (err) {
       console.error("Profile save error:", err);
@@ -1219,6 +1085,66 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
         }
         .friend-avatar img{ width:100%; height:100%; object-fit:cover; }
 
+        .page{ background:radial-gradient(ellipse at 50% 0,#173651 0,#07111d 46%,#03080e 100%); padding:22px 16px 50px; }
+        .wrapper{ width:min(1120px,100%); box-shadow:none; }
+        .header{ height:auto; min-height:72px; padding:0 6px 16px; background:transparent; border:0; }
+        .logo-box{ height:auto; padding:0; background:transparent; border:0; box-shadow:none; }
+        .logo-circle{ width:48px; height:48px; margin-right:12px; }
+        .logo-text{ font-size:32px; line-height:30px; }
+        .title-bar{ position:relative; overflow:hidden; min-height:122px; margin:0; padding:25px 28px; border:1px solid #285577; border-radius:14px 14px 0 0; background:linear-gradient(100deg,rgba(13,54,85,.97),rgba(6,23,39,.94)),url('/hex-grid.svg') center/420px; }
+        .title-bar:after{ content:""; position:absolute; inset:0; opacity:.17; pointer-events:none; background:url('/hex-grid.svg') right center/420px; }
+        .title-bar > div{ position:relative; z-index:1; }
+        .title-main{ font-size:27px; color:#fff; letter-spacing:.02em; }
+        .title-sub{ color:#bdd3e4; margin-top:8px; line-height:1.5; }
+        .profile-back{ display:inline-block; margin-bottom:11px; color:#91c9ef; font-size:12px; font-weight:bold; }
+        .profile-back:hover{ color:#fff; }
+        .nav{ margin:0; padding:10px 18px; border:1px solid #285577; border-top:0; border-radius:0 0 14px 14px; background:#0a1a29; gap:7px; }
+        .nav button{ min-height:38px; padding:8px 16px; background:transparent; border-radius:7px; color:#a9c1d5; }
+        .nav button.active{ color:#fff; border-color:#397eaa; background:linear-gradient(135deg,#245a80,#14344d); }
+        .edit-grid{ grid-template-columns:280px minmax(0,1fr); gap:20px; margin-top:20px; padding:0; }
+        .box{ background:linear-gradient(150deg,#10283a,#0a1724 70%); border:1px solid #28465c; border-radius:14px; box-shadow:0 10px 30px #0003; margin-bottom:18px; }
+        .box-title{ height:auto; min-height:55px; padding:16px 20px; background:transparent; border-bottom:1px solid #294457; color:#f1f7fc; font-size:13px; letter-spacing:.08em; }
+        .box-body{ padding:20px; }
+        .editor-box{ height:220px; background:radial-gradient(circle,#173650,#07111b); border:1px solid #396587; }
+        .profile-preview{ border-color:#294b64; background:#091725; }
+        .form-row label{ color:#e4f0f8; }
+        .form-row input,.form-row select,.form-row textarea{ background:#081522; border-color:#36566d; color:#f2f7fb; min-height:42px; }
+        .form-row input:focus,.form-row select:focus,.form-row textarea:focus{ border-color:#65baff; }
+        .notice{ background:#102c40; border-color:#345d76; color:#c6dbe9; }
+        .save-button{ padding:0 18px; }
+        .section-intro{ margin:0 0 16px; color:#b5ccdc; line-height:1.6; }
+        .visibility-list{ display:grid; gap:0; }
+        .visibility-row{ display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 0; border-top:1px solid #284457; }
+        .visibility-row strong,.visibility-row small{ display:block; }
+        .visibility-row strong{ color:#f3f8fc; font-size:13px; }
+        .visibility-row small{ margin-top:4px; color:#a2bbcc; line-height:1.45; }
+        .visibility-switch{ display:flex; align-items:center; gap:8px; flex:none; color:#d5e8f4; font-weight:bold; }
+        .visibility-switch input{ width:18px; height:18px; accent-color:#4fa9df; }
+        .special-profile{ border-color:#795f35; background:linear-gradient(135deg,#2c261c,#111e29 58%,#0a1724); }
+        .special-profile .box-title{ border-color:#6b5633; color:#f3d996; }
+        .special-profile-heading{ display:flex; align-items:center; gap:14px; }
+        .special-profile-heading > span{ display:grid; place-items:center; width:46px; height:46px; flex:none; border:1px solid #b18f51; border-radius:12px; color:#f3d478; font-size:24px; background:#3a2f1e; }
+        .special-profile-heading strong{ color:#f7e5b4; font-size:15px; }
+        .special-profile-heading p{ margin:5px 0 0; color:#c9c6b6; line-height:1.5; }
+        .founder-profile-access{ margin-top:20px; padding-top:16px; border-top:1px solid #5b523e; }
+        .founder-profile-access > strong{ color:#f1e0b0; }
+        .staff-player-picker{ position:relative; margin-top:10px; }
+        .staff-player-picker input{ width:100%; min-height:42px; padding:10px 12px; border:1px solid #466478; border-radius:8px; background:#081522; color:#fff; }
+        .staff-player-picker ul{ position:absolute; z-index:10; top:100%; left:0; right:0; margin:4px 0 0; padding:4px; list-style:none; background:#102538; border:1px solid #517596; border-radius:8px; }
+        .staff-player-picker li{ padding:9px; cursor:pointer; color:#e4f2fb; }
+        .staff-player-picker li:hover,.staff-player-picker li[aria-selected="true"]{ background:#24506b; }
+        .staff-player-status{ color:#bfd5e3; }
+        .founder-access-actions{ display:flex; gap:8px; margin-top:10px; }
+        .founder-access-actions .edit-button{ width:auto; margin:0; padding:0 16px; }
+        .linked-id-form{ display:grid; grid-template-columns:1fr 1.4fr auto; align-items:end; gap:10px; }
+        .linked-id-form label{ color:#e4f0f8; font-weight:bold; font-size:12px; }
+        .linked-id-form input{ display:block; width:100%; min-height:42px; margin-top:7px; padding:10px 12px; border:1px solid #36566d; border-radius:8px; background:#081522; color:#fff; }
+        .linked-id-cancel,.linked-id-row button{ border:0; background:transparent; color:#92c9ec; font-weight:bold; cursor:pointer; padding:7px; }
+        .linked-id-list{ margin-top:16px; }
+        .linked-id-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-top:1px solid #284457; }
+        .linked-id-row strong,.linked-id-row small{ display:block; overflow-wrap:anywhere; }
+        .linked-id-row small{ margin-top:4px; color:#a9c3db; }
+        button:disabled{ opacity:.6; cursor:not-allowed; }
         @media (max-width:860px){
           .edit-grid{ grid-template-columns:1fr; }
           .edit-grid aside{ position:static; }
@@ -1227,6 +1153,20 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
           .friend-slots{ grid-template-columns:repeat(2,1fr); }
           .manage-grid{ grid-template-columns:repeat(2,1fr); }
           .logo-text{ font-size:28px; }
+        }
+        @media (max-width:600px){
+          .page{ padding:12px 10px 40px; }
+          .header{ min-height:62px; }
+          .logo-text{ font-size:25px; line-height:26px; }
+          .logo-sub{ font-size:8px; letter-spacing:3px; }
+          .title-bar{ min-height:0; padding:20px; }
+          .title-main{ font-size:23px; }
+          .nav{ padding:8px; }
+          .nav button{ flex:1 1 auto; padding:8px; }
+          .box-body{ padding:16px; }
+          .editor-box{ height:190px; }
+          .linked-id-form{ grid-template-columns:1fr; }
+          .linked-id-row{ align-items:flex-start; }
         }
       `}</style>
 
@@ -1247,15 +1187,15 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
 
           <div className="title-bar">
             <div>
+              <Link className="profile-back" href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>← Back to profile</Link>
               <div className="title-main">Account / Profile</div>
               <div className="title-sub">
-                Manage the important details that appear on your public player profile.
+                Your picture, gaming accounts, privacy and profile style, all in one place.
               </div>
             </div>
           </div>
 
           <nav className="nav">
-            <Link href="/profile" onClick={(event) => handleNavClick(event, "/profile")}>Profile</Link>
             <button className={activeTab === "main" ? "active" : ""} onClick={() => handleTabChange("main")}>Main Edit</button>
             <button className={activeTab === "awards" ? "active" : ""} onClick={() => handleTabChange("awards")}>Awards</button>
             <button className={activeTab === "friends" ? "active" : ""} onClick={() => handleTabChange("friends")}>Friends</button>
@@ -1350,20 +1290,22 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
                       )}
                     </div>
 
-                    <div className="form-row">
+                    <div className="form-row" ref={gamingAccountSectionRef}>
                       <label>Gamertags</label>
                       <input value={gtXbox} onChange={(e) => { setGtXbox(e.target.value); markChanged(); }} placeholder="Xbox GT" style={{marginBottom:8}} />
                       <input value={gtPlaystation} onChange={(e) => { setGtPlaystation(e.target.value); markChanged(); }} placeholder="PlayStation ID" style={{marginBottom:8}} />
                       <input value={gtNintendo} onChange={(e) => { setGtNintendo(e.target.value); markChanged(); }} placeholder="Nintendo ID" style={{marginBottom:8}} />
-                      <input value={gtPc} onChange={(e) => { setGtPc(e.target.value); markChanged(); }} placeholder="PC / Steam ID" style={{marginBottom:8}} />
+                      <input ref={gamingAccountIdInputRef} value={gtPc} onChange={(e) => { setGtPc(e.target.value); markChanged(); }} placeholder="PC / Steam ID" style={{marginBottom:8}} />
                       <button
                         className="save-button"
                         type="button"
                         onClick={linkWithSteam}
                       >
-                        {steamLinked ? "Relink with Steam" : "Link with Steam"}
+                        Link with Steam
                       </button>
                       <div className="field-note">Provide platform-specific IDs so friends and teams can find you. Steam players: use Link with Steam to sign in through Steam and pick up your ID automatically.</div>
+                      {initialSteamId && <div className="field-note">Steam verified. Save changes to use this as your PC ID.</div>}
+                      {steamError && <div className="error-text" role="alert">{steamError}</div>}
                     </div>
 
                     <div className="save-row">
@@ -1379,146 +1321,8 @@ function EditProfileForm({ savedSteamGame }: { savedSteamGame: string | null }) 
                     </div>
                   </div>
                 </div>
-                <div className="box" ref={gamingAccountSectionRef}>
-                  <div className="box-title">Gaming Accounts</div>
-                  <div className="box-body">
-                    {steamPrefill && gamingAccountPlatform === "pc" && (
-                      <div className="notice" style={{ borderColor: "#3fbf6f", color: "#8be3a8" }}>
-                        Steam account verified: {steamPrefill}. Pick the game you play, then press Save Gaming Account to finish linking.
-                      </div>
-                    )}
-                    <div className="notice">
-                      {gamingAccountPlatform === "ea"
-                        ? "Enter the EA ID shown in your EA account, then save it here. Signing in on EA does not automatically share your ID with GameBattles. IDs used for an open or active match cannot be changed until that commitment ends."
-                        : "Your profile ID works across games on this platform. Save a game-specific ID only if a title uses a different one; IDs used for an open or active match cannot be changed until that commitment ends."}
-                    </div>
-                    <div className="form-row">
-                      <label>Platform</label>
-                      <select
-                        value={gamingAccountPlatform}
-                        onChange={(event) => {
-                          const nextPlatform = event.target.value;
-                          const nextCategories = gamingCategoriesForPlatform(nextPlatform);
-                          const nextCategory = nextCategories.some((category) => category.value === gamingAccountCategory)
-                            ? gamingAccountCategory
-                            : nextCategories[0]?.value || "";
-                          const nextGames = gamingGamesForPlatform(nextPlatform).filter(
-                            (game) => game.category === nextCategory,
-                          );
-                          setGamingAccountPlatform(nextPlatform);
-                          setGamingAccountDraft(null);
-                          setGamingAccountCategory(nextCategory);
-                          setGamingAccountGame(
-                            nextGames.some((game) => game.value === gamingAccountGame)
-                              ? gamingAccountGame
-                              : nextGames[0]?.value || "",
-                          );
-                        }}
-                      >
-                        {gamingPlatforms.map((platform) => (
-                          <option key={platform.value} value={platform.value}>{platform.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <label>Game Category</label>
-                      <select
-                        value={gamingAccountCategory}
-                        onChange={(event) => {
-                          const nextCategory = event.target.value;
-                          setGamingAccountCategory(nextCategory);
-                          setGamingAccountDraft(null);
-                          setGamingAccountGame(
-                            availableGamingGames.find((game) => game.category === nextCategory)?.value || "",
-                          );
-                        }}
-                      >
-                        {availableGamingCategories.map((category) => (
-                          <option key={category.value} value={category.value}>{category.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <label>Game</label>
-                      <select
-                        value={gamingAccountGame}
-                        onChange={(event) => { setGamingAccountGame(event.target.value); setGamingAccountDraft(null); }}
-                      >
-                        {availableCategoryGames.map((game) => (
-                          <option key={game.value} value={game.value}>{game.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <label>Gaming ID</label>
-                      <input
-                        ref={gamingAccountIdInputRef}
-                        value={gamingAccountId}
-                        maxLength={80}
-                        onChange={(event) => setGamingAccountDraft({ key: gamingAccountKey, value: event.target.value })}
-                        placeholder={
-                          gamingAccountPlatform === "ea"
-                            ? "Enter your EA ID"
-                            : gamingAccountPlatform === "pc"
-                              ? "Steam, Battle.net, Epic or EA ID"
-                              : "Enter your in-game/platform ID"
-                        }
-                      />
-                    </div>
-                    {gamingAccountPlatform === "pc" && (
-                      <div className="form-row">
-                        <label>Steam</label>
-                        <div>
-                          <button
-                            className="save-button"
-                            type="button"
-                            onClick={linkWithSteam}
-                          >
-                            {steamLinked ? "Relink with Steam" : "Link with Steam"}
-                          </button>
-                          <div className="field-note">
-                            Sign in through Steam to fill in your Steam ID automatically. GameBattles never sees your Steam password. Playing through Battle.net, Epic or EA instead? Type that ID above.
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="save-row">
-                      <button
-                        className="save-button"
-                        type="button"
-                        disabled={savingGamingAccount}
-                        onClick={saveGamingAccount}
-                      >
-                        {savingGamingAccount ? "Saving..." : "Save Gaming Account"}
-                      </button>
-                    </div>
-                    <div className="field-note">
-                      The 30-day gaming ID change and removal cooldown is paused for testing. A game-specific ID cannot be used on another account, and IDs used in an open or active match remain locked until it ends.
-                    </div>
-                    {gamingAccountError && <div className="error-text">{gamingAccountError}</div>}
-                    {gamingAccounts.length > 0 ? (
-                      <div className="manage-grid">
-                        {gamingAccounts.map((account) => (
-                          <div className="manage-card" key={account.id}>
-                            <div>
-                              <strong>{gamingPlatformLabel(account.platform)}</strong>
-                              <div className="field-note">{account.category} / {account.game}: {account.account_id}</div>
-                            </div>
-                            <button
-                              className="edit-button"
-                              type="button"
-                              onClick={() => void removeGamingAccount(account)}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="field-note">No game-specific overrides saved. Your profile system ID works across games on that platform.</div>
-                    )}
-                  </div>
-                </div>
+                <LinkedIds userId={currentUser.id} />
+                <ProfileControls userId={currentUser.id} isOwner={isOwner} />
                 </>
               )}
 

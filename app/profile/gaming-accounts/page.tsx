@@ -24,10 +24,11 @@ type ProfileAccounts = {
   gt_pc: string | null;
   pc_gt: string | null;
 };
+type LinkedId = { id: string; service: string; account_id: string };
 
 type AccountResult =
-  | { userId: string; error: string; profile: null; accounts: GamingAccount[] }
-  | { userId: string; error: ""; profile: ProfileAccounts; accounts: GamingAccount[] };
+  | { userId: string; error: string; profile: null; accounts: GamingAccount[]; linkedIds: LinkedId[] }
+  | { userId: string; error: ""; profile: ProfileAccounts; accounts: GamingAccount[]; linkedIds: LinkedId[] };
 
 function GamingAccountsContent() {
   const { user, loading } = useUser();
@@ -41,7 +42,7 @@ function GamingAccountsContent() {
     let active = true;
 
     async function loadAccounts() {
-      const [profileResult, accountsResult] = await Promise.all([
+      const [profileResult, accountsResult, linkedResult] = await Promise.all([
         supabase
           .from("profiles")
           .select("username,gt_xbox,xbox_gt,gt_playstation,psn_gt,gt_nintendo,nintendo_gt,gt_pc,pc_gt")
@@ -54,20 +55,23 @@ function GamingAccountsContent() {
           .order("platform")
           .order("category")
           .order("game"),
+        supabase.from("profile_linked_ids").select("id,service,account_id")
+          .eq("user_id", viewedUserId).order("created_at"),
       ]);
       if (!active) return;
 
-      if (profileResult.error || accountsResult.error) {
-        const message = profileResult.error?.message || accountsResult.error?.message;
-        setResult({ userId: viewedUserId, error: `Gaming accounts could not be loaded: ${message}`, profile: null, accounts: [] });
+      if (profileResult.error || accountsResult.error || linkedResult.error) {
+        const message = profileResult.error?.message || accountsResult.error?.message || linkedResult.error?.message;
+        setResult({ userId: viewedUserId, error: `Gaming accounts could not be loaded: ${message}`, profile: null, accounts: [], linkedIds: [] });
       } else if (!profileResult.data) {
-        setResult({ userId: viewedUserId, error: "Player profile not found.", profile: null, accounts: [] });
+        setResult({ userId: viewedUserId, error: "Player profile not found.", profile: null, accounts: [], linkedIds: [] });
       } else {
         setResult({
           userId: viewedUserId,
           error: "",
           profile: profileResult.data as ProfileAccounts,
           accounts: (accountsResult.data || []) as GamingAccount[],
+          linkedIds: linkedResult.data || [],
         });
       }
     }
@@ -113,7 +117,7 @@ function GamingAccountsContent() {
         <div className="ga-header">
           <div>
             <h1 className="ga-title">{profile?.username ? `${profile.username}'s Gaming Accounts` : "Gaming Accounts"}</h1>
-            <p className="ga-sub">Gaming IDs linked to this profile, organized by system and game.</p>
+            <p className="ga-sub">Gamertags and usernames linked to this profile.</p>
           </div>
         </div>
 
@@ -129,7 +133,7 @@ function GamingAccountsContent() {
               <section className="ga-section">
                 <h2>Profile System IDs</h2>
                 <div className="ga-body">
-                  <p className="ga-note">A system ID linked on your profile works across games on that system. Game-specific accounts below are optional overrides.</p>
+                  <p className="ga-note">A system ID linked on your profile is used across games on that system. Older game-specific IDs below are used only if no system ID is set.</p>
                   <div className="ga-grid">
                     {generalIds.map((entry) => (
                       <div className="ga-card" key={entry.platform}>
@@ -138,6 +142,16 @@ function GamingAccountsContent() {
                       </div>
                     ))}
                   </div>
+                </div>
+              </section>
+            )}
+            {current && current.linkedIds.length > 0 && (
+              <section className="ga-section">
+                <h2>More Gamertags &amp; Usernames</h2>
+                <div className="ga-body ga-grid">
+                  {current.linkedIds.map((entry) => <div className="ga-card" key={entry.id}>
+                    <div className="ga-label">{entry.service}</div><strong>{entry.account_id}</strong>
+                  </div>)}
                 </div>
               </section>
             )}
@@ -155,7 +169,7 @@ function GamingAccountsContent() {
                 </div>
               </section>
             ))}
-            {generalIds.length === 0 && platformGroups.length === 0 && (
+            {generalIds.length === 0 && platformGroups.length === 0 && !current?.linkedIds.length && (
               <section className="ga-section">
                 <h2>Gaming Accounts</h2>
                 <div className="ga-body ga-empty">

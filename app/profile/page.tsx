@@ -50,6 +50,7 @@ type Profile = {
   avatar_url?: string | null;
   logo_url?: string | null;
   profile_glow?: string | null;
+  profile_status_private?: boolean;
   display_awards?: string[] | null;
   created_at?: string | null;
   profile_views?: number | null;
@@ -132,6 +133,7 @@ function ProfilePageContent() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [gamingAccounts, setGamingAccounts] = useState<GamingAccount[]>([]);
+  const [linkedIds, setLinkedIds] = useState<{ userId: string; entries: { id: string; service: string; account_id: string }[]; error: string } | null>(null);
   const [topTeams, setTopTeams] = useState<TopTeam[]>([]);
   const [friendsResult, setFriendsResult] = useState<{ userId: string; friends: TopFriend[]; private: boolean; error: string } | null>(null);
   const currentFriends = friendsResult?.userId === viewedUserId ? friendsResult : null;
@@ -154,6 +156,16 @@ function ProfilePageContent() {
   const [ambLinkCopied, setAmbLinkCopied] = useState(false);
   const [ambLiveBusy, setAmbLiveBusy] = useState(false);
   const [ambLiveMsg, setAmbLiveMsg] = useState("");
+
+  useEffect(() => {
+    if (!viewedUserId) return;
+    let active = true;
+    void supabase.from("profile_linked_ids").select("id,service,account_id")
+      .eq("user_id", viewedUserId).order("created_at").then(({ data, error }) => {
+        if (active) setLinkedIds({ userId: viewedUserId, entries: data || [], error: error ? `Additional IDs could not be loaded: ${error.message}` : "" });
+      });
+    return () => { active = false; };
+  }, [viewedUserId]);
 
   useEffect(() => {
     if (!viewedUserId) return;
@@ -324,7 +336,7 @@ function ProfilePageContent() {
 
     supabase
       .from("profiles")
-      .select("id, username, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, credits, role, player_bio, avatar_url, logo_url, profile_glow, display_awards, created_at, profile_views")
+      .select("id, username, xbox_gt, psn_gt, nintendo_gt, pc_gt, gt_xbox, gt_playstation, gt_nintendo, gt_pc, gb_wins, gb_losses, gb_rank_points, favorite_system, favorite_game, credits, role, player_bio, avatar_url, logo_url, profile_glow, profile_status_private, display_awards, created_at, profile_views")
       .eq("id", viewedUserId)
       .single()
       .then(async ({ data }) => {
@@ -601,8 +613,8 @@ function ProfilePageContent() {
       label: earnedAward ? "★" : "?",
     };
   });
-  const statusText = isViewingOwnProfile ? "Online" : "Offline";
-  const statusClass = isViewingOwnProfile ? "status-online" : "status-offline";
+  const statusText = profile?.profile_status_private ? "Private" : isViewingOwnProfile ? "Online" : "Offline";
+  const statusClass = profile?.profile_status_private ? "" : isViewingOwnProfile ? "status-online" : "status-offline";
   const rankNumber = Number(gbRankDisplay);
   const rankParts = Number.isFinite(rankNumber) && rankNumber > 0 ? ordinalRank(rankNumber) : null;
   const joinedDate = profile?.created_at || (isViewingOwnProfile ? currentUser?.created_at : null) || null;
@@ -719,11 +731,14 @@ function ProfilePageContent() {
   const totalGames = gbWins + gbLosses;
   const winPct = totalGames > 0 ? Math.round((gbWins / totalGames) * 100) : 0;
   const linkedPlatforms = [
-    { name: "Xbox", cls: "system-xbox", id: xboxGT },
-    { name: "PlayStation", cls: "system-playstation", id: psnGT },
-    { name: "Nintendo", cls: "system-nintendo", id: nintendoGT },
-    { name: "PC", cls: "system-pc", id: pcGT },
-    { name: "EA", cls: "system-ea", id: eaGT },
+    { key: "xbox", name: "Xbox", cls: "system-xbox", id: xboxGT },
+    { key: "playstation", name: "PlayStation", cls: "system-playstation", id: psnGT },
+    { key: "nintendo", name: "Nintendo", cls: "system-nintendo", id: nintendoGT },
+    { key: "pc", name: "PC", cls: "system-pc", id: pcGT },
+    { key: "ea", name: "EA", cls: "system-ea", id: eaGT },
+    ...(linkedIds?.userId === viewedUserId ? linkedIds.entries : []).map((entry) => ({
+      key: entry.id, name: entry.service, cls: "system-other", id: entry.account_id,
+    })),
   ];
 
   return (
@@ -1973,7 +1988,8 @@ function ProfilePageContent() {
         }
         .pf-record-head{ color:#8fa9c2; font-weight:bold; border-bottom:1px solid #244b70; }
         .pf-record-row{ border-bottom:1px solid #16273a; color:#fff; }
-        .pf-record-row .pf-linked{ grid-column:2 / span 2; color:#b9cde0; }
+        .pf-record-row .pf-linked{ grid-column:2 / span 2; min-width:0; overflow-wrap:anywhere; color:#b9cde0; }
+        .pf-record-row .system-link{ min-width:0; overflow-wrap:anywhere; }
         .pf-gap{ margin-top:12px; }
         .pf-bio{ font-size:13px; line-height:1.5; color:#d7eaff; }
 
@@ -2004,17 +2020,18 @@ function ProfilePageContent() {
         .pf-banner-actions{ width:150px; }
         .pf-tags{ display:flex; flex-direction:column; gap:5px; width:230px; flex:none; align-self:stretch; justify-content:center; }
         .pf-tag{
-          display:grid; grid-template-columns:92px 1fr; align-items:center;
+          display:grid; grid-template-columns:92px minmax(0,1fr); align-items:center;
           background:#0a1c2e; border:1px solid #244b70; border-left-width:4px;
           font-size:12px; min-height:26px;
         }
-        .pf-tag-platform{ padding:0 8px; font-weight:bold; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
+        .pf-tag-platform{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 8px; font-weight:bold; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
         .pf-tag-id{ padding:0 8px; color:#fff; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(255,255,255,.05); line-height:26px; }
         .system-xbox-tag{ border-left-color:#2bd96b; } .system-xbox-tag .pf-tag-platform{ color:#2bd96b; }
         .system-playstation-tag{ border-left-color:#2f7bff; } .system-playstation-tag .pf-tag-platform{ color:#4d94ff; }
         .system-nintendo-tag{ border-left-color:#ff4b4b; } .system-nintendo-tag .pf-tag-platform{ color:#ff6b6b; }
         .system-pc-tag{ border-left-color:#a56bff; } .system-pc-tag .pf-tag-platform{ color:#b98cff; }
         .system-ea-tag{ border-left-color:#ff8a2a; } .system-ea-tag .pf-tag-platform{ color:#ff9a45; }
+        .system-other-tag{ border-left-color:#65b5d5; } .system-other-tag .pf-tag-platform{ color:#9bd8f0; }
         .pf-tag-empty{ color:#8fa9c2; font-size:12px; text-align:center; }
         .profile-grid{ align-items:start; }
         .left-column{ min-height:0; }
@@ -2249,14 +2266,15 @@ function ProfilePageContent() {
 
                 <div className="pf-tags">
                   {linkedPlatforms.filter((p) => p.id).map((p) => (
-                    <div className={`pf-tag ${p.cls}-tag`} key={p.name}>
-                      <span className="pf-tag-platform">{p.name}</span>
-                      <span className="pf-tag-id">{p.id}</span>
+                    <div className={`pf-tag ${p.cls}-tag`} key={p.key}>
+                      <span className="pf-tag-platform" title={p.name}>{p.name}</span>
+                      <span className="pf-tag-id" title={p.id}>{p.id}</span>
                     </div>
                   ))}
                   {linkedPlatforms.every((p) => !p.id) && (
                     <div className="pf-tag-empty">No gaming accounts linked</div>
                   )}
+                  {linkedIds?.userId === viewedUserId && linkedIds.error && <div className="pf-tag-empty" role="alert">{linkedIds.error}</div>}
                 </div>
 
                 {currentUser?.id && isViewingOwnProfile && (
@@ -2549,7 +2567,7 @@ function ProfilePageContent() {
                       <span></span>
                     </div>
                     {linkedPlatforms.map((platform) => (
-                      <div className="pf-record-row" key={platform.name}>
+                      <div className="pf-record-row" key={platform.key}>
                         <span className={`system-link ${platform.cls}`}>{platform.name}</span>
                         <span className="pf-linked">{platform.id || "Not Linked"}</span>
                         <span></span>

@@ -25,15 +25,16 @@ test("a profile system ID is eligible across games on its platform", () => {
   );
 });
 
-test("game-specific ID takes precedence over the profile system ID", () => {
+test("profile system IDs take precedence while old game IDs remain a fallback", () => {
   assert.equal(
     gamingAccounts.resolveGamingAccountId(
       "GameSpecific",
       { gt_xbox: "PlatformWide" },
       "xbox",
     ),
-    "GameSpecific",
+    "PlatformWide",
   );
+  assert.equal(gamingAccounts.resolveGamingAccountId(" GameSpecific ", {}, "xbox"), "GameSpecific");
 });
 
 test("unknown platforms and blank IDs remain unlinked", () => {

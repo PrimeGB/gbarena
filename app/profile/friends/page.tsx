@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
+import { getProfileListVisibility } from "../../../lib/profileListVisibility";
 
 type Player = { id: string; username: string | null; avatar_url: string | null };
 type FriendRequest = { id: string; requester_id: string };
@@ -35,6 +36,20 @@ function FriendsContent() {
 
   const loadFriends = useCallback(async (isActive: () => boolean = () => true) => {
     if (!viewedId) return;
+    if (!isOwn) {
+      try {
+        const visibility = await getProfileListVisibility(viewedId);
+        if (!isActive()) return;
+        if (!visibility.friends) {
+          setError(null);
+          setLoaded({ userId: viewedId, list: { username: null, private: true }, pending: [], requesters: [] });
+          return;
+        }
+      } catch (reason) {
+        if (isActive()) setError({ userId: viewedId, message: `Friends visibility could not be loaded: ${reason instanceof Error ? reason.message : String(reason)}` });
+        return;
+      }
+    }
     const { data, error: listError } = await supabase.rpc("gb_profile_friends", { p_user: viewedId });
     if (!isActive()) return;
     if (listError || !data) {

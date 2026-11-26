@@ -175,7 +175,7 @@ export function resolveGamingAccountId(
   profile: Record<string, unknown> | null | undefined,
   platform: string,
 ) {
-  return gameSpecificId?.trim() || profilePlatformAccountId(profile, platform);
+  return profilePlatformAccountId(profile, platform) || gameSpecificId?.trim() || null;
 }
 
 export function isMatchEligibleGamingId(gamingId: string | null | undefined) {
