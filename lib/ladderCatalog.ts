@@ -1,5 +1,4 @@
 import { gamingCategories, gamingGames } from "./gamingAccounts";
-import { bf6TeamLadders } from "./bf6TeamLadders";
 
 export const ladderPlatforms = [
   { value: "xbox", label: "Xbox" },
@@ -257,7 +256,7 @@ export function laddersForGame(category: string, game: string) {
         { slug: "singles", title: "Solo TDM" },
         { slug: "rapid-royal-duos", title: "Rapid Royal" },
         { slug: "redsec", title: "RedSec" },
-        ...Object.entries(bf6TeamLadders).map(([slug, ladder]) => ({ slug, title: ladder.title })),
+        { slug: "team", title: "Team" },
       ]
     : standard;
 }

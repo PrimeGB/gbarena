@@ -63,15 +63,18 @@ test("custom team ladders lock match roster sizes to their format", () => {
   assert.deepEqual(roster.getPlayerOptions("team", false, ["3v3", "5v5"]), ["3v3", "5v5"]);
 });
 
-test("BF6 team formats have distinct ladders and fixed matching rosters", () => {
+test("BF6 formats share one team ladder and retain matching rules and rosters", () => {
+  const ladders = catalog.laddersForGame("battlefield", "battlefield-6");
+  assert.deepEqual(ladders.map((ladder) => ladder.slug), ["singles", "rapid-royal-duos", "redsec", "team"]);
+  assert.deepEqual(rules.getGameRules("battlefield", "battlefield-6", "team").teamSizes, ["5v5", "4v4", "8v8", "12v12", "32v32"]);
   for (const [slug, expected] of Object.entries(bf6.bf6TeamLadders)) {
-    const config = rules.getGameRules("battlefield", "battlefield-6", slug);
-    assert.ok(catalog.isValidLadder("battlefield", "battlefield-6", slug));
-    assert.deepEqual(roster.getPlayerOptions(slug, false, config.teamSizes), [expected.players]);
-    assert.equal(roster.getRequiredRosterSize(slug, expected.players), Number(expected.players.split("v")[0]));
-    assert.equal(bf6.getBf6TeamRosterSize("battlefield", "battlefield-6", slug), Number(expected.players.split("v")[0]));
+    const config = rules.getGameRules("battlefield", "battlefield-6", "team", expected.players);
+    assert.equal(catalog.isValidLadder("battlefield", "battlefield-6", slug), false);
+    assert.deepEqual(roster.getPlayerOptions("team", false, config.teamSizes), [expected.players]);
+    assert.equal(roster.getRequiredRosterSize("team", expected.players), Number(expected.players.split("v")[0]));
     assert.deepEqual(config.modes.map((mode) => mode.value), [expected.mode]);
   }
+  assert.equal(bf6.getBf6TeamRosterSize("battlefield", "battlefield-6", "team"), 32);
   assert.deepEqual(bf6.bf6TeamLadders["conquest-8v8"].presets, ["ESB Conquest Small", "SnP T8 Conquest"]);
   assert.equal(bf6.getBf6TeamRosterSize("battlefield", "battlefield-2042", "conquest-32v32"), null);
 });

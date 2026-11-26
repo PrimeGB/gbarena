@@ -103,8 +103,8 @@ test("rules use game art and avoid repeating a game name in the ladder title", a
   assert.equal(catalog.fullLadderTitle("NBA 2K27", "3v3"), "NBA 2K27 3v3");
 });
 
-test("BF6 team ranking routes recognize each new ladder", () => {
-  for (const slug of Object.keys(bf6.bf6TeamLadders)) {
+test("BF6 team rankings use the shared ladder", () => {
+  for (const slug of ["team"]) {
     const Page = load("app/ladders/[platform]/battlefield/[game]/[ladder]/rankings/page.tsx", {
       "next/navigation": { useParams: () => ({ platform: "pc", game: "battlefield-6", ladder: slug }) },
       "../../../../../../../lib/supabase": { supabase: {} },
@@ -119,7 +119,7 @@ test("BF6 team ranking routes recognize each new ladder", () => {
   }
 });
 
-test("Battlefield platform options show each BF6 team ladder with its own links", () => {
+test("Battlefield platform options show one BF6 team ladder", () => {
   const TeamOptions = load("app/components/Bf6TeamLadderOptions.tsx", {
     "../../lib/bf6TeamLadders": bf6,
   }).default;
@@ -129,11 +129,12 @@ test("Battlefield platform options show each BF6 team ladder with its own links"
       "../../../components/Bf6TeamLadderOptions": { default: TeamOptions },
     }).default;
     const markup = renderToStaticMarkup(React.createElement(Page));
-    assert.match(markup, /Team Ladders/);
+    assert.match(markup, /Team Ladder/);
+    assert.ok(markup.includes(`platform=${platform}&amp;category=battlefield&amp;game=battlefield-6&amp;ladder=team`));
+    assert.ok(markup.includes(`/ladders/${platform}/battlefield/battlefield-6/team/rankings`));
     for (const [slug, ladder] of Object.entries(bf6.bf6TeamLadders)) {
-      assert.ok(markup.includes(ladder.title), `${platform}: ${ladder.title}`);
-      assert.ok(markup.includes(`platform=${platform}&amp;category=battlefield&amp;game=battlefield-6&amp;ladder=${slug}`));
-      assert.ok(markup.includes(`/ladders/${platform}/battlefield/battlefield-6/${slug}/rankings`));
+      assert.ok(!markup.includes(ladder.title), `${platform}: ${ladder.title} should not be a separate ladder`);
+      assert.ok(!markup.includes(`game=battlefield-6&amp;ladder=${slug}`));
     }
     if (platform === "playstation") {
       assert.match(markup, /PlayStation Battlefield Ladders/);

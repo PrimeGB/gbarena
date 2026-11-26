@@ -128,6 +128,7 @@ function TeamHubContent() {
   const ladderName = getLadderName(category, game, ladder);
   const rosterLimit = getRosterLimit(category, game, ladder);
   const extraRosterSlots = getExtraRosterSlots(category, game, ladder);
+  const sharedBf6Team = category === "battlefield" && game === "battlefield-6" && ladder === "team";
 
   const rankingsUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rankings`;
   const rulesUrl = `/ladders/${platform}/${category}/${game}/${ladder}/rules`;
@@ -165,6 +166,7 @@ function TeamHubContent() {
   );
 
   const [rosterSlotCount, setRosterSlotCount] = useState(extraRosterSlots);
+  const [showAllRosterSlots, setShowAllRosterSlots] = useState(false);
   if (rosterSlotCount !== extraRosterSlots) {
     setRosterSlotCount(extraRosterSlots);
     setRoster(buildRosterSlots(extraRosterSlots));
@@ -1528,11 +1530,14 @@ function TeamHubContent() {
                               </div>
 
                               <div className="role-list">
-                                {roster.map((slot) => (
+                                {roster.filter((slot) => !sharedBf6Team || showAllRosterSlots || slot.slot <= 7).map((slot) => (
                                   <div className="role-row" key={slot.slot} onClick={() => !slot.playerId && openRosterSearch(slot.slot)}>
                                     <div className={slot.playerId ? "role-name" : "role-empty"}>
                                       {slot.playerId ? slot.username : ladder === "duos" ? "Empty Partner Slot" : "Empty Roster Slot"}
                                     </div>
+                                    {sharedBf6Team && !showAllRosterSlots && (
+                                      <button className="invite-small" type="button" onClick={() => setShowAllRosterSlots(true)}>Show all {extraRosterSlots} roster slots</button>
+                                    )}
 
                                     <select
                                       className="role-select"

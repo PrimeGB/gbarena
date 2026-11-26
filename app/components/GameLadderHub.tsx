@@ -115,7 +115,9 @@ export default function GameLadderHub({
                   <div className={styles.ladderInfo}>
                     <span className={styles.ladderKicker}>{platformName} · {gameName}</span>
                     <h3>{ladder.title}</h3>
-                    <p>{sizes.length <= 3 ? sizes.join(" / ") : "Multiple formats"} · Ladder competition</p>
+                    <p>{category === "battlefield" && game === "battlefield-6" && ladder.slug === "team"
+                      ? "Choose a game type when posting a match · One shared ladder"
+                      : `${sizes.length <= 3 ? sizes.join(" / ") : "Multiple formats"} · Ladder competition`}</p>
                   </div>
                   <div className={styles.actions}>
                     <Link className={styles.primary} href={`/team-hub?platform=${platform}&category=${category}&game=${game}&ladder=${ladder.slug}`}>

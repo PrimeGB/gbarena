@@ -649,7 +649,7 @@ export default function MatchDetailsPage() {
   const modeText = String(match?.game_mode || "").toLowerCase();
   const isBombMode = /search|demolition|bomb|defus|s-?n-?d/.test(modeText);
   const isSolo = match?.ladder === "singles";
-  const gameRuleSet = match ? getGameRules(match.category || "", match.game || "", match.ladder) : null;
+  const gameRuleSet = match ? getGameRules(match.category || "", match.game || "", match.ladder, match.players) : null;
   const modeDef = gameRuleSet?.modes.find((mode) => mode.value === match?.game_mode) || null;
   const gameTitle = match
     ? gameRuleSet

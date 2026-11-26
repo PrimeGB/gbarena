@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { bf6PortalSetup, bf6SolosMaps, bf6SolosSources, getGameRules, isBattlefieldSolos } from "../../../../../../../lib/matchRules";
-import { bf6TeamSources, getBf6TeamLadder } from "../../../../../../../lib/bf6TeamLadders";
+import { bf6TeamLadders, bf6TeamSources, getBf6TeamLadder } from "../../../../../../../lib/bf6TeamLadders";
 import { fullLadderTitle, ladderGameLabel, ladderPlatformLabel, ladderTitleForGame } from "../../../../../../../lib/ladderCatalog";
 import RapidRoyalRules from "../../../../../../components/RapidRoyalRules";
 import LadderDetailHeader from "../../../../../../components/LadderDetailHeader";
@@ -43,6 +43,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
   const platformName = ladderPlatformLabel(platform) || prettyText(platform);
   const bf6Rules = isBattlefieldSolos(category, game, ladder) ? getGameRules(category, game, ladder) : null;
   const bf6Team = getBf6TeamLadder(category, game, ladder);
+  const sharedBf6Team = category === "battlefield" && game === "battlefield-6" && ladder === "team";
   const currentLadderName = ladderName(category, game, ladder);
   const gameRuleSet = bf6Rules ? null : getGameRules(category, game, ladder);
 
@@ -199,7 +200,7 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
             <h2>{currentLadderName} Ladder Match Rules</h2>
             <ul>
               <li>This match is being played on the {fullLadderTitle(gameName, currentLadderName)} Ladder.</li>
-              <li>Use the ladder&apos;s selected ruleset and the player count listed for the ladder.</li>
+              <li>{sharedBf6Team ? "Choose a game type when posting the match. All formats share this team ladder and standings." : "Use the ladder's selected ruleset and the player count listed for the ladder."}</li>
               <li>{bf6Team ? "Agree maps and a compatible Portal experience before the match." : "Maps are generated after the match is accepted based on the game, ladder, mode, ruleset, and Best Of."}</li>
               <li>Report match results after the match.</li>
               <li>Keep screenshots or other proof in case a result is disputed.</li>
@@ -207,7 +208,20 @@ export default async function LadderRulesPage({ params }: LadderRulesPageProps) 
           </section>
         )}
 
-        {gameRuleSet && (
+        {sharedBf6Team && <section className="rule-section">
+          <h2>Team Ladder game types</h2>
+          <p>Choose one when you set up a match: {Object.values(bf6TeamLadders).map((format) => format.title).join(" · ")}.</p>
+          {Object.entries(bf6TeamLadders).map(([slug, format]) => {
+            const rules = getGameRules(category, game, slug);
+            return rules && <div key={slug}>
+              <h3>{format.title}</h3>
+              <p>Available rules: {format.presets.join(" or ")}.</p>
+              <ul>{rules.modes[0].rules.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+            </div>;
+          })}
+        </section>}
+
+        {gameRuleSet && !sharedBf6Team && (
           <section className="rule-section">
             <h2>{gameName} Match Rules</h2>
             {gameRuleSet.modes.map((mode) => (

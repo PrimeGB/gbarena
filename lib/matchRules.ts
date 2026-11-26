@@ -1,4 +1,4 @@
-import { getBf6TeamLadder } from "./bf6TeamLadders";
+import { bf6TeamLadders, getBf6TeamLadder } from "./bf6TeamLadders";
 
 // Per-game match rules for every game except Call of Duty / Old School (which use the
 // COD-style form) and RedSec (which has its own locked ruleset).
@@ -552,9 +552,17 @@ const rules: Record<string, GameRuleSet> = {
   },
 };
 
-export function getGameRules(category: string, game: string, ladder?: string | null): GameRuleSet | null {
+export function getGameRules(category: string, game: string, ladder?: string | null, players?: string | null): GameRuleSet | null {
   if (isBattlefieldSolos(category, game, ladder)) return bf6Solos;
-  const bf6Team = getBf6TeamLadder(category, game, ladder);
+  if (category === "battlefield" && game === "battlefield-6" && ladder === "team" && !players) {
+    const formats = Object.keys(bf6TeamLadders).map((slug) => getGameRules(category, game, slug)!);
+    return {
+      ...formats[0],
+      modes: formats.flatMap((format) => format.modes),
+      teamSizes: formats.flatMap((format) => format.teamSizes),
+    };
+  }
+  const bf6Team = getBf6TeamLadder(category, game, ladder, players);
   if (bf6Team) {
     const provisional = bf6Team.presets[0].includes("Provisional");
     return {

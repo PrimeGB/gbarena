@@ -15,7 +15,7 @@ import {
   resolveGamingAccountId,
 } from "../../../lib/gamingAccounts";
 import { bf6SolosMaps, getGameRules, isBattlefieldSolos } from "../../../lib/matchRules";
-import { getBf6TeamLadder } from "../../../lib/bf6TeamLadders";
+import { bf6TeamLadders, getBf6TeamLadder, type Bf6TeamLadder } from "../../../lib/bf6TeamLadders";
 import { ladderGameImage, ladderTitleForGame } from "../../../lib/ladderCatalog";
 import { ladderPlatforms } from "../../../lib/ladderStandings";
 import { AdditionalMatchRules } from "../../../lib/postedMatchRules";
@@ -98,9 +98,11 @@ function CreateMatchForm() {
   const isRapidRoyal = ladder === "rapid-royal-duos";
   const killRaceName = isRapidRoyal ? "Rapid Royal" : "RedSec";
   const isBf6Solos = isBattlefieldSolos(category, game, ladder);
-  const bf6Team = getBf6TeamLadder(category, game, ladder);
+  const [bf6Format, setBf6Format] = useState<Bf6TeamLadder>("domination-5v5");
+  const sharedBf6Team = category === "battlefield" && game === "battlefield-6" && ladder === "team";
+  const bf6Team = getBf6TeamLadder(category, game, sharedBf6Team ? bf6Format : ladder);
   const [bf6Preset, setBf6Preset] = useState(() => bf6Team?.presets[0] || "");
-  const gameRules = useMemo(() => getGameRules(category, game, ladder), [category, game, ladder]);
+  const gameRules = useMemo(() => getGameRules(category, game, ladder, bf6Team?.players), [category, game, ladder, bf6Team?.players]);
   const [mapSelection, setMapSelection] = useState("Random");
 
   const platformName = prettyText(platform);
@@ -697,10 +699,23 @@ function CreateMatchForm() {
 
                     <div className="form-body">
                       <div className="row">
-                        <label>Game Mode</label>
+                        <label>{sharedBf6Team ? "Game Type" : "Game Mode"}</label>
 
                         {isRedSec || isRapidRoyal ? (
                           <div className="locked-player-box">{killRaceName}</div>
+                        ) : sharedBf6Team ? (
+                          <select className="mode-select" value={bf6Format} onChange={(event) => {
+                            const format = event.target.value as Bf6TeamLadder;
+                            const selected = bf6TeamLadders[format];
+                            setBf6Format(format);
+                            setGameMode(selected.mode);
+                            setPlayers(selected.players);
+                            setBf6Preset(selected.presets[0]);
+                            setRuleValues({});
+                            setSelectedRosterPlayers([]);
+                          }}>
+                            {Object.entries(bf6TeamLadders).map(([slug, format]) => <option key={slug} value={slug}>{format.title}</option>)}
+                          </select>
                         ) : gameRules ? (
                           <select
                             className="mode-select"
@@ -925,7 +940,7 @@ function CreateMatchForm() {
                           <div>
                             <div className="locked-player-box">{playerOptions[0]}</div>
                             <div className="small-note">
-                              Player count is locked because this is a {ladderName}.
+                              {sharedBf6Team ? "Player count matches the selected game type." : `Player count is locked because this is a ${ladderName}.`}
                             </div>
                           </div>
                         ) : (

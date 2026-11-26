@@ -66,7 +66,7 @@ test("non-COD games use their configured field labels", () => {
 test("BF6 Solos uses ladder-specific timed rules without changing other Battlefield ladders", () => {
   const catalog = loadModule("../lib/ladderCatalog.ts", { "./gamingAccounts": { gamingCategories: [], gamingGames: [] }, "./bf6TeamLadders": bf6 });
   assert.deepEqual(catalog.laddersForGame("battlefield", "battlefield-6").map((ladder) => ladder.slug),
-    ["singles", "rapid-royal-duos", "redsec", "domination-5v5", "obliteration-4v4", "conquest-8v8", "conquest-12v12", "conquest-32v32"]);
+    ["singles", "rapid-royal-duos", "redsec", "team"]);
   const solos = gameRules.getGameRules("battlefield", "battlefield-6", "singles");
   assert.deepEqual(solos.teamSizes, ["1v1"]);
   assert.deepEqual(solos.modes.map((mode) => mode.value), ["Team Deathmatch"]);
@@ -86,4 +86,11 @@ test("BF6 Solos uses ladder-specific timed rules without changing other Battlefi
     { label: "Tiebreak", value: "Next Kill Wins" },
     { label: "AI Soldiers", value: "Off" },
   ]);
+});
+
+test("shared BF6 team matches display the chosen format's field labels", () => {
+  assert.deepEqual(postedRuleSettings({
+    category: "battlefield", game: "battlefield-6", ladder: "team", players: "8v8",
+    game_mode: "Conquest", perks: "Off", killstreaks: "On",
+  }), [{ label: "Vehicles", value: "On" }, { label: "AI Soldiers", value: "Off" }]);
 });

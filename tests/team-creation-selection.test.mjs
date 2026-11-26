@@ -40,6 +40,8 @@ test("a system and ladder select the correct existing team setup route", () => {
   const html = renderSelection("pc", "battlefield/battlefield-6", "singles");
   assert.match(html, />Solos<\/button>/);
   assert.match(html, />Rapid Royal<\/button>/);
+  assert.match(html, />Team<\/button>/);
+  assert.doesNotMatch(html, /5v5 Domination|8v8 Conquest/);
   assert.doesNotMatch(html, /Solo TDM|<input|<select/);
   assert.match(html, /href="\/team-hub\?platform=pc&amp;category=battlefield&amp;game=battlefield-6&amp;ladder=singles"/);
   assert.doesNotMatch(html, /Game Category|Game \/ Mode/);

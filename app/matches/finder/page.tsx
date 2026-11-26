@@ -940,7 +940,7 @@ function MatchFinderContent() {
               {viewMatch.preset === "Custom" && !viewMatch.additional_rules && (
                 <p className="accept-roster-note">This older post did not record additional custom settings or individual equipment and perk rules.</p>
               )}
-              {getGameRules(viewMatch.category, viewMatch.game, viewMatch.ladder)?.modes
+              {getGameRules(viewMatch.category, viewMatch.game, viewMatch.ladder, viewMatch.players)?.modes
                 .find((mode) => mode.value === viewMatch.game_mode)?.rules.map((rule) => (
                   <p key={rule}>• {rule}</p>
                 ))}

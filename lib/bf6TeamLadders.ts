@@ -8,12 +8,19 @@ export const bf6TeamLadders = {
 
 export type Bf6TeamLadder = keyof typeof bf6TeamLadders;
 
-export function getBf6TeamLadder(category: string, game: string, ladder?: string | null) {
-  if (category !== "battlefield" || game !== "battlefield-6" || !ladder || !Object.prototype.hasOwnProperty.call(bf6TeamLadders, ladder)) return null;
+export function getBf6TeamLadder(category: string, game: string, ladder?: string | null, players?: string | null) {
+  if (category !== "battlefield" || game !== "battlefield-6" || !ladder) return null;
+  if (ladder === "team") {
+    return players
+      ? Object.values(bf6TeamLadders).find((format) => format.players === players) || null
+      : bf6TeamLadders["domination-5v5"];
+  }
+  if (!Object.prototype.hasOwnProperty.call(bf6TeamLadders, ladder)) return null;
   return bf6TeamLadders[ladder as Bf6TeamLadder];
 }
 
 export function getBf6TeamRosterSize(category: string, game: string, ladder?: string | null) {
+  if (category === "battlefield" && game === "battlefield-6" && ladder === "team") return 32;
   const format = getBf6TeamLadder(category, game, ladder);
   return format ? Number(format.players.split("v")[0]) : null;
 }
