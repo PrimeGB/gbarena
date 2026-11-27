@@ -205,6 +205,13 @@ function TournamentListing() {
 
   useEffect(() => {
     let active = true;
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (active && !settled) {
+        setMessage({ id: "", ok: false, text: "Tournaments are taking too long to load. Please refresh the page." });
+        setLoading(false);
+      }
+    }, 15000);
     (async () => {
       setLoading(true);
       const currentScope = platformParam && categoryParam && gameParam
@@ -217,6 +224,8 @@ function TournamentListing() {
         .in("status", ["upcoming", "live"])
         .order("starts_at", { ascending: true });
       if (!active) return;
+      settled = true;
+      clearTimeout(timeout);
       if (tournamentError) {
         setMessage({ id: "", ok: false, text: `Could not load tournaments: ${tournamentError.message}` });
         setLoading(false);
@@ -236,6 +245,7 @@ function TournamentListing() {
     })();
     return () => {
       active = false;
+      clearTimeout(timeout);
     };
   }, [platformParam, categoryParam, gameParam]);
 

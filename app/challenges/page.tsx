@@ -94,11 +94,17 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     let mounted = true;
+    let settled = false;
+    const timeout = window.setTimeout(() => {
+      if (mounted && !settled) setError("Challenges are taking too long to load. Please refresh the page.");
+    }, 15000);
     void (async () => {
       const { data: session } = await supabase.auth.getSession();
       if (session.session) await supabase.rpc("gb_challenge_checkin");
       const { data, error: loadError } = await supabase.rpc("gb_challenge_overview");
       if (!mounted) return;
+      settled = true;
+      window.clearTimeout(timeout);
       if (loadError) setError(`Challenges could not be loaded: ${loadError.message}`);
       else {
         setOverview(data as Overview);
@@ -106,7 +112,7 @@ export default function ChallengesPage() {
       }
     })();
     const timer = window.setInterval(() => setNow((value) => (value ? value + 30000 : value)), 30000);
-    return () => { mounted = false; window.clearInterval(timer); };
+    return () => { mounted = false; window.clearInterval(timer); window.clearTimeout(timeout); };
   }, []);
 
   const view = overview && preview ? sampleOverview(overview) : overview;
