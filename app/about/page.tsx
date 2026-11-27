@@ -194,10 +194,9 @@ export default function AboutPage() {
             </p>
 
             <p>
-              This site is being built from the ground up and is currently a
-              work in progress. Many sections, pages, systems, ladders, forums,
-              rankings, and features will continue changing and evolving over
-              time as we improve the experience and listen to community
+              GameBattles is built for the long term. Sections, pages, systems,
+              ladders, forums, and rankings are actively maintained and refined
+              over time as we improve the experience and listen to community
               feedback.
             </p>
 

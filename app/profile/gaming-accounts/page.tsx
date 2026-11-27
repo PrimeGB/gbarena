@@ -36,6 +36,26 @@ function GamingAccountsContent() {
   const requestedUserId = searchParams.get("userId") || "";
   const viewedUserId = requestedUserId || user?.id || "";
   const [result, setResult] = useState<AccountResult | null>(null);
+  const [staffCanVerify, setStaffCanVerify] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { data } = await supabase.rpc("has_staff_permission", { permission_key: "team_enforcement" });
+      if (active) setStaffCanVerify(data === true);
+    })();
+    return () => { active = false; };
+  }, []);
+
+  async function toggleVerify(accountId: string, next: boolean) {
+    const { error } = await supabase.rpc("staff_set_gaming_account_verified", { p_account: accountId, p_verified: next });
+    if (error) {
+      setResult((prev) => (prev ? ({ ...prev, error: `Could not update verification: ${error.message}` } as AccountResult) : prev));
+      return;
+    }
+    setReloadKey((k) => k + 1);
+  }
 
   useEffect(() => {
     if ((!requestedUserId && loading) || !viewedUserId) return;
@@ -50,7 +70,7 @@ function GamingAccountsContent() {
           .maybeSingle(),
         supabase
           .from("gaming_accounts")
-          .select("id,user_id,platform,category,game,account_id")
+          .select("id,user_id,platform,category,game,account_id,verified")
           .eq("user_id", viewedUserId)
           .order("platform")
           .order("category")
@@ -78,7 +98,7 @@ function GamingAccountsContent() {
 
     void loadAccounts();
     return () => { active = false; };
-  }, [loading, requestedUserId, viewedUserId]);
+  }, [loading, requestedUserId, viewedUserId, reloadKey]);
 
   const current = result?.userId === viewedUserId ? result : null;
   const profile = current?.profile;
@@ -111,6 +131,8 @@ function GamingAccountsContent() {
         .ga-note{margin:0 0 12px;color:#a9c3db;font-size:12px;line-height:1.5}
         .ga-empty{color:#a9c3db;font-size:13px;line-height:1.6}
         .ga-error{padding:12px;border:1px solid #a83e3e;color:#ffd5d5}
+        .ga-verified{display:inline-block;margin-top:6px;padding:2px 8px;border:1px solid #2f8f4e;border-radius:10px;color:#8ff0a8;font-size:11px;font-weight:bold}
+        .ga-verify-btn{display:block;margin-top:8px;padding:5px 10px;border:1px solid #315f88;background:#0b2438;color:#8ac6f5;font-size:11px;cursor:pointer;border-radius:4px}
       `}</style>
       <div className="ga-shell">
         <Link className="ga-back" href={backHref}>Back to profile</Link>
@@ -163,7 +185,17 @@ function GamingAccountsContent() {
                     <div className="ga-card" key={account.id}>
                       <div className="ga-label">{gamingPlatformLabel(account.platform)}</div>
                       <strong>{account.account_id}</strong>
+                      {account.verified && <span className="ga-verified">✔ Verified</span>}
                       <div className="ga-game">{gamingCategoryLabel(account.category)} · {gamingGameLabel(account.category, account.game)}</div>
+                      {staffCanVerify && requestedUserId && (
+                        <button
+                          type="button"
+                          className="ga-verify-btn"
+                          onClick={() => toggleVerify(account.id, !account.verified)}
+                        >
+                          {account.verified ? "Remove verification" : "Mark verified"}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

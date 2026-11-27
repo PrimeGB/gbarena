@@ -6,6 +6,7 @@ export type GamingAccount = {
   game: string;
   account_id: string;
   locked_until?: string | null;
+  verified?: boolean | null;
 };
 
 export type GamingGame = {

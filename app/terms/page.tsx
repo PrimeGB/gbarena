@@ -19,10 +19,10 @@ export default function TermsPage() {
         website. All game names, logos, and images belong to their owners.
       </p>
 
-      <h2>Early Production</h2>
+      <h2>Platform Changes</h2>
       <p>
-        The site is still being built. Features, ladders, rankings, rules, events, prizes, awards and match procedures
-        may change, pause, reset or be removed at any time, and some features may not work exactly as described.
+        GameBattles is actively maintained. Features, ladders, rankings, rules, events, prizes, awards and match procedures
+        may be refined over time, and we aim to communicate significant changes to the community.
       </p>
 
       <h2>Your Account</h2>

@@ -1216,15 +1216,14 @@ function CreateMatchForm() {
                 <h2>REDSEC — KILL RACE RULES</h2>
 
                 <div className="disclaimer">
-                  <strong>Early Production Disclaimer</strong>
+                  <strong>Ladder Notice</strong>
                   <br />
                   <br />
-                  This website is still very early in production. This ladder may not function
-                  exactly as it will when finished, and rules, settings, and match procedures
-                  may be tweaked as development continues.
+                  This ladder is actively maintained. Rules, settings, and match procedures
+                  may be refined over time as the community grows.
                   <br />
                   <br />
-                  With that being said — <strong>THANK YOU for playing GameBattles!</strong> Any
+                  <strong>THANK YOU for playing GameBattles!</strong> Any
                   and all feedback is welcome. Expect tweaks, changes, and improvements as we
                   continue building the ladder.
                 </div>

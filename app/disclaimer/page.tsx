@@ -12,10 +12,11 @@ export default function DisclaimerPage() {
         by, or sponsored by any game publisher, developer, or console manufacturer. All game
         names, logos, and images are the property of their respective owners.
       </p>
-      <h2>Early Production</h2>
+      <h2>Platform Updates</h2>
       <p>
-        This site is still in early production. Features, ladders, rules, and match procedures
-        may change as development continues, and some features may not work exactly as described.
+        GameBattles is actively maintained. Features, ladders, rules, and match
+        procedures may be refined over time, and we communicate significant
+        changes to the community.
       </p>
       <h2>Fair Play</h2>
       <p>

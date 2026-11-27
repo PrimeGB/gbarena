@@ -109,9 +109,9 @@ export default function RulesPage() {
               <li>Attempts to lie to admins, hide evidence, pressure opponents, or abuse the dispute system may result in penalties.</li>
             </ul>
 
-            <h2>10. Work In Progress</h2>
+            <h2>10. Rule Updates</h2>
             <p className="highlight">
-              These rules will change as the site grows. More detailed game-specific rules, ladder rules, tournament rules, and team rules will be added over time.
+              These rules are maintained and refined as the platform grows. More detailed game-specific rules, ladder rules, tournament rules, and team rules are added over time.
             </p>
 
             <div className="warning-box">
