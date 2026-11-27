@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ChallengeCheckIn from "./components/ChallengeCheckIn";
 import DevelopmentNotice from "./components/DevelopmentNotice";
@@ -6,6 +6,7 @@ import HomeButton from "./components/HomeButton";
 import MobileBottomNav from "./components/MobileBottomNav";
 import NotificationBell from "./components/NotificationBell";
 import RecoveryRedirect from "./components/RecoveryRedirect";
+import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
 import TopHomeBar from "./components/TopHomeBar";
 import "./globals.css";
 import "./staff/staff-responsive.css";
@@ -42,6 +43,15 @@ export const metadata: Metadata = {
     title: "GameBattles - Where Gaming Finds Its Edge",
     description: siteDescription,
   },
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/logo.jpg", apple: "/logo.jpg" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "GameBattles" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#07111b",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -55,6 +65,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ServiceWorkerRegister />
         <TopHomeBar />
         {children}
         <MobileBottomNav />

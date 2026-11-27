@@ -38,6 +38,10 @@ export default function RanksPage() {
         </section>
 
         <h2>All ranks</h2>
+        <p className="rk-note">
+          Looking for standings? See the <Link href="/ranks/leaderboards">rankings &amp; leaderboards</Link>{" "}
+          for global, game, platform, ladder, and regional boards.
+        </p>
         <div className="rk-grid">
           {RANK_TIERS.map((tier, index) => {
             const first = index * 5 + 1;

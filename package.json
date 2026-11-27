@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node tests/smoke.mjs",
+    "test:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
