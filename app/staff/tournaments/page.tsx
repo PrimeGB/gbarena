@@ -246,6 +246,13 @@ export default function StaffTournamentsPage() {
 
   async function setStatus(id: string, status: string) {
     setError("");
+    if (status === "live") {
+      const { error: genError } = await supabase.rpc("generate_tournament_bracket", { p_tournament: id });
+      if (genError && !/already|exists|generated/i.test(genError.message)) {
+        setError(genError.message);
+        return;
+      }
+    }
     const { error: updateError } = await supabase
       .from("tournaments")
       .update({ status })
