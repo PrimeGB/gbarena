@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../lib/useUser";
 import { supabase } from "../../../lib/supabase";
@@ -196,6 +196,10 @@ function MatchFinderContent() {
 
   const [matches, setMatches] = useState<MatchPost[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const hasLoadedRef = useRef(false);
+  hasLoadedRef.current = hasLoaded;
   const [pageError, setPageError] = useState("");
   const [notice, setNotice] = useState("");
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -380,6 +384,14 @@ function MatchFinderContent() {
       supabase.removeChannel(matchChannel);
     };
   }, [platform, category, game, ladder, loadMatches]);
+
+  useEffect(() => {
+    setLoadTimedOut(false);
+    const timer = setTimeout(() => {
+      if (!hasLoadedRef.current) setLoadTimedOut(true);
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [platform, category, game, ladder, loadAttempt]);
 
   useEffect(() => {
     const nextExpiry = matches
@@ -764,8 +776,25 @@ function MatchFinderContent() {
 
                     {pageError && <div className="error-state">{pageError}</div>}
 
-                    {!pageError && !hasLoaded && (
+                    {!pageError && !hasLoaded && !loadTimedOut && (
                       <div className="loading-state">Loading match posts...</div>
+                    )}
+
+                    {!pageError && !hasLoaded && loadTimedOut && (
+                      <div className="error-state">
+                        The match board is taking too long to respond.{" "}
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            setLoadTimedOut(false);
+                            setLoadAttempt((n) => n + 1);
+                            void loadMatches();
+                          }}
+                        >
+                          Retry
+                        </button>
+                      </div>
                     )}
 
                     {!pageError && hasLoaded && matches.length === 0 && (
