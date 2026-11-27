@@ -210,7 +210,25 @@ export function laddersForGame(category: string, game: string) {
   ];
   const singles = standard[0];
   const duos = standard[1];
+  const team = standard[2];
   const gameSpecific: Record<string, { slug: string; title: string }[]> = {
+    "apex/battle-royale": [duos, { slug: "trios", title: "Trios" }],
+    "apex/ranked": [duos, { slug: "trios", title: "Trios" }],
+    "apex/mixtape": [
+      { slug: "team-deathmatch", title: "Team Deathmatch" },
+      { slug: "control", title: "Control" },
+      { slug: "gun-run", title: "Gun Run" },
+    ],
+    "apex/wildcard": [{ slug: "trios", title: "Trios" }, { slug: "squads", title: "Squads" }],
+    "rainbow-six/ranked": [team],
+    "rainbow-six/standard": [team],
+    "rainbow-six/quick-match": [team],
+    "rainbow-six/competitive": [team, { slug: "academy-team", title: "Academy Team" }],
+    "rocket-league/soccar": [singles, duos, { slug: "standard", title: "Standard" }],
+    "rocket-league/hoops": [duos],
+    "rocket-league/rumble": [team],
+    "rocket-league/dropshot": [team],
+    "rocket-league/snow-day": [team],
     "fighting-games/street-fighter-6": [singles],
     "fighting-games/brawlhalla": [singles, duos],
     "fighting-games/tekken-8": [singles],
