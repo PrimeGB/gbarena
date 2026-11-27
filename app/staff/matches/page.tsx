@@ -33,6 +33,9 @@ type MatchReviewEntry = {
   posting_team_reported_score: string | null;
   accepting_team_reported_score: string | null;
   ticket_submissions: DisputeSubmission[];
+  window_ends_at?: string | null;
+  escalated_at_deadline?: boolean;
+  missing_team_names?: string[];
 };
 
 type ReviewDecision = {
@@ -345,6 +348,9 @@ export default function StaffMatchReviewPage() {
                       </section>
                       <section className="ticket-detail-section">
                         <h3>Team statements &amp; evidence</h3>
+                        {selected.escalated_at_deadline && (selected.missing_team_names || []).length > 0 && (
+                          <p className="ticket-help">Escalated at the 3-hour filing deadline. {(selected.missing_team_names || []).join(", ")} did not submit a ticket or proof.</p>
+                        )}
                         <p className="ticket-help">Evidence files and links have not been scanned for malware. Check the source before opening files or links.</p>
                         {selected.ticket_submissions.length === 0 ? <div className="ticket-statement"><h4>{selected.dispute_reason || "Dispute"}</h4><p>{selected.dispute_description || "No team statements were submitted."}</p></div> : selected.ticket_submissions.map((submission) => (
                           <div className="ticket-statement" key={submission.team_id}>

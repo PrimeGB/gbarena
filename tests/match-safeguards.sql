@@ -74,7 +74,7 @@ begin
   if result->>'message' like '%15 minutes%' then raise exception 'Report blocked after 15 minutes: %', result; end if;
   result := public.dispute_match_score(m.id, 'test');
   if result->>'message' like '%15 minutes%' then raise exception 'Dispute blocked after 15 minutes: %', result; end if;
-  if public.dispute_ticket_window_ends_at(m.id) <> now() + interval '1 hour 44 minutes' then
+  if public.dispute_ticket_window_ends_at(m.id) <> now() + interval '2 hours 44 minutes' then
     raise exception 'Incorrect ticket deadline';
   end if;
   if has_table_privilege('authenticated', 'public.match_comments', 'INSERT')
@@ -152,7 +152,7 @@ begin
   insert into public.dispute_tickets(match_id, team_id, opponent_team_id, created_by,
     dispute_reason, dispute_description, status, evidence_paths)
   values (m.id, team, opponent, member, 'test', 'test', 'open', '["test"]'::jsonb);
-  update public.matches set match_time = (now() - interval '2 hours')::text where id = m.id;
+  update public.matches set match_time = (now() - interval '3 hours 1 minute')::text where id = m.id;
   rejected := false;
   begin
     insert into public.dispute_tickets(match_id, team_id, opponent_team_id, created_by,

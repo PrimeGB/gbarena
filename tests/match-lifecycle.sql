@@ -169,7 +169,7 @@ begin
             raise exception 'Staff queue exposed the case before both teams filed';
           end if;
           begin
-            update public.matches m set match_time = (now() - interval '2 hours')::text where m.id = match_id;
+            update public.matches m set match_time = (now() - interval '3 hours')::text where m.id = match_id;
             if not exists (select 1 from public.staff_get_match_review_queue() q where q->>'match_id' = match_id::text) then
               raise exception 'Staff queue did not release a one-sided case after the deadline';
             end if;
