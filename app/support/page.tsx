@@ -274,8 +274,8 @@ export default function SupportPage() {
               <div className="panel-body">
                 <p>
                   Use this for login issues, profile problems, linked accounts,
-                  usernames, missing information, or anything related to your GB
-                  Arena account.
+                  usernames, missing information, or anything related to your GameBattles
+                  account.
                 </p>
 
                 <Link className="button blue" href="/support/account">

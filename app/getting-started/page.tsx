@@ -249,8 +249,8 @@ export default function GettingStartedPage() {
                 <p className="gs-eyebrow">The quick start</p>
                 <h2 id="gs-steps-title">Four steps to get in the game</h2>
                 <p className="gs-section-intro">
-                  Some parts of the site are still being built, so availability may vary as new
-                  features come online.
+                  Availability of individual features may vary as the platform is refined and
+                  new capabilities are rolled out.
                 </p>
               </div>
 

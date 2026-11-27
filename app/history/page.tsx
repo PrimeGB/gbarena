@@ -242,7 +242,7 @@ export default function HistoryPage() {
             <h1>The History of Competitive Ladders</h1>
             <p>
               From old-school clan wars and ladder matches to the golden era of
-              online competition — this is the spirit GB Arena is bringing back.
+              online competition — this is the spirit GameBattles is bringing back.
             </p>
           </section>
 
@@ -373,7 +373,7 @@ export default function HistoryPage() {
                   <h2>Bringing It Full Circle</h2>
 
                   <p>
-                    <span className="highlight">GB Arena</span> is inspired by
+                    <span className="highlight">GameBattles</span> is inspired by
                     that golden era of competitive gaming. The goal is not to
                     copy the past exactly, but to rebuild the feeling that made
                     it special: teams, ladders, rivalries, rankings, match finder,
@@ -388,7 +388,7 @@ export default function HistoryPage() {
                   </p>
 
                   <p>
-                    Modern gaming gave players convenience. GB Arena aims to bring
+                    Modern gaming gave players convenience. GameBattles aims to bring
                     back the edge, the pride, and the community competition that
                     made the old days unforgettable.
                   </p>
