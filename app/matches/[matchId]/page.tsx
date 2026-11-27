@@ -973,12 +973,34 @@ export default function MatchDetailsPage() {
       return;
     }
 
+    if (!proofFile) {
+      setActionMessage("Attach a proof screenshot before submitting the score.");
+      return;
+    }
+
     const confirmText =
       "Submit this score for confirmation? The opposing team must confirm it before the match is completed.";
 
     if (!window.confirm(confirmText)) return;
 
     setActionLoading(true);
+
+    const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `${match.id}/${currentUser?.id}/${match.id}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
+    if (uploadError) {
+      setActionLoading(false);
+      setActionMessage("The proof image could not be uploaded. Please try again.");
+      return;
+    }
+    const { error: proofInsertError } = await supabase.from("match_proofs").insert([
+      { match_id: match.id, team_id: verifiedUserTeamId, user_id: currentUser?.id, proof_url: path, proof_note: "Score report proof" },
+    ]);
+    if (proofInsertError) {
+      setActionLoading(false);
+      setActionMessage(`The proof could not be saved: ${proofInsertError.message}`);
+      return;
+    }
 
     const { data, error } = await supabase.rpc("report_match_score", {
       match_uuid: match.id,
@@ -995,26 +1017,9 @@ export default function MatchDetailsPage() {
       return;
     }
 
-    setActionMessage("Score submitted. Awaiting opponent confirmation.");
-
-    if (proofFile) {
-      const ext = (proofFile.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${match.id}/${currentUser?.id}/${match.id}-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from("match-proofs").upload(path, proofFile);
-      if (uploadError) {
-        setActionMessage("Score submitted, but the proof image could not be uploaded.");
-      } else {
-        const { error: proofInsertError } = await supabase.from("match_proofs").insert([
-          { match_id: match.id, team_id: verifiedUserTeamId, user_id: currentUser?.id, proof_url: path, proof_note: "Score report proof" },
-        ]);
-        if (proofInsertError) {
-          setActionMessage(`Score submitted, but its proof could not be saved: ${proofInsertError.message}`);
-        } else {
-          setProofRefreshKey((key) => key + 1);
-        }
-      }
-      setProofFile(null);
-    }
+    setProofFile(null);
+    setProofRefreshKey((key) => key + 1);
+    setActionMessage("Score and proof submitted. Awaiting opponent confirmation.");
 
     await reloadMatch();
   }
@@ -2141,7 +2146,7 @@ export default function MatchDetailsPage() {
 
                   {canSubmitScore && (
                     <label className="score-note" style={{ display: "block" }}>
-                      Proof screenshot (optional):{" "}
+                      Proof screenshot (required):{" "}
                       <input
                         type="file"
                         accept="image/*"
