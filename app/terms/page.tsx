@@ -55,9 +55,9 @@ export default function TermsPage() {
 
       <h2>Credits and Payments</h2>
       <p>
-        Credits are bought in Canadian dollars through PayPal Friends &amp; Family, are non-refundable, have no cash
-        value, and can only be used on GameBattles, such as for paid tournament entries. Purchases are for players 18
-        and over. Full details are in the <Link href="/credits-terms">Credit Terms</Link>.
+        Credits are bought in Canadian dollars through PayPal (using the &quot;Goods and Services&quot; option so the purchase may be
+        covered by PayPal&apos;s Purchase Protection), are non-refundable, have no cash value, and can only be used on GameBattles,
+        such as for paid tournament entries. Purchases are for players 18 and over. Full details are in the <Link href="/credits-terms">Credit Terms</Link>.
       </p>
 
       <h2>Moderation and Enforcement</h2>

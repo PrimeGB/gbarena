@@ -46,7 +46,7 @@ function messagePreview(r: CreditRequest, email: string) {
     "HOW TO PAY",
     "1. Open PayPal and choose Send.",
     `2. Send ${price} to: ${email || "(your PayPal email)"}`,
-    '3. Choose "Friends and Family". Payments sent as "Goods and Services" cannot be accepted.',
+    '3. Choose "Goods and Services" (paying for an item or service) so the payment is covered by PayPal Purchase Protection.',
     `4. In the payment note, write your GameBattles username: ${name}`,
     "",
     "AFTER YOU PAY",

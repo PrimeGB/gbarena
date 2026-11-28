@@ -21,7 +21,11 @@ export default function CreditTermsPage() {
         <li>All credit purchases are final and non-refundable once credits are added to your account, except where the law requires otherwise.</li>
         <li>Prices are in Canadian dollars (CAD). If you pay in another currency, PayPal converts it to CAD. You are responsible for any conversion fees or taxes.</li>
         <li>To buy credits, send a request from the Tournaments page. The Founder will message your GameBattles inbox with the PayPal email to pay.</li>
-        <li>Payments are made by PayPal Friends &amp; Family only, to prevent chargebacks. Put your GameBattles username in the payment note.</li>
+        <li>
+          Payments are made through PayPal. For your protection, pay using PayPal&apos;s &quot;Goods and Services&quot; option so the
+          purchase may be covered by PayPal&apos;s Purchase Protection. Friends &amp; Family (personal) payments are not covered by
+          PayPal Purchase Protection and must not be used to pay for credits. Put your GameBattles username in the payment note.
+        </li>
         <li>Credits are added after the Founder confirms your payment. If you paid and did not get credits, contact Support with your PayPal receipt.</li>
         <li>Credits can be used toward paid tournaments, including events with cash prizes.</li>
         <li>Never share your PayPal password or login details with anyone. GameBattles staff will never ask for them.</li>
