@@ -647,7 +647,7 @@ function TournamentListing() {
           )}
         </div>
 
-        <section className="t-coming" aria-label="Coming soon">
+        <section className="t-coming" aria-label="More ways to compete">
           <div className="t-coming-head">
             <div className="t-coming-title">More ways to compete</div>
             <Link className="t-coming-link" href="/champions">
@@ -664,9 +664,9 @@ function TournamentListing() {
               </p>
             </article>
             {!tournaments.some((t) => t.entry_kind === "player") && <article className="t-coming-card solo">
-              <span className="t-coming-label">Coming soon</span>
+              <span className="t-coming-label">Planned</span>
               <h2>Free solo tournaments</h2>
-              <p>Game, platform and schedule TBD. Registration is not open yet.</p>
+              <p>Solo tournaments are being added to the schedule. Game, platform and dates will be announced here once registration opens.</p>
             </article>}
           </div>
         </section>

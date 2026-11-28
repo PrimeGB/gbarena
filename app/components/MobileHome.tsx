@@ -17,7 +17,7 @@ export default function MobileHome() {
         <div className={styles.brand}>
           <Image src="/logo-emblem.png" alt="" width={100} height={100} priority />
           <div className={styles.wordmark}>
-            <span>GAMEBATTLES</span>
+            <span>GameBattles</span>
             <small>WHERE GAMING FINDS ITS EDGE</small>
           </div>
         </div>
@@ -73,7 +73,6 @@ export default function MobileHome() {
           <Link href="/support">Support / Contact</Link><Link href="/staff">Staff</Link>
           <Link href="/terms">Terms</Link><Link href="/privacy">Privacy</Link><Link href="/disclaimer">Disclaimer</Link><Link className={styles.footerLegalLink} href="/rules">Rules</Link>
         </nav>
-        <p>© 2026 Competitive Gaming Network</p>
       </footer>
     </div>
   );

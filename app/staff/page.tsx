@@ -13,7 +13,7 @@ type RosterEntry = {
   position: string;
 };
 
-type Tier = "owner" | "admin" | "staff" | "referee";
+type Tier = "owner" | "admin" | "senior" | "staff" | "referee";
 
 const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duties: string[] }[] = [
   {
@@ -29,6 +29,13 @@ const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duti
     plural: "Administrators",
     blurb: "Runs day-to-day operations and keeps competition fair.",
     duties: ["Finalizes disputed match results", "Handles player reports and team enforcement", "Manages awards and reviews the audit log"],
+  },
+  {
+    tier: "senior",
+    label: "Senior Staff",
+    plural: "Senior Staff",
+    blurb: "Experienced staff who lead shifts and mentor the team.",
+    duties: ["Oversee day-to-day moderation", "Handle escalations from Moderators and Referees", "Keep rules and decisions consistent across the team"],
   },
   {
     tier: "staff",
@@ -47,7 +54,7 @@ const tierInfo: { tier: Tier; label: string; plural: string; blurb: string; duti
 ];
 
 function tierFor(entry: RosterEntry): Tier {
-  if (entry.role === "owner" || entry.role === "admin" || entry.role === "referee") return entry.role;
+  if (entry.role === "owner" || entry.role === "admin" || entry.role === "senior" || entry.role === "referee") return entry.role;
   return "staff";
 }
 
