@@ -229,7 +229,6 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
       <div className="members-wrap">
         <div className="members-topbar">
           <Link className="members-brand" href="/home">
-            <span className="members-brand-mark" aria-hidden="true">GB</span>
             <span>
               <span className="members-brand-name">GameBattles</span>
               <span className="members-brand-tagline">Where gaming finds its edge</span>
