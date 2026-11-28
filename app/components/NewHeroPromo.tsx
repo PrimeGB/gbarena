@@ -46,7 +46,7 @@ export default function NewHeroPromo({ kind, onFocusChange }: {
         {promo.category === "construction" && (
           <div className={styles.buildArt}>
             <div className={styles.stripes} />
-            <strong>{kind === "blueprint" ? "GB / 01" : "WORK IN PROGRESS"}</strong>
+            <strong>{kind === "blueprint" ? "GB / 01" : "ALWAYS IMPROVING"}</strong>
             <span>BUILDING A BETTER GAMEBATTLES</span>
             <div className={styles.stripes} />
           </div>

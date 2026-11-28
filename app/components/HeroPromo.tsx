@@ -82,9 +82,9 @@ const PROMOS: Record<HeroPromoKind, PromoConfig> = {
     emblem: CROWN_SVG,
   },
   building: {
-    tag: "Work in progress",
+    tag: "Always improving",
     heading: <>Built in<br /><em>the open.</em></>,
-    body: "GameBattles grows every week, so expect changes and new features. But your rank and every XP you earn are permanent - they stay with you.",
+    body: "GameBattles evolves every week, so expect new features and refinements. Your rank and every XP you earn are permanent - they stay with you.",
     ctaLabel: "See the player ranks",
     href: "/ranks",
     bottom: "Getting better every week.",

@@ -61,9 +61,10 @@ export default function DevelopmentNotice() {
           Thanks for signing up!
         </h2>
         <p style={styles.message}>
-          GameBattles is still in development. Some features may be buggy, and
-          things may change before launch. Thanks for being here while we build
-          and improve the site.
+          Welcome to GameBattles. The platform is actively maintained and
+          refined, and new features ship regularly. If you run into an issue,
+          contact the site owner and we&apos;ll make it right. Thanks for being
+          part of the community.
         </p>
         {currentError && (
           <p role="alert" style={styles.error}>

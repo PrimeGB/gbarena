@@ -59,14 +59,14 @@ export const NEW_PROMOS: Record<NewPromoKind, {
     href: "/tournaments/request", action: "Request an event", bannerTitle: "YOUR COMMUNITY EVENT", bannerText: "Tell staff what you have in mind.",
   },
   construction: {
-    category: "construction", tag: "Work in progress", title: "Pardon our", highlight: "progress.",
-    body: "GameBattles is a work in progress. We're building, improving and adding more for the community.",
-    href: "/suggestions", action: "Share an idea", bannerTitle: "SITE UNDER CONSTRUCTION", bannerText: "Help shape what's next.",
+    category: "construction", tag: "Always improving", title: "Built to keep", highlight: "getting better.",
+    body: "GameBattles is constantly refined — new ladders, features and improvements ship regularly for the community.",
+    href: "/suggestions", action: "Share an idea", bannerTitle: "ALWAYS IMPROVING", bannerText: "Help shape what's next.",
   },
   blueprint: {
-    category: "construction", tag: "Building GameBattles together", title: "Good things are", highlight: "underway.",
-    body: "We're still working on the site. Your feedback helps us make GameBattles better.",
-    href: "/suggestions", action: "Send feedback", bannerTitle: "WORK IN PROGRESS", bannerText: "We're building for the community.",
+    category: "construction", tag: "Built with the community", title: "Good things are", highlight: "already here.",
+    body: "Your feedback directly shapes GameBattles. Tell us what you want to see next.",
+    href: "/suggestions", action: "Send feedback", bannerTitle: "BUILT WITH THE COMMUNITY", bannerText: "Help shape what's next.",
   },
   "game-showcase": {
     category: "games", tag: "New ladders, more ways to compete", title: "Your game.", highlight: "Your ladder.",

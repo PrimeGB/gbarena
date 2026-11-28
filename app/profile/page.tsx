@@ -2147,7 +2147,7 @@ function ProfilePageContent() {
                     </svg>
                   </span>
                   <span className="promo-copy">
-                    <span className="promo-eyebrow">Work in progress</span>
+                    <span className="promo-eyebrow">Always improving</span>
                     <span className="promo-title">BUILT IN THE OPEN</span>
                     <span className="promo-sub">Your rank &amp; XP never reset.</span>
                   </span>
