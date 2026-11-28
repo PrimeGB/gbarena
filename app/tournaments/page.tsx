@@ -657,10 +657,10 @@ function TournamentListing() {
           <div className="t-coming-grid">
             <article className="t-coming-card">
               <span className="t-coming-label">Free team events</span>
-              <h2>Community Cups</h2>
+              <h2>Weekly Community Cups</h2>
               <p>
-                Scheduled cups appear below when announced. Entry is free; each event will list its game, format,
-                date and confirmed rewards.
+                Recurring weekly cups, separate from one-off tournaments. Scheduled cups appear below when announced.
+                Entry is free; each event lists its game, format, date and confirmed rewards.
               </p>
             </article>
             {!tournaments.some((t) => t.entry_kind === "player") && <article className="t-coming-card solo">

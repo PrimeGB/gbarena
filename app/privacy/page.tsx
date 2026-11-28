@@ -13,7 +13,7 @@ export default function PrivacyPage() {
 
       <h2>Information We Collect</h2>
       <ul>
-        <li><strong>Account details:</strong> email address, username, password (stored encrypted by our login provider), date of birth, country and region.</li>
+        <li><strong>Account details:</strong> email address, username, password (stored as a one-way hash by our login provider, Supabase Auth, so it cannot be read back), date of birth, country and region.</li>
         <li><strong>Profile and gaming details:</strong> gamertags and gaming IDs you link, avatar, bio, social links and profile settings.</li>
         <li><strong>Activity:</strong> teams, matches, results, evidence you upload, disputes, tournament entries, awards, forum posts, comments, suggestions and messages.</li>
         <li><strong>Credit purchases:</strong> the credit pack you request and its status. Payments are made through PayPal; we never see or store your PayPal password or card details.</li>
